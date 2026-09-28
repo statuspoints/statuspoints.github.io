@@ -783,6 +783,10 @@
 
   <footer class="foot">
     <div class="backup">
+      <button class="ghost-btn" id="text-btn" type="button">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 1.75h5.5l3 3v9.5H4z"/><path d="M9.5 1.75v3h3M6 8.25h4.5M6 10.75h4.5"/></svg>
+        Export as text
+      </button>
       <button class="ghost-btn" id="export-btn" type="button">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2.5v8M4.5 7L8 10.5 11.5 7M3 13.5h10"/></svg>
         Back up data
@@ -1023,6 +1027,7 @@
   const fmt = (n) => numFmt.format(n);
   const dateFmt = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   const todayFmt = new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  const timeFmt = new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit' });
   const clone = (v) => JSON.parse(JSON.stringify(v));
   const str = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
   const splitParts = (text) => text.split('·').map((part) => part.trim()).filter(Boolean);
@@ -1901,12 +1906,10 @@
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   }
 
-  $('#export-btn').addEventListener('click', async () => {
+  // Phones: hand the file to the share sheet (Save to Files, Notes, AirDrop, email). Elsewhere: download it.
+  async function saveFile(name, content, type) {
     if (saveTimer) saveNow();
-    const name = `points-status-backup-${todayISO()}.json`;
-    const json = JSON.stringify({ app: 'points-status-tracker', exportedAt: new Date().toISOString(), data: state }, null, 2);
-    const file = new File([json], name, { type: 'application/json' });
-    // Phones: hand the file to the share sheet (Save to Files, AirDrop, email). Elsewhere: download it.
+    const file = new File([content], name, { type });
     if (matchMedia('(pointer: coarse)').matches && navigator.canShare && navigator.canShare({ files: [file] })) {
       try {
         await navigator.share({ files: [file] });
@@ -1922,6 +1925,57 @@
     a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 10000);
     showToast(`Saved ${name}`);
+  }
+
+  // A plain-text summary meant for reading (not for restoring — that's the JSON backup).
+  function summaryText() {
+    const now = new Date();
+    const out = ['POINTS & STATUS TRACKER', `Exported ${todayFmt.format(now)} at ${timeFmt.format(now)}`, '', '', 'PROGRAMS', ''];
+
+    const medallion = medallionProgram();
+    for (const p of state.programs) {
+      const balance = state.balances[p.id];
+      if (!p.unit) out.push(p.name);
+      else out.push(`${p.name} — ${balance == null ? 'no balance entered' : `${fmt(balance)} ${p.unit}`}`);
+      if (p === medallion) {
+        const { current, next } = medallionFor(state.mqd);
+        out.push(`  ${current ? `${current.name} Medallion` : 'No Medallion status yet'} · ${fmt(state.mqd)} MQDs · `
+          + (next ? `${fmt(next.min - state.mqd)} to ${next.name}` : 'top tier'));
+      }
+      for (const line of mergedLines(p.status)) {
+        const tier = splitParts(line.tier).join(' · ');
+        const via = splitParts(line.via).join(' · ');
+        out.push(`  ${tier && via ? `${tier} (${via})` : tier || via}`);
+      }
+      out.push('');
+    }
+
+    out.push('', 'VOUCHERS', '');
+    if (!state.vouchers.length) out.push('None', '');
+    for (const v of state.vouchers) {
+      out.push(v.note ? `${v.name} — ${v.note}` : v.name);
+      const date = parseISODate(v.exp);
+      const days = date ? daysUntil(date) : null;
+      if (!date) out.push('  No expiration date');
+      else if (days < 0) out.push(`  EXPIRED ${dateFmt.format(date)}`);
+      else if (days === 0) out.push(`  Expires TODAY (${dateFmt.format(date)})`);
+      else out.push(`  Expires ${dateFmt.format(date)} · ${plural(days, 'day')} left`);
+      out.push('');
+    }
+
+    if (state.cards.length) out.push('', 'CARDS', '', ...state.cards.map((id) => CARD_BY_ID[id].name), '');
+    if (state.notes.trim()) out.push('', 'NOTE', '', state.notes.trim(), '');
+    return out.join('\n');
+  }
+
+  $('#text-btn').addEventListener('click', () => {
+    // Leading byte-order mark so Quick Look / Notepad read the "—" and "·" as UTF-8.
+    saveFile(`points-status-${todayISO()}.txt`, `﻿${summaryText()}`, 'text/plain;charset=utf-8');
+  });
+
+  $('#export-btn').addEventListener('click', () => {
+    const json = JSON.stringify({ app: 'points-status-tracker', exportedAt: new Date().toISOString(), data: state }, null, 2);
+    saveFile(`points-status-backup-${todayISO()}.json`, json, 'application/json');
   });
 
   $('#import-btn').addEventListener('click', () => $('#import-file').click());
@@ -1991,6 +2045,7 @@
     $('#vouchers-section').hidden = setup;
     $('#stats').hidden = setup;
     $('#export-btn').hidden = setup;
+    $('#text-btn').hidden = setup;
     if (setup) {
       renderSetup();
     } else {

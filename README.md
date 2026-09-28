@@ -25,7 +25,7 @@ Pick your cards (setup screen, or **Edit → Choose cards**) and the complimenta
 
 Everything — your program list, statuses, balances, MQDs, and vouchers — is saved only in your browser's local storage (`status-tracker-v2`) on that device. Nothing is uploaded, nothing syncs between devices, and each person who opens the site has their own separate tracker.
 
-Use **Back up data** at the bottom to save a backup file (on a phone it opens the share sheet — save it to Files or AirDrop it), and **Restore from backup** to load it on a new device. Deleting the home-screen app or clearing the browser's website data erases your data, so keep a backup.
+Use **Export as text** at the bottom to save an easy-to-read `.txt` summary of your programs, balances, statuses, Medallion progress, vouchers, and cards. Use **Back up data** to save a backup file (on a phone it opens the share sheet — save it to Files or AirDrop it), and **Restore from backup** to load it on a new device. Deleting the home-screen app or clearing the browser's website data erases your data, so keep a backup.
 
 ## Files
 
