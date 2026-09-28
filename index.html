@@ -59,6 +59,9 @@
     --toast-bg: #17202B;
     --toast-fg: #F3F5F9;
     --toast-accent: #9DC0EC;
+    --plan-a: rgba(27, 58, 92, .32);
+    --plan-b: rgba(27, 58, 92, .15);
+    --num-font: ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     color-scheme: light;
   }
   @media (prefers-color-scheme: dark) {
@@ -104,6 +107,8 @@
       --toast-bg: #E8ECF4;
       --toast-fg: #0E1420;
       --toast-accent: #1B3A5C;
+      --plan-a: rgba(127, 166, 217, .42);
+      --plan-b: rgba(127, 166, 217, .18);
       color-scheme: dark;
     }
   }
@@ -165,8 +170,33 @@
   h1 { margin: 0; font-size: 21px; line-height: 1.2; font-weight: 750; letter-spacing: -0.02em; }
   .sub { margin: 2px 0 0; font-size: 13px; color: rgba(244, 247, 251, .72); }
   .stats { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 16px; }
-  .stat { min-width: 0; padding: 10px 11px; border: 1px solid rgba(255, 255, 255, .12); border-radius: 14px; background: rgba(255, 255, 255, .08); }
-  .stat-v { display: block; overflow: hidden; font-size: 20px; font-weight: 750; line-height: 1.15; letter-spacing: -0.02em; white-space: nowrap; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+  .stat {
+    min-width: 0;
+    padding: 10px 11px;
+    border: 1px solid rgba(255, 255, 255, .12);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, .08);
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: background .15s ease, transform .12s ease;
+  }
+  .stat:active { transform: scale(.97); }
+  .stat:focus-visible { outline: 2px solid #FFFFFF; outline-offset: 2px; }
+  @media (hover: hover) {
+    .stat:hover { background: rgba(255, 255, 255, .14); }
+  }
+  .stat-v { display: flex; align-items: center; gap: 6px; min-width: 0; overflow: hidden; font-family: var(--num-font); font-size: 20px; font-weight: 750; line-height: 1.15; letter-spacing: -0.02em; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .ring { flex: none; width: 22px; height: 22px; }
+  .stat-l .ring { display: none; width: 13px; height: 13px; margin-right: 4px; vertical-align: -2px; }
+  @media (max-width: 419px) { /* three tiles are narrow on phones: ring moves beside the label */
+    .stat-v { font-size: 18px; }
+    .stat-v.tier { font-size: 16px; }
+    .stat-v .ring { display: none; }
+    .stat-l .ring { display: inline-block; }
+  }
+  .ring .prog { transition: stroke-dashoffset .8s cubic-bezier(.2, .7, .2, 1); }
   .stat-l { display: block; margin-top: 3px; font-size: 11.5px; line-height: 1.25; color: rgba(244, 247, 251, .72); }
   .stat-l.warn { color: #FFC98A; font-weight: 650; }
 
@@ -280,12 +310,12 @@
     width: 40px;
     height: 40px;
     border-radius: 12px;
-    background: var(--av-bg);
+    background: linear-gradient(150deg, rgba(255, 255, 255, .22), rgba(255, 255, 255, 0) 60%), var(--av-bg);
     color: var(--av-fg, #FFFFFF);
     font-size: 13.5px;
     font-weight: 800;
     letter-spacing: -0.02em;
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .1);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .12), 0 1px 2px rgba(0, 0, 0, .12);
     user-select: none;
   }
   .av.x3 { font-size: 11px; letter-spacing: -0.01em; }
@@ -364,6 +394,7 @@
     background: none;
     color: var(--text);
     font: inherit;
+    font-family: var(--num-font);
     font-size: 19px;
     font-weight: 700;
     line-height: 1.3;
@@ -394,6 +425,7 @@
     background: var(--field);
     color: var(--text);
     font: inherit;
+    font-family: var(--num-font);
     font-size: 19px;
     font-weight: 700;
     line-height: 1.3;
@@ -410,13 +442,104 @@
   .of { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
   .next { font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
   .bar { position: relative; height: 10px; border-radius: 999px; background: var(--track); }
-  .fill { width: 0; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--accent), var(--accent-2)); transition: width .5s cubic-bezier(.2, .7, .2, 1); }
-  .dot { position: absolute; top: 50%; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%; background: var(--inset); box-shadow: inset 0 0 0 2px var(--track); }
+  .fill, .fill-plan { position: absolute; top: 0; left: 0; width: 0; height: 100%; border-radius: inherit; transition: width .7s cubic-bezier(.2, .7, .2, 1); }
+  .fill { background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
+  .fill-plan { background: repeating-linear-gradient(-45deg, var(--plan-a) 0 5px, var(--plan-b) 5px 10px); transition-duration: .2s; }
+  .dot { z-index: 1; position: absolute; top: 50%; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%; background: var(--inset); box-shadow: inset 0 0 0 2px var(--track); }
   .dot.hit { background: var(--card); box-shadow: inset 0 0 0 2.5px var(--accent); }
   .ticks { position: relative; height: 16px; margin-top: 6px; font-size: 11px; line-height: 16px; }
   .tick { position: absolute; top: 0; transform: translateX(-50%); white-space: nowrap; color: var(--muted); }
   .tick.end { transform: translateX(-100%); }
   .tick.hit { color: var(--accent); font-weight: 700; }
+
+  /* Filter chips */
+  .filters {
+    display: flex;
+    gap: 6px;
+    margin: 0 -16px 12px;
+    padding: 2px 16px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .filters::-webkit-scrollbar { display: none; }
+  .filter {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 34px;
+    padding: 0 13px;
+    border: 1px solid var(--field-line);
+    border-radius: 999px;
+    background: var(--card);
+    color: var(--text);
+    font: inherit;
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease, border-color .15s ease;
+  }
+  .filter .n { font-family: var(--num-font); font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .filter[aria-pressed="true"] { border-color: var(--text); background: var(--text); color: var(--bg); }
+  .filter[aria-pressed="true"] .n { color: inherit; opacity: .7; }
+  .filter:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  @media (hover: hover) {
+    .filter[aria-pressed="false"]:hover { border-color: var(--accent); }
+  }
+
+  /* Motion: rows ease in on open / filter change, the Medallion panel pulses when jumped to */
+  .enter > li { animation: rise .5s cubic-bezier(.2, .7, .2, 1) both; animation-delay: calc(var(--i, 0) * 35ms); }
+  @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  .flash-ring { animation: flash-ring 1.4s ease-out; }
+  @keyframes flash-ring {
+    0% { box-shadow: 0 0 0 0 var(--accent); }
+    100% { box-shadow: 0 0 0 14px transparent; }
+  }
+  #programs-section, #vouchers-section { scroll-margin-top: 12px; }
+  .confetti { position: fixed; inset: 0; z-index: 30; width: 100%; height: 100%; pointer-events: none; }
+
+  /* Medallion "Plan ahead" */
+  .plan-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 12px 0 2px;
+    padding: 6px 12px 6px 10px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 650;
+    cursor: pointer;
+  }
+  .plan-toggle svg { width: 14px; height: 14px; transition: transform .3s ease; }
+  .plan-toggle[aria-expanded="true"] svg { transform: rotate(72deg); }
+  .plan-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .plan { margin-top: 10px; padding-top: 12px; border-top: 1px dashed var(--field-line); }
+  .plan-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; font-size: 13px; color: var(--muted); }
+  .plan-amt { font-family: var(--num-font); font-size: 16px; font-weight: 750; color: var(--text); font-variant-numeric: tabular-nums; }
+  .range { display: block; width: 100%; height: 30px; margin: 6px 0 2px; background: transparent; -webkit-appearance: none; appearance: none; cursor: pointer; }
+  .range::-webkit-slider-runnable-track { height: 6px; border-radius: 999px; background: var(--track); }
+  .range::-webkit-slider-thumb {
+    width: 26px;
+    height: 26px;
+    margin-top: -10px;
+    border: 2.5px solid var(--accent);
+    border-radius: 50%;
+    background: var(--card);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .22);
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .range::-moz-range-track { height: 6px; border-radius: 999px; background: var(--track); }
+  .range::-moz-range-thumb { width: 22px; height: 22px; border: 2.5px solid var(--accent); border-radius: 50%; background: var(--card); box-shadow: 0 2px 8px rgba(0, 0, 0, .22); }
+  .range:focus-visible { outline: none; }
+  .range:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 5px var(--accent-soft); }
+  .plan-result { margin: 0; font-size: 13px; color: var(--muted); }
+  .plan-result strong { color: var(--text); font-weight: 700; }
 
   /* Note under the program list */
   .footnote { display: flex; gap: 10px; margin: 12px 0 0; padding: 12px 14px; border-radius: 16px; background: var(--callout); font-size: 13.5px; line-height: 1.45; }
@@ -724,9 +847,9 @@
       </div>
     </div>
     <div class="stats" id="stats" hidden>
-      <div class="stat"><span class="stat-v" id="st-1"></span><span class="stat-l" id="st-1-l"></span></div>
-      <div class="stat"><span class="stat-v" id="st-2"></span><span class="stat-l" id="st-2-l"></span></div>
-      <div class="stat"><span class="stat-v" id="st-3"></span><span class="stat-l" id="st-3-l"></span></div>
+      <button class="stat" type="button" id="st-1-btn" data-go="status"><span class="stat-v" id="st-1"></span><span class="stat-l" id="st-1-l"></span></button>
+      <button class="stat" type="button" id="st-2-btn" data-go="medallion"><span class="stat-v" id="st-2"></span><span class="stat-l" id="st-2-l"></span></button>
+      <button class="stat" type="button" id="st-3-btn" data-go="vouchers"><span class="stat-v" id="st-3"></span><span class="stat-l" id="st-3-l"></span></button>
     </div>
   </header>
 
@@ -760,6 +883,7 @@
       </div>
       <button class="pill-btn" id="edit-toggle" type="button">Edit</button>
     </div>
+    <div class="filters" id="filters" role="group" aria-label="Show programs" hidden></div>
     <ul class="card programs" id="programs"></ul>
     <div class="cards-edit" id="cards-edit" hidden>
       <span>Your cards<strong id="cards-summary">none</strong></span>
@@ -940,6 +1064,11 @@
   const CATALOG_BY_ID = Object.fromEntries(CATALOG_ITEMS.map((c) => [c.id, c]));
   const catalogByName = (name) => CATALOG_ITEMS.find((c) => c.name.toLowerCase() === name.trim().toLowerCase());
 
+  // Filter chip categories; programs added by hand that aren't in the catalog fall under "Other".
+  const CATEGORIES = ['Airlines', 'Hotels', 'Points', 'Cars & lounges', 'Other'];
+  const GROUP_CATEGORY = { Airlines: 'Airlines', Hotels: 'Hotels', 'Credit card points': 'Points', 'Car rental & lounges': 'Cars & lounges' };
+  const CATEGORY_BY_ID = Object.fromEntries(CATALOG.flatMap((g) => g.items.map((c) => [c.id, GROUP_CATEGORY[g.group]])));
+
   // Complimentary statuses each card comes with (enrollment may be required), per the issuers' published
   // benefits as of CARDS_AS_OF. Grants are [program id, tier, note]; tiers joined with " · " show as separate
   // pills. Statuses you only unlock by spending are deliberately left out. `tone` picks the tile colors.
@@ -1062,7 +1191,8 @@
   };
 
   const ICON = {
-    x: '<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M2.5 2.5l9 9M11.5 2.5l-9 9"/></svg>',
+    spark: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M8 1.5l1.7 4.3 4.3 1.7-4.3 1.7L8 13.5l-1.7-4.3L2 7.5l4.3-1.7z"/></svg>',
+    x:'<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M2.5 2.5l9 9M11.5 2.5l-9 9"/></svg>',
     up: '<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 11.5v-9M3 6.5l4-4 4 4"/></svg>',
     down: '<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 2.5v9M3 7.5l4 4 4-4"/></svg>',
     plus: '<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M7 2v10M2 7h10"/></svg>',
@@ -1099,6 +1229,92 @@
     const t = document.createElement('template');
     t.innerHTML = markup;
     return t.content.firstChild;
+  }
+
+  /* ---------- Motion ---------- */
+
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
+
+  // Counts a number up from 0. Anything that later sets the element's text cancels it via `el._count = null`.
+  function countUp(el, to, format = fmt) {
+    if (reduceMotion.matches || document.hidden || !to) return; // hidden tabs pause animation frames
+    const token = {};
+    el._count = token;
+    const start = performance.now();
+    const step = (now) => {
+      if (el._count !== token) return;
+      const t = Math.min((now - start) / 800, 1);
+      el.textContent = format(Math.round(to * (1 - Math.pow(1 - t, 3))));
+      if (t < 1) requestAnimationFrame(step);
+      else el._count = null;
+    };
+    el.textContent = format(0);
+    requestAnimationFrame(step);
+  }
+
+  // Staggered fade-up of a list's rows.
+  function enter(list) {
+    if (reduceMotion.matches) return;
+    [...list.children].forEach((li, i) => li.style.setProperty('--i', Math.min(i, 12)));
+    list.classList.remove('enter');
+    void list.offsetWidth; // restart the animation
+    list.classList.add('enter');
+    clearTimeout(list._enterTimer);
+    list._enterTimer = setTimeout(() => list.classList.remove('enter'), 1200);
+  }
+
+  function pulse(el) {
+    if (!el || reduceMotion.matches) return;
+    el.classList.remove('flash-ring');
+    void el.offsetWidth;
+    el.classList.add('flash-ring');
+  }
+
+  // A short burst of confetti from an element — for reaching a new Medallion tier.
+  function confetti(from) {
+    if (reduceMotion.matches || !from) return;
+    const canvas = h('canvas', { class: 'confetti', 'aria-hidden': 'true' });
+    document.body.append(canvas);
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = innerWidth * dpr;
+    canvas.height = innerHeight * dpr;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    const box = from.getBoundingClientRect();
+    const colors = ['#F2C466', '#7FA6D9', '#1B3A5C', '#86DDE8', '#E8ECF4', '#C8102E', '#BAC5F2'];
+    const bits = Array.from({ length: 140 }, () => ({
+      x: box.left + box.width / 2,
+      y: box.top + box.height / 3,
+      vx: (Math.random() - 0.5) * 12,
+      vy: -Math.random() * 11 - 4,
+      w: 5 + Math.random() * 5,
+      h: 3 + Math.random() * 4,
+      r: Math.random() * Math.PI,
+      vr: (Math.random() - 0.5) * 0.4,
+      color: colors[Math.floor(Math.random() * colors.length)],
+    }));
+    const start = performance.now();
+    const frame = (now) => {
+      const age = now - start;
+      ctx.clearRect(0, 0, innerWidth, innerHeight);
+      ctx.globalAlpha = Math.max(0, 1 - Math.max(0, age - 1200) / 800);
+      for (const b of bits) {
+        b.vy += 0.32;
+        b.vx *= 0.985;
+        b.x += b.vx;
+        b.y += b.vy;
+        b.r += b.vr;
+        ctx.save();
+        ctx.translate(b.x, b.y);
+        ctx.rotate(b.r);
+        ctx.fillStyle = b.color;
+        ctx.fillRect(-b.w / 2, -b.h / 2, b.w, b.h);
+        ctx.restore();
+      }
+      if (age < 2000) requestAnimationFrame(frame);
+      else canvas.remove();
+    };
+    requestAnimationFrame(frame);
   }
 
   /* ---------- Look: avatars and tier colors ---------- */
@@ -1328,6 +1544,7 @@
   function paintNum(btn) {
     const v = getField(btn.dataset.field);
     const empty = v == null;
+    btn._count = null; // stop any count-up animation
     btn.textContent = empty ? '—' : fmt(v);
     btn.classList.toggle('is-empty', empty);
     btn.setAttribute('aria-label', `${btn.dataset.label}: ${empty ? 'not set' : fmt(v)}. Edit`);
@@ -1373,7 +1590,16 @@
       }
       paintNum(btn);
       input.replaceWith(btn);
-      if (field === 'mqd') updateMedallion();
+      if (field === 'mqd') {
+        updateMedallion();
+        // Crossed into a higher Medallion tier: celebrate.
+        const was = TIERS.indexOf(medallionFor(before || 0).current);
+        const now = medallionFor(state.mqd).current;
+        if (TIERS.indexOf(now) > was) {
+          confetti($('.delta'));
+          showToast(`Welcome to ${now.name} Medallion!`);
+        }
+      }
       if (refocus) btn.focus();
     };
     input.addEventListener('keydown', (e) => {
@@ -1431,7 +1657,7 @@
       'aria-label': 'MQDs toward Diamond Medallion',
       'aria-valuemin': '0',
       'aria-valuemax': String(MQD_GOAL),
-    }, h('div', { class: 'fill', id: 'mqd-fill' }));
+    }, h('div', { class: 'fill-plan', id: 'mqd-plan' }), h('div', { class: 'fill', id: 'mqd-fill' }));
     const ticks = h('div', { class: 'ticks', 'aria-hidden': 'true' });
     for (const t of TIERS) {
       const pct = (t.min / MQD_GOAL) * 100;
@@ -1451,7 +1677,35 @@
           h('span', { class: 'of' }, `/ ${fmt(MQD_GOAL)}`)),
         h('div', { class: 'next', id: 'mqd-next' })),
       bar,
-      ticks);
+      ticks,
+      h('button', { type: 'button', class: 'plan-toggle', id: 'plan-toggle', 'aria-expanded': String(planOpen), 'aria-controls': 'plan' },
+        svgIcon(ICON.spark), 'Plan ahead'),
+      h('div', { class: 'plan', id: 'plan', hidden: planOpen ? null : '' },
+        h('div', { class: 'plan-row' },
+          h('label', { for: 'plan-range' }, 'MQDs you expect to add'),
+          h('span', { class: 'plan-amt', id: 'plan-amt' })),
+        h('input', { type: 'range', class: 'range', id: 'plan-range', min: '0', max: '20000', step: '250', value: String(planMqd) }),
+        h('p', { class: 'plan-result', id: 'plan-result', 'aria-live': 'polite' })));
+  }
+
+  // "Plan ahead": a striped preview on the bar of where expected MQDs would land. Not saved.
+  let planOpen = false;
+  let planMqd = 0;
+
+  function updatePlan() {
+    if (!$('#plan-range')) return;
+    const add = planOpen ? planMqd : 0;
+    const total = state.mqd + add;
+    $('#plan-amt').textContent = `+${fmt(planMqd)}`;
+    $('#mqd-plan').style.width = `${Math.min(total / MQD_GOAL, 1) * 100}%`;
+    const now = medallionFor(state.mqd).current;
+    const then = medallionFor(total);
+    let result;
+    if (!add) result = ['Drag to see where upcoming trips or card spend would get you.'];
+    else if (then.current && then.current !== now) result = ['That gets you to ', h('strong', null, `${then.current.name} Medallion`), ` with ${fmt(total)} MQDs.`];
+    else if (then.next) result = [`${fmt(total)} MQDs — still `, h('strong', null, `${fmt(then.next.min - total)} short`), ` of ${then.next.name}.`];
+    else result = [`${fmt(total)} MQDs — you'd keep `, h('strong', null, 'Diamond'), '.'];
+    $('#plan-result').replaceChildren(...result);
   }
 
   function programRow(p, index, withMedallion) {
@@ -1481,15 +1735,57 @@
 
   const medallionProgram = () => state.programs.find((p) => p.medallion); // one tracker, on the first flagged program
 
+  /* ---------- Filter chips ---------- */
+
+  let filter = 'all';
+
+  const categoryOf = (p) => {
+    const c = CATALOG_BY_ID[p.id] || catalogByName(p.name);
+    return c ? CATEGORY_BY_ID[c.id] : 'Other';
+  };
+  // Elite = a real tier: the computed Medallion for the Delta tracker, any typed/card status elsewhere (not lounges).
+  const hasStatus = (p) => p.id !== 'lounges'
+    && (p === medallionProgram() ? !!medallionFor(state.mqd).current : p.status.some((line) => line.tier));
+  const matchesFilter = (p) => filter === 'all' || (filter === 'status' ? hasStatus(p) : categoryOf(p) === filter);
+
+  function renderFilters() {
+    const list = state.programs;
+    const options = [
+      ['all', 'All', list.length],
+      ['status', 'Elite', list.filter(hasStatus).length],
+      ...CATEGORIES.map((c) => [c, c, list.filter((p) => categoryOf(p) === c).length]),
+    ].filter(([key, , n]) => key === 'all' || n > 0);
+    if (!options.some(([key]) => key === filter)) filter = 'all';
+    $('#filters').hidden = editMode || list.length < 4;
+    $('#filters').replaceChildren(...options.map(([key, label, n]) => h('button', {
+      type: 'button',
+      class: 'filter',
+      'data-filter': key,
+      'aria-pressed': String(filter === key),
+    }, label, h('span', { class: 'n' }, String(n)))));
+  }
+
+  $('#filters').addEventListener('click', (e) => {
+    const chip = e.target.closest('[data-filter]');
+    if (!chip || chip.dataset.filter === filter) return;
+    filter = chip.dataset.filter;
+    renderPrograms();
+    enter($('#programs'));
+  });
+
   function renderPrograms() {
     const list = state.programs;
     const medallionId = (medallionProgram() || {}).id;
-    const rows = list.map((p, i) => programRow(p, i, !editMode && p.id === medallionId));
+    renderFilters();
+    const shown = editMode ? list : list.filter(matchesFilter);
+    const rows = shown.map((p) => programRow(p, list.indexOf(p), !editMode && p.id === medallionId));
     if (editMode) {
       rows.push(h('li', { class: 'row add-row' },
         h('button', { type: 'button', class: 'link add-program', id: 'add-program' }, svgIcon(ICON.plus), 'Add program')));
     } else if (!list.length) {
       rows.push(h('li', { class: 'empty-row' }, 'No programs yet — tap Edit to add one.'));
+    } else if (!shown.length) {
+      rows.push(h('li', { class: 'empty-row' }, 'Nothing here yet.'));
     }
     $('#programs').replaceChildren(...rows);
     $('#p-count').textContent = list.length;
@@ -1514,6 +1810,7 @@
   }
 
   function updateMedallion() {
+    if (!$('#mqd-bar')) { renderStats(); return; } // Delta row filtered out or in edit mode
     const mqd = state.mqd;
     const { current, next } = medallionFor(mqd);
 
@@ -1524,7 +1821,10 @@
       ? `${fmt(next.min - mqd)} to ${next.name}`
       : 'Diamond — top tier';
 
-    $('#mqd-fill').style.width = `${Math.min(mqd / MQD_GOAL, 1) * 100}%`;
+    const fill = $('#mqd-fill');
+    void fill.offsetWidth; // a freshly built bar animates up from empty
+    fill.style.width = `${Math.min(mqd / MQD_GOAL, 1) * 100}%`;
+    updatePlan();
     const bar = $('#mqd-bar');
     bar.setAttribute('aria-valuenow', String(Math.min(mqd, MQD_GOAL)));
     bar.setAttribute('aria-valuetext', `${fmt(mqd)} of ${fmt(MQD_GOAL)} MQDs`);
@@ -1538,9 +1838,7 @@
   function renderStats() {
     if (!state.programs) return;
     const medallion = medallionProgram();
-    const current = medallion ? medallionFor(state.mqd).current : null;
-    const statuses = state.programs.filter((p) => p.id !== 'lounges'
-      && (p === medallion ? current : p.status.some((line) => line.tier))).length;
+    const statuses = state.programs.filter(hasStatus).length;
 
     let active = 0;
     let soon = 0;
@@ -1551,19 +1849,71 @@
       if (days >= 0 && days <= SOON_DAYS) soon++;
     }
 
+    $('#st-1')._count = null;
     $('#st-1').textContent = statuses;
     $('#st-1-l').textContent = statuses === 1 ? 'Elite status' : 'Elite statuses';
+    $('#st-1-btn').dataset.go = statuses ? 'status' : 'programs';
+    $('#st-1-btn').setAttribute('aria-label', `${plural(statuses, 'elite status', 'elite statuses')}. Show them`);
     if (medallion) {
-      $('#st-2').textContent = current ? current.name : '—';
-      $('#st-2-l').textContent = 'Medallion';
+      const { current, next } = medallionFor(state.mqd);
+      const low = current ? current.min : 0;
+      const progress = next ? Math.max(0, Math.min(1, (state.mqd - low) / (next.min - low))) : 1;
+      $('#st-2').replaceChildren(ring(progress, current), current ? current.name : 'None');
+      $('#st-2').classList.add('tier');
+      $('#st-2-l').replaceChildren(ring(progress, current), 'Medallion');
+      $('#st-2-btn').dataset.go = 'medallion';
+      $('#st-2-btn').setAttribute('aria-label', `${current ? current.name : 'No'} Medallion, `
+        + `${next ? `${fmt(next.min - state.mqd)} MQDs to ${next.name}` : 'top tier'}. Show progress`);
     } else {
-      $('#st-2').textContent = state.programs.length;
+      $('#st-2').replaceChildren(String(state.programs.length));
+      $('#st-2').classList.remove('tier');
       $('#st-2-l').textContent = state.programs.length === 1 ? 'Program' : 'Programs';
+      $('#st-2-btn').dataset.go = 'programs';
+      $('#st-2-btn').setAttribute('aria-label', `${plural(state.programs.length, 'program')}. Show all`);
     }
+    $('#st-3')._count = null;
     $('#st-3').textContent = active;
     $('#st-3-l').textContent = soon ? `${soon} expiring soon` : active === 1 ? 'Voucher' : 'Vouchers';
     $('#st-3-l').classList.toggle('warn', soon > 0);
+    $('#st-3-btn').setAttribute('aria-label', `${plural(active, 'voucher')}${soon ? `, ${soon} expiring soon` : ''}. Show vouchers`);
   }
+
+  // Progress ring toward the next Medallion tier, tinted with the current tier's color.
+  const RING_COLOR = { Silver: '#DDE2E9', Gold: '#F2C466', Platinum: '#C9D2F7', Diamond: '#8BE0EA' };
+  function ring(progress, tier) {
+    const r = 9;
+    const c = 2 * Math.PI * r;
+    return svgIcon(`<svg class="ring" viewBox="0 0 24 24" aria-hidden="true">`
+      + `<circle cx="12" cy="12" r="${r}" fill="none" stroke="rgba(255,255,255,.22)" stroke-width="3.2"/>`
+      + `<circle class="prog" cx="12" cy="12" r="${r}" fill="none" stroke="${tier ? RING_COLOR[tier.name] : '#FFFFFF'}" stroke-width="3.2"`
+      + ` stroke-linecap="round" stroke-dasharray="${c.toFixed(2)}" stroke-dashoffset="${(c * (1 - progress)).toFixed(2)}"`
+      + ` transform="rotate(-90 12 12)"/></svg>`);
+  }
+
+  function jumpTo(el, block = 'start') {
+    if (el) el.scrollIntoView({ behavior: reduceMotion.matches ? 'auto' : 'smooth', block });
+  }
+
+  // Hero tiles: Elite → filter to programs with status; Medallion → Delta progress; Vouchers → vouchers.
+  $('#stats').addEventListener('click', (e) => {
+    const tile = e.target.closest('[data-go]');
+    if (!tile) return;
+    const go = tile.dataset.go;
+    if (go === 'vouchers') { jumpTo($('#vouchers-section')); return; }
+    editMode = false;
+    if (go === 'medallion') {
+      if (!matchesFilter(medallionProgram())) filter = 'all';
+      renderPrograms();
+      const panel = $('.delta');
+      jumpTo(panel, 'center');
+      setTimeout(() => pulse(panel), 350);
+      return;
+    }
+    filter = go === 'status' ? 'status' : 'all';
+    renderPrograms();
+    enter($('#programs'));
+    jumpTo($('#programs-section'));
+  });
 
   function renderNotes() {
     const text = state.notes.trim();
@@ -1596,7 +1946,20 @@
     if (edit) { openSheet(edit.dataset.edit); return; }
     const move = e.target.closest('[data-move]');
     if (move) { moveProgram(move.dataset.id, Number(move.dataset.move)); return; }
+    if (e.target.closest('#plan-toggle')) {
+      planOpen = !planOpen;
+      $('#plan').hidden = !planOpen;
+      $('#plan-toggle').setAttribute('aria-expanded', String(planOpen));
+      updatePlan();
+      return;
+    }
     if (e.target.closest('#add-program')) openSheet(null);
+  });
+
+  $('#programs').addEventListener('input', (e) => {
+    if (e.target.id !== 'plan-range') return;
+    planMqd = Number(e.target.value);
+    updatePlan();
   });
 
   $('#notes').addEventListener('input', (e) => {
@@ -1799,6 +2162,7 @@
     state.notes = setup.notes;
     editMode = false;
     saveNow();
+    intro = true;
     renderAll();
     scrollTo(0, 0);
   }
@@ -2074,6 +2438,7 @@
     Object.assign(state, next);
     editMode = false;
     saveNow();
+    intro = true;
     renderAll();
     showToast('Backup restored', () => {
       Object.assign(state, previous);
@@ -2127,7 +2492,18 @@
     } else {
       renderPrograms();
       renderVouchers();
+      if (intro) runIntro();
     }
+    intro = false;
+  }
+
+  // Opening flourish (app launch, finishing setup, restoring a backup): rows ease in, numbers count up.
+  let intro = true;
+  function runIntro() {
+    enter($('#programs'));
+    enter($('#vlist'));
+    for (const btn of document.querySelectorAll('#programs .num')) countUp(btn, getField(btn.dataset.field));
+    for (const id of ['#st-1', '#st-3']) countUp($(id), Number($(id).textContent), String);
   }
 
   $('#catalog-names').replaceChildren(...CATALOG_ITEMS.map((c) => h('option', { value: c.name })));
