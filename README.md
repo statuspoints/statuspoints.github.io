@@ -19,6 +19,12 @@ The first time you open it, pick the programs you have and, optionally, the cred
 
 ### Getting around
 
+- **Tap a program** to open its details:
+  - **What your status gets you:** headline perks for your level and what it normally takes to earn or keep it.
+  - **All levels** in the program, with yours marked and the next one up opened, so you can see what you'd gain.
+  - **Your member number:** masked on screen, with Show and Copy for check-in or booking.
+  - When you last updated the balance, plus a link to the program's website.
+  - Perks cover Delta, United, American, Southwest, Alaska Atmos, Aeroplan, Hilton, Marriott, IHG, Hyatt, Wyndham, Leading Hotels, Omni, Avis, Hertz, and National (as of September 2026).
 - **Filter chips** above the list show All, Elite (programs where you hold status), Airlines, Hotels, Points, or Cars & lounges.
 - **Header tiles** are tappable: Elite statuses filters the list, Medallion jumps to your Delta progress, Vouchers jumps to your vouchers.
 - **Plan ahead** (under the Medallion bar): drag the slider to add expected MQDs and see which tier you'd reach. It's a preview only and isn't saved.

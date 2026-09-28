@@ -786,6 +786,114 @@
   .fine { margin: 0; font-size: 12px; color: var(--muted); }
   .cards-status { min-height: 1.45em; margin: 0; font-size: 13.5px; font-weight: 600; color: var(--accent); }
 
+  /* Tappable program (opens its detail sheet) */
+  .who-open {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+    margin: -6px -8px;
+    padding: 6px 8px;
+    border: 0;
+    border-radius: 12px;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: background .15s ease;
+  }
+  .row-main.solo .who-open { align-items: center; }
+  .who-open:active { background: var(--hover); }
+  .who-open:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  @media (hover: hover) {
+    .who-open:hover { background: var(--hover); }
+  }
+
+  /* Program detail sheet */
+  .d-head { display: flex; align-items: center; gap: 12px; }
+  .d-head .av { width: 48px; height: 48px; border-radius: 14px; font-size: 15px; }
+  .d-head .av.x3 { font-size: 12.5px; }
+  .d-title { flex: 1; min-width: 0; }
+  .d-sub { margin: 2px 0 0; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .d-sec { display: grid; gap: 10px; }
+  .d-label { margin: 0; font-size: 11.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .member-row { display: flex; align-items: center; gap: 8px; min-height: 44px; }
+  .member-num {
+    flex: 1;
+    min-width: 0;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: .04em;
+    overflow-wrap: anywhere;
+  }
+  .pill-btn.sm { height: 32px; padding: 0 12px; font-size: 13px; }
+  .member-edit { display: flex; gap: 8px; }
+  .member-input {
+    flex: 1;
+    min-width: 0;
+    height: 44px;
+    padding: 0 12px;
+    border: 1px solid var(--field-line);
+    border-radius: 12px;
+    background: var(--field);
+    color: var(--text);
+    font: inherit;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 16px; /* 16px+ keeps iOS from zooming on focus */
+    letter-spacing: .03em;
+  }
+  .member-input::placeholder { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; letter-spacing: 0; color: var(--faint); }
+  .member-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .add.sm, .btn-secondary.sm { flex: none; padding: 0 16px; }
+  .perk-block { padding: 12px 14px; border-radius: 14px; background: var(--inset); }
+  .perk-block + .perk-block { margin-top: 8px; }
+  .perks { display: grid; gap: 6px; margin: 10px 0 0; padding: 0; list-style: none; font-size: 13.5px; line-height: 1.4; }
+  .perks li { position: relative; padding-left: 20px; }
+  .perks li::before, .perks li::after { /* soft circle + a check mark tinted with the theme accent */
+    content: "";
+    position: absolute;
+    top: .32em;
+    left: 1px;
+    width: 12px;
+    height: 12px;
+  }
+  .perks li::before { border-radius: 50%; background: var(--accent-soft); }
+  .perks li::after {
+    background: var(--accent);
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.3 6.2l1.8 1.8 3.6-3.8'/%3E%3C/svg%3E") center / 12px no-repeat;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.3 6.2l1.8 1.8 3.6-3.8'/%3E%3C/svg%3E") center / 12px no-repeat;
+  }
+  .earn { margin: 10px 0 0; font-size: 12px; color: var(--muted); }
+  .no-perks { margin: 8px 0 0; font-size: 13px; color: var(--muted); }
+  .level { border: 1px solid var(--line); border-radius: 14px; background: var(--card); }
+  .level + .level { margin-top: 8px; }
+  .level.held { border-color: var(--accent); }
+  .level summary { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; padding: 11px 38px 11px 12px; list-style: none; cursor: pointer; }
+  .level summary::-webkit-details-marker { display: none; }
+  .level summary::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    right: 15px;
+    width: 7px;
+    height: 7px;
+    border-right: 2px solid var(--muted);
+    border-bottom: 2px solid var(--muted);
+    transform: translateY(-70%) rotate(45deg);
+    transition: transform .2s ease;
+  }
+  .level[open] summary::after { transform: translateY(-25%) rotate(225deg); }
+  .level summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 14px; }
+  .level-earn { flex-basis: 100%; font-size: 12px; color: var(--muted); }
+  .level .perks { margin: 0; padding: 0 14px 13px 12px; }
+  .tag.you { background: var(--accent); color: var(--on-accent); }
+  .tag.next { background: var(--accent-soft); color: var(--accent); }
+  .d-actions { flex-wrap: wrap; }
+  a.ghost-btn { text-decoration: none; }
+
   /* Footer */
   .foot { display: grid; justify-items: center; gap: 12px; margin: 34px 0 0; font-size: 12px; color: var(--muted); }
   .foot p { margin: 0; }
@@ -879,7 +987,7 @@
     <div class="sec-row">
       <div>
         <h2 class="sec" id="h-programs">Programs <span class="count" id="p-count"></span></h2>
-        <p class="sec-sub" id="p-hint">Tap a number to update it</p>
+        <p class="sec-sub" id="p-hint">Tap a program for perks &amp; member number</p>
       </div>
       <button class="pill-btn" id="edit-toggle" type="button">Edit</button>
     </div>
@@ -962,6 +1070,10 @@
         <option value="">None — status only</option>
       </select>
     </div>
+    <div class="field">
+      <label for="p-member">Member number (optional)</label>
+      <input id="p-member" maxlength="40" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="e.g. 123456789">
+    </div>
     <label class="check" id="p-medallion-wrap"><input type="checkbox" id="p-medallion"> Show Delta Medallion progress (MQDs)</label>
     <fieldset class="field status-edit">
       <legend>Status</legend>
@@ -976,6 +1088,27 @@
       <button class="add" type="submit">Save</button>
     </div>
   </form>
+</dialog>
+<dialog class="sheet" id="detail" aria-labelledby="d-name">
+  <div class="sheet-body">
+    <div class="grab" aria-hidden="true"></div>
+    <div class="d-head">
+      <span id="d-av"></span>
+      <div class="d-title">
+        <h2 id="d-name" tabindex="-1" autofocus></h2>
+        <p class="d-sub" id="d-sub"></p>
+      </div>
+    </div>
+    <section class="d-sec" id="d-member" aria-label="Member number"></section>
+    <section class="d-sec" id="d-status" aria-label="Your status"></section>
+    <section class="d-sec" id="d-levels" aria-label="Status levels"></section>
+    <div class="sheet-actions d-actions">
+      <a class="ghost-btn" id="d-site" target="_blank" rel="noopener noreferrer">Website ↗</a>
+      <span class="spacer"></span>
+      <button class="btn-secondary" id="d-edit" type="button">Edit</button>
+      <button class="add" id="d-done" type="button">Done</button>
+    </div>
+  </div>
 </dialog>
 <dialog class="sheet" id="cards-sheet" aria-labelledby="cards-title">
   <div class="sheet-body">
@@ -1190,8 +1323,142 @@
     notes: '$75k spend on the Sapphire Reserve this year would add IHG Diamond, Hyatt Explorist, and Southwest A-List.',
   };
 
+  // What each status level gets you: headline perks per tier (lowest → highest) and what it takes to earn it,
+  // per the programs' published 2026 benefits. Entries are [tier name, how to earn, perks, extra name aliases].
+  const BENEFITS_AS_OF = 'September 2026';
+  const BENEFITS = {
+    delta: [
+      ['Silver Medallion', '$5,000 MQDs in a Medallion year', ['7 miles per $1 spent (2 bonus)', 'Complimentary upgrades, clearing 1 day out', 'Free Preferred seats', 'First checked bag free', 'SkyTeam Elite']],
+      ['Gold Medallion', '$10,000 MQDs in a Medallion year', ['8 miles per $1 spent (3 bonus)', 'Upgrades clearing 3 days out', 'Sky Priority check-in, security, and boarding', '2 free checked bags', 'SkyTeam Elite Plus: partner lounges on international trips']],
+      ['Platinum Medallion', '$15,000 MQDs in a Medallion year', ['9 miles per $1 spent (4 bonus)', 'Upgrades clearing 5 days out', '1 Choice Benefit (like upgrade certificates or 35,000 miles)', 'Gift Silver Medallion to up to 4 people', '3 free checked bags']],
+      ['Diamond Medallion', '$28,000 MQDs in a Medallion year', ['11 miles per $1 spent (6 bonus)', 'Top upgrade priority, clearing 5 days out', '3 Choice Benefits (options include a Sky Club membership)', 'Gift Gold Medallion to up to 4 people', 'Diamond service line']],
+    ],
+    united: [
+      ['Premier Silver', '6,000 PQP, or 5,000 PQP + 15 flights', ['7 miles per $1 spent', 'Complimentary upgrades on eligible flights', 'Economy Plus seats at check-in', 'First checked bag free', 'Star Alliance Silver']],
+      ['Premier Gold', '12,000 PQP, or 10,000 PQP + 30 flights', ['8 miles per $1 spent', 'Star Alliance Gold: partner lounges on international trips', 'Economy Plus seats at booking', '2 free checked bags', 'Higher upgrade priority']],
+      ['Premier Platinum', '18,000 PQP, or 15,000 PQP + 45 flights', ['9 miles per $1 spent', '40 PlusPoints a year for upgrades', '3 free checked bags', 'Higher upgrade priority']],
+      ['Premier 1K', '28,000 PQP, or 22,000 PQP + 60 flights', ['11 miles per $1 spent', '280 PlusPoints a year for upgrades', 'Top upgrade priority', 'Dedicated 1K service line']],
+    ],
+    american: [
+      ['Gold', '40,000 Loyalty Points a year', ['Complimentary upgrades, clearing 24 hours out', 'Priority check-in and boarding', 'First checked bag free', 'oneworld Ruby']],
+      ['Platinum', '75,000 Loyalty Points a year', ['Main Cabin Extra seats at booking', 'Upgrades clearing 48 hours out', '2 free checked bags', 'oneworld Sapphire: partner business lounges on international trips']],
+      ['Platinum Pro', '125,000 Loyalty Points a year', ['Upgrades clearing 72 hours out', 'Free same-day flight changes', '3 free checked bags', 'oneworld Emerald: first-class lounges on international trips']],
+      ['Executive Platinum', '200,000 Loyalty Points a year', ['Upgrades clearing 100 hours out', 'Upgrades on award tickets too', 'oneworld Emerald', 'More Loyalty Point Rewards, like systemwide upgrades']],
+    ],
+    southwest: [
+      ['A-List', '20 flights or 35,000 tier points a year', ['Pick a Preferred or Standard seat at booking', 'Free Extra Legroom seat within 48 hours of departure (when available)', 'Priority check-in and security lanes', 'Free same-day standby']],
+      ['A-List Preferred', '40 flights or 70,000 tier points a year', ['Pick any seat, including Extra Legroom, at booking', 'Board before Group 1', 'Double points on flights', 'Free same-day standby']],
+    ],
+    alaska: [
+      ['Silver', '20,000 status points a year', ['1 free checked bag', 'Preferred seats', 'Complimentary upgrades on Alaska, Hawaiian, and eligible American flights', 'oneworld Ruby']],
+      ['Gold', '40,000 status points a year', ['2 free checked bags', 'Higher upgrade priority', 'Same-day flight changes', 'oneworld Sapphire: partner lounges on international trips']],
+      ['Platinum', '80,000 status points a year', ['3 free checked bags', '100% bonus points on flights', 'Higher upgrade priority', 'oneworld Emerald']],
+      ['Titanium', '135,000 status points a year', ['150% bonus points on flights', 'Free meal in economy', 'Upgrades on select long-haul routes', 'oneworld Emerald']],
+    ],
+    aeroplan: [
+      ['25K', '25,000 Status Qualifying Credits a year (automatic with the Chase Aeroplan card)', ['Priority check-in and Zone 2 boarding', 'Free checked bag on Air Canada', 'Star Alliance Silver', 'eUpgrade credits through Milestone Benefits']],
+      ['35K', '35,000 SQC a year', ['Star Alliance Gold', 'Higher priority for upgrades and standby', 'More Milestone Benefits']],
+      ['50K', '50,000 SQC a year', ['Maple Leaf Lounge and Air Canada Café access (plus a guest)', 'Star Alliance Gold', 'Higher upgrade priority']],
+      ['75K', '75,000 SQC a year', ['20 eUpgrade credits a year', 'Maple Leaf Lounge access', 'Star Alliance Gold']],
+      ['Super Elite', '125,000 SQC a year', ['Top priority for upgrades and service', 'Star Alliance Gold lounge access worldwide', 'Nominate someone for Aeroplan status']],
+    ],
+    hilton: [
+      ['Silver', '10 nights or 4 stays a year', ['20% bonus points on stays', '5th night free on standard-room reward stays', 'Complimentary bottled water']],
+      ['Gold', '25 nights, 15 stays, or $6,000 on stays a year', ['80% bonus points on stays', 'Daily food & beverage credit in the U.S. (continental breakfast elsewhere)', 'Space-available room upgrades', '5th night free on reward stays']],
+      ['Diamond', '50 nights a year', ['100% bonus points on stays', 'Daily food & beverage credit or breakfast', 'Executive lounge access', 'Space-available upgrades up to a one-bedroom suite', '48-hour room guarantee']],
+      ['Diamond Reserve', '80 nights (or 40 stays) plus $18,000 on stays a year', ['120% bonus points on stays', 'Guaranteed 4 p.m. late checkout', 'Premium club access', 'Everything in Diamond']],
+    ],
+    marriott: [
+      ['Silver Elite', '10 nights a year', ['10% bonus points', 'Priority late checkout', 'Dedicated elite reservation line']],
+      ['Gold Elite', '25 nights a year', ['25% bonus points', '2 p.m. late checkout (when available)', 'Enhanced room upgrade (not suites)', 'Welcome gift of bonus points', 'Enhanced in-room internet']],
+      ['Platinum Elite', '50 nights a year', ['50% bonus points', '4 p.m. late checkout', 'Lounge access', 'Welcome gift: breakfast, points, or an amenity (varies by brand)', 'Upgrades including select suites', '1 Annual Choice Benefit']],
+      ['Titanium Elite', '75 nights a year', ['75% bonus points', 'Everything in Platinum', '48-hour room guarantee', 'A second Annual Choice Benefit']],
+      ['Ambassador Elite', '100 nights plus $23,000 on stays a year', ['75% bonus points', 'A personal Ambassador for your stays', 'Your24: pick your own 24-hour check-in window', 'Everything in Titanium']],
+    ],
+    ihg: [
+      ['Silver Elite', '10 nights a year', ['20% bonus points', 'Milestone Rewards once you pass 20 nights']],
+      ['Gold Elite', '20 nights or 40,000 qualifying points a year', ['40% bonus points', 'Late checkout (when available)', 'Milestone Rewards at 20+ nights']],
+      ['Platinum Elite', '40 nights or 60,000 qualifying points a year', ['60% bonus points', 'Room upgrades, including select suites (when available)', 'Early check-in (when available)', 'Welcome amenity', '72-hour room guarantee']],
+      ['Diamond Elite', '70 nights or 120,000 qualifying points a year', ['100% bonus points', 'Welcome amenity (breakfast is an option at many hotels)', 'Upgrades including suites (when available)', 'Early check-in and late checkout', 'Dedicated Diamond support']],
+    ],
+    hyatt: [
+      ['Discoverist', '10 nights or 25,000 base points a year', ['10% bonus points', 'Preferred room upgrade (when available)', '2 p.m. late checkout (when available)', 'Premium internet and daily bottled water']],
+      ['Explorist', '30 nights or 50,000 base points a year', ['20% bonus points', 'Upgrade to the best available room, excluding suites', '2 p.m. late checkout (when available)', '72-hour room guarantee']],
+      ['Globalist', '60 nights or 100,000 base points a year', ['30% bonus points', 'Suite upgrades and club lounge access', 'Free daily breakfast', '4 p.m. late checkout (when available)', 'No resort fees and free parking on award stays']],
+    ],
+    wyndham: [
+      ['Gold', '5 qualified nights a year', ['10% bonus points', 'Late checkout (when available)', 'Preferred room choice']],
+      ['Platinum', '15 qualified nights a year', ['15% bonus points', 'Early check-in (when available)', 'Late checkout (when available)']],
+      ['Diamond', '40 qualified nights a year', ['20% bonus points', 'Suite upgrades (when available)', 'Welcome amenity', 'Early check-in and late checkout']],
+    ],
+    lhw: [
+      ['Leaders Club Sterling', '$5,000 on eligible stays a year', ['5 confirmed pre-arrival room upgrades a year (one category, not suites)', 'Daily continental breakfast for two', 'Early check-in and late checkout (when available)', 'Free Wi-Fi', '5% bonus on points'], ['sterling']],
+    ],
+    omni: [
+      ['Champion', '$4,000 spent at Omni a year', ['One-room-type upgrade', 'Check in from 1 p.m., check out as late as 3 p.m.', 'Daily bottled water and a morning beverage delivery', 'Pressing or shoeshine for 4 items', 'Local amenity on arrival']],
+    ],
+    avis: [
+      ['Preferred Plus', '10 rentals or $4,000 a year', ['Skip the counter', 'One-car-class upgrade (when available)', 'Bonus points on rentals']],
+      ["President's Club", null, ['Guaranteed car-class upgrade', 'Free additional driver', 'Priority service and a dedicated 24/7 line', 'Bonus points on rentals']],
+    ],
+    hertz: [
+      ['Five Star', null, ['Pick from a wider selection of cars', 'Occasional upgrades', '25% bonus points', 'Skip the counter']],
+      ["President's Circle", null, ['Guaranteed one-class upgrade (up to full-size)', 'Pick from the President’s Circle area', '50% bonus points', 'Dedicated service line']],
+    ],
+    national: [
+      ['Executive', '12 paid rentals or 40 paid days a year', ['Pick any car in the Executive Area and pay the midsize rate', 'Guaranteed upgrade when you book midsize', 'Skip the counter'], ['exec']],
+      ['Executive Elite', '25 paid rentals or 85 paid days a year', ['Guaranteed full-size car when you book midsize', 'Car delivered to private aviation terminals at many locations', 'Everything in Executive'], ['exec elite']],
+    ],
+  };
+
+  // Where to check balances and manage each program.
+  const SITES = {
+    delta: 'www.delta.com', united: 'www.united.com', american: 'www.aa.com', southwest: 'www.southwest.com',
+    alaska: 'www.alaskaair.com', jetblue: 'www.jetblue.com', aeroplan: 'www.aircanada.com', flyingblue: 'www.flyingblue.com',
+    ba: 'www.britishairways.com', koreanair: 'www.koreanair.com', virgin: 'www.virginatlantic.com',
+    hilton: 'www.hilton.com', marriott: 'www.marriott.com', ihg: 'www.ihg.com', hyatt: 'www.hyatt.com',
+    wyndham: 'www.wyndhamhotels.com', choice: 'www.choicehotels.com', accor: 'all.accor.com', lhw: 'www.lhw.com',
+    omni: 'www.omnihotels.com', amex: 'www.americanexpress.com', chase: 'www.chase.com', citi: 'www.citi.com',
+    capitalone: 'www.capitalone.com', bilt: 'www.biltrewards.com', avis: 'www.avis.com', hertz: 'www.hertz.com',
+    national: 'www.nationalcar.com', enterprise: 'www.enterprise.com',
+  };
+
+  // Tier lookup: "Gold Elite", "Gold" and "Gold Medallion" all find the right level. Longest alias wins, so
+  // "Diamond Reserve" isn't mistaken for "Diamond".
+  const normTier = (text) => text.toLowerCase().replace(/[’`]/g, "'").replace(/[^a-z0-9']+/g, ' ').trim();
+  const TIER_FILLER = /\b(status|elite|medallion|premier|atmos|member|level|tier)\b/g;
+  for (const [id, tiers] of Object.entries(BENEFITS)) {
+    BENEFITS[id] = tiers.map(([name, earn, perks, also = []]) => {
+      const full = normTier(name);
+      const bare = full.replace(TIER_FILLER, ' ').replace(/\s+/g, ' ').trim();
+      return { name, earn, perks, aliases: [...new Set([full, bare, ...also].filter(Boolean))] };
+    });
+  }
+
+  const catalogFor = (p) => CATALOG_BY_ID[p.id] || catalogByName(p.name);
+  const benefitsFor = (p) => { const c = catalogFor(p); return (c && BENEFITS[c.id]) || null; };
+
+  // Index of the level a status text refers to, or -1.
+  function findTier(tiers, text) {
+    const haystack = ` ${normTier(text)} `;
+    let best = -1;
+    let bestLength = 0;
+    tiers.forEach((tier, i) => {
+      for (const alias of tier.aliases) {
+        if (alias.length > bestLength && haystack.includes(` ${alias} `)) { best = i; bestLength = alias.length; }
+      }
+    });
+    return best;
+  }
+
+  function perksFor(p, text) {
+    const tiers = benefitsFor(p);
+    const i = tiers ? findTier(tiers, text) : -1;
+    return i < 0 ? null : tiers[i];
+  }
+
   const ICON = {
-    spark: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M8 1.5l1.7 4.3 4.3 1.7-4.3 1.7L8 13.5l-1.7-4.3L2 7.5l4.3-1.7z"/></svg>',
+    spark:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M8 1.5l1.7 4.3 4.3 1.7-4.3 1.7L8 13.5l-1.7-4.3L2 7.5l4.3-1.7z"/></svg>',
     x:'<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M2.5 2.5l9 9M11.5 2.5l-9 9"/></svg>',
     up: '<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 11.5v-9M3 6.5l4-4 4 4"/></svg>',
     down: '<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 2.5v9M3 7.5l4 4 4-4"/></svg>',
@@ -1208,6 +1475,7 @@
   const dateFmt = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   const todayFmt = new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
   const timeFmt = new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit' });
+  const monthDayFmt = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' });
   const clone = (v) => JSON.parse(JSON.stringify(v));
   const str = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
   const splitParts = (text) => text.split('·').map((part) => part.trim()).filter(Boolean);
@@ -1424,7 +1692,7 @@
     s.cards = s.cards.filter((id) => id !== cardId);
     for (const p of s.programs) p.status = p.status.filter((line) => line.card !== cardId);
     s.programs = s.programs.filter((p) => !(p.addedBy && !s.cards.includes(p.addedBy)
-      && !p.status.length && s.balances[p.id] == null));
+      && !p.status.length && s.balances[p.id] == null && !(s.members || {})[p.id]));
   }
 
   // The previous version's example list had one hand-typed "Avis / Hertz / National" row. If it's still exactly
@@ -1449,9 +1717,15 @@
   function normalize(raw) {
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
     if (!['programs', 'balances', 'vouchers', 'mqd'].some((k) => k in raw)) return null;
-    const s = { programs: null, cards: [], notes: '', balances: {}, mqd: 0, vouchers: [] };
+    const s = { programs: null, cards: [], notes: '', balances: {}, mqd: 0, members: {}, updated: {}, vouchers: [] };
     if (raw.balances && typeof raw.balances === 'object') {
       for (const [id, v] of Object.entries(raw.balances)) if (isCount(v)) s.balances[id] = Math.floor(v);
+    }
+    if (raw.members && typeof raw.members === 'object') { // loyalty member / account numbers
+      for (const [id, v] of Object.entries(raw.members)) { const number = str(v, 40); if (number) s.members[id] = number; }
+    }
+    if (raw.updated && typeof raw.updated === 'object') { // when each balance was last changed (YYYY-MM-DD)
+      for (const [id, v] of Object.entries(raw.updated)) if (parseISODate(v)) s.updated[id] = v;
     }
     if (isCount(raw.mqd)) s.mqd = Math.floor(raw.mqd);
     if (Array.isArray(raw.vouchers)) {
@@ -1481,7 +1755,7 @@
       const s = normalize(JSON.parse(localStorage.getItem(KEY) || 'null'));
       if (s) return s;
     } catch (e) { /* corrupt or unavailable storage: start fresh */ }
-    return { programs: null, cards: [], notes: '', balances: {}, mqd: 0, vouchers: [] }; // null programs → first-run setup
+    return { programs: null, cards: [], notes: '', balances: {}, mqd: 0, members: {}, updated: {}, vouchers: [] }; // null programs → first-run setup
   }
 
   const state = load();
@@ -1525,10 +1799,12 @@
   function setField(field, value) {
     if (field === 'mqd') {
       state.mqd = value ?? 0;
+      state.updated.mqd = todayISO();
     } else {
       const id = field.slice(4);
       if (value == null) delete state.balances[id];
       else state.balances[id] = value;
+      state.updated[id] = todayISO();
     }
     scheduleSave();
   }
@@ -1702,7 +1978,11 @@
     const then = medallionFor(total);
     let result;
     if (!add) result = ['Drag to see where upcoming trips or card spend would get you.'];
-    else if (then.current && then.current !== now) result = ['That gets you to ', h('strong', null, `${then.current.name} Medallion`), ` with ${fmt(total)} MQDs.`];
+    else if (then.current && then.current !== now) {
+      const tier = perksFor(medallionProgram(), `${then.current.name} Medallion`);
+      result = ['That gets you to ', h('strong', null, `${then.current.name} Medallion`), ` with ${fmt(total)} MQDs`,
+        tier ? ` — ${tier.perks.slice(0, 2).map((perk) => perk.charAt(0).toLowerCase() + perk.slice(1)).join(', ')}, and more.` : '.'];
+    }
     else if (then.next) result = [`${fmt(total)} MQDs — still `, h('strong', null, `${fmt(then.next.min - total)} short`), ` of ${then.next.name}.`];
     else result = [`${fmt(total)} MQDs — you'd keep `, h('strong', null, 'Diamond'), '.'];
     $('#plan-result').replaceChildren(...result);
@@ -1723,8 +2003,9 @@
     }
     const status = statusBlock(p, withMedallion);
     const main = h('div', { class: status ? 'row-main' : 'row-main solo' },
-      avatar(p),
-      h('div', { class: 'who' }, h('div', { class: 'name' }, p.name), status));
+      h('button', { type: 'button', class: 'who-open', 'data-open': p.id },
+        avatar(p),
+        h('div', { class: 'who' }, h('div', { class: 'name' }, p.name), status)));
     if (p.unit) {
       main.append(h('div', { class: 'bal' },
         numButton(`bal:${p.id}`, `${p.name} balance`),
@@ -1791,7 +2072,7 @@
     $('#p-count').textContent = list.length;
     $('#edit-toggle').textContent = editMode ? 'Done' : 'Edit';
     $('#edit-toggle').classList.toggle('on', editMode);
-    $('#p-hint').textContent = editMode ? 'Tap a program to edit it' : 'Tap a number to update it';
+    $('#p-hint').textContent = editMode ? 'Tap a program to edit it' : 'Tap a program for perks & member number';
     $('#p-hint').hidden = !editMode && !list.some((p) => p.unit);
     $('#cards-edit').hidden = !editMode;
     $('#cards-summary').textContent = state.cards.map((id) => CARD_BY_ID[id].name).join(', ') || 'None yet';
@@ -1942,6 +2223,8 @@
   });
 
   $('#programs').addEventListener('click', (e) => {
+    const open = e.target.closest('[data-open]');
+    if (open) { openDetail(open.dataset.open); return; }
     const edit = e.target.closest('[data-edit]');
     if (edit) { openSheet(edit.dataset.edit); return; }
     const move = e.target.closest('[data-move]');
@@ -1990,6 +2273,7 @@
     $('#sheet-title').textContent = id ? 'Edit program' : 'Add program';
     $('#p-name').value = p.name;
     $('#p-unit').value = p.unit;
+    $('#p-member').value = (id && state.members[id]) || '';
     $('#p-medallion').checked = !!p.medallion;
     const lines = p.status.length ? p.status : [{ tier: '', via: '' }];
     $('#p-status').replaceChildren(...lines.map(statusEditorRow));
@@ -2053,6 +2337,9 @@
     Object.assign(program, { name, unit: $('#p-unit').value, status });
     if (medallion) program.medallion = true;
     else delete program.medallion;
+    const member = $('#p-member').value.trim().slice(0, 40);
+    if (member) state.members[program.id] = member;
+    else delete state.members[program.id];
 
     scheduleSave();
     sheet.close();
@@ -2064,13 +2351,19 @@
     if (index < 0) return;
     const [removed] = state.programs.splice(index, 1);
     const balance = state.balances[removed.id];
+    const member = state.members[removed.id];
+    const updated = state.updated[removed.id];
     delete state.balances[removed.id];
+    delete state.members[removed.id];
+    delete state.updated[removed.id];
     sheet.close();
     scheduleSave();
     renderPrograms();
     showToast(`Removed “${removed.name}”`, () => {
       state.programs.splice(Math.min(index, state.programs.length), 0, removed);
       if (balance != null) state.balances[removed.id] = balance;
+      if (member) state.members[removed.id] = member;
+      if (updated) state.updated[removed.id] = updated;
       scheduleSave();
       renderPrograms();
     });
@@ -2078,6 +2371,210 @@
 
   $('#p-cancel').addEventListener('click', () => sheet.close());
   sheet.addEventListener('click', (e) => { if (e.target === sheet) sheet.close(); }); // tap on the backdrop
+
+  /* ---------- Program detail sheet: perks, member number, every level ---------- */
+
+  const detail = $('#detail');
+  let detailId = null;
+  let memberShown = false;
+
+  const detailProgram = () => state.programs.find((p) => p.id === detailId);
+  const maskNumber = (n) => (n.length <= 4 ? n : `•••• ${n.slice(-4)}`);
+  const spaceNumber = (n) => n.replace(/\s+/g, '').replace(/(.{4})(?=.)/g, '$1 ');
+
+  function relativeDay(iso) {
+    const date = parseISODate(iso);
+    if (!date) return '';
+    const ago = -daysUntil(date);
+    if (ago <= 0) return 'today';
+    if (ago === 1) return 'yesterday';
+    if (ago < 7) return `${ago} days ago`;
+    return (date.getFullYear() === new Date().getFullYear() ? monthDayFmt : dateFmt).format(date);
+  }
+
+  function openDetail(id) {
+    const p = state.programs.find((x) => x.id === id);
+    if (!p) return;
+    detailId = id;
+    memberShown = false;
+    $('#d-av').replaceChildren(avatar(p));
+    $('#d-name').textContent = p.name;
+    const site = SITES[(catalogFor(p) || {}).id];
+    $('#d-site').hidden = !site;
+    if (site) {
+      $('#d-site').href = `https://${site}/`;
+      $('#d-site').textContent = `${site.replace(/^www\./, '')} ↗`;
+    }
+    renderDetail();
+    detail.showModal();
+    detail.scrollTop = 0;
+  }
+
+  function renderDetail() {
+    const p = detailProgram();
+    if (!p) return;
+    const sub = [];
+    if (p.unit) {
+      const balance = state.balances[p.id];
+      sub.push(balance == null ? 'No balance entered yet' : `${fmt(balance)} ${p.unit}`);
+      if (balance != null && state.updated[p.id]) sub.push(`updated ${relativeDay(state.updated[p.id])}`);
+    } else {
+      sub.push('Status program');
+    }
+    $('#d-sub').textContent = sub.join(' · ');
+    renderMember(p, false);
+    renderDetailStatus(p);
+    renderLevels(p);
+  }
+
+  function renderMember(p, editing) {
+    const number = state.members[p.id] || '';
+    const label = h('h3', { class: 'd-label' }, 'Member number');
+    if (editing || !number) {
+      const input = h('input', {
+        type: 'text',
+        class: 'member-input',
+        id: 'd-member-input',
+        maxlength: '40',
+        autocomplete: 'off',
+        autocapitalize: 'characters',
+        spellcheck: 'false',
+        enterkeyhint: 'done',
+        placeholder: 'Add your member number',
+        'aria-label': `${p.name} member number`,
+      });
+      input.value = number;
+      $('#d-member').replaceChildren(label, h('div', { class: 'member-edit' },
+        input,
+        h('button', { type: 'button', class: 'add sm', id: 'd-member-save' }, 'Save'),
+        number ? h('button', { type: 'button', class: 'btn-secondary sm', id: 'd-member-cancel' }, 'Cancel') : null));
+      if (editing) input.focus();
+      return;
+    }
+    $('#d-member').replaceChildren(label, h('div', { class: 'member-row' },
+      h('span', { class: 'member-num', 'aria-label': memberShown ? number : `Hidden, ending in ${number.slice(-4)}` },
+        memberShown ? spaceNumber(number) : maskNumber(number)),
+      h('button', { type: 'button', class: 'pill-btn sm', id: 'd-member-show', 'aria-pressed': String(memberShown) }, memberShown ? 'Hide' : 'Show'),
+      h('button', { type: 'button', class: 'pill-btn sm', id: 'd-member-copy' }, 'Copy'),
+      h('button', { type: 'button', class: 'icon-btn', id: 'd-member-edit', 'aria-label': 'Change member number' }, svgIcon(ICON.pencil))));
+  }
+
+  function saveMember() {
+    const p = detailProgram();
+    const value = $('#d-member-input').value.trim().slice(0, 40);
+    if (value) state.members[p.id] = value;
+    else delete state.members[p.id];
+    scheduleSave();
+    renderMember(p, false);
+  }
+
+  async function copyMember(btn) {
+    const number = (state.members[detailId] || '').replace(/\s+/g, '');
+    let ok = false;
+    try {
+      await navigator.clipboard.writeText(number);
+      ok = true;
+    } catch (err) { // older browsers / insecure contexts: fall back to a selected textarea
+      const area = h('textarea', { readonly: '', style: 'position:fixed;top:0;left:0;opacity:0' });
+      area.value = number;
+      detail.append(area);
+      area.select();
+      try { ok = document.execCommand('copy'); } catch (err2) { ok = false; }
+      area.remove();
+    }
+    btn.textContent = ok ? 'Copied' : 'Couldn’t copy';
+    setTimeout(() => { if (btn.isConnected) btn.textContent = 'Copy'; }, 1600);
+  }
+
+  // One status (pills + where it's from) with what it gets you and what it normally takes.
+  function perkBlock(p, tierText, via, emptyText) {
+    const parts = splitParts(tierText || '');
+    const from = splitParts(via || '').join(' · ');
+    const block = h('div', { class: 'perk-block' }, h('div', { class: 'sline' },
+      parts.map(pill),
+      emptyText ? h('span', { class: 'via' }, emptyText) : null,
+      from ? h('span', { class: 'via' }, from) : null));
+    const tiers = parts.map((t) => perksFor(p, t)).filter(Boolean);
+    for (const tier of tiers) {
+      if (tiers.length > 1) block.append(h('p', { class: 'earn' }, tier.name));
+      block.append(h('ul', { class: 'perks' }, tier.perks.map((perk) => h('li', null, perk))));
+      if (tier.earn) block.append(h('p', { class: 'earn' }, `Normally requires ${tier.earn}`));
+    }
+    if (!tiers.length && parts.length && p.id !== 'lounges') {
+      block.append(h('p', { class: 'no-perks' }, 'No perk details for this level yet — check the program’s site.'));
+    }
+    return block;
+  }
+
+  function renderDetailStatus(p) {
+    const blocks = [];
+    if (p === medallionProgram()) {
+      const { current, next } = medallionFor(state.mqd);
+      const progress = `${fmt(state.mqd)} MQDs · ${next ? `${fmt(next.min - state.mqd)} to ${next.name}` : 'top tier'}`;
+      blocks.push(perkBlock(p, current ? `${current.name} Medallion` : '', progress, current ? null : 'No Medallion status yet'));
+    }
+    for (const line of mergedLines(p.status)) blocks.push(perkBlock(p, line.tier, line.via));
+    const heading = h('h3', { class: 'd-label' }, 'Your status');
+    if (!blocks.length) {
+      $('#d-status').replaceChildren(heading, h('p', { class: 'no-perks' }, benefitsFor(p)
+        ? 'No status here yet — the levels below show what each one gets you.'
+        : 'No status here yet. You can add one with Edit.'));
+      return;
+    }
+    $('#d-status').replaceChildren(heading, h('div', null, blocks));
+  }
+
+  // Every level in the program, with yours marked and the next one up opened.
+  function renderLevels(p) {
+    const tiers = benefitsFor(p);
+    $('#d-levels').hidden = !tiers;
+    if (!tiers) return;
+    const texts = p.status.flatMap((line) => splitParts(line.tier));
+    if (p === medallionProgram()) {
+      const current = medallionFor(state.mqd).current;
+      if (current) texts.push(`${current.name} Medallion`);
+    }
+    const held = new Set(texts.map((t) => findTier(tiers, t)).filter((i) => i >= 0));
+    const top = held.size ? Math.max(...held) : -1;
+    const levels = tiers.map((tier, i) => {
+      const isNext = i === top + 1;
+      return h('details', { class: held.has(i) ? 'level held' : 'level', open: isNext ? '' : null },
+        h('summary', null,
+          pill(tier.name),
+          held.has(i) ? h('span', { class: 'tag you' }, 'You') : null,
+          isNext ? h('span', { class: 'tag next' }, top < 0 ? 'First level' : 'Next level') : null,
+          tier.earn ? h('span', { class: 'level-earn' }, tier.earn) : null),
+        h('ul', { class: 'perks' }, tier.perks.map((perk) => h('li', null, perk))));
+    });
+    $('#d-levels').replaceChildren(
+      h('h3', { class: 'd-label' }, 'All levels'),
+      h('div', null, levels),
+      h('p', { class: 'fine' }, `Headline perks as of ${BENEFITS_AS_OF}. Programs change benefits often — check the program’s site for full terms.`));
+  }
+
+  detail.addEventListener('click', (e) => {
+    if (e.target === detail) { detail.close(); return; } // tap on the backdrop
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    const p = detailProgram();
+    switch (btn.id) {
+      case 'd-done': detail.close(); break;
+      case 'd-edit': detail.close(); openSheet(p.id); break;
+      case 'd-member-save': saveMember(); break;
+      case 'd-member-cancel': renderMember(p, false); break;
+      case 'd-member-edit': renderMember(p, true); break;
+      case 'd-member-show': memberShown = !memberShown; renderMember(p, false); break;
+      case 'd-member-copy': copyMember(btn); break;
+      default: break;
+    }
+  });
+
+  detail.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && e.target.id === 'd-member-input') {
+      e.preventDefault();
+      saveMember();
+    }
+  });
 
   /* ---------- Card tiles ---------- */
 
@@ -2373,19 +2870,27 @@
     const out = ['POINTS & STATUS TRACKER', `Exported ${todayFmt.format(now)} at ${timeFmt.format(now)}`, '', '', 'PROGRAMS', ''];
 
     const medallion = medallionProgram();
+    const pushPerks = (p, tierText) => {
+      const tier = perksFor(p, tierText);
+      if (tier) for (const perk of tier.perks) out.push(`      - ${perk}`);
+    };
     for (const p of state.programs) {
       const balance = state.balances[p.id];
+      const updated = balance != null && state.updated[p.id] ? ` (updated ${dateFmt.format(parseISODate(state.updated[p.id]))})` : '';
       if (!p.unit) out.push(p.name);
-      else out.push(`${p.name} — ${balance == null ? 'no balance entered' : `${fmt(balance)} ${p.unit}`}`);
+      else out.push(`${p.name} — ${balance == null ? 'no balance entered' : `${fmt(balance)} ${p.unit}${updated}`}`);
+      if (state.members[p.id]) out.push(`  Member #: ${state.members[p.id]}`);
       if (p === medallion) {
         const { current, next } = medallionFor(state.mqd);
         out.push(`  ${current ? `${current.name} Medallion` : 'No Medallion status yet'} · ${fmt(state.mqd)} MQDs · `
           + (next ? `${fmt(next.min - state.mqd)} to ${next.name}` : 'top tier'));
+        if (current) pushPerks(p, `${current.name} Medallion`);
       }
       for (const line of mergedLines(p.status)) {
         const tier = splitParts(line.tier).join(' · ');
         const via = splitParts(line.via).join(' · ');
         out.push(`  ${tier && via ? `${tier} (${via})` : tier || via}`);
+        for (const part of splitParts(line.tier)) pushPerks(p, part);
       }
       out.push('');
     }
@@ -2405,6 +2910,7 @@
 
     if (state.cards.length) out.push('', 'CARDS', '', ...state.cards.map((id) => CARD_BY_ID[id].name), '');
     if (state.notes.trim()) out.push('', 'NOTE', '', state.notes.trim(), '');
+    out.push('', `Status perks are headline benefits as of ${BENEFITS_AS_OF}; check each program for full terms.`, '');
     return out.join('\n');
   }
 
