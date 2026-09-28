@@ -2,7 +2,7 @@
 
 A personal airline and hotel loyalty tracker: point balances, elite status, Delta Medallion progress, and voucher expirations. One self-contained `index.html`, no frameworks or external requests, and it works offline once loaded.
 
-**Live app:** https://dannykcho.github.io/points-status-tracker/
+**Live app:** https://statuspoints.github.io/
 
 ## Use it on your phone
 
