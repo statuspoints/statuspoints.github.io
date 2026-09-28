@@ -22,21 +22,40 @@
     --card: #FFFFFF;
     --text: #17202B;
     --accent: #1B3A5C;
+    --accent-2: #3A6EA5;
     --muted: #5D6876;
     --faint: #8A929D;
-    --line: #E9E7E0;
-    --inset: #F5F4EF;
-    --track: #E2E0D8;
+    --line: #ECEAE3;
+    --inset: #F6F5F0;
+    --track: #E4E2DA;
     --field: #FFFFFF;
     --field-line: #D8D5CC;
+    --chip-bg: rgba(23, 32, 43, .06);
     --dots: rgba(27, 58, 92, .32);
-    --hover: rgba(27, 58, 92, .06);
-    --accent-soft: rgba(27, 58, 92, .12);
+    --hover: rgba(27, 58, 92, .05);
+    --accent-soft: rgba(27, 58, 92, .09);
+    --callout: rgba(27, 58, 92, .045);
     --on-accent: #FFFFFF;
     --warn: #B45309;
+    --warn-soft: rgba(180, 83, 9, .1);
     --danger: #B42318;
     --danger-soft: rgba(180, 35, 24, .09);
-    --shadow: 0 1px 2px rgba(23, 32, 43, .05);
+    --shadow: 0 1px 2px rgba(23, 32, 43, .04), 0 8px 24px -12px rgba(23, 32, 43, .12);
+    --hero-a: #1B3A5C;
+    --hero-b: #2C5A8A;
+    --hero-glow: rgba(127, 166, 217, .35);
+    --hero-border: transparent;
+    --hero-shadow: 0 14px 34px -18px rgba(27, 58, 92, .7);
+    --t-base-bg: rgba(27, 58, 92, .07);
+    --t-base-fg: #1B3A5C;
+    --t-silver-bg: #EDEFF2;
+    --t-silver-fg: #4A5462;
+    --t-gold-bg: #FAEFD6;
+    --t-gold-fg: #85570A;
+    --t-plat-bg: #E8EBF6;
+    --t-plat-fg: #384879;
+    --t-diam-bg: #DEF2F5;
+    --t-diam-fg: #0B6470;
     --toast-bg: #17202B;
     --toast-fg: #F3F5F9;
     --toast-accent: #9DC0EC;
@@ -48,21 +67,40 @@
       --card: #16202F;
       --text: #E8ECF4;
       --accent: #7FA6D9;
+      --accent-2: #B3CCEE;
       --muted: #97A3B5;
       --faint: #66748A;
-      --line: #233044;
+      --line: #223046;
       --inset: #111A28;
       --track: #26354D;
       --field: #111A28;
       --field-line: #2D3C54;
+      --chip-bg: rgba(232, 236, 244, .08);
       --dots: rgba(127, 166, 217, .4);
-      --hover: rgba(127, 166, 217, .1);
-      --accent-soft: rgba(127, 166, 217, .18);
+      --hover: rgba(127, 166, 217, .08);
+      --accent-soft: rgba(127, 166, 217, .15);
+      --callout: rgba(127, 166, 217, .07);
       --on-accent: #0E1420;
       --warn: #F0A254;
+      --warn-soft: rgba(240, 162, 84, .14);
       --danger: #F28B7F;
       --danger-soft: rgba(242, 139, 127, .13);
       --shadow: none;
+      --hero-a: #19304D;
+      --hero-b: #16273F;
+      --hero-glow: rgba(127, 166, 217, .22);
+      --hero-border: rgba(127, 166, 217, .16);
+      --hero-shadow: none;
+      --t-base-bg: rgba(127, 166, 217, .13);
+      --t-base-fg: #AFC9EC;
+      --t-silver-bg: rgba(203, 211, 222, .12);
+      --t-silver-fg: #CBD3DE;
+      --t-gold-bg: rgba(242, 196, 102, .14);
+      --t-gold-fg: #F2C466;
+      --t-plat-bg: rgba(170, 182, 240, .15);
+      --t-plat-fg: #BAC5F2;
+      --t-diam-bg: rgba(110, 212, 226, .14);
+      --t-diam-fg: #86DDE8;
       --toast-bg: #E8ECF4;
       --toast-fg: #0E1420;
       --toast-accent: #1B3A5C;
@@ -85,7 +123,7 @@
     max-width: 640px;
     margin: 0 auto;
     padding:
-      calc(20px + env(safe-area-inset-top))
+      calc(12px + env(safe-area-inset-top))
       max(16px, env(safe-area-inset-right))
       calc(40px + env(safe-area-inset-bottom))
       max(16px, env(safe-area-inset-left));
@@ -93,31 +131,92 @@
   button { touch-action: manipulation; }
   [hidden] { display: none !important; }
 
-  /* Header */
-  .top { display: flex; align-items: center; gap: 12px; margin: 4px 4px 0; }
-  .mark { width: 38px; height: 38px; flex: none; }
-  .mark .m-bg, .mark .m-star { fill: var(--accent); }
-  .mark .m-disc { fill: var(--card); }
-  .mark .m-ring { fill: none; stroke: var(--accent); stroke-width: 1.4; }
-  h1 { margin: 0; font-size: 21px; line-height: 1.2; font-weight: 700; letter-spacing: -0.015em; }
-  .sub { margin: 2px 0 0; font-size: 13px; color: var(--muted); }
+  /* Hero */
+  .hero {
+    position: relative;
+    overflow: hidden;
+    margin-top: 8px;
+    padding: 18px 18px 16px;
+    border: 1px solid var(--hero-border);
+    border-radius: 22px;
+    color: #F4F7FB;
+    background:
+      radial-gradient(120% 140% at 100% 0%, var(--hero-glow) 0%, transparent 55%),
+      linear-gradient(150deg, var(--hero-a), var(--hero-b));
+    box-shadow: var(--hero-shadow);
+  }
+  .hero::after { /* faint medallion ring, echoing the app icon */
+    content: "";
+    position: absolute;
+    top: -70px;
+    right: -60px;
+    width: 210px;
+    height: 210px;
+    border: 26px solid rgba(255, 255, 255, .05);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+  .hero-top { position: relative; z-index: 1; display: flex; align-items: center; gap: 12px; }
+  .mark { width: 42px; height: 42px; flex: none; }
+  .mark .m-bg { fill: rgba(255, 255, 255, .14); }
+  .mark .m-disc { fill: #FAFAF7; }
+  .mark .m-ring { fill: none; stroke: #1B3A5C; stroke-width: 1.4; }
+  .mark .m-star { fill: #1B3A5C; }
+  h1 { margin: 0; font-size: 21px; line-height: 1.2; font-weight: 750; letter-spacing: -0.02em; }
+  .sub { margin: 2px 0 0; font-size: 13px; color: rgba(244, 247, 251, .72); }
+  .stats { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 16px; }
+  .stat { min-width: 0; padding: 10px 11px; border: 1px solid rgba(255, 255, 255, .12); border-radius: 14px; background: rgba(255, 255, 255, .08); }
+  .stat-v { display: block; overflow: hidden; font-size: 20px; font-weight: 750; line-height: 1.15; letter-spacing: -0.02em; white-space: nowrap; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+  .stat-l { display: block; margin-top: 3px; font-size: 11.5px; line-height: 1.25; color: rgba(244, 247, 251, .72); }
+  .stat-l.warn { color: #FFC98A; font-weight: 650; }
 
   /* Sections */
-  .sec-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 28px 4px 8px; }
-  .sec { margin: 0; font-size: 12px; font-weight: 650; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .sec-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 28px 2px 10px; }
+  .sec { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 17px; font-weight: 720; letter-spacing: -0.015em; }
+  .count { display: inline-grid; place-items: center; min-width: 22px; height: 20px; padding: 0 7px; border-radius: 999px; background: var(--chip-bg); color: var(--muted); font-size: 12px; font-weight: 650; font-variant-numeric: tabular-nums; }
+  .sec-sub { margin: 1px 0 0; font-size: 12.5px; color: var(--muted); }
   .sec-meta { font-size: 12.5px; color: var(--muted); text-align: right; }
   .sec-meta .warn { color: var(--warn); font-weight: 600; }
   .sec-meta .danger { color: var(--danger); font-weight: 600; }
-  .p-meta { display: flex; align-items: baseline; gap: 14px; }
   .card {
     background: var(--card);
     border: 1px solid var(--line);
-    border-radius: 14px;
+    border-radius: 18px;
     box-shadow: var(--shadow);
     overflow: hidden;
   }
 
-  /* Small buttons */
+  /* Buttons */
+  .pill-btn {
+    flex: none;
+    height: 32px;
+    padding: 0 14px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font: inherit;
+    font-size: 13.5px;
+    font-weight: 650;
+    cursor: pointer;
+  }
+  .pill-btn.on { background: var(--accent); color: var(--on-accent); }
+  .ghost-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 34px;
+    padding: 0 14px;
+    border: 1px solid var(--field-line);
+    border-radius: 999px;
+    background: var(--card);
+    color: var(--text);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .ghost-btn svg { width: 14px; height: 14px; color: var(--accent); }
   .link {
     margin: -6px -4px;
     padding: 6px 4px;
@@ -137,7 +236,7 @@
     width: 36px;
     height: 36px;
     border: 0;
-    border-radius: 8px;
+    border-radius: 10px;
     background: none;
     color: var(--muted);
     cursor: pointer;
@@ -148,7 +247,7 @@
     height: 44px;
     padding: 0 18px;
     border: 1px solid var(--field-line);
-    border-radius: 10px;
+    border-radius: 12px;
     background: var(--card);
     color: var(--text);
     font: inherit;
@@ -156,39 +255,79 @@
     font-weight: 600;
     cursor: pointer;
   }
-  .link:focus-visible, .icon-btn:focus-visible, .btn-secondary:focus-visible, .chip:focus-visible, .who-btn:focus-visible {
+  .link:focus-visible, .icon-btn:focus-visible, .btn-secondary:focus-visible, .chip:focus-visible, .who-btn:focus-visible,
+  .pill-btn:focus-visible, .ghost-btn:focus-visible, .cc:focus-visible {
     outline: 2px solid var(--accent);
-    outline-offset: 1px;
+    outline-offset: 2px;
   }
   @media (hover: hover) {
     .link:hover { text-decoration: underline; }
     .icon-btn:not(:disabled):hover, .who-btn:hover { background: var(--hover); color: var(--text); }
+    .pill-btn:not(.on):hover { background: var(--hover); box-shadow: inset 0 0 0 1px var(--accent-soft); }
+    .ghost-btn:hover { border-color: var(--accent); }
   }
 
   /* Program rows */
   .programs { list-style: none; margin: 0; padding: 0; }
   .row { padding: 14px 16px; }
   .row + .row { border-top: 1px solid var(--line); }
-  .row-main { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 40px; }
-  .who { min-width: 0; }
-  .name { font-size: 15.5px; font-weight: 600; letter-spacing: -0.005em; }
-  .status { margin-top: 2px; font-size: 13px; line-height: 1.35; color: var(--muted); }
-  .status .tier { color: var(--accent); font-weight: 600; }
-  .status + .status { margin-top: 3px; }
-  .status { overflow-wrap: anywhere; }
-  .status .nw { white-space: nowrap; } /* short parts wrap only between " · " separators */
+  .row-main { display: flex; align-items: flex-start; gap: 12px; min-height: 40px; }
+  .row-main.solo { align-items: center; }
+  .av {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: var(--av-bg);
+    color: var(--av-fg, #FFFFFF);
+    font-size: 13.5px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .1);
+    user-select: none;
+  }
+  .av.x3 { font-size: 11px; letter-spacing: -0.01em; }
+  .av svg { width: 20px; height: 20px; }
+  .who { flex: 1; min-width: 0; }
+  .name { font-size: 15.5px; font-weight: 650; line-height: 1.3; letter-spacing: -0.01em; }
+  .slines { display: grid; gap: 6px; margin-top: 6px; }
+  .sline { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; min-width: 0; }
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    max-width: 100%;
+    min-height: 22px;
+    padding: 2px 9px;
+    border-radius: 999px;
+    background: var(--t-base-bg);
+    color: var(--t-base-fg);
+    font-size: 12px;
+    font-weight: 650;
+    line-height: 1.3;
+    white-space: nowrap;
+  }
+  .pill.long { white-space: normal; }
+  .pill.t-silver { background: var(--t-silver-bg); color: var(--t-silver-fg); }
+  .pill.t-gold { background: var(--t-gold-bg); color: var(--t-gold-fg); }
+  .pill.t-plat { background: var(--t-plat-bg); color: var(--t-plat-fg); }
+  .pill.t-diam { background: var(--t-diam-bg); color: var(--t-diam-fg); }
+  .via { font-size: 12.5px; line-height: 1.35; color: var(--muted); overflow-wrap: anywhere; }
+  .via .nw { white-space: nowrap; } /* keep "Sapphire Reserve", "thru 12/31/27" whole; wrap between them */
+  .no-status { margin-top: 3px; font-size: 13px; color: var(--faint); }
   .bal { flex: none; text-align: right; }
-  .unit { margin-top: 1px; font-size: 12px; color: var(--muted); }
-  .empty-row { padding: 22px 16px; text-align: center; font-size: 14px; color: var(--muted); }
+  .unit { margin-top: 2px; font-size: 11.5px; color: var(--muted); }
+  .empty-row { padding: 26px 16px; text-align: center; font-size: 14px; color: var(--muted); }
 
-  /* Edit mode rows */
+  /* Edit mode */
   .who-btn {
     flex: 1;
     min-width: 0;
     margin: -6px -8px;
     padding: 6px 8px;
     border: 0;
-    border-radius: 8px;
+    border-radius: 10px;
     background: none;
     color: inherit;
     font: inherit;
@@ -196,11 +335,23 @@
     cursor: pointer;
   }
   .who-btn .name svg { width: 13px; height: 13px; margin-left: 6px; color: var(--accent); vertical-align: -1px; }
-  .no-status { margin-top: 2px; font-size: 13px; color: var(--faint); }
-  .reorder { flex: none; display: flex; gap: 2px; margin-right: -8px; }
+  .reorder { flex: none; display: flex; gap: 2px; margin: 2px -8px 0 0; }
   .add-row { padding: 12px 16px; }
   .add-program { display: inline-flex; align-items: center; gap: 8px; }
   .add-program svg { width: 14px; height: 14px; }
+  .cards-edit {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 12px;
+    padding: 12px 14px;
+    border: 1px dashed var(--field-line);
+    border-radius: 16px;
+    font-size: 13.5px;
+    color: var(--muted);
+  }
+  .cards-edit strong { display: block; margin-top: 1px; color: var(--text); font-weight: 600; }
 
   /* Tap-to-edit numbers */
   .num {
@@ -209,14 +360,14 @@
     margin: -3px -8px;
     padding: 3px 8px;
     border: 0;
-    border-radius: 7px;
+    border-radius: 8px;
     background: none;
     color: var(--text);
     font: inherit;
     font-size: 19px;
-    font-weight: 650;
+    font-weight: 700;
     line-height: 1.3;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.015em;
     font-variant-numeric: tabular-nums;
     text-align: right;
     text-decoration: underline dotted var(--dots);
@@ -237,14 +388,14 @@
     margin: -4px -9px;
     padding: 3px 8px;
     border: 1.5px solid var(--accent);
-    border-radius: 8px;
+    border-radius: 9px;
     outline: none;
     box-shadow: 0 0 0 3px var(--accent-soft);
     background: var(--field);
     color: var(--text);
     font: inherit;
     font-size: 19px;
-    font-weight: 650;
+    font-weight: 700;
     line-height: 1.3;
     font-variant-numeric: tabular-nums;
     text-align: right;
@@ -252,93 +403,131 @@
   .num-input.sm { width: 6.5em; font-size: 16px; }
 
   /* Delta Medallion panel */
-  .delta { margin-top: 12px; padding: 12px 14px 10px; border-radius: 10px; background: var(--inset); }
-  .mqd-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; margin-bottom: 10px; }
+  .delta { margin-top: 14px; padding: 13px 14px 10px; border-radius: 14px; background: var(--inset); }
+  .mqd-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; margin-bottom: 12px; }
   .mqd-count { display: flex; align-items: baseline; gap: 8px; }
-  .mqd-label { font-size: 11.5px; font-weight: 650; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+  .mqd-label { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
   .of { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
-  .next { font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; }
-  .bar { position: relative; height: 8px; border-radius: 999px; background: var(--track); overflow: hidden; }
-  .fill { width: 0; height: 100%; border-radius: inherit; background: var(--accent); transition: width .45s cubic-bezier(.2, .7, .2, 1); }
-  .notch { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: var(--inset); }
-  .ticks { position: relative; height: 16px; margin-top: 5px; font-size: 11px; line-height: 16px; }
+  .next { font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .bar { position: relative; height: 10px; border-radius: 999px; background: var(--track); }
+  .fill { width: 0; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--accent), var(--accent-2)); transition: width .5s cubic-bezier(.2, .7, .2, 1); }
+  .dot { position: absolute; top: 50%; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%; background: var(--inset); box-shadow: inset 0 0 0 2px var(--track); }
+  .dot.hit { background: var(--card); box-shadow: inset 0 0 0 2.5px var(--accent); }
+  .ticks { position: relative; height: 16px; margin-top: 6px; font-size: 11px; line-height: 16px; }
   .tick { position: absolute; top: 0; transform: translateX(-50%); white-space: nowrap; color: var(--muted); }
   .tick.end { transform: translateX(-100%); }
-  .tick.hit { color: var(--accent); font-weight: 650; }
+  .tick.hit { color: var(--accent); font-weight: 700; }
 
   /* Note under the program list */
-  .footnote { display: flex; gap: 8px; margin: 10px 6px 0; font-size: 13px; line-height: 1.45; color: var(--muted); }
-  .footnote svg { flex: none; width: 14px; height: 14px; margin-top: 2px; color: var(--accent); }
+  .footnote { display: flex; gap: 10px; margin: 12px 0 0; padding: 12px 14px; border-radius: 16px; background: var(--callout); font-size: 13.5px; line-height: 1.45; }
+  .footnote svg { flex: none; width: 16px; height: 16px; margin-top: 1px; color: var(--accent); }
   .footnote span { white-space: pre-line; }
   .notes-edit { margin: 14px 2px 0; }
 
   /* First-run setup */
-  .setup-card { margin-top: 24px; padding: 20px 16px; }
-  .setup-card h2 { margin: 0; font-size: 18px; letter-spacing: -0.01em; }
+  .setup-card { margin-top: 18px; padding: 22px 18px; }
+  .setup-card h2 { margin: 0; font-size: 19px; letter-spacing: -0.015em; }
   .setup-sub { margin: 4px 0 20px; font-size: 14px; color: var(--muted); }
   .cat-group + .cat-group { margin-top: 18px; }
-  .cat-title { margin: 0 0 8px; font-size: 12px; font-weight: 650; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
-  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .cat-title { margin: 0 0 9px; font-size: 11.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .chips { display: grid; grid-template-columns: repeat(auto-fill, minmax(136px, 1fr)); gap: 8px; }
   .chip {
-    min-height: 38px;
-    padding: 7px 14px;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    min-width: 0;
+    min-height: 46px;
+    padding: 6px 10px 6px 6px;
     border: 1px solid var(--field-line);
-    border-radius: 999px;
+    border-radius: 14px;
     background: var(--field);
     color: var(--text);
     font: inherit;
-    font-size: 14px;
+    font-size: 13.5px;
+    line-height: 1.25;
+    text-align: left;
     cursor: pointer;
   }
+  .chip .av { width: 30px; height: 30px; border-radius: 9px; font-size: 10.5px; box-shadow: none; }
+  .chip .av.x3 { font-size: 8.5px; }
+  .chip .av svg { width: 15px; height: 15px; }
   .chip[aria-pressed="true"] { border-color: var(--accent); background: var(--accent); color: var(--on-accent); font-weight: 600; }
-  .setup-actions { display: grid; justify-items: center; gap: 14px; margin-top: 24px; }
-  .setup-actions .add { width: 100%; }
-  .setup-alt { margin: 0; font-size: 14px; color: var(--muted); text-align: center; }
-  .setup-cards { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--line); }
+  .chip[aria-pressed="true"] .av { box-shadow: 0 0 0 2px var(--on-accent); }
+  .setup-cards { margin-top: 26px; padding-top: 22px; border-top: 1px solid var(--line); }
   .setup-cards h3 { margin: 0; font-size: 16px; letter-spacing: -0.01em; }
   .setup-cards h3 span { font-weight: 400; color: var(--muted); }
   .setup-cards .setup-sub { margin: 2px 0 16px; font-size: 13.5px; }
+  .setup-actions { display: grid; justify-items: center; gap: 14px; margin-top: 26px; }
+  .setup-actions .add { width: 100%; }
+  .setup-alt { margin: 0; font-size: 14px; color: var(--muted); text-align: center; }
 
-  /* Cards (edit mode + picker sheet) */
-  .cards-edit { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 12px 6px 0; font-size: 13.5px; color: var(--muted); }
-  .cards-edit strong { color: var(--text); font-weight: 600; }
-  .fine { margin: 0; font-size: 12px; color: var(--muted); }
-  .cards-status { min-height: 1.45em; margin: 0; font-size: 13.5px; font-weight: 600; color: var(--accent); }
+  /* Card tiles (setup + picker sheet) */
+  .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(136px, 1fr)); gap: 10px; }
+  .cc {
+    --c1: #3D7CC0;
+    --c2: #1D4F8A;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-width: 0;
+    height: 92px;
+    padding: 10px 11px 9px;
+    border: 0;
+    border-radius: 12px;
+    background:
+      radial-gradient(110% 90% at 0% 0%, rgba(255, 255, 255, .22), transparent 60%),
+      linear-gradient(135deg, var(--c1), var(--c2));
+    color: #FFFFFF;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .14), inset 0 0 0 1px rgba(255, 255, 255, .1);
+    transition: transform .12s ease, box-shadow .12s ease;
+  }
+  .cc:active { transform: scale(.98); }
+  .cc[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--card), 0 0 0 4.5px var(--accent), 0 6px 16px -8px rgba(0, 0, 0, .5); }
+  .cc-top { display: flex; align-items: center; justify-content: space-between; height: 20px; }
+  .cc-emv { width: 22px; height: 16px; border-radius: 4px; background: linear-gradient(135deg, #F1DFA6, #B9974F); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .12); }
+  .cc-check { display: none; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--card); color: var(--accent); box-shadow: 0 1px 3px rgba(0, 0, 0, .3); }
+  .cc-check svg { width: 12px; height: 12px; }
+  .cc[aria-pressed="true"] .cc-check { display: grid; }
+  .cc-name { display: -webkit-box; overflow: hidden; font-size: 12.5px; font-weight: 700; line-height: 1.2; letter-spacing: -0.005em; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+  .cc-perks { display: block; overflow: hidden; margin-top: 2px; font-size: 10.5px; line-height: 1.25; opacity: .8; white-space: nowrap; text-overflow: ellipsis; }
+  .tone-platinum { --c1: #F1F2F4; --c2: #A9B0B9; color: #1C232C; }
+  .tone-gold { --c1: #F3DA97; --c2: #BE9443; color: #372707; }
+  .tone-black { --c1: #454A52; --c2: #121418; }
+  .tone-sapphire { --c1: #2A4A7A; --c2: #0C1A33; }
+  .tone-blue { --c1: #4A88CC; --c2: #1D4F8A; }
+  .tone-slate { --c1: #7F8DA2; --c2: #465468; }
+  .tone-bronze { --c1: #D3B78F; --c2: #8C6D4B; color: #2B1E10; }
 
   /* Vouchers */
   .vlist { list-style: none; margin: 0; padding: 0; }
-  .voucher { display: flex; align-items: flex-start; gap: 8px; padding: 12px 8px 12px 16px; }
+  .voucher { display: flex; align-items: flex-start; gap: 12px; padding: 14px 8px 14px 16px; }
   .voucher + .voucher { border-top: 1px solid var(--line); }
   .voucher.new { animation: flash 1.6s ease-out; }
   @keyframes flash { from { background: var(--accent-soft); } to { background: transparent; } }
-  .v-body { flex: 1; min-width: 0; }
-  .v-name { font-weight: 600; overflow-wrap: anywhere; }
-  .v-note { font-size: 13.5px; color: var(--muted); overflow-wrap: anywhere; }
-  .v-exp { margin-top: 3px; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
-  .voucher.soon .v-exp { color: var(--warn); }
-  .voucher.soon .v-exp strong { font-weight: 650; }
+  .v-ico { flex: none; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: var(--accent-soft); color: var(--accent); }
+  .v-ico svg { width: 20px; height: 20px; }
+  .voucher.soon .v-ico { background: var(--warn-soft); color: var(--warn); }
+  .voucher.expired .v-ico { background: var(--danger-soft); color: var(--danger); }
+  .v-body { flex: 1; min-width: 0; padding-top: 1px; }
+  .v-name { font-weight: 650; overflow-wrap: anywhere; }
   .voucher.expired .v-name { color: var(--muted); }
-  .badge {
-    display: inline-block;
-    margin-right: 6px;
-    padding: 1px 6px;
-    border-radius: 5px;
-    background: var(--danger-soft);
-    color: var(--danger);
-    font-size: 10.5px;
-    font-weight: 700;
-    letter-spacing: .07em;
-    vertical-align: 1px;
-  }
+  .v-note { font-size: 13.5px; color: var(--muted); overflow-wrap: anywhere; }
+  .v-exp { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin-top: 6px; font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .tag { display: inline-flex; align-items: center; min-height: 20px; padding: 1px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 700; }
+  .tag.warn { background: var(--warn-soft); color: var(--warn); }
+  .tag.danger { background: var(--danger-soft); color: var(--danger); letter-spacing: .05em; }
   .v-del {
     flex: none;
     display: grid;
     place-items: center;
     width: 40px;
     height: 40px;
-    margin-top: -6px;
     border: 0;
-    border-radius: 8px;
+    border-radius: 10px;
     background: none;
     color: var(--muted);
     cursor: pointer;
@@ -349,15 +538,16 @@
   @media (hover: hover) {
     .v-del:hover { background: var(--hover); color: var(--text); }
   }
-  .empty { margin: 0; padding: 22px 16px; text-align: center; font-size: 14px; color: var(--muted); outline: none; }
+  .empty { margin: 0; padding: 26px 16px; text-align: center; font-size: 14px; color: var(--muted); outline: none; }
 
   .vform {
     display: grid;
     grid-template-columns: 1fr auto;
     grid-template-areas: "name name" "note note" "exp add";
     gap: 12px;
-    padding: 14px 16px 16px;
+    padding: 16px;
     border-top: 1px solid var(--line);
+    background: var(--inset);
   }
   @media (min-width: 540px) {
     .vform { grid-template-columns: 1fr 11rem auto; grid-template-areas: "name name name" "note exp add"; }
@@ -376,7 +566,7 @@
     margin: 0;
     padding: 0 12px;
     border: 1px solid var(--field-line);
-    border-radius: 10px;
+    border-radius: 12px;
     background: var(--field);
     color: var(--text);
     font: inherit;
@@ -407,7 +597,7 @@
     height: 44px;
     padding: 0 22px;
     border: 0;
-    border-radius: 10px;
+    border-radius: 12px;
     background: var(--accent);
     color: var(--on-accent);
     font: inherit;
@@ -419,25 +609,28 @@
   .add:disabled { opacity: .45; cursor: default; filter: none; }
   .add:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-  /* Program editor sheet */
+  /* Sheets (program editor, card picker) */
   .sheet {
     width: min(560px, calc(100% - 32px));
     max-width: none;
     max-height: calc(100% - 32px);
     padding: 0;
     border: 1px solid var(--line);
-    border-radius: 16px;
+    border-radius: 20px;
     background: var(--card);
     color: var(--text);
     box-shadow: 0 24px 64px rgba(0, 0, 0, .28);
     overflow: auto;
   }
   .sheet::backdrop { background: rgba(8, 13, 22, .5); }
+  .grab { display: none; width: 38px; height: 5px; margin: 0 auto -6px; border-radius: 999px; background: var(--field-line); }
   @media (max-width: 560px) {
-    .sheet { width: 100%; max-height: 92%; margin: auto 0 0; border-width: 1px 0 0; border-radius: 18px 18px 0 0; }
+    .sheet { width: 100%; max-height: 92%; margin: auto 0 0; border-width: 1px 0 0; border-radius: 22px 22px 0 0; }
+    .grab { display: block; }
   }
-  .sheet form, .sheet-body { display: grid; gap: 16px; padding: 20px 16px calc(16px + env(safe-area-inset-bottom)); }
-  .sheet h2 { margin: 0; font-size: 18px; letter-spacing: -0.01em; outline: none; }
+  .sheet form, .sheet-body { display: grid; gap: 16px; padding: 12px 16px calc(16px + env(safe-area-inset-bottom)); }
+  @media (min-width: 561px) { .sheet form, .sheet-body { padding-top: 22px; } }
+  .sheet h2 { margin: 0; font-size: 19px; letter-spacing: -0.015em; outline: none; }
   .sheet .setup-sub { margin: -10px 0 0; }
   .check { display: flex; align-items: center; gap: 10px; font-size: 14.5px; cursor: pointer; }
   .check input { flex: none; width: 20px; height: 20px; margin: 0; accent-color: var(--accent); }
@@ -445,15 +638,16 @@
   .sl-head, .sl { display: grid; grid-template-columns: 3fr 2fr 36px; gap: 8px; align-items: center; }
   .sl-head { margin: 0 2px 4px; font-size: 11.5px; color: var(--muted); }
   .sl + .sl { margin-top: 8px; }
-  .add-line { justify-self: start; margin-top: 4px; }
   .status-edit .add-line { display: inline-block; margin: 6px -4px -6px; }
   .sheet-actions { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
   .sheet-actions .spacer { flex: 1; }
+  .fine { margin: 0; font-size: 12px; color: var(--muted); }
+  .cards-status { min-height: 1.45em; margin: 0; font-size: 13.5px; font-weight: 600; color: var(--accent); }
 
   /* Footer */
-  .foot { display: grid; gap: 8px; margin: 32px 0 0; text-align: center; font-size: 12px; color: var(--muted); }
+  .foot { display: grid; justify-items: center; gap: 12px; margin: 34px 0 0; font-size: 12px; color: var(--muted); }
   .foot p { margin: 0; }
-  .backup { font-size: 13px; }
+  .backup { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
 
   /* Toast */
   .toast {
@@ -466,11 +660,11 @@
     gap: 14px;
     max-width: calc(100% - 32px);
     padding: 8px 8px 8px 16px;
-    border-radius: 12px;
+    border-radius: 14px;
     background: var(--toast-bg);
     color: var(--toast-fg);
     font-size: 14px;
-    box-shadow: 0 8px 28px rgba(0, 0, 0, .2);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, .22);
     opacity: 0;
     visibility: hidden;
     transform: translate(-50%, 16px);
@@ -497,16 +691,23 @@
 </head>
 <body>
 <main>
-  <header class="top">
-    <svg class="mark" viewBox="0 0 64 64" aria-hidden="true">
-      <rect class="m-bg" width="64" height="64" rx="15"/>
-      <circle class="m-disc" cx="32" cy="32" r="19.84"/>
-      <circle class="m-ring" cx="32" cy="32" r="16.13"/>
-      <path class="m-star" d="M32 22.85L34.23 29.7H41.44L35.6 33.94L37.83 40.79L32 36.56L26.17 40.79L28.4 33.94L22.57 29.7H29.77Z"/>
-    </svg>
-    <div>
-      <h1>Points &amp; Status Tracker</h1>
-      <p class="sub" id="today"></p>
+  <header class="hero">
+    <div class="hero-top">
+      <svg class="mark" viewBox="0 0 64 64" aria-hidden="true">
+        <rect class="m-bg" width="64" height="64" rx="16"/>
+        <circle class="m-disc" cx="32" cy="32" r="19.84"/>
+        <circle class="m-ring" cx="32" cy="32" r="16.13"/>
+        <path class="m-star" d="M32 22.85L34.23 29.7H41.44L35.6 33.94L37.83 40.79L32 36.56L26.17 40.79L28.4 33.94L22.57 29.7H29.77Z"/>
+      </svg>
+      <div>
+        <h1>Points &amp; Status Tracker</h1>
+        <p class="sub" id="today"></p>
+      </div>
+    </div>
+    <div class="stats" id="stats" hidden>
+      <div class="stat"><span class="stat-v" id="st-1"></span><span class="stat-l" id="st-1-l"></span></div>
+      <div class="stat"><span class="stat-v" id="st-2"></span><span class="stat-l" id="st-2-l"></span></div>
+      <div class="stat"><span class="stat-v" id="st-3"></span><span class="stat-l" id="st-3-l"></span></div>
     </div>
   </header>
 
@@ -521,7 +722,7 @@
         <div id="setup-card-picker"></div>
       </div>
       <div class="setup-actions">
-        <button class="add" id="setup-start" type="button" disabled>Pick at least one program</button>
+        <button class="add" id="setup-start" type="button" disabled>Pick a program or card</button>
         <p class="setup-alt">
           <button class="link" id="setup-example" type="button">Use the example setup</button>
           <span aria-hidden="true">·</span>
@@ -533,16 +734,16 @@
 
   <section id="programs-section" aria-labelledby="h-programs" hidden>
     <div class="sec-row">
-      <h2 class="sec" id="h-programs">Programs</h2>
-      <span class="sec-meta p-meta">
-        <span id="p-hint">Tap a number to update</span>
-        <button class="link" id="edit-toggle" type="button">Edit</button>
-      </span>
+      <div>
+        <h2 class="sec" id="h-programs">Programs <span class="count" id="p-count"></span></h2>
+        <p class="sec-sub" id="p-hint">Tap a number to update it</p>
+      </div>
+      <button class="pill-btn" id="edit-toggle" type="button">Edit</button>
     </div>
     <ul class="card programs" id="programs"></ul>
     <div class="cards-edit" id="cards-edit" hidden>
-      <span>Cards: <strong id="cards-summary">none</strong></span>
-      <button class="link" id="cards-change" type="button">Choose cards</button>
+      <span>Your cards<strong id="cards-summary">none</strong></span>
+      <button class="pill-btn" id="cards-change" type="button">Choose cards</button>
     </div>
     <p class="footnote" id="footnote" hidden>
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12L12 4M6 4h6v6"/></svg>
@@ -556,7 +757,7 @@
 
   <section id="vouchers-section" aria-labelledby="h-vouchers" hidden>
     <div class="sec-row">
-      <h2 class="sec" id="h-vouchers">Vouchers</h2>
+      <h2 class="sec" id="h-vouchers">Vouchers <span class="count" id="v-count"></span></h2>
       <span class="sec-meta" id="v-meta"></span>
     </div>
     <div class="card">
@@ -581,16 +782,24 @@
   </section>
 
   <footer class="foot">
+    <div class="backup">
+      <button class="ghost-btn" id="export-btn" type="button">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2.5v8M4.5 7L8 10.5 11.5 7M3 13.5h10"/></svg>
+        Back up data
+      </button>
+      <button class="ghost-btn" id="import-btn" type="button">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 10.5v-8M4.5 6L8 2.5 11.5 6M3 13.5h10"/></svg>
+        Restore from backup
+      </button>
+    </div>
     <p id="foot-status">Saved on this device only</p>
-    <p class="backup">
-      <button class="link" id="export-btn" type="button">Back up data</button><span id="backup-sep" aria-hidden="true"> · </span><button class="link" id="import-btn" type="button">Restore from backup</button>
-    </p>
     <input type="file" id="import-file" accept="application/json,.json" hidden>
   </footer>
 </main>
 
 <dialog class="sheet" id="sheet" aria-labelledby="sheet-title">
   <form id="sheet-form" method="dialog" autocomplete="off">
+    <div class="grab" aria-hidden="true"></div>
     <h2 id="sheet-title" tabindex="-1" autofocus>Edit program</h2>
     <div class="field">
       <label for="p-name">Name</label>
@@ -622,6 +831,7 @@
 </dialog>
 <dialog class="sheet" id="cards-sheet" aria-labelledby="cards-title">
   <div class="sheet-body">
+    <div class="grab" aria-hidden="true"></div>
     <h2 id="cards-title" tabindex="-1" autofocus>Your cards</h2>
     <p class="setup-sub">Tap the cards you have. Their statuses are added to your list; tap a card again to take its statuses off.</p>
     <div id="cards-picker"></div>
@@ -658,129 +868,136 @@
   const UNITS = ['miles', 'points', 'Avios', '']; // '' = status only, no balance
 
   // Offered on first run and as name suggestions; any other program can be added by name.
+  // `mark` is the avatar: [label, background, text color] — airline codes for airlines, initials elsewhere.
   const CATALOG = [
     { group: 'Airlines', items: [
-      { id: 'delta', name: 'Delta SkyMiles', unit: 'miles', medallion: true },
-      { id: 'united', name: 'United MileagePlus', unit: 'miles' },
-      { id: 'american', name: 'American AAdvantage', unit: 'miles' },
-      { id: 'southwest', name: 'Southwest Rapid Rewards', unit: 'points' },
-      { id: 'alaska', name: 'Alaska Atmos Rewards', unit: 'points' },
-      { id: 'jetblue', name: 'JetBlue TrueBlue', unit: 'points' },
-      { id: 'aeroplan', name: 'Air Canada Aeroplan', unit: 'points' },
-      { id: 'flyingblue', name: 'Air France-KLM Flying Blue', unit: 'miles' },
-      { id: 'ba', name: 'British Airways Club', unit: 'Avios' },
-      { id: 'koreanair', name: 'Korean Air SkyPass', unit: 'miles' },
-      { id: 'virgin', name: 'Virgin Atlantic Flying Club', unit: 'points' },
+      { id: 'delta', name: 'Delta SkyMiles', unit: 'miles', medallion: true, mark: ['DL', '#B5122B'] },
+      { id: 'united', name: 'United MileagePlus', unit: 'miles', mark: ['UA', '#1B3F8B'] },
+      { id: 'american', name: 'American AAdvantage', unit: 'miles', mark: ['AA', '#0A6AB8'] },
+      { id: 'southwest', name: 'Southwest Rapid Rewards', unit: 'points', mark: ['WN', '#2F4FB0'] },
+      { id: 'alaska', name: 'Alaska Atmos Rewards', unit: 'points', mark: ['AS', '#01426A'] },
+      { id: 'jetblue', name: 'JetBlue TrueBlue', unit: 'points', mark: ['B6', '#0033A0'] },
+      { id: 'aeroplan', name: 'Air Canada Aeroplan', unit: 'points', mark: ['AC', '#C8102E'] },
+      { id: 'flyingblue', name: 'Air France-KLM Flying Blue', unit: 'miles', mark: ['AF', '#0B2A6F'] },
+      { id: 'ba', name: 'British Airways Club', unit: 'Avios', mark: ['BA', '#0B4EA2'] },
+      { id: 'koreanair', name: 'Korean Air SkyPass', unit: 'miles', mark: ['KE', '#1470B3'] },
+      { id: 'virgin', name: 'Virgin Atlantic Flying Club', unit: 'points', mark: ['VS', '#B8002C'] },
     ] },
     { group: 'Hotels', items: [
-      { id: 'hilton', name: 'Hilton Honors', unit: 'points' },
-      { id: 'marriott', name: 'Marriott Bonvoy', unit: 'points' },
-      { id: 'ihg', name: 'IHG One Rewards', unit: 'points' },
-      { id: 'hyatt', name: 'World of Hyatt', unit: 'points' },
-      { id: 'wyndham', name: 'Wyndham Rewards', unit: 'points' },
-      { id: 'choice', name: 'Choice Privileges', unit: 'points' },
-      { id: 'accor', name: 'Accor ALL', unit: 'points' },
-      { id: 'lhw', name: 'Leading Hotels of the World', unit: '' },
-      { id: 'omni', name: 'Omni Select Guest', unit: '' },
+      { id: 'hilton', name: 'Hilton Honors', unit: 'points', mark: ['H', '#104C97'] },
+      { id: 'marriott', name: 'Marriott Bonvoy', unit: 'points', mark: ['M', '#2A2A2A'] },
+      { id: 'ihg', name: 'IHG One Rewards', unit: 'points', mark: ['IHG', '#BF4A14'] },
+      { id: 'hyatt', name: 'World of Hyatt', unit: 'points', mark: ['Hy', '#0B6A93'] },
+      { id: 'wyndham', name: 'Wyndham Rewards', unit: 'points', mark: ['W', '#0C57A0'] },
+      { id: 'choice', name: 'Choice Privileges', unit: 'points', mark: ['C', '#0B7468'] },
+      { id: 'accor', name: 'Accor ALL', unit: 'points', mark: ['A', '#23205A'] },
+      { id: 'lhw', name: 'Leading Hotels of the World', unit: '', mark: ['LHW', '#6B5638'] },
+      { id: 'omni', name: 'Omni Select Guest', unit: '', mark: ['O', '#2E4A45'] },
     ] },
     { group: 'Credit card points', items: [
-      { id: 'amex', name: 'Amex Membership Rewards', unit: 'points' },
-      { id: 'chase', name: 'Chase Ultimate Rewards', unit: 'points' },
-      { id: 'citi', name: 'Citi ThankYou Points', unit: 'points' },
-      { id: 'capitalone', name: 'Capital One Miles', unit: 'miles' },
-      { id: 'bilt', name: 'Bilt Rewards', unit: 'points' },
+      { id: 'amex', name: 'Amex Membership Rewards', unit: 'points', mark: ['MR', '#006FCF'] },
+      { id: 'chase', name: 'Chase Ultimate Rewards', unit: 'points', mark: ['UR', '#1269AE'] },
+      { id: 'citi', name: 'Citi ThankYou Points', unit: 'points', mark: ['TY', '#0A5E9E'] },
+      { id: 'capitalone', name: 'Capital One Miles', unit: 'miles', mark: ['C1', '#0B4B73'] },
+      { id: 'bilt', name: 'Bilt Rewards', unit: 'points', mark: ['B', '#1F1F1F'] },
     ] },
     { group: 'Car rental & lounges', items: [
-      { id: 'avis', name: 'Avis Preferred', unit: '' },
-      { id: 'hertz', name: 'Hertz Gold Plus Rewards', unit: '' },
-      { id: 'national', name: 'National Emerald Club', unit: '' },
-      { id: 'enterprise', name: 'Enterprise Plus', unit: '' },
-      { id: 'lounges', name: 'Airport lounges', unit: '' },
+      { id: 'avis', name: 'Avis Preferred', unit: '', mark: ['AV', '#C8102E'] },
+      { id: 'hertz', name: 'Hertz Gold Plus Rewards', unit: '', mark: ['HZ', '#F2C200', '#1A1A1A'] },
+      { id: 'national', name: 'National Emerald Club', unit: '', mark: ['NA', '#0B7A3E'] },
+      { id: 'enterprise', name: 'Enterprise Plus', unit: '', mark: ['EP', '#13905A'] },
+      { id: 'lounges', name: 'Airport lounges', unit: '', mark: ['lounge', 'var(--accent)', 'var(--on-accent)'] },
     ] },
   ];
   const CATALOG_ITEMS = CATALOG.flatMap((g) => g.items);
+  const CATALOG_BY_ID = Object.fromEntries(CATALOG_ITEMS.map((c) => [c.id, c]));
   const catalogByName = (name) => CATALOG_ITEMS.find((c) => c.name.toLowerCase() === name.trim().toLowerCase());
 
-  const CATALOG_BY_ID = Object.fromEntries(CATALOG_ITEMS.map((c) => [c.id, c]));
-
   // Complimentary statuses each card comes with (enrollment may be required), per the issuers' published
-  // benefits as of CARDS_AS_OF. Grants are [program id, tier, note]. Statuses you only unlock by spending
-  // are deliberately left out. `label` (optional) is the picker text when `name` alone is ambiguous.
+  // benefits as of CARDS_AS_OF. Grants are [program id, tier, note]; tiers joined with " · " show as separate
+  // pills. Statuses you only unlock by spending are deliberately left out. `tone` picks the tile colors.
   const CARDS_AS_OF = 'September 2026';
+  const AMEX_PLATINUM = [
+    ['hilton', 'Gold'],
+    ['marriott', 'Gold Elite'],
+    ['lhw', 'Leaders Club Sterling'],
+    ['avis', 'Preferred Plus'],
+    ['hertz', "President's Circle"],
+    ['national', 'Emerald Club Executive'],
+    ['lounges', 'Centurion · Sky Club (10 visits/yr) · Escape · Plaza Premium · Priority Pass'],
+  ];
+  const DELTA_PLATINUM = [['delta', 'MQD Headstart $2,500 · MQD Boost $1 per $20']];
+  const DELTA_RESERVE = [
+    ['delta', 'MQD Headstart $2,500 · MQD Boost $1 per $10'],
+    ['lounges', 'Sky Club (15 visits/yr) · Centurion on Delta flights'],
+  ];
+  const SAPPHIRE_RESERVE = [
+    ['ihg', 'Platinum Elite', 'thru 12/31/27'],
+    ['avis', 'Preferred Plus'],
+    ['national', 'Emerald Club Executive'],
+    ['lounges', 'Sapphire Lounges · Priority Pass · Air Canada Maple Leaf'],
+  ];
   const CARDS = [
-    { issuer: 'American Express', id: 'amex-platinum', name: 'Amex Platinum', grants: [
-      ['hilton', 'Gold'],
-      ['marriott', 'Gold Elite'],
-      ['lhw', 'Leaders Club Sterling'],
-      ['avis', 'Preferred Plus'],
-      ['hertz', "President's Circle"],
-      ['national', 'Emerald Club Executive'],
-      ['lounges', 'Centurion · Sky Club (10 visits/yr) · Escape · Plaza Premium · Priority Pass'],
-    ] },
-    { issuer: 'American Express', id: 'amex-business-platinum', name: 'Amex Business Platinum', grants: [
-      ['hilton', 'Gold'],
-      ['marriott', 'Gold Elite'],
-      ['avis', 'Preferred Plus'],
-      ['hertz', "President's Circle"],
-      ['national', 'Emerald Club Executive'],
-      ['lounges', 'Centurion · Sky Club (10 visits/yr) · Escape · Plaza Premium · Priority Pass'],
-    ] },
-    { issuer: 'American Express', id: 'hilton-aspire', name: 'Hilton Aspire', grants: [['hilton', 'Diamond']] },
-    { issuer: 'American Express', id: 'hilton-surpass', name: 'Hilton Surpass', grants: [['hilton', 'Gold']] },
-    { issuer: 'American Express', id: 'hilton-business', name: 'Hilton Business', grants: [['hilton', 'Gold']] },
-    { issuer: 'American Express', id: 'hilton-amex', name: 'Hilton Honors Amex', label: 'Hilton Honors (no fee)', grants: [['hilton', 'Silver']] },
-    { issuer: 'American Express', id: 'bonvoy-brilliant', name: 'Bonvoy Brilliant', grants: [['marriott', 'Platinum Elite']] },
-    { issuer: 'American Express', id: 'bonvoy-bevy', name: 'Bonvoy Bevy', grants: [['marriott', 'Gold Elite']] },
-    { issuer: 'American Express', id: 'bonvoy-business', name: 'Bonvoy Business', grants: [['marriott', 'Gold Elite']] },
-    { issuer: 'American Express', id: 'delta-reserve', name: 'Delta Reserve', grants: [
-      ['lounges', 'Sky Club (15 visits/yr) · Centurion on Delta flights'],
-    ] },
-    { issuer: 'Chase', id: 'sapphire-reserve', name: 'Sapphire Reserve', grants: [
-      ['ihg', 'Platinum Elite', 'thru 12/31/27'],
-      ['avis', 'Preferred Plus'],
-      ['national', 'Emerald Club Executive'],
-      ['lounges', 'Sapphire Lounges · Priority Pass · Air Canada Maple Leaf'],
-    ] },
-    { issuer: 'Chase', id: 'sapphire-reserve-business', name: 'Sapphire Reserve for Business', grants: [
-      ['ihg', 'Platinum Elite', 'thru 12/31/27'],
-      ['avis', 'Preferred Plus'],
-      ['national', 'Emerald Club Executive'],
-      ['lounges', 'Sapphire Lounges · Priority Pass · Air Canada Maple Leaf'],
-    ] },
-    { issuer: 'Chase', id: 'ihg-premier', name: 'IHG Premier', grants: [['ihg', 'Platinum Elite']] },
-    { issuer: 'Chase', id: 'ihg-premier-business', name: 'IHG Premier Business', grants: [['ihg', 'Platinum Elite']] },
-    { issuer: 'Chase', id: 'ihg-traveler', name: 'IHG Traveler', grants: [['ihg', 'Silver Elite']] },
-    { issuer: 'Chase', id: 'hyatt-card', name: 'World of Hyatt card', grants: [['hyatt', 'Discoverist']] },
-    { issuer: 'Chase', id: 'hyatt-business', name: 'World of Hyatt Business', grants: [['hyatt', 'Discoverist']] },
-    { issuer: 'Chase', id: 'bonvoy-boundless', name: 'Bonvoy Boundless', grants: [['marriott', 'Silver Elite']] },
-    { issuer: 'Chase', id: 'bonvoy-bold', name: 'Bonvoy Bold', grants: [['marriott', 'Silver Elite']] },
-    { issuer: 'Chase', id: 'united-club', name: 'United Club Card', grants: [
+    { issuer: 'American Express', id: 'amex-platinum', name: 'Amex Platinum', tone: 'platinum', grants: AMEX_PLATINUM },
+    { issuer: 'American Express', id: 'amex-business-platinum', name: 'Amex Business Platinum', tone: 'platinum', grants: AMEX_PLATINUM.filter(([id]) => id !== 'lhw') },
+    { issuer: 'American Express', id: 'schwab-platinum', name: 'Schwab Platinum', tone: 'platinum', grants: AMEX_PLATINUM },
+    { issuer: 'American Express', id: 'morgan-stanley-platinum', name: 'Morgan Stanley Platinum', tone: 'platinum', grants: AMEX_PLATINUM },
+    { issuer: 'American Express', id: 'amex-gold', name: 'Amex Gold', tone: 'gold', grants: [['hertz', 'Five Star']] },
+    { issuer: 'American Express', id: 'hilton-aspire', name: 'Hilton Aspire', tone: 'black', grants: [['hilton', 'Diamond']] },
+    { issuer: 'American Express', id: 'hilton-surpass', name: 'Hilton Surpass', tone: 'slate', grants: [['hilton', 'Gold']] },
+    { issuer: 'American Express', id: 'hilton-business', name: 'Hilton Business', tone: 'slate', grants: [['hilton', 'Gold']] },
+    { issuer: 'American Express', id: 'hilton-amex', name: 'Hilton Honors Amex', label: 'Hilton Honors (no fee)', tone: 'blue', grants: [['hilton', 'Silver']] },
+    { issuer: 'American Express', id: 'bonvoy-brilliant', name: 'Bonvoy Brilliant', tone: 'black', grants: [['marriott', 'Platinum Elite']] },
+    { issuer: 'American Express', id: 'bonvoy-bevy', name: 'Bonvoy Bevy', tone: 'bronze', grants: [['marriott', 'Gold Elite']] },
+    { issuer: 'American Express', id: 'bonvoy-business', name: 'Bonvoy Business', tone: 'black', grants: [['marriott', 'Gold Elite']] },
+    { issuer: 'Delta SkyMiles (Amex)', id: 'delta-blue', name: 'Delta Blue', tone: 'blue', grants: [] },
+    { issuer: 'Delta SkyMiles (Amex)', id: 'delta-gold', name: 'Delta Gold', tone: 'gold', grants: [] },
+    { issuer: 'Delta SkyMiles (Amex)', id: 'delta-platinum', name: 'Delta Platinum', tone: 'platinum', grants: DELTA_PLATINUM },
+    { issuer: 'Delta SkyMiles (Amex)', id: 'delta-reserve', name: 'Delta Reserve', tone: 'black', grants: DELTA_RESERVE },
+    { issuer: 'Delta SkyMiles (Amex)', id: 'delta-gold-business', name: 'Delta Gold Business', tone: 'gold', grants: [] },
+    { issuer: 'Delta SkyMiles (Amex)', id: 'delta-platinum-business', name: 'Delta Platinum Business', tone: 'platinum', grants: DELTA_PLATINUM },
+    { issuer: 'Delta SkyMiles (Amex)', id: 'delta-reserve-business', name: 'Delta Reserve Business', tone: 'black', grants: DELTA_RESERVE },
+    { issuer: 'Chase', id: 'sapphire-reserve', name: 'Sapphire Reserve', tone: 'sapphire', grants: SAPPHIRE_RESERVE },
+    { issuer: 'Chase', id: 'sapphire-reserve-business', name: 'Sapphire Reserve for Business', tone: 'black', grants: SAPPHIRE_RESERVE },
+    { issuer: 'Chase', id: 'ihg-premier', name: 'IHG Premier', tone: 'black', grants: [['ihg', 'Platinum Elite']] },
+    { issuer: 'Chase', id: 'ihg-premier-business', name: 'IHG Premier Business', tone: 'black', grants: [['ihg', 'Platinum Elite']] },
+    { issuer: 'Chase', id: 'ihg-traveler', name: 'IHG Traveler', tone: 'blue', grants: [['ihg', 'Silver Elite']] },
+    { issuer: 'Chase', id: 'hyatt-card', name: 'World of Hyatt card', tone: 'sapphire', grants: [['hyatt', 'Discoverist']] },
+    { issuer: 'Chase', id: 'hyatt-business', name: 'World of Hyatt Business', tone: 'sapphire', grants: [['hyatt', 'Discoverist']] },
+    { issuer: 'Chase', id: 'bonvoy-boundless', name: 'Bonvoy Boundless', tone: 'slate', grants: [['marriott', 'Silver Elite']] },
+    { issuer: 'Chase', id: 'bonvoy-bold', name: 'Bonvoy Bold', tone: 'blue', grants: [['marriott', 'Silver Elite']] },
+    { issuer: 'Chase', id: 'united-club', name: 'United Club Card', tone: 'sapphire', grants: [
       ['ihg', 'Platinum Elite'],
       ['avis', "President's Club"],
       ['lounges', 'United Club membership'],
     ] },
-    { issuer: 'Capital One', id: 'venture-x', name: 'Venture X', grants: [
+    { issuer: 'Capital One', id: 'venture-x', name: 'Venture X', tone: 'black', grants: [
       ['hertz', "President's Circle"],
       ['lounges', 'Capital One Lounges · Priority Pass'],
     ] },
-    { issuer: 'Capital One', id: 'venture-x-business', name: 'Venture X Business', grants: [
+    { issuer: 'Capital One', id: 'venture-x-business', name: 'Venture X Business', tone: 'black', grants: [
       ['hertz', "President's Circle"],
       ['lounges', 'Capital One Lounges · Priority Pass'],
     ] },
-    { issuer: 'Citi', id: 'aadvantage-executive', name: 'AAdvantage Executive', grants: [
+    { issuer: 'Citi', id: 'aadvantage-executive', name: 'AAdvantage Executive', tone: 'black', grants: [
       ['omni', 'Champion'],
       ['avis', "President's Club"],
       ['lounges', 'Admirals Club membership'],
     ] },
-    { issuer: 'Citi', id: 'strata-elite', name: 'Citi Strata Elite', grants: [
+    { issuer: 'Citi', id: 'strata-elite', name: 'Citi Strata Elite', tone: 'sapphire', grants: [
       ['lounges', 'Priority Pass · 4 Admirals Club passes/yr'],
     ] },
     // Earner Plus: accounts opened since June 17, 2026 get Diamond for the first 12 months, then Platinum.
-    { issuer: 'Barclays', id: 'wyndham-earner', name: 'Wyndham Earner', grants: [['wyndham', 'Gold']] },
-    { issuer: 'Barclays', id: 'wyndham-earner-plus', name: 'Wyndham Earner Plus', grants: [['wyndham', 'Platinum']] },
-    { issuer: 'Barclays', id: 'wyndham-earner-business', name: 'Wyndham Earner Business', grants: [['wyndham', 'Diamond']] },
+    { issuer: 'Barclays', id: 'wyndham-earner', name: 'Wyndham Earner', tone: 'blue', grants: [['wyndham', 'Gold']] },
+    { issuer: 'Barclays', id: 'wyndham-earner-plus', name: 'Wyndham Earner Plus', tone: 'sapphire', grants: [['wyndham', 'Platinum']] },
+    { issuer: 'Barclays', id: 'wyndham-earner-business', name: 'Wyndham Earner Business', tone: 'black', grants: [['wyndham', 'Diamond']] },
+    // Palladium's Bilt Gold comes from meeting the welcome-offer spend, so it isn't auto-applied.
+    { issuer: 'Bilt', id: 'bilt-blue', name: 'Bilt Blue', tone: 'blue', grants: [] },
+    { issuer: 'Bilt', id: 'bilt-obsidian', name: 'Bilt Obsidian', tone: 'black', grants: [] },
+    { issuer: 'Bilt', id: 'bilt-palladium', name: 'Bilt Palladium', tone: 'platinum', grants: [['lounges', 'Priority Pass']] },
   ];
   const CARD_BY_ID = Object.fromEntries(CARDS.map((c) => [c.id, c]));
+  const PERK_SHORT = { delta: 'MQD Headstart', lhw: 'LHW', hertz: 'Hertz', avis: 'Avis', national: 'National', lounges: 'Lounges', omni: 'Omni' };
 
   // "Use the example setup" — built from the Amex Platinum + Sapphire Reserve presets. Also what anyone who
   // saved data before the program list became editable keeps.
@@ -796,6 +1013,9 @@
     down: '<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 2.5v9M3 7.5l4 4 4-4"/></svg>',
     plus: '<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M7 2v10M2 7h10"/></svg>',
     pencil: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 2.5l2.5 2.5L6 12.5 2.5 13.5l1-3.5z"/></svg>',
+    check: '<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7.5l2.6 2.6L11 4.5"/></svg>',
+    lounge: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 10V7.5A2.5 2.5 0 0 1 7 5h6a2.5 2.5 0 0 1 2.5 2.5V10"/><path d="M3 10.5a1.5 1.5 0 0 1 3 0V12h8v-1.5a1.5 1.5 0 0 1 3 0V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M5 15v1.5M15 15v1.5"/></svg>',
+    ticket: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h11A1.5 1.5 0 0 1 17 6.5V8a2 2 0 0 0 0 4v1.5a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 3 13.5V12a2 2 0 0 0 0-4z"/><path d="M12.5 5.5v9" stroke-dasharray="1.6 1.8"/></svg>',
   };
 
   const $ = (sel) => document.querySelector(sel);
@@ -807,6 +1027,7 @@
   const str = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
   const splitParts = (text) => text.split('·').map((part) => part.trim()).filter(Boolean);
   const sameText = (a, b) => splitParts(a).join('·').toLowerCase() === splitParts(b).join('·').toLowerCase();
+  const plural = (n, word, many = `${word}s`) => `${n} ${n === 1 ? word : many}`;
 
   function h(tag, attrs, ...kids) {
     const el = document.createElement(tag);
@@ -824,6 +1045,38 @@
     t.innerHTML = markup;
     return t.content.firstChild;
   }
+
+  /* ---------- Look: avatars and tier colors ---------- */
+
+  const CUSTOM_COLORS = ['#3B5B8C', '#6F4E9C', '#2F7D6D', '#9A4F2E', '#5A6B2E', '#8C3B55', '#2E6E8E'];
+
+  // Catalog programs get their airline code / initials and color; custom ones get initials and a stable color.
+  function avatar(p) {
+    const catalog = CATALOG_BY_ID[p.id] || catalogByName(p.name);
+    let [label, bg, fg] = catalog ? catalog.mark : [];
+    if (!catalog) {
+      const words = p.name.replace(/[^\p{L}\p{N} ]/gu, ' ').split(/\s+/).filter(Boolean);
+      label = (words.length > 1 ? words[0][0] + words[1][0] : (words[0] || '?').slice(0, 2)).toUpperCase();
+      let hash = 0;
+      for (const ch of p.name) hash = (hash * 31 + ch.codePointAt(0)) >>> 0;
+      bg = CUSTOM_COLORS[hash % CUSTOM_COLORS.length];
+    }
+    const el = h('span', { class: label.length > 2 ? 'av x3' : 'av', style: `--av-bg:${bg}${fg ? `;--av-fg:${fg}` : ''}`, 'aria-hidden': 'true' });
+    if (label === 'lounge') el.append(svgIcon(ICON.lounge));
+    else el.textContent = label;
+    return el;
+  }
+
+  function tierClass(text) {
+    const t = text.toLowerCase();
+    if (/diamond/.test(t)) return 't-diam';
+    if (/platinum|president|executive|globalist|champion|titanium|ambassador/.test(t)) return 't-plat';
+    if (/gold/.test(t)) return 't-gold';
+    if (/silver|sterling/.test(t)) return 't-silver';
+    return '';
+  }
+
+  const pill = (text) => h('span', { class: ['pill', tierClass(text), text.length > 30 && 'long'].filter(Boolean).join(' ') }, text);
 
   /* ---------- State & persistence ---------- */
 
@@ -1101,13 +1354,18 @@
     return out;
   }
 
+  // Tiers as colored pills, then where they come from.
   function statusLine({ tier, via }) {
-    const part = (text, cls) => h('span', { class: [cls, text.length <= 28 && 'nw'].filter(Boolean).join(' ') || null }, text);
-    const parts = [
-      ...splitParts(tier).map((t) => part(t, 'tier')),
-      ...splitParts(via).map((v) => part(v, '')),
-    ];
-    return h('div', { class: 'status' }, parts.flatMap((p, i) => (i ? [' · ', p] : [p])));
+    const from = splitParts(via).map((part) => h('span', { class: part.length <= 28 ? 'nw' : null }, part));
+    return h('div', { class: 'sline' },
+      splitParts(tier).map(pill),
+      from.length ? h('span', { class: 'via' }, from.flatMap((part, i) => (i ? [' · ', part] : [part]))) : null);
+  }
+
+  function statusBlock(p, withMedallion) {
+    const lines = mergedLines(p.status).map(statusLine);
+    if (withMedallion) lines.unshift(h('div', { class: 'sline', id: 'medallion-status' }));
+    return lines.length ? h('div', { class: 'slines' }, lines) : null;
   }
 
   function medallionPanel() {
@@ -1122,7 +1380,7 @@
     const ticks = h('div', { class: 'ticks', 'aria-hidden': 'true' });
     for (const t of TIERS) {
       const pct = (t.min / MQD_GOAL) * 100;
-      if (t.min < MQD_GOAL) bar.append(h('span', { class: 'notch', style: `left:${pct}%` }));
+      if (t.min < MQD_GOAL) bar.append(h('span', { class: 'dot', style: `left:${pct}%`, 'data-min': String(t.min) }));
       ticks.append(h('span', {
         class: t.min >= MQD_GOAL ? 'tick end' : 'tick',
         style: `left:${pct}%`,
@@ -1145,18 +1403,19 @@
     if (editMode) {
       const last = index === state.programs.length - 1;
       return h('li', { class: 'row' },
-        h('div', { class: 'row-main' },
+        h('div', { class: p.status.length ? 'row-main' : 'row-main solo' },
+          avatar(p),
           h('button', { type: 'button', class: 'who-btn', 'data-edit': p.id },
             h('div', { class: 'name' }, p.name, svgIcon(ICON.pencil)),
-            p.status.length ? mergedLines(p.status).map(statusLine) : h('div', { class: 'no-status' }, 'No status yet — tap to add')),
+            statusBlock(p, false) || h('div', { class: 'no-status' }, 'No status yet — tap to add')),
           h('div', { class: 'reorder' },
             h('button', { type: 'button', class: 'icon-btn', 'data-move': '-1', 'data-id': p.id, 'aria-label': `Move ${p.name} up`, disabled: index === 0 ? '' : null }, svgIcon(ICON.up)),
             h('button', { type: 'button', class: 'icon-btn', 'data-move': '1', 'data-id': p.id, 'aria-label': `Move ${p.name} down`, disabled: last ? '' : null }, svgIcon(ICON.down)))));
     }
-    const who = h('div', { class: 'who' }, h('div', { class: 'name' }, p.name));
-    if (withMedallion) who.append(h('div', { class: 'status', id: 'medallion-status' }));
-    who.append(...mergedLines(p.status).map(statusLine));
-    const main = h('div', { class: 'row-main' }, who);
+    const status = statusBlock(p, withMedallion);
+    const main = h('div', { class: status ? 'row-main' : 'row-main solo' },
+      avatar(p),
+      h('div', { class: 'who' }, h('div', { class: 'name' }, p.name), status));
     if (p.unit) {
       main.append(h('div', { class: 'bal' },
         numButton(`bal:${p.id}`, `${p.name} balance`),
@@ -1165,9 +1424,11 @@
     return h('li', { class: 'row' }, main, withMedallion ? medallionPanel() : null);
   }
 
+  const medallionProgram = () => state.programs.find((p) => p.medallion); // one tracker, on the first flagged program
+
   function renderPrograms() {
     const list = state.programs;
-    const medallionId = (list.find((p) => p.medallion) || {}).id; // only one tracker, on the first flagged program
+    const medallionId = (medallionProgram() || {}).id;
     const rows = list.map((p, i) => programRow(p, i, !editMode && p.id === medallionId));
     if (editMode) {
       rows.push(h('li', { class: 'row add-row' },
@@ -1176,12 +1437,16 @@
       rows.push(h('li', { class: 'empty-row' }, 'No programs yet — tap Edit to add one.'));
     }
     $('#programs').replaceChildren(...rows);
+    $('#p-count').textContent = list.length;
     $('#edit-toggle').textContent = editMode ? 'Done' : 'Edit';
-    $('#p-hint').hidden = editMode || !list.some((p) => p.unit);
+    $('#edit-toggle').classList.toggle('on', editMode);
+    $('#p-hint').textContent = editMode ? 'Tap a program to edit it' : 'Tap a number to update it';
+    $('#p-hint').hidden = !editMode && !list.some((p) => p.unit);
     $('#cards-edit').hidden = !editMode;
-    $('#cards-summary').textContent = state.cards.map((id) => CARD_BY_ID[id].name).join(', ') || 'none';
+    $('#cards-summary').textContent = state.cards.map((id) => CARD_BY_ID[id].name).join(', ') || 'None yet';
     if (medallionId && !editMode) updateMedallion();
     renderNotes();
+    renderStats();
   }
 
   function medallionFor(mqd) {
@@ -1197,19 +1462,52 @@
     const mqd = state.mqd;
     const { current, next } = medallionFor(mqd);
 
-    $('#medallion-status').replaceChildren(
-      current ? h('span', { class: 'tier' }, `${current.name} Medallion`) : 'No Medallion status');
+    $('#medallion-status').replaceChildren(current
+      ? pill(`${current.name} Medallion`)
+      : h('span', { class: 'via' }, 'No Medallion status yet'));
     $('#mqd-next').textContent = next
-      ? `${fmt(next.min - mqd)} MQDs to ${next.name}`
-      : 'Diamond reached — top tier';
+      ? `${fmt(next.min - mqd)} to ${next.name}`
+      : 'Diamond — top tier';
 
     $('#mqd-fill').style.width = `${Math.min(mqd / MQD_GOAL, 1) * 100}%`;
     const bar = $('#mqd-bar');
     bar.setAttribute('aria-valuenow', String(Math.min(mqd, MQD_GOAL)));
     bar.setAttribute('aria-valuetext', `${fmt(mqd)} of ${fmt(MQD_GOAL)} MQDs`);
-    for (const tick of document.querySelectorAll('.tick')) {
-      tick.classList.toggle('hit', mqd >= Number(tick.dataset.min));
+    for (const el of document.querySelectorAll('.tick, .dot')) {
+      el.classList.toggle('hit', mqd >= Number(el.dataset.min));
     }
+    renderStats();
+  }
+
+  // Hero numbers: elite statuses, Medallion tier (or program count), and vouchers.
+  function renderStats() {
+    if (!state.programs) return;
+    const medallion = medallionProgram();
+    const current = medallion ? medallionFor(state.mqd).current : null;
+    const statuses = state.programs.filter((p) => p.id !== 'lounges'
+      && (p === medallion ? current : p.status.some((line) => line.tier))).length;
+
+    let active = 0;
+    let soon = 0;
+    for (const v of state.vouchers) {
+      const date = parseISODate(v.exp);
+      const days = date ? daysUntil(date) : Infinity;
+      if (days >= 0) active++;
+      if (days >= 0 && days <= SOON_DAYS) soon++;
+    }
+
+    $('#st-1').textContent = statuses;
+    $('#st-1-l').textContent = statuses === 1 ? 'Elite status' : 'Elite statuses';
+    if (medallion) {
+      $('#st-2').textContent = current ? current.name : '—';
+      $('#st-2-l').textContent = 'Medallion';
+    } else {
+      $('#st-2').textContent = state.programs.length;
+      $('#st-2-l').textContent = state.programs.length === 1 ? 'Program' : 'Programs';
+    }
+    $('#st-3').textContent = active;
+    $('#st-3-l').textContent = soon ? `${soon} expiring soon` : active === 1 ? 'Voucher' : 'Vouchers';
+    $('#st-3-l').classList.toggle('warn', soon > 0);
   }
 
   function renderNotes() {
@@ -1363,10 +1661,11 @@
   $('#p-cancel').addEventListener('click', () => sheet.close());
   sheet.addEventListener('click', (e) => { if (e.target === sheet) sheet.close(); }); // tap on the backdrop
 
-  /* ---------- First-run setup ---------- */
+  /* ---------- Card tiles ---------- */
 
-  const picked = new Set();
-  const pickedCards = new Set();
+  const perksLine = (card) => (card.grants.length
+    ? [...new Set(card.grants.map(([id]) => PERK_SHORT[id] || CATALOG_BY_ID[id].name.split(' ')[0]))].join(' · ')
+    : 'No elite status');
 
   function cardPicker(selected) {
     const groups = [];
@@ -1377,13 +1676,23 @@
     }
     return groups.map((g) => h('div', { class: 'cat-group', role: 'group', 'aria-label': g.issuer },
       h('h3', { class: 'cat-title' }, g.issuer),
-      h('div', { class: 'chips' }, g.cards.map((c) => h('button', {
+      h('div', { class: 'cards-grid' }, g.cards.map((c) => h('button', {
         type: 'button',
-        class: 'chip',
+        class: `cc tone-${c.tone}`,
         'data-card': c.id,
         'aria-pressed': String(selected.has(c.id)),
-      }, c.label || c.name)))));
+        'aria-label': `${c.label || c.name}: ${perksLine(c)}`,
+      },
+      h('span', { class: 'cc-top' }, h('span', { class: 'cc-emv' }), h('span', { class: 'cc-check' }, svgIcon(ICON.check))),
+      h('span', null,
+        h('span', { class: 'cc-name' }, c.label || c.name),
+        h('span', { class: 'cc-perks' }, perksLine(c))))))));
   }
+
+  /* ---------- First-run setup ---------- */
+
+  const picked = new Set();
+  const pickedCards = new Set();
 
   function renderSetup() {
     $('#catalog').replaceChildren(...CATALOG.map((g) => h('div', { class: 'cat-group', role: 'group', 'aria-label': g.group },
@@ -1393,14 +1702,13 @@
         class: 'chip',
         'data-pick': c.id,
         'aria-pressed': String(picked.has(c.id)),
-      }, c.name))))));
+      }, avatar(c), c.name))))));
     $('#setup-card-picker').replaceChildren(...cardPicker(pickedCards));
     syncStartButton();
   }
 
   function syncStartButton() {
-    const count = (n, word) => n && `${n} ${word}${n === 1 ? '' : 's'}`;
-    const parts = [count(picked.size, 'program'), count(pickedCards.size, 'card')].filter(Boolean);
+    const parts = [picked.size && plural(picked.size, 'program'), pickedCards.size && plural(pickedCards.size, 'card')].filter(Boolean);
     $('#setup-start').disabled = !parts.length;
     $('#setup-start').textContent = parts.length ? `Start tracking ${parts.join(' + ')}` : 'Pick a program or card';
   }
@@ -1426,12 +1734,12 @@
   });
 
   $('#setup-card-picker').addEventListener('click', (e) => {
-    const chip = e.target.closest('[data-card]');
-    if (!chip) return;
-    const id = chip.dataset.card;
+    const tile = e.target.closest('[data-card]');
+    if (!tile) return;
+    const id = tile.dataset.card;
     if (pickedCards.has(id)) pickedCards.delete(id);
     else pickedCards.add(id);
-    chip.setAttribute('aria-pressed', String(pickedCards.has(id)));
+    tile.setAttribute('aria-pressed', String(pickedCards.has(id)));
     syncStartButton();
   });
 
@@ -1456,20 +1764,20 @@
   });
 
   $('#cards-picker').addEventListener('click', (e) => {
-    const chip = e.target.closest('[data-card]');
-    if (!chip) return;
-    const card = CARD_BY_ID[chip.dataset.card];
+    const tile = e.target.closest('[data-card]');
+    if (!tile) return;
+    const card = CARD_BY_ID[tile.dataset.card];
     let message;
     if (state.cards.includes(card.id)) {
       removeCard(state, card.id);
-      message = `Took off ${card.name}’s statuses`;
+      message = card.grants.length ? `Took off ${card.name}’s statuses` : `Removed ${card.name}`;
     } else {
       const added = applyCard(state, card.id);
-      message = added
-        ? `Added ${added} status${added === 1 ? '' : 'es'} from ${card.name}`
-        : `${card.name}’s statuses were already on your list`;
+      if (!card.grants.length) message = `Added ${card.name} — it doesn’t come with elite status`;
+      else if (added) message = `Added ${plural(added, 'status', 'statuses')} from ${card.name}`;
+      else message = `${card.name}’s statuses were already on your list`;
     }
-    chip.setAttribute('aria-pressed', String(state.cards.includes(card.id)));
+    tile.setAttribute('aria-pressed', String(state.cards.includes(card.id)));
     $('#cards-status').textContent = message;
     scheduleSave();
     renderPrograms();
@@ -1504,15 +1812,15 @@
     const days = daysUntil(date);
     const when = dateFmt.format(date);
     if (days < 0) {
-      return { cls: 'expired', line: h('div', { class: 'v-exp' }, h('span', { class: 'badge' }, 'EXPIRED'), when) };
+      return { cls: 'expired', line: h('div', { class: 'v-exp' }, h('span', { class: 'tag danger' }, 'EXPIRED'), when) };
     }
     if (days === 0) {
-      return { cls: 'soon', line: h('div', { class: 'v-exp' }, h('strong', null, 'expires today')) };
+      return { cls: 'soon', line: h('div', { class: 'v-exp' }, h('span', { class: 'tag warn' }, 'expires today')) };
     }
     if (days <= SOON_DAYS) {
       return {
         cls: 'soon',
-        line: h('div', { class: 'v-exp' }, `expires ${when} · `, h('strong', null, `${days} day${days === 1 ? '' : 's'} left`)),
+        line: h('div', { class: 'v-exp' }, `expires ${when}`, h('span', { class: 'tag warn' }, `${plural(days, 'day')} left`)),
       };
     }
     return { cls: '', line: h('div', { class: 'v-exp' }, `expires ${when}`) };
@@ -1526,6 +1834,7 @@
       if (cls === 'soon') soon++;
       if (cls === 'expired') expired++;
       return h('li', { class: ['voucher', cls, v === highlight && 'new'].filter(Boolean).join(' ') },
+        h('span', { class: 'v-ico', 'aria-hidden': 'true' }, svgIcon(ICON.ticket)),
         h('div', { class: 'v-body' },
           h('div', { class: 'v-name' }, v.name),
           v.note ? h('div', { class: 'v-note' }, v.note) : null,
@@ -1536,11 +1845,14 @@
     $('#vlist').replaceChildren(...items);
     $('#vlist').hidden = items.length === 0;
     $('#vempty').hidden = items.length > 0;
+    $('#v-count').textContent = items.length;
+    $('#v-count').hidden = items.length === 0;
 
     const meta = [];
     if (soon) meta.push(h('span', { class: 'warn' }, `${soon} expiring soon`));
     if (expired) meta.push(h('span', { class: 'danger' }, `${expired} expired`));
     $('#v-meta').replaceChildren(...meta.flatMap((m, i) => (i ? [' · ', m] : [m])));
+    renderStats();
   }
 
   $('#vform').addEventListener('submit', (e) => {
@@ -1677,8 +1989,8 @@
     $('#setup').hidden = !setup;
     $('#programs-section').hidden = setup;
     $('#vouchers-section').hidden = setup;
+    $('#stats').hidden = setup;
     $('#export-btn').hidden = setup;
-    $('#backup-sep').hidden = setup;
     if (setup) {
       renderSetup();
     } else {
@@ -1701,7 +2013,7 @@
       navigator.serviceWorker.register('./sw.js').catch(() => {});
     });
     navigator.serviceWorker.ready.then(() => {
-      $('#foot-status').textContent = 'Saved on this device only · available offline';
+      $('#foot-status').textContent = 'Saved on this device only · works offline';
     });
   }
 })();
