@@ -2,7 +2,7 @@
 // Files are served cache-first and refreshed in the background (stale-while-revalidate),
 // so an edit reaches an installed copy on the launch after it's deployed.
 // Bump VERSION when the SHELL list changes so old caches get cleaned up.
-const VERSION = 'v2';
+const VERSION = 'v3';
 const CACHE = `status-tracker-shell-${VERSION}`;
 const SHELL = [
   './',
@@ -40,7 +40,12 @@ self.addEventListener('fetch', (event) => {
     const cached = (await cache.match(request, { ignoreSearch: true }))
       || (isNavigation ? await cache.match('./index.html') : undefined);
 
-    const refresh = fetch(request)
+    // Revalidate with the server (a cheap 304 when nothing changed) rather than trusting the browser's HTTP
+    // cache, which GitHub Pages sets to 10 minutes and would otherwise delay updates.
+    const fresh = isNavigation
+      ? new Request(request.url, { cache: 'no-cache', credentials: 'same-origin' })
+      : new Request(request, { cache: 'no-cache' });
+    const refresh = fetch(fresh)
       .then((response) => {
         // Redirected responses can't be replayed for navigations, so don't cache them.
         if (response.ok && !response.redirected && response.type === 'basic') {
