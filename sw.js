@@ -2,7 +2,7 @@
 // Files are served cache-first and refreshed in the background (stale-while-revalidate),
 // so an edit reaches an installed copy on the launch after it's deployed.
 // Bump VERSION when the SHELL list changes so old caches get cleaned up.
-const VERSION = 'v1';
+const VERSION = 'v2';
 const CACHE = `status-tracker-shell-${VERSION}`;
 const SHELL = [
   './',
@@ -17,7 +17,7 @@ const SHELL = [
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE)
-      .then((cache) => cache.addAll(SHELL))
+      .then((cache) => cache.addAll(SHELL.map((url) => new Request(url, { cache: 'reload' }))))
       .then(() => self.skipWaiting())
   );
 });

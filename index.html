@@ -72,6 +72,7 @@
 
   * { box-sizing: border-box; }
   html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+  html:has(dialog[open]) { overflow: hidden; }
   body {
     margin: 0;
     background: var(--bg);
@@ -107,12 +108,61 @@
   .sec-meta { font-size: 12.5px; color: var(--muted); text-align: right; }
   .sec-meta .warn { color: var(--warn); font-weight: 600; }
   .sec-meta .danger { color: var(--danger); font-weight: 600; }
+  .p-meta { display: flex; align-items: baseline; gap: 14px; }
   .card {
     background: var(--card);
     border: 1px solid var(--line);
     border-radius: 14px;
     box-shadow: var(--shadow);
     overflow: hidden;
+  }
+
+  /* Small buttons */
+  .link {
+    margin: -6px -4px;
+    padding: 6px 4px;
+    border: 0;
+    border-radius: 6px;
+    background: none;
+    color: var(--accent);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .link.danger-link { color: var(--danger); }
+  .icon-btn {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border: 0;
+    border-radius: 8px;
+    background: none;
+    color: var(--muted);
+    cursor: pointer;
+  }
+  .icon-btn svg { width: 14px; height: 14px; }
+  .icon-btn:disabled { opacity: .3; cursor: default; }
+  .btn-secondary {
+    height: 44px;
+    padding: 0 18px;
+    border: 1px solid var(--field-line);
+    border-radius: 10px;
+    background: var(--card);
+    color: var(--text);
+    font: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .link:focus-visible, .icon-btn:focus-visible, .btn-secondary:focus-visible, .chip:focus-visible, .who-btn:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+  @media (hover: hover) {
+    .link:hover { text-decoration: underline; }
+    .icon-btn:not(:disabled):hover, .who-btn:hover { background: var(--hover); color: var(--text); }
   }
 
   /* Program rows */
@@ -125,9 +175,32 @@
   .status { margin-top: 2px; font-size: 13px; line-height: 1.35; color: var(--muted); }
   .status .tier { color: var(--accent); font-weight: 600; }
   .status + .status { margin-top: 3px; }
-  .status span { white-space: nowrap; } /* wrap only between " · " parts */
+  .status { overflow-wrap: anywhere; }
+  .status .nw { white-space: nowrap; } /* short parts wrap only between " · " separators */
   .bal { flex: none; text-align: right; }
   .unit { margin-top: 1px; font-size: 12px; color: var(--muted); }
+  .empty-row { padding: 22px 16px; text-align: center; font-size: 14px; color: var(--muted); }
+
+  /* Edit mode rows */
+  .who-btn {
+    flex: 1;
+    min-width: 0;
+    margin: -6px -8px;
+    padding: 6px 8px;
+    border: 0;
+    border-radius: 8px;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+  .who-btn .name svg { width: 13px; height: 13px; margin-left: 6px; color: var(--accent); vertical-align: -1px; }
+  .no-status { margin-top: 2px; font-size: 13px; color: var(--faint); }
+  .reorder { flex: none; display: flex; gap: 2px; margin-right: -8px; }
+  .add-row { padding: 12px 16px; }
+  .add-program { display: inline-flex; align-items: center; gap: 8px; }
+  .add-program svg { width: 14px; height: 14px; }
 
   /* Tap-to-edit numbers */
   .num {
@@ -193,10 +266,34 @@
   .tick.end { transform: translateX(-100%); }
   .tick.hit { color: var(--accent); font-weight: 650; }
 
-  /* Footnote */
+  /* Note under the program list */
   .footnote { display: flex; gap: 8px; margin: 10px 6px 0; font-size: 13px; line-height: 1.45; color: var(--muted); }
   .footnote svg { flex: none; width: 14px; height: 14px; margin-top: 2px; color: var(--accent); }
-  .footnote strong { color: var(--text); font-weight: 600; }
+  .footnote span { white-space: pre-line; }
+  .notes-edit { margin: 14px 2px 0; }
+
+  /* First-run setup */
+  .setup-card { margin-top: 24px; padding: 20px 16px; }
+  .setup-card h2 { margin: 0; font-size: 18px; letter-spacing: -0.01em; }
+  .setup-sub { margin: 4px 0 20px; font-size: 14px; color: var(--muted); }
+  .cat-group + .cat-group { margin-top: 18px; }
+  .cat-title { margin: 0 0 8px; font-size: 12px; font-weight: 650; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    min-height: 38px;
+    padding: 7px 14px;
+    border: 1px solid var(--field-line);
+    border-radius: 999px;
+    background: var(--field);
+    color: var(--text);
+    font: inherit;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  .chip[aria-pressed="true"] { border-color: var(--accent); background: var(--accent); color: var(--on-accent); font-weight: 600; }
+  .setup-actions { display: grid; justify-items: center; gap: 14px; margin-top: 24px; }
+  .setup-actions .add { width: 100%; }
+  .setup-alt { margin: 0; font-size: 14px; color: var(--muted); text-align: center; }
 
   /* Vouchers */
   .vlist { list-style: none; margin: 0; padding: 0; }
@@ -258,8 +355,10 @@
   .f-name { grid-area: name; }
   .f-note { grid-area: note; }
   .f-exp { grid-area: exp; min-width: 0; }
-  .field label { display: block; margin: 0 0 5px 2px; font-size: 12px; font-weight: 600; color: var(--muted); }
-  .field input {
+
+  /* Form fields */
+  .field label, .field legend { display: block; margin: 0 0 5px 2px; padding: 0; font-size: 12px; font-weight: 600; color: var(--muted); }
+  .field input, .field select, .field textarea {
     display: block;
     width: 100%;
     min-width: 0;
@@ -275,9 +374,23 @@
     -webkit-appearance: none;
     appearance: none;
   }
-  .field input::placeholder { color: var(--faint); }
+  .field select {
+    padding-right: 36px;
+    background-image:
+      linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+      linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+    background-position: calc(100% - 19px) 55%, calc(100% - 14px) 55%;
+    background-size: 5px 5px;
+    background-repeat: no-repeat;
+  }
+  .field textarea { height: auto; min-height: 76px; padding: 10px 12px; line-height: 1.45; resize: vertical; }
+  .field input::placeholder, .field textarea::placeholder { color: var(--faint); }
   .field input::-webkit-date-and-time-value { text-align: left; }
-  .field input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .field input:focus, .field select:focus, .field textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
   .add {
     grid-area: add;
     align-self: end;
@@ -293,11 +406,45 @@
     cursor: pointer;
   }
   .add:active { filter: brightness(1.12); }
+  .add:disabled { opacity: .45; cursor: default; filter: none; }
   .add:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-  .foot { margin: 28px 0 0; text-align: center; font-size: 12px; color: var(--muted); }
+  /* Program editor sheet */
+  .sheet {
+    width: min(560px, calc(100% - 32px));
+    max-width: none;
+    max-height: calc(100% - 32px);
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: var(--card);
+    color: var(--text);
+    box-shadow: 0 24px 64px rgba(0, 0, 0, .28);
+    overflow: auto;
+  }
+  .sheet::backdrop { background: rgba(8, 13, 22, .5); }
+  @media (max-width: 560px) {
+    .sheet { width: 100%; max-height: 92%; margin: auto 0 0; border-width: 1px 0 0; border-radius: 18px 18px 0 0; }
+  }
+  .sheet form { display: grid; gap: 16px; padding: 20px 16px calc(16px + env(safe-area-inset-bottom)); }
+  .sheet h2 { margin: 0; font-size: 18px; letter-spacing: -0.01em; outline: none; }
+  .check { display: flex; align-items: center; gap: 10px; font-size: 14.5px; cursor: pointer; }
+  .check input { flex: none; width: 20px; height: 20px; margin: 0; accent-color: var(--accent); }
+  .status-edit { min-width: 0; margin: 0; padding: 0; border: 0; }
+  .sl-head, .sl { display: grid; grid-template-columns: 3fr 2fr 36px; gap: 8px; align-items: center; }
+  .sl-head { margin: 0 2px 4px; font-size: 11.5px; color: var(--muted); }
+  .sl + .sl { margin-top: 8px; }
+  .add-line { justify-self: start; margin-top: 4px; }
+  .status-edit .add-line { display: inline-block; margin: 6px -4px -6px; }
+  .sheet-actions { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
+  .sheet-actions .spacer { flex: 1; }
 
-  /* Undo toast */
+  /* Footer */
+  .foot { display: grid; gap: 8px; margin: 32px 0 0; text-align: center; font-size: 12px; color: var(--muted); }
+  .foot p { margin: 0; }
+  .backup { font-size: 13px; }
+
+  /* Toast */
   .toast {
     position: fixed;
     left: 50%;
@@ -319,7 +466,7 @@
     transition: opacity .18s, transform .18s, visibility 0s .18s;
   }
   .toast.show { opacity: 1; visibility: visible; transform: translate(-50%, 0); transition: opacity .18s, transform .18s; }
-  .toast-msg { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .toast-msg { min-width: 0; padding: 6px 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .toast button {
     flex: none;
     padding: 6px 10px;
@@ -352,19 +499,42 @@
     </div>
   </header>
 
-  <section aria-labelledby="h-programs">
-    <div class="sec-row">
-      <h2 class="sec" id="h-programs">Programs</h2>
-      <span class="sec-meta">Tap any number to edit</span>
+  <section id="setup" aria-labelledby="h-setup" hidden>
+    <div class="card setup-card">
+      <h2 id="h-setup">Set up your tracker</h2>
+      <p class="setup-sub">Pick the programs you have. You can add your status levels, rename, reorder, or add any other program later with Edit.</p>
+      <div id="catalog"></div>
+      <div class="setup-actions">
+        <button class="add" id="setup-start" type="button" disabled>Pick at least one program</button>
+        <p class="setup-alt">
+          <button class="link" id="setup-example" type="button">Use the example setup</button>
+          <span aria-hidden="true">·</span>
+          <button class="link" id="setup-restore" type="button">Restore a backup</button>
+        </p>
+      </div>
     </div>
-    <ul class="card programs" id="programs"></ul>
-    <p class="footnote">
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12L12 4M6 4h6v6"/></svg>
-      <span><strong>$75k spend</strong> on the Sapphire Reserve this year would add IHG Diamond, Hyatt Explorist, and Southwest A-List.</span>
-    </p>
   </section>
 
-  <section aria-labelledby="h-vouchers">
+  <section id="programs-section" aria-labelledby="h-programs" hidden>
+    <div class="sec-row">
+      <h2 class="sec" id="h-programs">Programs</h2>
+      <span class="sec-meta p-meta">
+        <span id="p-hint">Tap a number to update</span>
+        <button class="link" id="edit-toggle" type="button">Edit</button>
+      </span>
+    </div>
+    <ul class="card programs" id="programs"></ul>
+    <p class="footnote" id="footnote" hidden>
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12L12 4M6 4h6v6"/></svg>
+      <span id="footnote-text"></span>
+    </p>
+    <div class="field notes-edit" id="notes-edit" hidden>
+      <label for="notes">Note under your list (optional)</label>
+      <textarea id="notes" rows="3" maxlength="400" placeholder="e.g. $75k spend on my card this year would unlock more status"></textarea>
+    </div>
+  </section>
+
+  <section id="vouchers-section" aria-labelledby="h-vouchers" hidden>
     <div class="sec-row">
       <h2 class="sec" id="h-vouchers">Vouchers</h2>
       <span class="sec-meta" id="v-meta"></span>
@@ -390,8 +560,47 @@
     </div>
   </section>
 
-  <p class="foot" id="foot">Saved on this device only</p>
+  <footer class="foot">
+    <p id="foot-status">Saved on this device only</p>
+    <p class="backup">
+      <button class="link" id="export-btn" type="button">Back up data</button><span id="backup-sep" aria-hidden="true"> · </span><button class="link" id="import-btn" type="button">Restore from backup</button>
+    </p>
+    <input type="file" id="import-file" accept="application/json,.json" hidden>
+  </footer>
 </main>
+
+<dialog class="sheet" id="sheet" aria-labelledby="sheet-title">
+  <form id="sheet-form" method="dialog" autocomplete="off">
+    <h2 id="sheet-title" tabindex="-1" autofocus>Edit program</h2>
+    <div class="field">
+      <label for="p-name">Name</label>
+      <input id="p-name" required maxlength="60" list="catalog-names" placeholder="e.g. United MileagePlus">
+    </div>
+    <div class="field">
+      <label for="p-unit">Balance</label>
+      <select id="p-unit">
+        <option value="miles">Miles</option>
+        <option value="points">Points</option>
+        <option value="Avios">Avios</option>
+        <option value="">None — status only</option>
+      </select>
+    </div>
+    <label class="check" id="p-medallion-wrap"><input type="checkbox" id="p-medallion"> Show Delta Medallion progress (MQDs)</label>
+    <fieldset class="field status-edit">
+      <legend>Status</legend>
+      <div class="sl-head" aria-hidden="true"><span>Level</span><span>From (optional)</span><span></span></div>
+      <div id="p-status"></div>
+      <button class="link add-line" id="p-add-status" type="button">+ Add another status</button>
+    </fieldset>
+    <div class="sheet-actions">
+      <button class="link danger-link" id="p-delete" type="button">Delete</button>
+      <span class="spacer"></span>
+      <button class="btn-secondary" id="p-cancel" type="button">Cancel</button>
+      <button class="add" type="submit">Save</button>
+    </div>
+  </form>
+</dialog>
+<datalist id="catalog-names"></datalist>
 
 <div class="toast" id="toast" role="status" aria-live="polite">
   <span class="toast-msg" id="toast-msg"></span>
@@ -413,41 +622,91 @@
     { name: 'Platinum', min: 15000 },
     { name: 'Diamond', min: 28000 },
   ];
+  const UNITS = ['miles', 'points', 'Avios', '']; // '' = status only, no balance
 
-  // status: one line per source card — tiers are highlighted, sources muted, joined with " · "
-  const PROGRAMS = [
-    { id: 'delta', name: 'Delta SkyMiles', unit: 'miles', medallion: true },
-    { id: 'koreanair', name: 'Korean Air SkyPass', unit: 'miles' },
-    { id: 'hilton', name: 'Hilton Honors', unit: 'points', status: [
-      { tiers: ['Gold'], via: ['Amex Platinum'] },
+  // Offered on first run and as name suggestions; any other program can be added by name.
+  const CATALOG = [
+    { group: 'Airlines', items: [
+      { id: 'delta', name: 'Delta SkyMiles', unit: 'miles', medallion: true },
+      { id: 'united', name: 'United MileagePlus', unit: 'miles' },
+      { id: 'american', name: 'American AAdvantage', unit: 'miles' },
+      { id: 'southwest', name: 'Southwest Rapid Rewards', unit: 'points' },
+      { id: 'alaska', name: 'Alaska Atmos Rewards', unit: 'points' },
+      { id: 'jetblue', name: 'JetBlue TrueBlue', unit: 'points' },
+      { id: 'aeroplan', name: 'Air Canada Aeroplan', unit: 'points' },
+      { id: 'flyingblue', name: 'Air France-KLM Flying Blue', unit: 'miles' },
+      { id: 'ba', name: 'British Airways Club', unit: 'Avios' },
+      { id: 'koreanair', name: 'Korean Air SkyPass', unit: 'miles' },
+      { id: 'virgin', name: 'Virgin Atlantic Flying Club', unit: 'points' },
     ] },
-    { id: 'marriott', name: 'Marriott Bonvoy', unit: 'points', status: [
-      { tiers: ['Gold Elite'], via: ['Amex Platinum'] },
+    { group: 'Hotels', items: [
+      { id: 'hilton', name: 'Hilton Honors', unit: 'points' },
+      { id: 'marriott', name: 'Marriott Bonvoy', unit: 'points' },
+      { id: 'ihg', name: 'IHG One Rewards', unit: 'points' },
+      { id: 'hyatt', name: 'World of Hyatt', unit: 'points' },
+      { id: 'wyndham', name: 'Wyndham Rewards', unit: 'points' },
+      { id: 'choice', name: 'Choice Privileges', unit: 'points' },
+      { id: 'accor', name: 'Accor ALL', unit: 'points' },
+      { id: 'lhw', name: 'Leading Hotels of the World', unit: '' },
     ] },
-    { id: 'ihg', name: 'IHG One Rewards', unit: 'points', status: [
-      { tiers: ['Platinum Elite'], via: ['Sapphire Reserve', 'thru\u00a012/31/27'] },
+    { group: 'Credit card points', items: [
+      { id: 'amex', name: 'Amex Membership Rewards', unit: 'points' },
+      { id: 'chase', name: 'Chase Ultimate Rewards', unit: 'points' },
+      { id: 'citi', name: 'Citi ThankYou Points', unit: 'points' },
+      { id: 'capitalone', name: 'Capital One Miles', unit: 'miles' },
+      { id: 'bilt', name: 'Bilt Rewards', unit: 'points' },
     ] },
-    { id: 'hyatt', name: 'World of Hyatt', unit: 'points' },
-    { id: 'amex', name: 'Amex Membership Rewards', unit: 'points' },
-    { id: 'chase', name: 'Chase Ultimate Rewards', unit: 'points' },
-    { id: 'lhw', name: 'Leading Hotels of the World', status: [
-      { tiers: ['Leaders Club Sterling'], via: ['Amex Platinum'] },
-    ] },
-    { id: 'cars', name: 'Avis / Hertz / National', status: [
-      { tiers: ['Preferred Plus', "President's Circle", 'Emerald Exec'], via: ['Amex Platinum'] },
-      { tiers: ['Preferred Plus', 'Emerald Exec'], via: ['Sapphire Reserve'] },
-    ] },
-    { id: 'lounges', name: 'Airport lounges', status: [
-      { tiers: ['Sapphire Lounges', 'Priority Pass', 'Air Canada Maple Leaf'], via: ['Sapphire Reserve'] },
-      { tiers: ['Centurion', 'Sky Club (10 visits/yr)', 'Escape', 'Plaza Premium', 'Priority Pass'], via: ['Amex Platinum'] },
+    { group: 'Car rental & lounges', items: [
+      { id: 'avis', name: 'Avis Preferred', unit: '' },
+      { id: 'hertz', name: 'Hertz Gold Plus Rewards', unit: '' },
+      { id: 'national', name: 'National Emerald Club', unit: '' },
+      { id: 'enterprise', name: 'Enterprise Plus', unit: '' },
+      { id: 'lounges', name: 'Airport lounges', unit: '' },
     ] },
   ];
+  const CATALOG_ITEMS = CATALOG.flatMap((g) => g.items);
+  const catalogByName = (name) => CATALOG_ITEMS.find((c) => c.name.toLowerCase() === name.trim().toLowerCase());
+
+  // "Use the example setup" — an Amex Platinum + Sapphire Reserve holder's list. Also what anyone who
+  // saved data before the list became editable keeps.
+  const EXAMPLE = {
+    programs: [
+      { id: 'delta', name: 'Delta SkyMiles', unit: 'miles', status: [], medallion: true },
+      { id: 'koreanair', name: 'Korean Air SkyPass', unit: 'miles', status: [] },
+      { id: 'hilton', name: 'Hilton Honors', unit: 'points', status: [{ tier: 'Gold', via: 'Amex Platinum' }] },
+      { id: 'marriott', name: 'Marriott Bonvoy', unit: 'points', status: [{ tier: 'Gold Elite', via: 'Amex Platinum' }] },
+      { id: 'ihg', name: 'IHG One Rewards', unit: 'points', status: [{ tier: 'Platinum Elite', via: 'Sapphire Reserve · thru 12/31/27' }] },
+      { id: 'hyatt', name: 'World of Hyatt', unit: 'points', status: [] },
+      { id: 'amex', name: 'Amex Membership Rewards', unit: 'points', status: [] },
+      { id: 'chase', name: 'Chase Ultimate Rewards', unit: 'points', status: [] },
+      { id: 'lhw', name: 'Leading Hotels of the World', unit: '', status: [{ tier: 'Leaders Club Sterling', via: 'Amex Platinum' }] },
+      { id: 'cars', name: 'Avis / Hertz / National', unit: '', status: [
+        { tier: "Preferred Plus · President's Circle · Emerald Exec", via: 'Amex Platinum' },
+        { tier: 'Preferred Plus · Emerald Exec', via: 'Sapphire Reserve' },
+      ] },
+      { id: 'lounges', name: 'Airport lounges', unit: '', status: [
+        { tier: 'Sapphire Lounges · Priority Pass · Air Canada Maple Leaf', via: 'Sapphire Reserve' },
+        { tier: 'Centurion · Sky Club (10 visits/yr) · Escape · Plaza Premium · Priority Pass', via: 'Amex Platinum' },
+      ] },
+    ],
+    notes: '$75k spend on the Sapphire Reserve this year would add IHG Diamond, Hyatt Explorist, and Southwest A-List.',
+  };
+
+  const ICON = {
+    x: '<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M2.5 2.5l9 9M11.5 2.5l-9 9"/></svg>',
+    up: '<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 11.5v-9M3 6.5l4-4 4 4"/></svg>',
+    down: '<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 2.5v9M3 7.5l4 4 4-4"/></svg>',
+    plus: '<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M7 2v10M2 7h10"/></svg>',
+    pencil: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 2.5l2.5 2.5L6 12.5 2.5 13.5l1-3.5z"/></svg>',
+  };
 
   const $ = (sel) => document.querySelector(sel);
   const numFmt = new Intl.NumberFormat('en-US');
   const fmt = (n) => numFmt.format(n);
   const dateFmt = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   const todayFmt = new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  const clone = (v) => JSON.parse(JSON.stringify(v));
+  const str = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
 
   function h(tag, attrs, ...kids) {
     const el = document.createElement(tag);
@@ -465,33 +724,68 @@
     t.innerHTML = markup;
     return t.content.firstChild;
   }
-  const X_ICON = '<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M2.5 2.5l9 9M11.5 2.5l-9 9"/></svg>';
 
   /* ---------- State & persistence ---------- */
 
   const isCount = (v) => typeof v === 'number' && Number.isFinite(v) && v >= 0;
 
-  function load() {
-    const s = { balances: {}, mqd: 0, vouchers: [] };
-    try {
-      const raw = JSON.parse(localStorage.getItem(KEY) || 'null');
-      if (raw && typeof raw === 'object') {
-        if (raw.balances && typeof raw.balances === 'object') {
-          for (const [id, v] of Object.entries(raw.balances)) if (isCount(v)) s.balances[id] = Math.floor(v);
-        }
-        if (isCount(raw.mqd)) s.mqd = Math.floor(raw.mqd);
-        if (Array.isArray(raw.vouchers)) {
-          s.vouchers = raw.vouchers
-            .filter((v) => v && typeof v.name === 'string')
-            .map((v) => ({
-              name: v.name,
-              note: typeof v.note === 'string' ? v.note : '',
-              exp: typeof v.exp === 'string' ? v.exp : '',
-            }));
-        }
-      }
-    } catch (e) { /* corrupt or unavailable storage: start fresh */ }
+  function cleanPrograms(list) {
+    const seen = new Set();
+    const out = [];
+    for (const p of list) {
+      const name = str(p && p.name, 60);
+      if (!name || typeof p.id !== 'string' || !p.id || seen.has(p.id)) continue;
+      seen.add(p.id);
+      const program = {
+        id: p.id,
+        name,
+        unit: UNITS.includes(p.unit) ? p.unit : '',
+        status: (Array.isArray(p.status) ? p.status : [])
+          .map((line) => ({ tier: str(line && line.tier, 80), via: str(line && line.via, 80) }))
+          .filter((line) => line.tier || line.via),
+      };
+      if (p.medallion === true) program.medallion = true;
+      out.push(program);
+    }
+    return out;
+  }
+
+  // Clean state from stored or imported JSON, or null if it isn't tracker data.
+  function normalize(raw) {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+    if (!['programs', 'balances', 'vouchers', 'mqd'].some((k) => k in raw)) return null;
+    const s = { programs: null, notes: '', balances: {}, mqd: 0, vouchers: [] };
+    if (raw.balances && typeof raw.balances === 'object') {
+      for (const [id, v] of Object.entries(raw.balances)) if (isCount(v)) s.balances[id] = Math.floor(v);
+    }
+    if (isCount(raw.mqd)) s.mqd = Math.floor(raw.mqd);
+    if (Array.isArray(raw.vouchers)) {
+      s.vouchers = raw.vouchers
+        .filter((v) => v && typeof v.name === 'string')
+        .map((v) => ({
+          name: v.name,
+          note: typeof v.note === 'string' ? v.note : '',
+          exp: typeof v.exp === 'string' ? v.exp : '',
+        }));
+      sortVouchers(s.vouchers);
+    }
+    if (Array.isArray(raw.programs)) {
+      s.programs = cleanPrograms(raw.programs);
+      s.notes = str(raw.notes, 400);
+    } else {
+      // Saved before the program list was editable: keep the list those users already had.
+      s.programs = clone(EXAMPLE.programs);
+      s.notes = EXAMPLE.notes;
+    }
     return s;
+  }
+
+  function load() {
+    try {
+      const s = normalize(JSON.parse(localStorage.getItem(KEY) || 'null'));
+      if (s) return s;
+    } catch (e) { /* corrupt or unavailable storage: start fresh */ }
+    return { programs: null, notes: '', balances: {}, mqd: 0, vouchers: [] }; // null programs → first-run setup
   }
 
   const state = load();
@@ -506,7 +800,8 @@
     clearTimeout(saveTimer);
     saveTimer = 0;
     try {
-      localStorage.setItem(KEY, JSON.stringify(state));
+      if (state.programs) localStorage.setItem(KEY, JSON.stringify(state));
+      else localStorage.removeItem(KEY); // not set up yet
     } catch (e) {
       showToast('Couldn’t save — browser storage is unavailable');
     }
@@ -621,10 +916,15 @@
 
   /* ---------- Programs ---------- */
 
-  function statusLine({ tiers, via }) {
+  let editMode = false;
+
+  const splitParts = (s) => s.split('·').map((part) => part.trim()).filter(Boolean);
+
+  function statusLine({ tier, via }) {
+    const part = (text, cls) => h('span', { class: [cls, text.length <= 28 && 'nw'].filter(Boolean).join(' ') || null }, text);
     const parts = [
-      ...tiers.map((t) => h('span', { class: 'tier' }, t)),
-      ...via.map((v) => h('span', null, v)),
+      ...splitParts(tier).map((t) => part(t, 'tier')),
+      ...splitParts(via).map((v) => part(v, '')),
     ];
     return h('div', { class: 'status' }, parts.flatMap((p, i) => (i ? [' · ', p] : [p])));
   }
@@ -660,22 +960,45 @@
       ticks);
   }
 
-  function renderPrograms() {
-    const rows = PROGRAMS.map((p) => {
-      const who = h('div', { class: 'who' }, h('div', { class: 'name' }, p.name));
-      if (p.medallion) who.append(h('div', { class: 'status', id: 'medallion-status' }));
-      else if (p.status) who.append(...p.status.map(statusLine));
+  function programRow(p, index, withMedallion) {
+    if (editMode) {
+      const last = index === state.programs.length - 1;
+      return h('li', { class: 'row' },
+        h('div', { class: 'row-main' },
+          h('button', { type: 'button', class: 'who-btn', 'data-edit': p.id },
+            h('div', { class: 'name' }, p.name, svgIcon(ICON.pencil)),
+            p.status.length ? p.status.map(statusLine) : h('div', { class: 'no-status' }, 'No status yet — tap to add')),
+          h('div', { class: 'reorder' },
+            h('button', { type: 'button', class: 'icon-btn', 'data-move': '-1', 'data-id': p.id, 'aria-label': `Move ${p.name} up`, disabled: index === 0 ? '' : null }, svgIcon(ICON.up)),
+            h('button', { type: 'button', class: 'icon-btn', 'data-move': '1', 'data-id': p.id, 'aria-label': `Move ${p.name} down`, disabled: last ? '' : null }, svgIcon(ICON.down)))));
+    }
+    const who = h('div', { class: 'who' }, h('div', { class: 'name' }, p.name));
+    if (withMedallion) who.append(h('div', { class: 'status', id: 'medallion-status' }));
+    who.append(...p.status.map(statusLine));
+    const main = h('div', { class: 'row-main' }, who);
+    if (p.unit) {
+      main.append(h('div', { class: 'bal' },
+        numButton(`bal:${p.id}`, `${p.name} balance`),
+        h('div', { class: 'unit' }, p.unit)));
+    }
+    return h('li', { class: 'row' }, main, withMedallion ? medallionPanel() : null);
+  }
 
-      const main = h('div', { class: 'row-main' }, who);
-      if (p.unit) {
-        main.append(h('div', { class: 'bal' },
-          numButton(`bal:${p.id}`, `${p.name} balance`),
-          h('div', { class: 'unit' }, p.unit)));
-      }
-      return h('li', { class: 'row' }, main, p.medallion ? medallionPanel() : null);
-    });
+  function renderPrograms() {
+    const list = state.programs;
+    const medallionId = (list.find((p) => p.medallion) || {}).id; // only one tracker, on the first flagged program
+    const rows = list.map((p, i) => programRow(p, i, !editMode && p.id === medallionId));
+    if (editMode) {
+      rows.push(h('li', { class: 'row add-row' },
+        h('button', { type: 'button', class: 'link add-program', id: 'add-program' }, svgIcon(ICON.plus), 'Add program')));
+    } else if (!list.length) {
+      rows.push(h('li', { class: 'empty-row' }, 'No programs yet — tap Edit to add one.'));
+    }
     $('#programs').replaceChildren(...rows);
-    updateMedallion();
+    $('#edit-toggle').textContent = editMode ? 'Done' : 'Edit';
+    $('#p-hint').hidden = editMode || !list.some((p) => p.unit);
+    if (medallionId && !editMode) updateMedallion();
+    renderNotes();
   }
 
   function medallionFor(mqd) {
@@ -706,6 +1029,205 @@
     }
   }
 
+  function renderNotes() {
+    const text = state.notes.trim();
+    $('#footnote').hidden = editMode || !text;
+    $('#footnote-text').textContent = text;
+    $('#notes-edit').hidden = !editMode;
+    if (editMode && document.activeElement !== $('#notes')) $('#notes').value = state.notes;
+  }
+
+  function moveProgram(id, dir) {
+    const list = state.programs;
+    const i = list.findIndex((p) => p.id === id);
+    const j = i + dir;
+    if (i < 0 || j < 0 || j >= list.length) return;
+    [list[i], list[j]] = [list[j], list[i]];
+    scheduleSave();
+    renderPrograms();
+    const same = document.querySelector(`[data-move="${dir}"][data-id="${CSS.escape(id)}"]`);
+    const other = document.querySelector(`[data-move="${-dir}"][data-id="${CSS.escape(id)}"]`);
+    (same && !same.disabled ? same : other).focus();
+  }
+
+  $('#edit-toggle').addEventListener('click', () => {
+    editMode = !editMode;
+    renderPrograms();
+  });
+
+  $('#programs').addEventListener('click', (e) => {
+    const edit = e.target.closest('[data-edit]');
+    if (edit) { openSheet(edit.dataset.edit); return; }
+    const move = e.target.closest('[data-move]');
+    if (move) { moveProgram(move.dataset.id, Number(move.dataset.move)); return; }
+    if (e.target.closest('#add-program')) openSheet(null);
+  });
+
+  $('#notes').addEventListener('input', (e) => {
+    state.notes = e.target.value.slice(0, 400);
+    scheduleSave();
+  });
+
+  /* ---------- Program editor sheet ---------- */
+
+  const sheet = $('#sheet');
+  let sheetId = null; // program being edited; null when adding
+
+  function statusEditorRow(line) {
+    return h('div', { class: 'sl' },
+      h('input', { type: 'text', class: 'sl-tier', maxlength: '80', placeholder: 'Gold', 'aria-label': 'Status level', value: line.tier }),
+      h('input', { type: 'text', class: 'sl-via', maxlength: '80', placeholder: 'Amex Platinum', 'aria-label': 'Where the status comes from (optional)', value: line.via }),
+      h('button', { type: 'button', class: 'icon-btn sl-del', 'aria-label': 'Remove this status' }, svgIcon(ICON.x)));
+  }
+
+  function syncMedallionToggle() {
+    $('#p-medallion-wrap').hidden = !/delta/i.test($('#p-name').value);
+  }
+
+  function openSheet(id) {
+    const p = id ? state.programs.find((x) => x.id === id) : { name: '', unit: 'points', status: [] };
+    if (!p) return;
+    sheetId = id;
+    $('#sheet-title').textContent = id ? 'Edit program' : 'Add program';
+    $('#p-name').value = p.name;
+    $('#p-unit').value = p.unit;
+    $('#p-medallion').checked = !!p.medallion;
+    const lines = p.status.length ? p.status : [{ tier: '', via: '' }];
+    $('#p-status').replaceChildren(...lines.map(statusEditorRow));
+    $('#p-delete').hidden = !id;
+    syncMedallionToggle();
+    sheet.showModal();
+    if (!id) $('#p-name').focus();
+  }
+
+  function newProgramId(name) {
+    const taken = new Set(state.programs.map((p) => p.id));
+    const match = catalogByName(name);
+    if (match && !taken.has(match.id)) return match.id;
+    let id;
+    do { id = `p${Math.random().toString(36).slice(2, 8)}`; } while (taken.has(id));
+    return id;
+  }
+
+  $('#p-name').addEventListener('input', () => {
+    syncMedallionToggle();
+    if (sheetId) return;
+    const match = catalogByName($('#p-name').value); // picked a known program: fill in its balance type
+    if (match) {
+      $('#p-unit').value = match.unit;
+      $('#p-medallion').checked = !!match.medallion;
+    }
+  });
+
+  $('#p-add-status').addEventListener('click', () => {
+    const row = statusEditorRow({ tier: '', via: '' });
+    $('#p-status').append(row);
+    row.querySelector('input').focus();
+  });
+
+  $('#p-status').addEventListener('click', (e) => {
+    const del = e.target.closest('.sl-del');
+    if (!del) return;
+    const row = del.closest('.sl');
+    if ($('#p-status').children.length > 1) row.remove();
+    else row.querySelectorAll('input').forEach((input) => { input.value = ''; });
+  });
+
+  $('#sheet-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const name = $('#p-name').value.trim().slice(0, 60);
+    if (!name) { $('#p-name').focus(); return; }
+    const status = [...$('#p-status').querySelectorAll('.sl')]
+      .map((row) => ({ tier: row.querySelector('.sl-tier').value.trim(), via: row.querySelector('.sl-via').value.trim() }))
+      .filter((line) => line.tier || line.via);
+    const medallion = !$('#p-medallion-wrap').hidden && $('#p-medallion').checked;
+
+    let program = sheetId && state.programs.find((p) => p.id === sheetId);
+    if (!program) {
+      program = { id: newProgramId(name) };
+      state.programs.push(program);
+    }
+    Object.assign(program, { name, unit: $('#p-unit').value, status });
+    if (medallion) program.medallion = true;
+    else delete program.medallion;
+
+    scheduleSave();
+    sheet.close();
+    renderPrograms();
+  });
+
+  $('#p-delete').addEventListener('click', () => {
+    const index = state.programs.findIndex((p) => p.id === sheetId);
+    if (index < 0) return;
+    const [removed] = state.programs.splice(index, 1);
+    const balance = state.balances[removed.id];
+    delete state.balances[removed.id];
+    sheet.close();
+    scheduleSave();
+    renderPrograms();
+    showToast(`Removed “${removed.name}”`, () => {
+      state.programs.splice(Math.min(index, state.programs.length), 0, removed);
+      if (balance != null) state.balances[removed.id] = balance;
+      scheduleSave();
+      renderPrograms();
+    });
+  });
+
+  $('#p-cancel').addEventListener('click', () => sheet.close());
+  sheet.addEventListener('click', (e) => { if (e.target === sheet) sheet.close(); }); // tap on the backdrop
+
+  /* ---------- First-run setup ---------- */
+
+  const picked = new Set();
+
+  function renderSetup() {
+    $('#catalog').replaceChildren(...CATALOG.map((g) => h('div', { class: 'cat-group', role: 'group', 'aria-label': g.group },
+      h('h3', { class: 'cat-title' }, g.group),
+      h('div', { class: 'chips' }, g.items.map((c) => h('button', {
+        type: 'button',
+        class: 'chip',
+        'data-pick': c.id,
+        'aria-pressed': String(picked.has(c.id)),
+      }, c.name))))));
+    syncStartButton();
+  }
+
+  function syncStartButton() {
+    const n = picked.size;
+    $('#setup-start').disabled = n === 0;
+    $('#setup-start').textContent = n ? `Start tracking ${n} program${n === 1 ? '' : 's'}` : 'Pick at least one program';
+  }
+
+  function finishSetup(programs, notes) {
+    state.programs = programs;
+    state.notes = notes;
+    editMode = false;
+    saveNow();
+    renderAll();
+    scrollTo(0, 0);
+  }
+
+  $('#catalog').addEventListener('click', (e) => {
+    const chip = e.target.closest('[data-pick]');
+    if (!chip) return;
+    const id = chip.dataset.pick;
+    if (picked.has(id)) picked.delete(id);
+    else picked.add(id);
+    chip.setAttribute('aria-pressed', String(picked.has(id)));
+    syncStartButton();
+  });
+
+  $('#setup-start').addEventListener('click', () => {
+    finishSetup(CATALOG_ITEMS.filter((c) => picked.has(c.id)).map((c) => {
+      const program = { id: c.id, name: c.name, unit: c.unit, status: [] };
+      if (c.medallion) program.medallion = true;
+      return program;
+    }), '');
+    showToast('Tip: tap Edit to add your status levels');
+  });
+  $('#setup-example').addEventListener('click', () => finishSetup(clone(EXAMPLE.programs), EXAMPLE.notes));
+  $('#setup-restore').addEventListener('click', () => $('#import-file').click());
+
   /* ---------- Vouchers ---------- */
 
   function parseISODate(s) {
@@ -722,8 +1244,8 @@
   }
 
   // Soonest expiration first; YYYY-MM-DD strings sort chronologically.
-  function sortVouchers() {
-    state.vouchers.sort((a, b) => (a.exp || '9999').localeCompare(b.exp || '9999'));
+  function sortVouchers(list = state.vouchers) {
+    list.sort((a, b) => (a.exp || '9999').localeCompare(b.exp || '9999'));
   }
 
   function expiryLine(v) {
@@ -759,7 +1281,7 @@
           v.note ? h('div', { class: 'v-note' }, v.note) : null,
           line),
         h('button', { type: 'button', class: 'v-del', 'data-index': String(i), 'aria-label': `Delete ${v.name}`, title: 'Delete' },
-          svgIcon(X_ICON)));
+          svgIcon(ICON.x)));
     });
     $('#vlist').replaceChildren(...items);
     $('#vlist').hidden = items.length === 0;
@@ -810,6 +1332,64 @@
     });
   });
 
+  /* ---------- Backup & restore ---------- */
+
+  function todayISO() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+
+  $('#export-btn').addEventListener('click', async () => {
+    if (saveTimer) saveNow();
+    const name = `points-status-backup-${todayISO()}.json`;
+    const json = JSON.stringify({ app: 'points-status-tracker', exportedAt: new Date().toISOString(), data: state }, null, 2);
+    const file = new File([json], name, { type: 'application/json' });
+    // Phones: hand the file to the share sheet (Save to Files, AirDrop, email). Elsewhere: download it.
+    if (matchMedia('(pointer: coarse)').matches && navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file] });
+        return;
+      } catch (err) {
+        if (err.name === 'AbortError') return;
+      }
+    }
+    const url = URL.createObjectURL(file);
+    const a = h('a', { href: url, download: name });
+    document.body.append(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+    showToast(`Saved ${name}`);
+  });
+
+  $('#import-btn').addEventListener('click', () => $('#import-file').click());
+
+  $('#import-file').addEventListener('change', async (e) => {
+    const input = e.target;
+    const file = input.files && input.files[0];
+    input.value = '';
+    if (!file) return;
+    let next = null;
+    try {
+      const parsed = JSON.parse(await file.text());
+      next = normalize(parsed && parsed.data && typeof parsed.data === 'object' ? parsed.data : parsed);
+    } catch (err) { /* not JSON */ }
+    if (!next) {
+      showToast('That file isn’t a Points & Status backup');
+      return;
+    }
+    const previous = clone(state);
+    Object.assign(state, next);
+    editMode = false;
+    saveNow();
+    renderAll();
+    showToast('Backup restored', () => {
+      Object.assign(state, previous);
+      saveNow();
+      renderAll();
+    });
+  });
+
   /* ---------- Toast ---------- */
 
   let toastTimer = 0;
@@ -842,10 +1422,24 @@
     $('#today').textContent = todayFmt.format(new Date());
   }
 
-  sortVouchers();
+  function renderAll() {
+    const setup = !state.programs;
+    $('#setup').hidden = !setup;
+    $('#programs-section').hidden = setup;
+    $('#vouchers-section').hidden = setup;
+    $('#export-btn').hidden = setup;
+    $('#backup-sep').hidden = setup;
+    if (setup) {
+      renderSetup();
+    } else {
+      renderPrograms();
+      renderVouchers();
+    }
+  }
+
+  $('#catalog-names').replaceChildren(...CATALOG_ITEMS.map((c) => h('option', { value: c.name })));
   renderToday();
-  renderPrograms();
-  renderVouchers();
+  renderAll();
 
   const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
   if (standalone && navigator.storage && navigator.storage.persist) {
@@ -857,7 +1451,7 @@
       navigator.serviceWorker.register('./sw.js').catch(() => {});
     });
     navigator.serviceWorker.ready.then(() => {
-      $('#foot').textContent = 'Saved on this device only · available offline';
+      $('#foot-status').textContent = 'Saved on this device only · available offline';
     });
   }
 })();
