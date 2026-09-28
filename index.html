@@ -501,6 +501,25 @@
   .tone-blue { --c1: #4A88CC; --c2: #1D4F8A; }
   .tone-slate { --c1: #7F8DA2; --c2: #465468; }
   .tone-bronze { --c1: #D3B78F; --c2: #8C6D4B; color: #2B1E10; }
+  .tone-green { --c1: #74AC8E; --c2: #2E5E47; }
+  .card-search {
+    display: block;
+    width: 100%;
+    height: 42px;
+    margin: 0 0 16px;
+    padding: 0 12px 0 38px;
+    border: 1px solid var(--field-line);
+    border-radius: 12px;
+    background: var(--field) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%238A929D' stroke-width='1.7' stroke-linecap='round'%3E%3Ccircle cx='7' cy='7' r='4.5'/%3E%3Cpath d='M10.5 10.5L14 14'/%3E%3C/svg%3E") no-repeat 12px 50% / 16px 16px;
+    color: var(--text);
+    font: inherit;
+    font-size: 16px; /* 16px+ keeps iOS from zooming on focus */
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .card-search::placeholder { color: var(--faint); }
+  .card-search:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .no-match { margin: 0; font-size: 13.5px; color: var(--muted); }
 
   /* Vouchers */
   .vlist { list-style: none; margin: 0; padding: 0; }
@@ -719,6 +738,7 @@
       <div class="setup-cards">
         <h3>Your cards <span>(optional)</span></h3>
         <p class="setup-sub">Pick the cards you have and the statuses they come with are filled in for you.</p>
+        <input class="card-search" type="search" placeholder="Search cards" aria-label="Search cards" autocomplete="off" data-for="setup-card-picker">
         <div id="setup-card-picker"></div>
       </div>
       <div class="setup-actions">
@@ -838,7 +858,10 @@
     <div class="grab" aria-hidden="true"></div>
     <h2 id="cards-title" tabindex="-1" autofocus>Your cards</h2>
     <p class="setup-sub">Tap the cards you have. Their statuses are added to your list; tap a card again to take its statuses off.</p>
-    <div id="cards-picker"></div>
+    <div>
+      <input class="card-search" type="search" placeholder="Search cards" aria-label="Search cards" autocomplete="off" data-for="cards-picker">
+      <div id="cards-picker"></div>
+    </div>
     <p class="cards-status" id="cards-status" role="status"></p>
     <p class="fine" id="cards-fine"></p>
     <div class="sheet-actions">
@@ -961,8 +984,19 @@
     { issuer: 'Delta SkyMiles (Amex)', id: 'delta-gold-business', name: 'Delta Gold Business', tone: 'gold', grants: [] },
     { issuer: 'Delta SkyMiles (Amex)', id: 'delta-platinum-business', name: 'Delta Platinum Business', tone: 'platinum', grants: DELTA_PLATINUM },
     { issuer: 'Delta SkyMiles (Amex)', id: 'delta-reserve-business', name: 'Delta Reserve Business', tone: 'black', grants: DELTA_RESERVE },
+    { issuer: 'American Express', id: 'amex-green', name: 'Amex Green', tone: 'green', grants: [] },
     { issuer: 'Chase', id: 'sapphire-reserve', name: 'Sapphire Reserve', tone: 'sapphire', grants: SAPPHIRE_RESERVE },
+    { issuer: 'Chase', id: 'sapphire-preferred', name: 'Sapphire Preferred', tone: 'blue', grants: [] },
     { issuer: 'Chase', id: 'sapphire-reserve-business', name: 'Sapphire Reserve for Business', tone: 'black', grants: SAPPHIRE_RESERVE },
+    { issuer: 'Chase', id: 'freedom-unlimited', name: 'Freedom Unlimited', tone: 'blue', grants: [] },
+    { issuer: 'Chase', id: 'freedom-flex', name: 'Freedom Flex', tone: 'slate', grants: [] },
+    { issuer: 'Chase', id: 'ink-preferred', name: 'Ink Business Preferred', tone: 'black', grants: [] },
+    // Automatic 25K every year since the September 2026 refresh (it used to need $15k spend).
+    { issuer: 'Chase', id: 'chase-aeroplan', name: 'Chase Aeroplan', tone: 'black', grants: [['aeroplan', '25K']] },
+    { issuer: 'Chase', id: 'united-explorer', name: 'United Explorer', tone: 'sapphire', grants: [['lounges', '2 United Club passes/yr']] },
+    { issuer: 'Chase', id: 'united-quest', name: 'United Quest', tone: 'slate', grants: [] },
+    { issuer: 'Chase', id: 'southwest-priority', name: 'Southwest Priority', tone: 'sapphire', grants: [] },
+    { issuer: 'Chase', id: 'southwest-plus', name: 'Southwest Plus', tone: 'blue', grants: [] },
     { issuer: 'Chase', id: 'ihg-premier', name: 'IHG Premier', tone: 'black', grants: [['ihg', 'Platinum Elite']] },
     { issuer: 'Chase', id: 'ihg-premier-business', name: 'IHG Premier Business', tone: 'black', grants: [['ihg', 'Platinum Elite']] },
     { issuer: 'Chase', id: 'ihg-traveler', name: 'IHG Traveler', tone: 'blue', grants: [['ihg', 'Silver Elite']] },
@@ -983,6 +1017,10 @@
       ['hertz', "President's Circle"],
       ['lounges', 'Capital One Lounges · Priority Pass'],
     ] },
+    // Venture's complimentary lounge visits ended in 2025.
+    { issuer: 'Capital One', id: 'venture', name: 'Venture', tone: 'slate', grants: [] },
+    { issuer: 'Capital One', id: 'ventureone', name: 'VentureOne', tone: 'blue', grants: [] },
+    { issuer: 'Capital One', id: 'savor', name: 'Savor', tone: 'bronze', grants: [] },
     { issuer: 'Citi', id: 'aadvantage-executive', name: 'AAdvantage Executive', tone: 'black', grants: [
       ['omni', 'Champion'],
       ['avis', "President's Club"],
@@ -991,6 +1029,9 @@
     { issuer: 'Citi', id: 'strata-elite', name: 'Citi Strata Elite', tone: 'sapphire', grants: [
       ['lounges', 'Priority Pass · 4 Admirals Club passes/yr'],
     ] },
+    { issuer: 'Citi', id: 'strata-premier', name: 'Citi Strata Premier', tone: 'sapphire', grants: [] },
+    { issuer: 'Citi', id: 'double-cash', name: 'Citi Double Cash', tone: 'slate', grants: [] },
+    { issuer: 'Citi', id: 'custom-cash', name: 'Citi Custom Cash', tone: 'blue', grants: [] },
     // Earner Plus: accounts opened since June 17, 2026 get Diamond for the first 12 months, then Platinum.
     { issuer: 'Barclays', id: 'wyndham-earner', name: 'Wyndham Earner', tone: 'blue', grants: [['wyndham', 'Gold']] },
     { issuer: 'Barclays', id: 'wyndham-earner-plus', name: 'Wyndham Earner Plus', tone: 'sapphire', grants: [['wyndham', 'Platinum']] },
@@ -999,9 +1040,18 @@
     { issuer: 'Bilt', id: 'bilt-blue', name: 'Bilt Blue', tone: 'blue', grants: [] },
     { issuer: 'Bilt', id: 'bilt-obsidian', name: 'Bilt Obsidian', tone: 'black', grants: [] },
     { issuer: 'Bilt', id: 'bilt-palladium', name: 'Bilt Palladium', tone: 'platinum', grants: [['lounges', 'Priority Pass']] },
+    { issuer: 'Bank of America', id: 'premium-rewards-elite', name: 'Premium Rewards Elite', tone: 'sapphire', grants: [['lounges', 'Priority Pass']] },
+    { issuer: 'Bank of America', id: 'premium-rewards', name: 'Premium Rewards', tone: 'slate', grants: [] },
+    // Summit's Atmos status comes from status points earned by spending, so only the lounge passes apply.
+    { issuer: 'Bank of America', id: 'atmos-summit', name: 'Atmos Summit', tone: 'black', grants: [['lounges', '8 Alaska Lounge passes/yr']] },
+    { issuer: 'Bank of America', id: 'atmos-ascent', name: 'Atmos Ascent', tone: 'blue', grants: [] },
+    { issuer: 'Wells Fargo', id: 'autograph-journey', name: 'Autograph Journey', tone: 'black', grants: [] },
   ];
   const CARD_BY_ID = Object.fromEntries(CARDS.map((c) => [c.id, c]));
-  const PERK_SHORT = { delta: 'MQD Headstart', lhw: 'LHW', hertz: 'Hertz', avis: 'Avis', national: 'National', lounges: 'Lounges', omni: 'Omni' };
+  const PERK_SHORT = {
+    delta: 'MQD Headstart', aeroplan: 'Aeroplan', hyatt: 'Hyatt', lhw: 'LHW', omni: 'Omni',
+    hertz: 'Hertz', avis: 'Avis', national: 'National', lounges: 'Lounges',
+  };
 
   // "Use the example setup" — built from the Amex Platinum + Sapphire Reserve presets. Also what anyone who
   // saved data before the program list became editable keeps.
@@ -1691,7 +1741,32 @@
       h('span', { class: 'cc-top' }, h('span', { class: 'cc-emv' }), h('span', { class: 'cc-check' }, svgIcon(ICON.check))),
       h('span', null,
         h('span', { class: 'cc-name' }, c.label || c.name),
-        h('span', { class: 'cc-perks' }, perksLine(c))))))));
+        h('span', { class: 'cc-perks' }, perksLine(c)))))))).concat(
+      h('p', { class: 'no-match', hidden: '' }, 'No cards match. You can still add any status by hand with Edit.'));
+  }
+
+  // Matches every word typed against the card's name and issuer ("chase pref", "amex plat").
+  function filterCards(input) {
+    const picker = document.getElementById(input.dataset.for);
+    const words = input.value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    let anyShown = false;
+    for (const group of picker.querySelectorAll('.cat-group')) {
+      let shown = 0;
+      for (const tile of group.querySelectorAll('.cc')) {
+        const card = CARD_BY_ID[tile.dataset.card];
+        const issuer = card.issuer === 'American Express' ? 'American Express amex' : card.issuer;
+        const haystack = `${card.label || card.name} ${card.name} ${issuer}`.toLowerCase();
+        tile.hidden = !words.every((w) => haystack.includes(w));
+        if (!tile.hidden) shown++;
+      }
+      group.hidden = !shown;
+      if (shown) anyShown = true;
+    }
+    picker.querySelector('.no-match').hidden = anyShown;
+  }
+
+  for (const input of document.querySelectorAll('.card-search')) {
+    input.addEventListener('input', () => filterCards(input));
   }
 
   /* ---------- First-run setup ---------- */
@@ -1763,6 +1838,7 @@
 
   $('#cards-change').addEventListener('click', () => {
     $('#cards-picker').replaceChildren(...cardPicker(new Set(state.cards)));
+    $('#cards-sheet .card-search').value = '';
     $('#cards-status').textContent = '';
     $('#cards-fine').textContent = `Based on each card’s published benefits as of ${CARDS_AS_OF}. Most need enrolling with the card issuer, and benefits change — check your card’s benefits page.`;
     cardsSheet.showModal();
