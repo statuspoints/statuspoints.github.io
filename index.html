@@ -294,6 +294,16 @@
   .setup-actions { display: grid; justify-items: center; gap: 14px; margin-top: 24px; }
   .setup-actions .add { width: 100%; }
   .setup-alt { margin: 0; font-size: 14px; color: var(--muted); text-align: center; }
+  .setup-cards { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--line); }
+  .setup-cards h3 { margin: 0; font-size: 16px; letter-spacing: -0.01em; }
+  .setup-cards h3 span { font-weight: 400; color: var(--muted); }
+  .setup-cards .setup-sub { margin: 2px 0 16px; font-size: 13.5px; }
+
+  /* Cards (edit mode + picker sheet) */
+  .cards-edit { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 12px 6px 0; font-size: 13.5px; color: var(--muted); }
+  .cards-edit strong { color: var(--text); font-weight: 600; }
+  .fine { margin: 0; font-size: 12px; color: var(--muted); }
+  .cards-status { min-height: 1.45em; margin: 0; font-size: 13.5px; font-weight: 600; color: var(--accent); }
 
   /* Vouchers */
   .vlist { list-style: none; margin: 0; padding: 0; }
@@ -426,8 +436,9 @@
   @media (max-width: 560px) {
     .sheet { width: 100%; max-height: 92%; margin: auto 0 0; border-width: 1px 0 0; border-radius: 18px 18px 0 0; }
   }
-  .sheet form { display: grid; gap: 16px; padding: 20px 16px calc(16px + env(safe-area-inset-bottom)); }
+  .sheet form, .sheet-body { display: grid; gap: 16px; padding: 20px 16px calc(16px + env(safe-area-inset-bottom)); }
   .sheet h2 { margin: 0; font-size: 18px; letter-spacing: -0.01em; outline: none; }
+  .sheet .setup-sub { margin: -10px 0 0; }
   .check { display: flex; align-items: center; gap: 10px; font-size: 14.5px; cursor: pointer; }
   .check input { flex: none; width: 20px; height: 20px; margin: 0; accent-color: var(--accent); }
   .status-edit { min-width: 0; margin: 0; padding: 0; border: 0; }
@@ -504,6 +515,11 @@
       <h2 id="h-setup">Set up your tracker</h2>
       <p class="setup-sub">Pick the programs you have. You can add your status levels, rename, reorder, or add any other program later with Edit.</p>
       <div id="catalog"></div>
+      <div class="setup-cards">
+        <h3>Your cards <span>(optional)</span></h3>
+        <p class="setup-sub">Pick the cards you have and the statuses they come with are filled in for you.</p>
+        <div id="setup-card-picker"></div>
+      </div>
       <div class="setup-actions">
         <button class="add" id="setup-start" type="button" disabled>Pick at least one program</button>
         <p class="setup-alt">
@@ -524,6 +540,10 @@
       </span>
     </div>
     <ul class="card programs" id="programs"></ul>
+    <div class="cards-edit" id="cards-edit" hidden>
+      <span>Cards: <strong id="cards-summary">none</strong></span>
+      <button class="link" id="cards-change" type="button">Choose cards</button>
+    </div>
     <p class="footnote" id="footnote" hidden>
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12L12 4M6 4h6v6"/></svg>
       <span id="footnote-text"></span>
@@ -600,6 +620,19 @@
     </div>
   </form>
 </dialog>
+<dialog class="sheet" id="cards-sheet" aria-labelledby="cards-title">
+  <div class="sheet-body">
+    <h2 id="cards-title" tabindex="-1" autofocus>Your cards</h2>
+    <p class="setup-sub">Tap the cards you have. Their statuses are added to your list; tap a card again to take its statuses off.</p>
+    <div id="cards-picker"></div>
+    <p class="cards-status" id="cards-status" role="status"></p>
+    <p class="fine" id="cards-fine"></p>
+    <div class="sheet-actions">
+      <span class="spacer"></span>
+      <button class="add" id="cards-done" type="button">Done</button>
+    </div>
+  </div>
+</dialog>
 <datalist id="catalog-names"></datalist>
 
 <div class="toast" id="toast" role="status" aria-live="polite">
@@ -648,6 +681,7 @@
       { id: 'choice', name: 'Choice Privileges', unit: 'points' },
       { id: 'accor', name: 'Accor ALL', unit: 'points' },
       { id: 'lhw', name: 'Leading Hotels of the World', unit: '' },
+      { id: 'omni', name: 'Omni Select Guest', unit: '' },
     ] },
     { group: 'Credit card points', items: [
       { id: 'amex', name: 'Amex Membership Rewards', unit: 'points' },
@@ -667,28 +701,92 @@
   const CATALOG_ITEMS = CATALOG.flatMap((g) => g.items);
   const catalogByName = (name) => CATALOG_ITEMS.find((c) => c.name.toLowerCase() === name.trim().toLowerCase());
 
-  // "Use the example setup" — an Amex Platinum + Sapphire Reserve holder's list. Also what anyone who
-  // saved data before the list became editable keeps.
+  const CATALOG_BY_ID = Object.fromEntries(CATALOG_ITEMS.map((c) => [c.id, c]));
+
+  // Complimentary statuses each card comes with (enrollment may be required), per the issuers' published
+  // benefits as of CARDS_AS_OF. Grants are [program id, tier, note]. Statuses you only unlock by spending
+  // are deliberately left out. `label` (optional) is the picker text when `name` alone is ambiguous.
+  const CARDS_AS_OF = 'September 2026';
+  const CARDS = [
+    { issuer: 'American Express', id: 'amex-platinum', name: 'Amex Platinum', grants: [
+      ['hilton', 'Gold'],
+      ['marriott', 'Gold Elite'],
+      ['lhw', 'Leaders Club Sterling'],
+      ['avis', 'Preferred Plus'],
+      ['hertz', "President's Circle"],
+      ['national', 'Emerald Club Executive'],
+      ['lounges', 'Centurion · Sky Club (10 visits/yr) · Escape · Plaza Premium · Priority Pass'],
+    ] },
+    { issuer: 'American Express', id: 'amex-business-platinum', name: 'Amex Business Platinum', grants: [
+      ['hilton', 'Gold'],
+      ['marriott', 'Gold Elite'],
+      ['avis', 'Preferred Plus'],
+      ['hertz', "President's Circle"],
+      ['national', 'Emerald Club Executive'],
+      ['lounges', 'Centurion · Sky Club (10 visits/yr) · Escape · Plaza Premium · Priority Pass'],
+    ] },
+    { issuer: 'American Express', id: 'hilton-aspire', name: 'Hilton Aspire', grants: [['hilton', 'Diamond']] },
+    { issuer: 'American Express', id: 'hilton-surpass', name: 'Hilton Surpass', grants: [['hilton', 'Gold']] },
+    { issuer: 'American Express', id: 'hilton-business', name: 'Hilton Business', grants: [['hilton', 'Gold']] },
+    { issuer: 'American Express', id: 'hilton-amex', name: 'Hilton Honors Amex', label: 'Hilton Honors (no fee)', grants: [['hilton', 'Silver']] },
+    { issuer: 'American Express', id: 'bonvoy-brilliant', name: 'Bonvoy Brilliant', grants: [['marriott', 'Platinum Elite']] },
+    { issuer: 'American Express', id: 'bonvoy-bevy', name: 'Bonvoy Bevy', grants: [['marriott', 'Gold Elite']] },
+    { issuer: 'American Express', id: 'bonvoy-business', name: 'Bonvoy Business', grants: [['marriott', 'Gold Elite']] },
+    { issuer: 'American Express', id: 'delta-reserve', name: 'Delta Reserve', grants: [
+      ['lounges', 'Sky Club (15 visits/yr) · Centurion on Delta flights'],
+    ] },
+    { issuer: 'Chase', id: 'sapphire-reserve', name: 'Sapphire Reserve', grants: [
+      ['ihg', 'Platinum Elite', 'thru 12/31/27'],
+      ['avis', 'Preferred Plus'],
+      ['national', 'Emerald Club Executive'],
+      ['lounges', 'Sapphire Lounges · Priority Pass · Air Canada Maple Leaf'],
+    ] },
+    { issuer: 'Chase', id: 'sapphire-reserve-business', name: 'Sapphire Reserve for Business', grants: [
+      ['ihg', 'Platinum Elite', 'thru 12/31/27'],
+      ['avis', 'Preferred Plus'],
+      ['national', 'Emerald Club Executive'],
+      ['lounges', 'Sapphire Lounges · Priority Pass · Air Canada Maple Leaf'],
+    ] },
+    { issuer: 'Chase', id: 'ihg-premier', name: 'IHG Premier', grants: [['ihg', 'Platinum Elite']] },
+    { issuer: 'Chase', id: 'ihg-premier-business', name: 'IHG Premier Business', grants: [['ihg', 'Platinum Elite']] },
+    { issuer: 'Chase', id: 'ihg-traveler', name: 'IHG Traveler', grants: [['ihg', 'Silver Elite']] },
+    { issuer: 'Chase', id: 'hyatt-card', name: 'World of Hyatt card', grants: [['hyatt', 'Discoverist']] },
+    { issuer: 'Chase', id: 'hyatt-business', name: 'World of Hyatt Business', grants: [['hyatt', 'Discoverist']] },
+    { issuer: 'Chase', id: 'bonvoy-boundless', name: 'Bonvoy Boundless', grants: [['marriott', 'Silver Elite']] },
+    { issuer: 'Chase', id: 'bonvoy-bold', name: 'Bonvoy Bold', grants: [['marriott', 'Silver Elite']] },
+    { issuer: 'Chase', id: 'united-club', name: 'United Club Card', grants: [
+      ['ihg', 'Platinum Elite'],
+      ['avis', "President's Club"],
+      ['lounges', 'United Club membership'],
+    ] },
+    { issuer: 'Capital One', id: 'venture-x', name: 'Venture X', grants: [
+      ['hertz', "President's Circle"],
+      ['lounges', 'Capital One Lounges · Priority Pass'],
+    ] },
+    { issuer: 'Capital One', id: 'venture-x-business', name: 'Venture X Business', grants: [
+      ['hertz', "President's Circle"],
+      ['lounges', 'Capital One Lounges · Priority Pass'],
+    ] },
+    { issuer: 'Citi', id: 'aadvantage-executive', name: 'AAdvantage Executive', grants: [
+      ['omni', 'Champion'],
+      ['avis', "President's Club"],
+      ['lounges', 'Admirals Club membership'],
+    ] },
+    { issuer: 'Citi', id: 'strata-elite', name: 'Citi Strata Elite', grants: [
+      ['lounges', 'Priority Pass · 4 Admirals Club passes/yr'],
+    ] },
+    // Earner Plus: accounts opened since June 17, 2026 get Diamond for the first 12 months, then Platinum.
+    { issuer: 'Barclays', id: 'wyndham-earner', name: 'Wyndham Earner', grants: [['wyndham', 'Gold']] },
+    { issuer: 'Barclays', id: 'wyndham-earner-plus', name: 'Wyndham Earner Plus', grants: [['wyndham', 'Platinum']] },
+    { issuer: 'Barclays', id: 'wyndham-earner-business', name: 'Wyndham Earner Business', grants: [['wyndham', 'Diamond']] },
+  ];
+  const CARD_BY_ID = Object.fromEntries(CARDS.map((c) => [c.id, c]));
+
+  // "Use the example setup" — built from the Amex Platinum + Sapphire Reserve presets. Also what anyone who
+  // saved data before the program list became editable keeps.
   const EXAMPLE = {
-    programs: [
-      { id: 'delta', name: 'Delta SkyMiles', unit: 'miles', status: [], medallion: true },
-      { id: 'koreanair', name: 'Korean Air SkyPass', unit: 'miles', status: [] },
-      { id: 'hilton', name: 'Hilton Honors', unit: 'points', status: [{ tier: 'Gold', via: 'Amex Platinum' }] },
-      { id: 'marriott', name: 'Marriott Bonvoy', unit: 'points', status: [{ tier: 'Gold Elite', via: 'Amex Platinum' }] },
-      { id: 'ihg', name: 'IHG One Rewards', unit: 'points', status: [{ tier: 'Platinum Elite', via: 'Sapphire Reserve · thru 12/31/27' }] },
-      { id: 'hyatt', name: 'World of Hyatt', unit: 'points', status: [] },
-      { id: 'amex', name: 'Amex Membership Rewards', unit: 'points', status: [] },
-      { id: 'chase', name: 'Chase Ultimate Rewards', unit: 'points', status: [] },
-      { id: 'lhw', name: 'Leading Hotels of the World', unit: '', status: [{ tier: 'Leaders Club Sterling', via: 'Amex Platinum' }] },
-      { id: 'cars', name: 'Avis / Hertz / National', unit: '', status: [
-        { tier: "Preferred Plus · President's Circle · Emerald Exec", via: 'Amex Platinum' },
-        { tier: 'Preferred Plus · Emerald Exec', via: 'Sapphire Reserve' },
-      ] },
-      { id: 'lounges', name: 'Airport lounges', unit: '', status: [
-        { tier: 'Sapphire Lounges · Priority Pass · Air Canada Maple Leaf', via: 'Sapphire Reserve' },
-        { tier: 'Centurion · Sky Club (10 visits/yr) · Escape · Plaza Premium · Priority Pass', via: 'Amex Platinum' },
-      ] },
-    ],
+    programs: ['delta', 'koreanair', 'hilton', 'marriott', 'ihg', 'hyatt', 'amex', 'chase'],
+    cards: ['amex-platinum', 'sapphire-reserve'],
     notes: '$75k spend on the Sapphire Reserve this year would add IHG Diamond, Hyatt Explorist, and Southwest A-List.',
   };
 
@@ -707,6 +805,8 @@
   const todayFmt = new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
   const clone = (v) => JSON.parse(JSON.stringify(v));
   const str = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
+  const splitParts = (text) => text.split('·').map((part) => part.trim()).filter(Boolean);
+  const sameText = (a, b) => splitParts(a).join('·').toLowerCase() === splitParts(b).join('·').toLowerCase();
 
   function h(tag, attrs, ...kids) {
     const el = document.createElement(tag);
@@ -741,20 +841,91 @@
         name,
         unit: UNITS.includes(p.unit) ? p.unit : '',
         status: (Array.isArray(p.status) ? p.status : [])
-          .map((line) => ({ tier: str(line && line.tier, 80), via: str(line && line.via, 80) }))
+          .map((line) => {
+            const clean = { tier: str(line && line.tier, 80), via: str(line && line.via, 80) };
+            if (line && typeof line.card === 'string') clean.card = line.card; // added by a card preset
+            return clean;
+          })
           .filter((line) => line.tier || line.via),
       };
       if (p.medallion === true) program.medallion = true;
+      if (typeof p.addedBy === 'string') program.addedBy = p.addedBy; // created by a card preset
       out.push(program);
     }
     return out;
+  }
+
+  function programFromCatalog(c) {
+    const program = { id: c.id, name: c.name, unit: c.unit, status: [] };
+    if (c.medallion) program.medallion = true;
+    return program;
+  }
+
+  const catalogRank = (p) => (CATALOG_BY_ID[p.id] ? CATALOG_ITEMS.indexOf(CATALOG_BY_ID[p.id]) : Infinity);
+
+  function findProgram(s, programId) {
+    const catalogName = CATALOG_BY_ID[programId].name.toLowerCase();
+    return s.programs.find((p) => p.id === programId) || s.programs.find((p) => p.name.toLowerCase() === catalogName);
+  }
+
+  // Adds a card's statuses to `s`, creating programs as needed. Returns how many status lines it added.
+  function applyCard(s, cardId) {
+    const card = CARD_BY_ID[cardId];
+    if (!card || s.cards.includes(cardId)) return 0;
+    s.cards.push(cardId);
+    let added = 0;
+    for (const [programId, tier, note] of card.grants) {
+      let program = findProgram(s, programId);
+      if (!program) {
+        program = { ...programFromCatalog(CATALOG_BY_ID[programId]), addedBy: cardId };
+        // Slot it in with its kind (hotels with hotels, etc.) rather than at the very end.
+        const at = s.programs.findIndex((p) => catalogRank(p) > catalogRank(program));
+        if (at < 0) s.programs.push(program);
+        else s.programs.splice(at, 0, program);
+      }
+      const via = note ? `${card.name} · ${note}` : card.name;
+      const existing = program.status.find((line) => sameText(line.tier, tier) && sameText(line.via, via));
+      if (existing) {
+        existing.card = cardId; // the person already typed this one; link it to the card
+      } else {
+        program.status.push({ tier, via, card: cardId });
+        added++;
+      }
+    }
+    return added;
+  }
+
+  // Takes a card's statuses off, plus any program a removed card created that is now empty with no balance.
+  function removeCard(s, cardId) {
+    s.cards = s.cards.filter((id) => id !== cardId);
+    for (const p of s.programs) p.status = p.status.filter((line) => line.card !== cardId);
+    s.programs = s.programs.filter((p) => !(p.addedBy && !s.cards.includes(p.addedBy)
+      && !p.status.length && s.balances[p.id] == null));
+  }
+
+  // The previous version's example list had one hand-typed "Avis / Hertz / National" row. If it's still exactly
+  // that, swap it for the Amex Platinum + Sapphire Reserve presets so those statuses stay linked to the cards.
+  const LEGACY_CARS_TIERS = ["Preferred Plus · President's Circle · Emerald Exec", 'Preferred Plus · Emerald Exec'];
+  function upgradeLegacyExample(s) {
+    const i = s.programs.findIndex((p) => p.id === 'cars' && p.name === 'Avis / Hertz / National');
+    if (i < 0) return;
+    const tiers = s.programs[i].status.map((line) => line.tier);
+    if (tiers.length !== LEGACY_CARS_TIERS.length || !LEGACY_CARS_TIERS.every((t, k) => sameText(t, tiers[k]))) return;
+    s.programs.splice(i, 1);
+    EXAMPLE.cards.forEach((id) => applyCard(s, id));
+  }
+
+  function exampleSetup() {
+    const s = { programs: EXAMPLE.programs.map((id) => programFromCatalog(CATALOG_BY_ID[id])), cards: [], notes: EXAMPLE.notes };
+    EXAMPLE.cards.forEach((id) => applyCard(s, id));
+    return s;
   }
 
   // Clean state from stored or imported JSON, or null if it isn't tracker data.
   function normalize(raw) {
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
     if (!['programs', 'balances', 'vouchers', 'mqd'].some((k) => k in raw)) return null;
-    const s = { programs: null, notes: '', balances: {}, mqd: 0, vouchers: [] };
+    const s = { programs: null, cards: [], notes: '', balances: {}, mqd: 0, vouchers: [] };
     if (raw.balances && typeof raw.balances === 'object') {
       for (const [id, v] of Object.entries(raw.balances)) if (isCount(v)) s.balances[id] = Math.floor(v);
     }
@@ -771,11 +942,12 @@
     }
     if (Array.isArray(raw.programs)) {
       s.programs = cleanPrograms(raw.programs);
+      s.cards = Array.isArray(raw.cards) ? [...new Set(raw.cards.filter((id) => CARD_BY_ID[id]))] : [];
       s.notes = str(raw.notes, 400);
+      if (!('cards' in raw)) upgradeLegacyExample(s); // saved before card presets existed
     } else {
       // Saved before the program list was editable: keep the list those users already had.
-      s.programs = clone(EXAMPLE.programs);
-      s.notes = EXAMPLE.notes;
+      Object.assign(s, exampleSetup());
     }
     return s;
   }
@@ -785,7 +957,7 @@
       const s = normalize(JSON.parse(localStorage.getItem(KEY) || 'null'));
       if (s) return s;
     } catch (e) { /* corrupt or unavailable storage: start fresh */ }
-    return { programs: null, notes: '', balances: {}, mqd: 0, vouchers: [] }; // null programs → first-run setup
+    return { programs: null, cards: [], notes: '', balances: {}, mqd: 0, vouchers: [] }; // null programs → first-run setup
   }
 
   const state = load();
@@ -918,7 +1090,16 @@
 
   let editMode = false;
 
-  const splitParts = (s) => s.split('·').map((part) => part.trim()).filter(Boolean);
+  // One line per tier when several cards give the same status: "Preferred Plus · Amex Platinum · Sapphire Reserve".
+  function mergedLines(lines) {
+    const out = [];
+    for (const line of lines) {
+      const same = line.tier && out.find((o) => sameText(o.tier, line.tier));
+      if (same) same.via = [same.via, line.via].filter(Boolean).join(' · ');
+      else out.push({ tier: line.tier, via: line.via });
+    }
+    return out;
+  }
 
   function statusLine({ tier, via }) {
     const part = (text, cls) => h('span', { class: [cls, text.length <= 28 && 'nw'].filter(Boolean).join(' ') || null }, text);
@@ -967,14 +1148,14 @@
         h('div', { class: 'row-main' },
           h('button', { type: 'button', class: 'who-btn', 'data-edit': p.id },
             h('div', { class: 'name' }, p.name, svgIcon(ICON.pencil)),
-            p.status.length ? p.status.map(statusLine) : h('div', { class: 'no-status' }, 'No status yet — tap to add')),
+            p.status.length ? mergedLines(p.status).map(statusLine) : h('div', { class: 'no-status' }, 'No status yet — tap to add')),
           h('div', { class: 'reorder' },
             h('button', { type: 'button', class: 'icon-btn', 'data-move': '-1', 'data-id': p.id, 'aria-label': `Move ${p.name} up`, disabled: index === 0 ? '' : null }, svgIcon(ICON.up)),
             h('button', { type: 'button', class: 'icon-btn', 'data-move': '1', 'data-id': p.id, 'aria-label': `Move ${p.name} down`, disabled: last ? '' : null }, svgIcon(ICON.down)))));
     }
     const who = h('div', { class: 'who' }, h('div', { class: 'name' }, p.name));
     if (withMedallion) who.append(h('div', { class: 'status', id: 'medallion-status' }));
-    who.append(...p.status.map(statusLine));
+    who.append(...mergedLines(p.status).map(statusLine));
     const main = h('div', { class: 'row-main' }, who);
     if (p.unit) {
       main.append(h('div', { class: 'bal' },
@@ -997,6 +1178,8 @@
     $('#programs').replaceChildren(...rows);
     $('#edit-toggle').textContent = editMode ? 'Done' : 'Edit';
     $('#p-hint').hidden = editMode || !list.some((p) => p.unit);
+    $('#cards-edit').hidden = !editMode;
+    $('#cards-summary').textContent = state.cards.map((id) => CARD_BY_ID[id].name).join(', ') || 'none';
     if (medallionId && !editMode) updateMedallion();
     renderNotes();
   }
@@ -1074,7 +1257,7 @@
   let sheetId = null; // program being edited; null when adding
 
   function statusEditorRow(line) {
-    return h('div', { class: 'sl' },
+    return h('div', { class: 'sl', 'data-card': line.card || null },
       h('input', { type: 'text', class: 'sl-tier', maxlength: '80', placeholder: 'Gold', 'aria-label': 'Status level', value: line.tier }),
       h('input', { type: 'text', class: 'sl-via', maxlength: '80', placeholder: 'Amex Platinum', 'aria-label': 'Where the status comes from (optional)', value: line.via }),
       h('button', { type: 'button', class: 'icon-btn sl-del', 'aria-label': 'Remove this status' }, svgIcon(ICON.x)));
@@ -1138,7 +1321,11 @@
     const name = $('#p-name').value.trim().slice(0, 60);
     if (!name) { $('#p-name').focus(); return; }
     const status = [...$('#p-status').querySelectorAll('.sl')]
-      .map((row) => ({ tier: row.querySelector('.sl-tier').value.trim(), via: row.querySelector('.sl-via').value.trim() }))
+      .map((row) => {
+        const line = { tier: row.querySelector('.sl-tier').value.trim(), via: row.querySelector('.sl-via').value.trim() };
+        if (row.dataset.card) line.card = row.dataset.card;
+        return line;
+      })
       .filter((line) => line.tier || line.via);
     const medallion = !$('#p-medallion-wrap').hidden && $('#p-medallion').checked;
 
@@ -1179,6 +1366,24 @@
   /* ---------- First-run setup ---------- */
 
   const picked = new Set();
+  const pickedCards = new Set();
+
+  function cardPicker(selected) {
+    const groups = [];
+    for (const card of CARDS) {
+      let group = groups.find((g) => g.issuer === card.issuer);
+      if (!group) groups.push(group = { issuer: card.issuer, cards: [] });
+      group.cards.push(card);
+    }
+    return groups.map((g) => h('div', { class: 'cat-group', role: 'group', 'aria-label': g.issuer },
+      h('h3', { class: 'cat-title' }, g.issuer),
+      h('div', { class: 'chips' }, g.cards.map((c) => h('button', {
+        type: 'button',
+        class: 'chip',
+        'data-card': c.id,
+        'aria-pressed': String(selected.has(c.id)),
+      }, c.label || c.name)))));
+  }
 
   function renderSetup() {
     $('#catalog').replaceChildren(...CATALOG.map((g) => h('div', { class: 'cat-group', role: 'group', 'aria-label': g.group },
@@ -1189,18 +1394,21 @@
         'data-pick': c.id,
         'aria-pressed': String(picked.has(c.id)),
       }, c.name))))));
+    $('#setup-card-picker').replaceChildren(...cardPicker(pickedCards));
     syncStartButton();
   }
 
   function syncStartButton() {
-    const n = picked.size;
-    $('#setup-start').disabled = n === 0;
-    $('#setup-start').textContent = n ? `Start tracking ${n} program${n === 1 ? '' : 's'}` : 'Pick at least one program';
+    const count = (n, word) => n && `${n} ${word}${n === 1 ? '' : 's'}`;
+    const parts = [count(picked.size, 'program'), count(pickedCards.size, 'card')].filter(Boolean);
+    $('#setup-start').disabled = !parts.length;
+    $('#setup-start').textContent = parts.length ? `Start tracking ${parts.join(' + ')}` : 'Pick a program or card';
   }
 
-  function finishSetup(programs, notes) {
-    state.programs = programs;
-    state.notes = notes;
+  function finishSetup(setup) {
+    state.programs = setup.programs;
+    state.cards = setup.cards;
+    state.notes = setup.notes;
     editMode = false;
     saveNow();
     renderAll();
@@ -1217,16 +1425,58 @@
     syncStartButton();
   });
 
-  $('#setup-start').addEventListener('click', () => {
-    finishSetup(CATALOG_ITEMS.filter((c) => picked.has(c.id)).map((c) => {
-      const program = { id: c.id, name: c.name, unit: c.unit, status: [] };
-      if (c.medallion) program.medallion = true;
-      return program;
-    }), '');
-    showToast('Tip: tap Edit to add your status levels');
+  $('#setup-card-picker').addEventListener('click', (e) => {
+    const chip = e.target.closest('[data-card]');
+    if (!chip) return;
+    const id = chip.dataset.card;
+    if (pickedCards.has(id)) pickedCards.delete(id);
+    else pickedCards.add(id);
+    chip.setAttribute('aria-pressed', String(pickedCards.has(id)));
+    syncStartButton();
   });
-  $('#setup-example').addEventListener('click', () => finishSetup(clone(EXAMPLE.programs), EXAMPLE.notes));
+
+  $('#setup-start').addEventListener('click', () => {
+    const setup = { programs: CATALOG_ITEMS.filter((c) => picked.has(c.id)).map(programFromCatalog), cards: [], notes: '' };
+    CARDS.filter((c) => pickedCards.has(c.id)).forEach((c) => applyCard(setup, c.id));
+    finishSetup(setup);
+    showToast(setup.cards.length ? 'Your cards’ statuses are filled in — tap Edit to adjust' : 'Tip: tap Edit to add your status levels');
+  });
+  $('#setup-example').addEventListener('click', () => finishSetup(exampleSetup()));
   $('#setup-restore').addEventListener('click', () => $('#import-file').click());
+
+  /* ---------- Card presets sheet ---------- */
+
+  const cardsSheet = $('#cards-sheet');
+
+  $('#cards-change').addEventListener('click', () => {
+    $('#cards-picker').replaceChildren(...cardPicker(new Set(state.cards)));
+    $('#cards-status').textContent = '';
+    $('#cards-fine').textContent = `Based on each card’s published benefits as of ${CARDS_AS_OF}. Most need enrolling with the card issuer, and benefits change — check your card’s benefits page.`;
+    cardsSheet.showModal();
+  });
+
+  $('#cards-picker').addEventListener('click', (e) => {
+    const chip = e.target.closest('[data-card]');
+    if (!chip) return;
+    const card = CARD_BY_ID[chip.dataset.card];
+    let message;
+    if (state.cards.includes(card.id)) {
+      removeCard(state, card.id);
+      message = `Took off ${card.name}’s statuses`;
+    } else {
+      const added = applyCard(state, card.id);
+      message = added
+        ? `Added ${added} status${added === 1 ? '' : 'es'} from ${card.name}`
+        : `${card.name}’s statuses were already on your list`;
+    }
+    chip.setAttribute('aria-pressed', String(state.cards.includes(card.id)));
+    $('#cards-status').textContent = message;
+    scheduleSave();
+    renderPrograms();
+  });
+
+  $('#cards-done').addEventListener('click', () => cardsSheet.close());
+  cardsSheet.addEventListener('click', (e) => { if (e.target === cardsSheet) cardsSheet.close(); }); // tap on the backdrop
 
   /* ---------- Vouchers ---------- */
 
