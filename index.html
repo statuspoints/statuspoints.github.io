@@ -793,6 +793,52 @@
   .fine { margin: 0; font-size: 12px; color: var(--muted); }
   .cards-status { min-height: 1.45em; margin: 0; font-size: 13.5px; font-weight: 600; color: var(--accent); }
 
+  /* Glanceable perks under each program's status */
+  .perk-line { display: flex; align-items: flex-start; gap: 6px; margin-top: 7px; font-size: 12.5px; line-height: 1.4; color: var(--text); }
+  .perk-line > span { opacity: .8; }
+  .perk-line .nw { white-space: nowrap; }
+  .perk-line svg { flex: none; width: 13px; height: 13px; margin-top: 2px; color: var(--accent); }
+  .sec-actions { display: flex; flex: none; gap: 8px; }
+  .pill-btn svg { width: 14px; height: 14px; margin: 0 5px -2px -2px; }
+
+  /* "Your perks" sheet */
+  .sheet .perks-sub { margin: 3px 0 0; }
+  #perks-search { margin: 0; }
+  .perk-cat + .perk-cat { margin-top: 20px; }
+  .perk-cat-title { display: flex; align-items: center; gap: 9px; margin: 0 0 9px; font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
+  .perk-cat-title .n { font-family: var(--num-font); font-size: 12.5px; font-weight: 500; color: var(--muted); }
+  .perk-ico { flex: none; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 10px; background: var(--accent-soft); color: var(--accent); }
+  .perk-ico svg { width: 17px; height: 17px; }
+  .perk-items { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+  .perk-item { display: grid; gap: 7px; padding: 11px 12px; }
+  .perk-item + .perk-item { border-top: 1px solid var(--line); }
+  .perk-text { font-size: 14px; line-height: 1.4; }
+  .perk-src {
+    justify-self: start;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 100%;
+    padding: 3px 9px 3px 3px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--inset);
+    color: var(--muted);
+    font: inherit;
+    font-size: 12px;
+    text-align: left;
+    cursor: pointer;
+  }
+  .perk-src:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  @media (hover: hover) {
+    .perk-src:hover { color: var(--text); }
+  }
+  .perk-src .av { width: 20px; height: 20px; border-radius: 6px; font-size: 8px; box-shadow: none; }
+  .perk-src .av.x3 { font-size: 6.5px; }
+  .perk-src .av svg { width: 12px; height: 12px; }
+  .perk-src .pill { min-height: 18px; padding: 0 7px; font-size: 11px; }
+  .perks-empty { margin: 0; font-size: 14px; color: var(--muted); }
+
   /* "Coming up": expiring statuses and vouchers */
   .upcoming { margin-top: 16px; }
   .up-head { display: flex; align-items: center; gap: 10px; padding: 14px 16px 6px; }
@@ -1062,7 +1108,12 @@
         <h2 class="sec" id="h-programs">Programs <span class="count" id="p-count"></span></h2>
         <p class="sec-sub" id="p-hint">Tap a program for perks &amp; member number</p>
       </div>
-      <button class="pill-btn" id="edit-toggle" type="button">Edit</button>
+      <div class="sec-actions">
+        <button class="pill-btn" id="perks-btn" type="button">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M8 1.5l1.7 4.3 4.3 1.7-4.3 1.7L8 13.5l-1.7-4.3L2 7.5l4.3-1.7z"/></svg>Perks
+        </button>
+        <button class="pill-btn" id="edit-toggle" type="button">Edit</button>
+      </div>
     </div>
     <div class="filters" id="filters" role="group" aria-label="Show programs" hidden></div>
     <ul class="card programs" id="programs"></ul>
@@ -1184,6 +1235,23 @@
       <span class="spacer"></span>
       <button class="btn-secondary" id="d-edit" type="button">Edit</button>
       <button class="add" id="d-done" type="button">Done</button>
+    </div>
+  </div>
+</dialog>
+<dialog class="sheet" id="perks-sheet" aria-labelledby="perks-title">
+  <div class="sheet-body">
+    <div class="grab" aria-hidden="true"></div>
+    <div>
+      <h2 id="perks-title" tabindex="-1" autofocus>Your perks</h2>
+      <p class="setup-sub perks-sub" id="perks-sub"></p>
+    </div>
+    <input class="card-search" type="search" id="perks-search" placeholder="Search perks — breakfast, lounge, checkout…" aria-label="Search your perks" autocomplete="off">
+    <div class="filters" id="perk-filters" role="group" aria-label="Perk type"></div>
+    <div id="perks-list"></div>
+    <p class="fine" id="perks-fine"></p>
+    <div class="sheet-actions">
+      <span class="spacer"></span>
+      <button class="add" id="perks-done" type="button">Done</button>
     </div>
   </div>
 </dialog>
@@ -1406,86 +1474,86 @@
   const BENEFITS_AS_OF = 'September 2026';
   const BENEFITS = {
     delta: [
-      ['Silver Medallion', '$5,000 MQDs in a Medallion year', ['7 miles per $1 spent (2 bonus)', 'Complimentary upgrades, clearing 1 day out', 'Free Preferred seats', 'First checked bag free', 'SkyTeam Elite']],
-      ['Gold Medallion', '$10,000 MQDs in a Medallion year', ['8 miles per $1 spent (3 bonus)', 'Upgrades clearing 3 days out', 'Sky Priority check-in, security, and boarding', '2 free checked bags', 'SkyTeam Elite Plus: partner lounges on international trips']],
-      ['Platinum Medallion', '$15,000 MQDs in a Medallion year', ['9 miles per $1 spent (4 bonus)', 'Upgrades clearing 5 days out', '1 Choice Benefit (like upgrade certificates or 35,000 miles)', 'Gift Silver Medallion to up to 4 people', '3 free checked bags']],
-      ['Diamond Medallion', '$28,000 MQDs in a Medallion year', ['11 miles per $1 spent (6 bonus)', 'Top upgrade priority, clearing 5 days out', '3 Choice Benefits (options include a Sky Club membership)', 'Gift Gold Medallion to up to 4 people', 'Diamond service line']],
+      ['Silver Medallion', '$5,000 MQDs in a Medallion year', ["Free upgrades", "Free Preferred seats", "1 free bag"], ['7 miles per $1 spent (2 bonus)', 'Complimentary upgrades, clearing 1 day out', 'Free Preferred seats', 'First checked bag free', 'SkyTeam Elite']],
+      ['Gold Medallion', '$10,000 MQDs in a Medallion year', ["Sky Priority", "Partner lounges abroad", "2 free bags"], ['8 miles per $1 spent (3 bonus)', 'Upgrades clearing 3 days out', 'Sky Priority check-in, security, and boarding', '2 free checked bags', 'SkyTeam Elite Plus: partner lounges on international trips']],
+      ['Platinum Medallion', '$15,000 MQDs in a Medallion year', ["Upgrades 5 days out", "Choice Benefit", "3 free bags"], ['9 miles per $1 spent (4 bonus)', 'Upgrades clearing 5 days out', '1 Choice Benefit (like upgrade certificates or 35,000 miles)', 'Gift Silver Medallion to up to 4 people', '3 free checked bags']],
+      ['Diamond Medallion', '$28,000 MQDs in a Medallion year', ["Top upgrade priority", "3 Choice Benefits", "Sky Club option"], ['11 miles per $1 spent (6 bonus)', 'Top upgrade priority, clearing 5 days out', '3 Choice Benefits (options include a Sky Club membership)', 'Gift Gold Medallion to up to 4 people', 'Diamond service line']],
     ],
     united: [
-      ['Premier Silver', '6,000 PQP, or 5,000 PQP + 15 flights', ['7 miles per $1 spent', 'Complimentary upgrades on eligible flights', 'Economy Plus seats at check-in', 'First checked bag free', 'Star Alliance Silver']],
-      ['Premier Gold', '12,000 PQP, or 10,000 PQP + 30 flights', ['8 miles per $1 spent', 'Star Alliance Gold: partner lounges on international trips', 'Economy Plus seats at booking', '2 free checked bags', 'Higher upgrade priority']],
-      ['Premier Platinum', '18,000 PQP, or 15,000 PQP + 45 flights', ['9 miles per $1 spent', '40 PlusPoints a year for upgrades', '3 free checked bags', 'Higher upgrade priority']],
-      ['Premier 1K', '28,000 PQP, or 22,000 PQP + 60 flights', ['11 miles per $1 spent', '280 PlusPoints a year for upgrades', 'Top upgrade priority', 'Dedicated 1K service line']],
+      ['Premier Silver', '6,000 PQP, or 5,000 PQP + 15 flights', ["Free upgrades", "Economy Plus at check-in", "1 free bag"], ['7 miles per $1 spent', 'Complimentary upgrades on eligible flights', 'Economy Plus seats at check-in', 'First checked bag free', 'Star Alliance Silver']],
+      ['Premier Gold', '12,000 PQP, or 10,000 PQP + 30 flights', ["Star Alliance lounges", "Economy Plus", "2 free bags"], ['8 miles per $1 spent', 'Star Alliance Gold: partner lounges on international trips', 'Economy Plus seats at booking', '2 free checked bags', 'Higher upgrade priority']],
+      ['Premier Platinum', '18,000 PQP, or 15,000 PQP + 45 flights', ["40 PlusPoints", "Upgrade priority", "3 free bags"], ['9 miles per $1 spent', '40 PlusPoints a year for upgrades', '3 free checked bags', 'Higher upgrade priority']],
+      ['Premier 1K', '28,000 PQP, or 22,000 PQP + 60 flights', ["280 PlusPoints", "Top upgrade priority", "1K service line"], ['11 miles per $1 spent', '280 PlusPoints a year for upgrades', 'Top upgrade priority', 'Dedicated 1K service line']],
     ],
     american: [
-      ['Gold', '40,000 Loyalty Points a year', ['Complimentary upgrades, clearing 24 hours out', 'Priority check-in and boarding', 'First checked bag free', 'oneworld Ruby']],
-      ['Platinum', '75,000 Loyalty Points a year', ['Main Cabin Extra seats at booking', 'Upgrades clearing 48 hours out', '2 free checked bags', 'oneworld Sapphire: partner business lounges on international trips']],
-      ['Platinum Pro', '125,000 Loyalty Points a year', ['Upgrades clearing 72 hours out', 'Free same-day flight changes', '3 free checked bags', 'oneworld Emerald: first-class lounges on international trips']],
-      ['Executive Platinum', '200,000 Loyalty Points a year', ['Upgrades clearing 100 hours out', 'Upgrades on award tickets too', 'oneworld Emerald', 'More Loyalty Point Rewards, like systemwide upgrades']],
+      ['Gold', '40,000 Loyalty Points a year', ["Free upgrades", "Priority boarding", "1 free bag"], ['Complimentary upgrades, clearing 24 hours out', 'Priority check-in and boarding', 'First checked bag free', 'oneworld Ruby']],
+      ['Platinum', '75,000 Loyalty Points a year', ["Main Cabin Extra", "oneworld lounges", "2 free bags"], ['Main Cabin Extra seats at booking', 'Upgrades clearing 48 hours out', '2 free checked bags', 'oneworld Sapphire: partner business lounges on international trips']],
+      ['Platinum Pro', '125,000 Loyalty Points a year', ["Upgrades 72 hrs out", "Free same-day changes", "First-class lounges"], ['Upgrades clearing 72 hours out', 'Free same-day flight changes', '3 free checked bags', 'oneworld Emerald: first-class lounges on international trips']],
+      ['Executive Platinum', '200,000 Loyalty Points a year', ["Upgrades 100 hrs out", "Award upgrades", "oneworld Emerald"], ['Upgrades clearing 100 hours out', 'Upgrades on award tickets too', 'oneworld Emerald', 'More Loyalty Point Rewards, like systemwide upgrades']],
     ],
     southwest: [
-      ['A-List', '20 flights or 35,000 tier points a year', ['Pick a Preferred or Standard seat at booking', 'Free Extra Legroom seat within 48 hours of departure (when available)', 'Priority check-in and security lanes', 'Free same-day standby']],
-      ['A-List Preferred', '40 flights or 70,000 tier points a year', ['Pick any seat, including Extra Legroom, at booking', 'Board before Group 1', 'Double points on flights', 'Free same-day standby']],
+      ['A-List', '20 flights or 35,000 tier points a year', ["Seat pick at booking", "Priority lanes", "Free standby"], ['Pick a Preferred or Standard seat at booking', 'Free Extra Legroom seat within 48 hours of departure (when available)', 'Priority check-in and security lanes', 'Free same-day standby']],
+      ['A-List Preferred', '40 flights or 70,000 tier points a year', ["Any seat incl. Extra Legroom", "Board first", "Double points"], ['Pick any seat, including Extra Legroom, at booking', 'Board before Group 1', 'Double points on flights', 'Free same-day standby']],
     ],
     alaska: [
-      ['Silver', '20,000 status points a year', ['1 free checked bag', 'Preferred seats', 'Complimentary upgrades on Alaska, Hawaiian, and eligible American flights', 'oneworld Ruby']],
-      ['Gold', '40,000 status points a year', ['2 free checked bags', 'Higher upgrade priority', 'Same-day flight changes', 'oneworld Sapphire: partner lounges on international trips']],
-      ['Platinum', '80,000 status points a year', ['3 free checked bags', '100% bonus points on flights', 'Higher upgrade priority', 'oneworld Emerald']],
-      ['Titanium', '135,000 status points a year', ['150% bonus points on flights', 'Free meal in economy', 'Upgrades on select long-haul routes', 'oneworld Emerald']],
+      ['Silver', '20,000 status points a year', ["Free upgrades", "Preferred seats", "1 free bag"], ['1 free checked bag', 'Preferred seats', 'Complimentary upgrades on Alaska, Hawaiian, and eligible American flights', 'oneworld Ruby']],
+      ['Gold', '40,000 status points a year', ["oneworld lounges", "Same-day changes", "2 free bags"], ['2 free checked bags', 'Higher upgrade priority', 'Same-day flight changes', 'oneworld Sapphire: partner lounges on international trips']],
+      ['Platinum', '80,000 status points a year', ["100% bonus", "Upgrade priority", "3 free bags"], ['3 free checked bags', '100% bonus points on flights', 'Higher upgrade priority', 'oneworld Emerald']],
+      ['Titanium', '135,000 status points a year', ["150% bonus", "Free economy meal", "Long-haul upgrades"], ['150% bonus points on flights', 'Free meal in economy', 'Upgrades on select long-haul routes', 'oneworld Emerald']],
     ],
     aeroplan: [
-      ['25K', '25,000 Status Qualifying Credits a year (automatic with the Chase Aeroplan card)', ['Priority check-in and Zone 2 boarding', 'Free checked bag on Air Canada', 'Star Alliance Silver', 'eUpgrade credits through Milestone Benefits']],
-      ['35K', '35,000 SQC a year', ['Star Alliance Gold', 'Higher priority for upgrades and standby', 'More Milestone Benefits']],
-      ['50K', '50,000 SQC a year', ['Maple Leaf Lounge and Air Canada Café access (plus a guest)', 'Star Alliance Gold', 'Higher upgrade priority']],
-      ['75K', '75,000 SQC a year', ['20 eUpgrade credits a year', 'Maple Leaf Lounge access', 'Star Alliance Gold']],
-      ['Super Elite', '125,000 SQC a year', ['Top priority for upgrades and service', 'Star Alliance Gold lounge access worldwide', 'Nominate someone for Aeroplan status']],
+      ['25K', '25,000 Status Qualifying Credits a year (automatic with the Chase Aeroplan card)', ["Priority check-in", "Zone 2 boarding", "Free checked bag"], ['Priority check-in and Zone 2 boarding', 'Free checked bag on Air Canada', 'Star Alliance Silver', 'eUpgrade credits through Milestone Benefits']],
+      ['35K', '35,000 SQC a year', ["Star Alliance Gold", "Upgrade priority", "Milestone Benefits"], ['Star Alliance Gold', 'Higher priority for upgrades and standby', 'More Milestone Benefits']],
+      ['50K', '50,000 SQC a year', ["Maple Leaf Lounges", "Star Alliance Gold", "Upgrade priority"], ['Maple Leaf Lounge and Air Canada Café access (plus a guest)', 'Star Alliance Gold', 'Higher upgrade priority']],
+      ['75K', '75,000 SQC a year', ["20 eUpgrades", "Maple Leaf Lounges", "Star Alliance Gold"], ['20 eUpgrade credits a year', 'Maple Leaf Lounge access', 'Star Alliance Gold']],
+      ['Super Elite', '125,000 SQC a year', ["Top priority", "Lounges worldwide", "Gift status"], ['Top priority for upgrades and service', 'Star Alliance Gold lounge access worldwide', 'Nominate someone for Aeroplan status']],
     ],
     hilton: [
-      ['Silver', '10 nights or 4 stays a year', ['20% bonus points on stays', '5th night free on standard-room reward stays', 'Complimentary bottled water']],
-      ['Gold', '25 nights, 15 stays, or $6,000 on stays a year', ['80% bonus points on stays', 'Daily food & beverage credit in the U.S. (continental breakfast elsewhere)', 'Space-available room upgrades', '5th night free on reward stays']],
-      ['Diamond', '50 nights a year', ['100% bonus points on stays', 'Daily food & beverage credit or breakfast', 'Executive lounge access', 'Space-available upgrades up to a one-bedroom suite', '48-hour room guarantee']],
-      ['Diamond Reserve', '80 nights (or 40 stays) plus $18,000 on stays a year', ['120% bonus points on stays', 'Guaranteed 4 p.m. late checkout', 'Premium club access', 'Everything in Diamond']],
+      ['Silver', '10 nights or 4 stays a year', ["20% bonus", "5th night free", "Bottled water"], ['20% bonus points on stays', '5th night free on standard-room reward stays', 'Complimentary bottled water']],
+      ['Gold', '25 nights, 15 stays, or $6,000 on stays a year', ["Breakfast / F&B credit", "Room upgrades", "80% bonus"], ['80% bonus points on stays', 'Daily food & beverage credit in the U.S. (continental breakfast elsewhere)', 'Space-available room upgrades', '5th night free on reward stays']],
+      ['Diamond', '50 nights a year', ["Breakfast / F&B credit", "Executive lounge", "Suite upgrades"], ['100% bonus points on stays', 'Daily food & beverage credit or breakfast', 'Executive lounge access', 'Space-available upgrades up to a one-bedroom suite', '48-hour room guarantee']],
+      ['Diamond Reserve', '80 nights (or 40 stays) plus $18,000 on stays a year', ["4 p.m. checkout", "Premium club", "120% bonus"], ['120% bonus points on stays', 'Guaranteed 4 p.m. late checkout', 'Premium club access', 'Everything in Diamond']],
     ],
     marriott: [
-      ['Silver Elite', '10 nights a year', ['10% bonus points', 'Priority late checkout', 'Dedicated elite reservation line']],
-      ['Gold Elite', '25 nights a year', ['25% bonus points', '2 p.m. late checkout (when available)', 'Enhanced room upgrade (not suites)', 'Welcome gift of bonus points', 'Enhanced in-room internet']],
-      ['Platinum Elite', '50 nights a year', ['50% bonus points', '4 p.m. late checkout', 'Lounge access', 'Welcome gift: breakfast, points, or an amenity (varies by brand)', 'Upgrades including select suites', '1 Annual Choice Benefit']],
-      ['Titanium Elite', '75 nights a year', ['75% bonus points', 'Everything in Platinum', '48-hour room guarantee', 'A second Annual Choice Benefit']],
-      ['Ambassador Elite', '100 nights plus $23,000 on stays a year', ['75% bonus points', 'A personal Ambassador for your stays', 'Your24: pick your own 24-hour check-in window', 'Everything in Titanium']],
+      ['Silver Elite', '10 nights a year', ["10% bonus", "Priority late checkout"], ['10% bonus points', 'Priority late checkout', 'Dedicated elite reservation line']],
+      ['Gold Elite', '25 nights a year', ["2 p.m. checkout", "Room upgrade", "25% bonus"], ['25% bonus points', '2 p.m. late checkout (when available)', 'Enhanced room upgrade (not suites)', 'Welcome gift of bonus points', 'Enhanced in-room internet']],
+      ['Platinum Elite', '50 nights a year', ["Lounge access", "Breakfast option", "4 p.m. checkout"], ['50% bonus points', '4 p.m. late checkout', 'Lounge access', 'Welcome gift: breakfast, points, or an amenity (varies by brand)', 'Upgrades including select suites', '1 Annual Choice Benefit']],
+      ['Titanium Elite', '75 nights a year', ["48-hr guarantee", "2nd Choice Benefit", "75% bonus"], ['75% bonus points', 'Everything in Platinum', '48-hour room guarantee', 'A second Annual Choice Benefit']],
+      ['Ambassador Elite', '100 nights plus $23,000 on stays a year', ["Personal Ambassador", "Your24 check-in", "All Titanium perks"], ['75% bonus points', 'A personal Ambassador for your stays', 'Your24: pick your own 24-hour check-in window', 'Everything in Titanium']],
     ],
     ihg: [
-      ['Silver Elite', '10 nights a year', ['20% bonus points', 'Milestone Rewards once you pass 20 nights']],
-      ['Gold Elite', '20 nights or 40,000 qualifying points a year', ['40% bonus points', 'Late checkout (when available)', 'Milestone Rewards at 20+ nights']],
-      ['Platinum Elite', '40 nights or 60,000 qualifying points a year', ['60% bonus points', 'Room upgrades, including select suites (when available)', 'Early check-in (when available)', 'Welcome amenity', '72-hour room guarantee']],
-      ['Diamond Elite', '70 nights or 120,000 qualifying points a year', ['100% bonus points', 'Welcome amenity (breakfast is an option at many hotels)', 'Upgrades including suites (when available)', 'Early check-in and late checkout', 'Dedicated Diamond support']],
+      ['Silver Elite', '10 nights a year', ["20% bonus", "Milestone Rewards"], ['20% bonus points', 'Milestone Rewards once you pass 20 nights']],
+      ['Gold Elite', '20 nights or 40,000 qualifying points a year', ["40% bonus", "Late checkout"], ['40% bonus points', 'Late checkout (when available)', 'Milestone Rewards at 20+ nights']],
+      ['Platinum Elite', '40 nights or 60,000 qualifying points a year', ["Room & suite upgrades", "Early check-in", "Welcome amenity"], ['60% bonus points', 'Room upgrades, including select suites (when available)', 'Early check-in (when available)', 'Welcome amenity', '72-hour room guarantee']],
+      ['Diamond Elite', '70 nights or 120,000 qualifying points a year', ["Breakfast option", "Suite upgrades", "100% bonus"], ['100% bonus points', 'Welcome amenity (breakfast is an option at many hotels)', 'Upgrades including suites (when available)', 'Early check-in and late checkout', 'Dedicated Diamond support']],
     ],
     hyatt: [
-      ['Discoverist', '10 nights or 25,000 base points a year', ['10% bonus points', 'Preferred room upgrade (when available)', '2 p.m. late checkout (when available)', 'Premium internet and daily bottled water']],
-      ['Explorist', '30 nights or 50,000 base points a year', ['20% bonus points', 'Upgrade to the best available room, excluding suites', '2 p.m. late checkout (when available)', '72-hour room guarantee']],
-      ['Globalist', '60 nights or 100,000 base points a year', ['30% bonus points', 'Suite upgrades and club lounge access', 'Free daily breakfast', '4 p.m. late checkout (when available)', 'No resort fees and free parking on award stays']],
+      ['Discoverist', '10 nights or 25,000 base points a year', ["Preferred room", "2 p.m. checkout", "Premium Wi-Fi"], ['10% bonus points', 'Preferred room upgrade (when available)', '2 p.m. late checkout (when available)', 'Premium internet and daily bottled water']],
+      ['Explorist', '30 nights or 50,000 base points a year', ["Best-room upgrade", "2 p.m. checkout", "20% bonus"], ['20% bonus points', 'Upgrade to the best available room, excluding suites', '2 p.m. late checkout (when available)', '72-hour room guarantee']],
+      ['Globalist', '60 nights or 100,000 base points a year', ["Free breakfast", "Suite upgrades", "Club lounge"], ['30% bonus points', 'Suite upgrades and club lounge access', 'Free daily breakfast', '4 p.m. late checkout (when available)', 'No resort fees and free parking on award stays']],
     ],
     wyndham: [
-      ['Gold', '5 qualified nights a year', ['10% bonus points', 'Late checkout (when available)', 'Preferred room choice']],
-      ['Platinum', '15 qualified nights a year', ['15% bonus points', 'Early check-in (when available)', 'Late checkout (when available)']],
-      ['Diamond', '40 qualified nights a year', ['20% bonus points', 'Suite upgrades (when available)', 'Welcome amenity', 'Early check-in and late checkout']],
+      ['Gold', '5 qualified nights a year', ["Late checkout", "Preferred room", "10% bonus"], ['10% bonus points', 'Late checkout (when available)', 'Preferred room choice']],
+      ['Platinum', '15 qualified nights a year', ["Early check-in", "Late checkout", "15% bonus"], ['15% bonus points', 'Early check-in (when available)', 'Late checkout (when available)']],
+      ['Diamond', '40 qualified nights a year', ["Suite upgrades", "Welcome amenity", "20% bonus"], ['20% bonus points', 'Suite upgrades (when available)', 'Welcome amenity', 'Early check-in and late checkout']],
     ],
     lhw: [
-      ['Leaders Club Sterling', '$5,000 on eligible stays a year', ['5 confirmed pre-arrival room upgrades a year (one category, not suites)', 'Daily continental breakfast for two', 'Early check-in and late checkout (when available)', 'Free Wi-Fi', '5% bonus on points'], ['sterling']],
+      ['Leaders Club Sterling', '$5,000 on eligible stays a year', ["Breakfast for two", "5 confirmed upgrades", "Free Wi-Fi"], ['5 confirmed pre-arrival room upgrades a year (one category, not suites)', 'Daily continental breakfast for two', 'Early check-in and late checkout (when available)', 'Free Wi-Fi', '5% bonus on points'], ['sterling']],
     ],
     omni: [
-      ['Champion', '$4,000 spent at Omni a year', ['One-room-type upgrade', 'Check in from 1 p.m., check out as late as 3 p.m.', 'Daily bottled water and a morning beverage delivery', 'Pressing or shoeshine for 4 items', 'Local amenity on arrival']],
+      ['Champion', '$4,000 spent at Omni a year', ["Room upgrade", "3 p.m. checkout", "Morning beverage"], ['One-room-type upgrade', 'Check in from 1 p.m., check out as late as 3 p.m.', 'Daily bottled water and a morning beverage delivery', 'Pressing or shoeshine for 4 items', 'Local amenity on arrival']],
     ],
     avis: [
-      ['Preferred Plus', '10 rentals or $4,000 a year', ['Skip the counter', 'One-car-class upgrade (when available)', 'Bonus points on rentals']],
-      ["President's Club", null, ['Guaranteed car-class upgrade', 'Free additional driver', 'Priority service and a dedicated 24/7 line', 'Bonus points on rentals']],
+      ['Preferred Plus', '10 rentals or $4,000 a year', ["Skip the counter", "Upgrade when available"], ['Skip the counter', 'One-car-class upgrade (when available)', 'Bonus points on rentals']],
+      ["President's Club", null, ["Guaranteed upgrade", "Free extra driver", "24/7 service line"], ['Guaranteed car-class upgrade', 'Free additional driver', 'Priority service and a dedicated 24/7 line', 'Bonus points on rentals']],
     ],
     hertz: [
-      ['Five Star', null, ['Pick from a wider selection of cars', 'Occasional upgrades', '25% bonus points', 'Skip the counter']],
-      ["President's Circle", null, ['Guaranteed one-class upgrade (up to full-size)', 'Pick from the President’s Circle area', '50% bonus points', 'Dedicated service line']],
+      ['Five Star', null, ["Wider car choice", "Skip the counter", "25% bonus"], ['Pick from a wider selection of cars', 'Occasional upgrades', '25% bonus points', 'Skip the counter']],
+      ["President's Circle", null, ["Guaranteed upgrade", "Pick your car", "50% bonus"], ['Guaranteed one-class upgrade (up to full-size)', 'Pick from the President’s Circle area', '50% bonus points', 'Dedicated service line']],
     ],
     national: [
-      ['Executive', '12 paid rentals or 40 paid days a year', ['Pick any car in the Executive Area and pay the midsize rate', 'Guaranteed upgrade when you book midsize', 'Skip the counter'], ['exec']],
-      ['Executive Elite', '25 paid rentals or 85 paid days a year', ['Guaranteed full-size car when you book midsize', 'Car delivered to private aviation terminals at many locations', 'Everything in Executive'], ['exec elite']],
+      ['Executive', '12 paid rentals or 40 paid days a year', ["Pick any Executive car", "Midsize price", "Skip the counter"], ['Pick any car in the Executive Area and pay the midsize rate', 'Guaranteed upgrade when you book midsize', 'Skip the counter'], ['exec']],
+      ['Executive Elite', '25 paid rentals or 85 paid days a year', ["Guaranteed full-size", "Private terminal delivery"], ['Guaranteed full-size car when you book midsize', 'Car delivered to private aviation terminals at many locations', 'Everything in Executive'], ['exec elite']],
     ],
   };
 
@@ -1506,10 +1574,10 @@
   const normTier = (text) => text.toLowerCase().replace(/[’`]/g, "'").replace(/[^a-z0-9']+/g, ' ').trim();
   const TIER_FILLER = /\b(status|elite|medallion|premier|atmos|member|level|tier)\b/g;
   for (const [id, tiers] of Object.entries(BENEFITS)) {
-    BENEFITS[id] = tiers.map(([name, earn, perks, also = []]) => {
+    BENEFITS[id] = tiers.map(([name, earn, short, perks, also = []]) => {
       const full = normTier(name);
       const bare = full.replace(TIER_FILLER, ' ').replace(/\s+/g, ' ').trim();
-      return { name, earn, perks, aliases: [...new Set([full, bare, ...also].filter(Boolean))] };
+      return { name, earn, short, perks, aliases: [...new Set([full, bare, ...also].filter(Boolean))] };
     });
   }
 
@@ -1534,6 +1602,28 @@
     const i = tiers ? findTier(tiers, text) : -1;
     return i < 0 ? null : tiers[i];
   }
+
+  // Levels you currently hold in a program (unexpired statuses, plus the computed Medallion tier).
+  function heldTierIndexes(p) {
+    const tiers = benefitsFor(p);
+    if (!tiers) return new Set();
+    const texts = p.status.filter((line) => !lineExpired(line)).flatMap((line) => splitParts(line.tier));
+    if (p === medallionProgram()) {
+      const current = medallionFor(state.mqd).current;
+      if (current) texts.push(`${current.name} Medallion`);
+    }
+    return new Set(texts.map((t) => findTier(tiers, t)).filter((i) => i >= 0));
+  }
+
+  // Your highest level in a program — its perks generally include the ones below it.
+  function topTier(p) {
+    const held = heldTierIndexes(p);
+    return held.size ? benefitsFor(p)[Math.max(...held)] : null;
+  }
+
+  // Each short perk stays on one line; lines break only between perks.
+  const perkLineContent = (tier) => [svgIcon(ICON.check),
+    h('span', null, tier.short.flatMap((perk, i) => [i ? ' · ' : null, h('span', { class: 'nw' }, perk)]))];
 
   const ICON = {
     spark:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M8 1.5l1.7 4.3 4.3 1.7-4.3 1.7L8 13.5l-1.7-4.3L2 7.5l4.3-1.7z"/></svg>',
@@ -2094,6 +2184,14 @@
     $('#plan-result').replaceChildren(...result);
   }
 
+  // "✓ Breakfast / F&B credit · Room upgrades · 80% bonus" under the status. The Delta row's is filled in by
+  // updateMedallion(), since it changes as MQDs are edited.
+  function perkLine(p, withMedallion) {
+    if (withMedallion) return h('div', { class: 'perk-line', id: 'medallion-perks', hidden: '' });
+    const tier = topTier(p);
+    return tier ? h('div', { class: 'perk-line' }, perkLineContent(tier)) : null;
+  }
+
   function programRow(p, index, withMedallion) {
     if (editMode) {
       const last = index === state.programs.length - 1;
@@ -2111,7 +2209,7 @@
     const main = h('div', { class: status ? 'row-main' : 'row-main solo' },
       h('button', { type: 'button', class: 'who-open', 'data-open': p.id },
         avatar(p),
-        h('div', { class: 'who' }, h('div', { class: 'name' }, p.name), status)));
+        h('div', { class: 'who' }, h('div', { class: 'name' }, p.name), status, perkLine(p, withMedallion))));
     if (p.unit) {
       main.append(h('div', { class: 'bal' },
         numButton(`bal:${p.id}`, `${p.name} balance`),
@@ -2177,6 +2275,7 @@
     $('#programs').replaceChildren(...rows);
     $('#p-count').textContent = list.length;
     $('#edit-toggle').textContent = editMode ? 'Done' : 'Edit';
+    $('#perks-btn').hidden = editMode;
     $('#edit-toggle').classList.toggle('on', editMode);
     $('#p-hint').textContent = editMode ? 'Tap a program to edit it' : 'Tap a program for perks & member number';
     $('#p-hint').hidden = !editMode && !list.some((p) => p.unit);
@@ -2204,6 +2303,9 @@
     $('#medallion-status').replaceChildren(current
       ? pill(`${current.name} Medallion`)
       : h('span', { class: 'via' }, 'No Medallion status yet'));
+    const top = topTier(medallionProgram());
+    $('#medallion-perks').hidden = !top;
+    if (top) $('#medallion-perks').replaceChildren(...perkLineContent(top));
     $('#mqd-next').textContent = next
       ? `${fmt(next.min - mqd)} to ${next.name}`
       : 'Diamond — top tier';
@@ -2239,8 +2341,8 @@
     $('#st-1')._count = null;
     $('#st-1').textContent = statuses;
     $('#st-1-l').textContent = statuses === 1 ? 'Elite status' : 'Elite statuses';
-    $('#st-1-btn').dataset.go = statuses ? 'status' : 'programs';
-    $('#st-1-btn').setAttribute('aria-label', `${plural(statuses, 'elite status', 'elite statuses')}. Show them`);
+    $('#st-1-btn').dataset.go = statuses ? 'perks' : 'programs';
+    $('#st-1-btn').setAttribute('aria-label', `${plural(statuses, 'elite status', 'elite statuses')}. See what they get you`);
     if (medallion) {
       const { current, next } = medallionFor(state.mqd);
       const low = current ? current.min : 0;
@@ -2288,6 +2390,7 @@
     if (!tile) return;
     const go = tile.dataset.go;
     if (go === 'vouchers') { jumpTo($('#vouchers-section')); return; }
+    if (go === 'perks') { openPerks(); return; }
     editMode = false;
     if (go === 'medallion') {
       if (!matchesFilter(medallionProgram())) filter = 'all';
@@ -2684,12 +2787,7 @@
     const tiers = benefitsFor(p);
     $('#d-levels').hidden = !tiers;
     if (!tiers) return;
-    const texts = p.status.filter((line) => !lineExpired(line)).flatMap((line) => splitParts(line.tier));
-    if (p === medallionProgram()) {
-      const current = medallionFor(state.mqd).current;
-      if (current) texts.push(`${current.name} Medallion`);
-    }
-    const held = new Set(texts.map((t) => findTier(tiers, t)).filter((i) => i >= 0));
+    const held = heldTierIndexes(p);
     const top = held.size ? Math.max(...held) : -1;
     const levels = tiers.map((tier, i) => {
       const isNext = i === top + 1;
@@ -2749,6 +2847,130 @@
       e.preventDefault();
       setStatusExp(detailProgram(), expEditing, e.target.value);
     }
+  });
+
+  /* ---------- "Your perks": every benefit you hold, grouped by what you'd look for ---------- */
+
+  const PERK_SVG = (paths) => `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
+  const PERK_TYPES = [
+    { id: 'food', label: 'Food & breakfast', test: /breakfast|food|beverage|meal/i,
+      icon: PERK_SVG('<path d="M6 2.5v5.5a2 2 0 0 0 4 0V2.5M8 2.5v15M14.5 2.5c-1.6 1.2-2.5 3.2-2.5 5.5 0 1.7.9 2.8 2.5 3v6.5"/>') },
+    { id: 'lounges', label: 'Lounges', test: /lounge|club access|premium club/i, icon: ICON.lounge },
+    { id: 'upgrades', label: 'Upgrades', test: /upgrade|pluspoints|suite/i, icon: PERK_SVG('<path d="M10 16V4M5.5 8.5L10 4l4.5 4.5"/>') },
+    { id: 'time', label: 'Check-in & checkout', test: /check-?out|check-?in|your24/i, notFor: 'Airlines',
+      icon: PERK_SVG('<circle cx="10" cy="10" r="7"/><path d="M10 6.2V10l2.6 1.8"/>') },
+    { id: 'travel', label: 'Airport, seats & bags', test: /bag|board|priority|security|seat|standby|same-day|alliance|skyteam|oneworld|economy plus|main cabin/i, onlyFor: 'Airlines',
+      icon: PERK_SVG('<rect x="3.5" y="6.5" width="13" height="10" rx="2"/><path d="M7.5 6.5v-2a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v2M3.5 11h13"/>') },
+    { id: 'earning', label: 'Bonus points & miles', test: /bonus|miles per|double points/i, icon: ICON.spark },
+    { id: 'cars', label: 'Car rental', icon: PERK_SVG('<path d="M3.5 12.5l1.6-4.3A2 2 0 0 1 7 7h6a2 2 0 0 1 1.9 1.2l1.6 4.3v3h-13z"/><path d="M3.5 12.5h13M6.5 15.5V17M13.5 15.5V17"/>') },
+    { id: 'other', label: 'More perks', icon: PERK_SVG('<rect x="3" y="7.5" width="14" height="3.5" rx="1"/><path d="M4.5 11v5.5h11V11M10 7.5v9M10 7.5C8.8 5 6 4.5 6 6.2s4 1.3 4 1.3zm0 0c1.2-2.5 4-3 4-1.3s-4 1.3-4 1.3z"/>') },
+  ];
+  const CAR_PROGRAMS = new Set(['avis', 'hertz', 'national', 'enterprise']);
+
+  // Which groups a perk belongs in (a perk like "Suite upgrades and club lounge access" can be in two).
+  function perkTypes(p, perk) {
+    const id = (catalogFor(p) || {}).id;
+    if (CAR_PROGRAMS.has(id)) return ['cars'];
+    if (id === 'lounges') return ['lounges'];
+    const kind = categoryOf(p);
+    const types = PERK_TYPES.filter((t) => t.test && t.test.test(perk)
+      && (!t.onlyFor || kind === t.onlyFor) && (!t.notFor || kind !== t.notFor)).map((t) => t.id);
+    return types.length ? types : ['other'];
+  }
+
+  // Every perk from every level you hold (expired statuses left out), with where it comes from.
+  function collectPerks() {
+    const items = [];
+    const seen = new Map();
+    const add = (p, perk, tierName, via, types) => {
+      const key = `${p.id}|${perk}`;
+      const existing = seen.get(key);
+      if (existing) { // same perk from another card (e.g. Priority Pass): credit both
+        if (via && !splitParts(existing.via).includes(via)) existing.via = [existing.via, via].filter(Boolean).join(' · ');
+        return;
+      }
+      const item = { p, perk, tierName, via, types: types || perkTypes(p, perk) };
+      seen.set(key, item);
+      items.push(item);
+    };
+    for (const p of state.programs || []) {
+      const lounges = (catalogFor(p) || {}).id === 'lounges';
+      if (p === medallionProgram()) {
+        const current = medallionFor(state.mqd).current;
+        const tier = current && perksFor(p, `${current.name} Medallion`);
+        if (tier) tier.perks.forEach((perk) => add(p, perk, tier.name, ''));
+      }
+      for (const group of mergedLines(p.status)) {
+        if (!group.tier || (group.exp && daysLeft(group.exp) < 0)) continue;
+        const via = splitParts(group.via).join(' · ');
+        for (const part of splitParts(group.tier)) {
+          if (lounges) { add(p, part, '', via, ['lounges']); continue; }
+          const tier = perksFor(p, part);
+          if (tier) tier.perks.forEach((perk) => add(p, perk, tier.name, via));
+        }
+      }
+    }
+    return items;
+  }
+
+  const perksSheet = $('#perks-sheet');
+  let perkFilter = 'all';
+
+  function renderPerks() {
+    const items = collectPerks();
+    const words = $('#perks-search').value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    const found = items.filter((it) => words.every((w) => `${it.perk} ${it.p.name} ${it.tierName} ${it.via}`.toLowerCase().includes(w)));
+    const statuses = state.programs.filter(hasStatus).length;
+    $('#perks-sub').textContent = items.length
+      ? `${plural(items.length, 'perk')} from ${plural(statuses, 'elite status', 'elite statuses')}${state.programs.some((p) => (catalogFor(p) || {}).id === 'lounges') ? ' and your lounge access' : ''}.`
+      : '';
+
+    const counts = Object.fromEntries(PERK_TYPES.map((t) => [t.id, found.filter((it) => it.types.includes(t.id)).length]));
+    const types = PERK_TYPES.filter((t) => counts[t.id]);
+    if (perkFilter !== 'all' && !counts[perkFilter]) perkFilter = 'all';
+    $('#perk-filters').hidden = types.length < 2;
+    $('#perk-filters').replaceChildren(
+      h('button', { type: 'button', class: 'filter', 'data-perk-filter': 'all', 'aria-pressed': String(perkFilter === 'all') }, 'All', h('span', { class: 'n' }, String(found.length))),
+      ...types.map((t) => h('button', { type: 'button', class: 'filter', 'data-perk-filter': t.id, 'aria-pressed': String(perkFilter === t.id) },
+        t.label, h('span', { class: 'n' }, String(counts[t.id])))));
+
+    let body;
+    if (!items.length) {
+      body = [h('p', { class: 'perks-empty' }, 'No elite statuses yet. Add the cards you hold (Edit → Choose cards) or type in a status, and its perks show up here.')];
+    } else if (!found.length) {
+      body = [h('p', { class: 'perks-empty' }, `Nothing matches “${$('#perks-search').value.trim()}”. Try “breakfast”, “lounge”, “upgrade”, or “checkout”.`)];
+    } else {
+      body = types.filter((t) => perkFilter === 'all' || t.id === perkFilter).map((t) => {
+        const list = found.filter((it) => it.types.includes(t.id));
+        return h('section', { class: 'perk-cat', 'aria-label': t.label },
+          h('h3', { class: 'perk-cat-title' }, h('span', { class: 'perk-ico' }, svgIcon(t.icon)), t.label, h('span', { class: 'n' }, String(list.length))),
+          h('ul', { class: 'perk-items' }, list.map((it) => h('li', { class: 'perk-item' },
+            h('span', { class: 'perk-text' }, it.perk),
+            h('button', { type: 'button', class: 'perk-src', 'data-open': it.p.id, 'aria-label': `${it.p.name}${it.tierName ? ` ${it.tierName}` : ''}${it.via ? `, from ${it.via}` : ''}. Open program` },
+              avatar(it.p),
+              it.tierName ? [it.p.name, pill(it.tierName)] : [it.via || it.p.name])))));
+      });
+    }
+    $('#perks-list').replaceChildren(...body);
+    $('#perks-fine').textContent = `Headline perks as of ${BENEFITS_AS_OF}. Tap a source to see its full details.`;
+  }
+
+  function openPerks() {
+    $('#perks-search').value = '';
+    perkFilter = 'all';
+    renderPerks();
+    perksSheet.showModal();
+    perksSheet.scrollTop = 0;
+  }
+
+  $('#perks-btn').addEventListener('click', openPerks);
+  $('#perks-search').addEventListener('input', renderPerks);
+  perksSheet.addEventListener('click', (e) => {
+    if (e.target === perksSheet || e.target.closest('#perks-done')) { perksSheet.close(); return; }
+    const chip = e.target.closest('[data-perk-filter]');
+    if (chip) { perkFilter = chip.dataset.perkFilter; renderPerks(); return; }
+    const src = e.target.closest('[data-open]');
+    if (src) { perksSheet.close(); openDetail(src.dataset.open); }
   });
 
   /* ---------- Reminders: "Coming up", calendar events, app badge ---------- */
@@ -2951,7 +3173,7 @@
     picker.querySelector('.no-match').hidden = anyShown;
   }
 
-  for (const input of document.querySelectorAll('.card-search')) {
+  for (const input of document.querySelectorAll('.card-search[data-for]')) {
     input.addEventListener('input', () => filterCards(input));
   }
 

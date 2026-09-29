@@ -17,6 +17,11 @@ It launches full-screen from the home screen and works with no network.
 
 The first time you open it, pick the programs you have and, optionally, the credit cards you hold (or tap **Use the example setup**). Tap **Edit** on the program list anytime to add, rename, reorder, or delete programs, set your own status levels and where they come from, and write a note under the list. Tap any number to update a balance.
 
+### Knowing your perks
+
+- **Under every status** in the list, a one-line summary of what it gets you (e.g. "✓ Breakfast / F&B credit · Room upgrades · 80% bonus") — for your highest level in that program.
+- **Your perks** (the **Perks** button, or tap the Elite statuses tile): every benefit across all your statuses in one place, grouped into Food & breakfast, Lounges, Upgrades, Check-in & checkout, Airport/seats/bags, Bonus points & miles, Car rental, and more. Search it ("breakfast", "late checkout", "lounge") to see which status covers you; tap a source to open that program.
+
 ### Expiration dates & reminders
 
 - Add an expiration date to any status from its detail sheet (**Add date**) or in **Edit**. Statuses noted "thru 12/31/27" (like IHG Platinum from the Sapphire Reserve) get their date automatically.
