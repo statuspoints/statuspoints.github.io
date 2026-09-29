@@ -17,6 +17,13 @@ It launches full-screen from the home screen and works with no network.
 
 The first time you open it, pick the programs you have and, optionally, the credit cards you hold (or tap **Use the example setup**). Tap **Edit** on the program list anytime to add, rename, reorder, or delete programs, set your own status levels and where they come from, and write a note under the list. Tap any number to update a balance.
 
+### Expiration dates & reminders
+
+- Add an expiration date to any status from its detail sheet (**Add date**) or in **Edit**. Statuses noted "thru 12/31/27" (like IHG Platinum from the Sapphire Reserve) get their date automatically.
+- **Coming up** at the top lists statuses expiring within 90 days and vouchers within 60 (plus anything that lapsed in the last month). Rows show "48 days left" or "Expired"; expired statuses stop counting as elite.
+- **Add to calendar** saves every upcoming expiration as calendar events with alerts 30 days before, 7 days before, and on the day (9 a.m.) — real reminders even when the app is closed. On iPhone it opens straight into Calendar; elsewhere it downloads a `.ics` file to open.
+- On devices that support it, the installed app's icon shows a badge for anything due within 30 days.
+
 ### Getting around
 
 - **Tap a program** to open its details:

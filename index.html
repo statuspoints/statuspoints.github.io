@@ -344,6 +344,7 @@
   .pill.t-plat { background: var(--t-plat-bg); color: var(--t-plat-fg); }
   .pill.t-diam { background: var(--t-diam-bg); color: var(--t-diam-fg); }
   .via { font-size: 12.5px; line-height: 1.35; color: var(--muted); overflow-wrap: anywhere; }
+  .sline.expired .pill { opacity: .55; text-decoration: line-through; }
   .via .nw { white-space: nowrap; } /* keep "Sapphire Reserve", "thru 12/31/27" whole; wrap between them */
   .no-status { margin-top: 3px; font-size: 13px; color: var(--faint); }
   .bal { flex: none; text-align: right; }
@@ -778,13 +779,76 @@
   .check input { flex: none; width: 20px; height: 20px; margin: 0; accent-color: var(--accent); }
   .status-edit { min-width: 0; margin: 0; padding: 0; border: 0; }
   .sl-head, .sl { display: grid; grid-template-columns: 3fr 2fr 36px; gap: 8px; align-items: center; }
+  .sl { grid-template-areas: "tier via del" "exp exp exp"; row-gap: 6px; }
+  .sl-tier { grid-area: tier; }
+  .sl-via { grid-area: via; }
+  .sl-del { grid-area: del; }
+  .sl-exp { grid-area: exp; display: flex; align-items: center; gap: 8px; margin: 0 0 0 2px; font-size: 12px; color: var(--muted); }
+  .field .sl-exp input { flex: 1; width: auto; max-width: 200px; height: 38px; }
   .sl-head { margin: 0 2px 4px; font-size: 11.5px; color: var(--muted); }
-  .sl + .sl { margin-top: 8px; }
+  .sl + .sl { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line); }
   .status-edit .add-line { display: inline-block; margin: 6px -4px -6px; }
   .sheet-actions { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
   .sheet-actions .spacer { flex: 1; }
   .fine { margin: 0; font-size: 12px; color: var(--muted); }
   .cards-status { min-height: 1.45em; margin: 0; font-size: 13.5px; font-weight: 600; color: var(--accent); }
+
+  /* "Coming up": expiring statuses and vouchers */
+  .upcoming { margin-top: 16px; }
+  .up-head { display: flex; align-items: center; gap: 10px; padding: 14px 16px 6px; }
+  .up-head svg { flex: none; width: 18px; height: 18px; color: var(--warn); }
+  .up-title-main { flex: 1; min-width: 0; margin: 0; font-size: 15.5px; font-weight: 700; letter-spacing: -0.01em; }
+  .up-title-main span { font-weight: 500; color: var(--muted); font-size: 13px; }
+  .up-list { list-style: none; margin: 0; padding: 0 8px 8px; }
+  .up-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 9px 8px;
+    border: 0;
+    border-radius: 12px;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+  .up-item:active { background: var(--hover); }
+  .up-item:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  @media (hover: hover) {
+    .up-item:hover { background: var(--hover); }
+  }
+  .up-item .av, .up-item .v-ico { width: 34px; height: 34px; border-radius: 10px; font-size: 11.5px; }
+  .up-item .av.x3 { font-size: 9.5px; }
+  .up-item .v-ico svg { width: 17px; height: 17px; }
+  .up-body { flex: 1; min-width: 0; }
+  .up-name { font-size: 14.5px; font-weight: 650; line-height: 1.3; }
+  .up-sub { font-size: 12.5px; color: var(--muted); }
+  .up-item .tag { flex: none; }
+
+  /* Status expiration in the detail sheet */
+  .exp-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); font-size: 13px; }
+  .exp-text { flex: 1 1 100%; color: var(--muted); }
+  .exp-text.warn { color: var(--warn); font-weight: 600; }
+  .exp-text.danger { color: var(--danger); font-weight: 600; }
+  .exp-row .link { font-size: 13px; }
+  .exp-row.editing .exp-text { display: none; }
+  .exp-input {
+    flex: 1;
+    min-width: 0;
+    max-width: 200px;
+    height: 40px;
+    padding: 0 10px;
+    border: 1px solid var(--field-line);
+    border-radius: 10px;
+    background: var(--field);
+    color: var(--text);
+    font: inherit;
+    font-size: 16px;
+  }
+  .exp-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .exp-row .add.sm, .exp-row .btn-secondary.sm { height: 40px; }
 
   /* Tappable program (opens its detail sheet) */
   .who-open {
@@ -961,6 +1025,15 @@
     </div>
   </header>
 
+  <section class="card upcoming" id="upcoming" aria-labelledby="up-title" hidden>
+    <div class="up-head">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 8.5a5 5 0 0 1 10 0c0 4 1.5 5.5 1.5 5.5h-13S5 12.5 5 8.5z"/><path d="M8.5 16.5a1.6 1.6 0 0 0 3 0"/></svg>
+      <h2 class="up-title-main" id="up-title">Coming up <span id="up-count"></span></h2>
+      <button class="pill-btn sm" id="up-cal" type="button">Add to calendar</button>
+    </div>
+    <ul class="up-list" id="up-list"></ul>
+  </section>
+
   <section id="setup" aria-labelledby="h-setup" hidden>
     <div class="card setup-card">
       <h2 id="h-setup">Set up your tracker</h2>
@@ -1038,6 +1111,10 @@
       <button class="ghost-btn" id="text-btn" type="button">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 1.75h5.5l3 3v9.5H4z"/><path d="M9.5 1.75v3h3M6 8.25h4.5M6 10.75h4.5"/></svg>
         Export as text
+      </button>
+      <button class="ghost-btn" id="cal-btn" type="button" hidden>
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="3.5" width="11" height="10" rx="2"/><path d="M2.5 6.5h11M5.5 2v3M10.5 2v3"/></svg>
+        Add reminders to calendar
       </button>
       <button class="ghost-btn" id="export-btn" type="button">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2.5v8M4.5 7L8 10.5 11.5 7M3 13.5h10"/></svg>
@@ -1140,7 +1217,8 @@
 
   const KEY = 'status-tracker-v2';
   const SAVE_DELAY = 400;
-  const SOON_DAYS = 60;
+  const SOON_DAYS = 60; // vouchers: flag and remind this many days out
+  const STATUS_SOON_DAYS = 90; // statuses: more lead time to requalify or use perks
   const MAX_VALUE = 999999999999;
   const MQD_GOAL = 28000;
   const TIERS = [
@@ -1221,7 +1299,7 @@
     ['lounges', 'Sky Club (15 visits/yr) · Centurion on Delta flights'],
   ];
   const SAPPHIRE_RESERVE = [
-    ['ihg', 'Platinum Elite', 'thru 12/31/27'],
+    ['ihg', 'Platinum Elite', 'thru 12/31/27', '2027-12-31'], // 4th item: expiration date
     ['avis', 'Preferred Plus'],
     ['national', 'Emerald Club Executive'],
     ['lounges', 'Sapphire Lounges · Priority Pass · Air Canada Maple Leaf'],
@@ -1636,6 +1714,8 @@
           .map((line) => {
             const clean = { tier: str(line && line.tier, 80), via: str(line && line.via, 80) };
             if (line && typeof line.card === 'string') clean.card = line.card; // added by a card preset
+            const exp = line && typeof line.exp === 'string' && parseISODate(line.exp) ? line.exp : thruDate(clean.via);
+            if (exp) clean.exp = exp; // status expiration (YYYY-MM-DD)
             return clean;
           })
           .filter((line) => line.tier || line.via),
@@ -1645,6 +1725,15 @@
       out.push(program);
     }
     return out;
+  }
+
+  // "thru 12/31/27" in a status's source text → "2027-12-31", so those statuses get reminders automatically.
+  function thruDate(text) {
+    const m = /\bthru\s+(\d{1,2})\/(\d{1,2})\/(\d{4}|\d{2})\b/i.exec(text || '');
+    if (!m) return '';
+    const year = m[3].length === 2 ? 2000 + Number(m[3]) : Number(m[3]);
+    const iso = `${year}-${m[1].padStart(2, '0')}-${m[2].padStart(2, '0')}`;
+    return parseISODate(iso) ? iso : '';
   }
 
   function programFromCatalog(c) {
@@ -1666,7 +1755,7 @@
     if (!card || s.cards.includes(cardId)) return 0;
     s.cards.push(cardId);
     let added = 0;
-    for (const [programId, tier, note] of card.grants) {
+    for (const [programId, tier, note, exp] of card.grants) {
       let program = findProgram(s, programId);
       if (!program) {
         program = { ...programFromCatalog(CATALOG_BY_ID[programId]), addedBy: cardId };
@@ -1679,8 +1768,9 @@
       const existing = program.status.find((line) => sameText(line.tier, tier) && sameText(line.via, via));
       if (existing) {
         existing.card = cardId; // the person already typed this one; link it to the card
+        if (exp && !existing.exp) existing.exp = exp;
       } else {
-        program.status.push({ tier, via, card: cardId });
+        program.status.push(exp ? { tier, via, card: cardId, exp } : { tier, via, card: cardId });
         added++;
       }
     }
@@ -1901,22 +1991,38 @@
   let editMode = false;
 
   // One line per tier when several cards give the same status: "Preferred Plus · Amex Platinum · Sapphire Reserve".
+  // Each merged line keeps its underlying lines (`refs`). It expires when its last source does; one source
+  // without an end date (e.g. a card you keep) means it doesn't expire.
   function mergedLines(lines) {
     const out = [];
     for (const line of lines) {
       const same = line.tier && out.find((o) => sameText(o.tier, line.tier));
-      if (same) same.via = [same.via, line.via].filter(Boolean).join(' · ');
-      else out.push({ tier: line.tier, via: line.via });
+      if (same) {
+        same.via = [same.via, line.via].filter(Boolean).join(' · ');
+        same.refs.push(line);
+      } else {
+        out.push({ tier: line.tier, via: line.via, refs: [line] });
+      }
     }
+    for (const group of out) group.exp = group.refs.every((l) => l.exp) ? group.refs.map((l) => l.exp).sort().pop() : '';
     return out;
   }
 
-  // Tiers as colored pills, then where they come from.
-  function statusLine({ tier, via }) {
+  // Days until a YYYY-MM-DD date (negative once past), or null without a date.
+  const daysLeft = (iso) => { const date = parseISODate(iso); return date ? daysUntil(date) : null; };
+  const lineExpired = (line) => { const days = daysLeft(line.exp); return days != null && days < 0; };
+
+  // Tiers as colored pills, then where they come from, then a tag if it's expiring soon or expired.
+  function statusLine({ tier, via, exp }) {
     const from = splitParts(via).map((part) => h('span', { class: part.length <= 28 ? 'nw' : null }, part));
-    return h('div', { class: 'sline' },
+    const days = tier ? daysLeft(exp) : null;
+    let tag = null;
+    if (days != null && days < 0) tag = h('span', { class: 'tag danger' }, 'Expired');
+    else if (days != null && days <= STATUS_SOON_DAYS) tag = h('span', { class: 'tag warn' }, days === 0 ? 'Expires today' : `${plural(days, 'day')} left`);
+    return h('div', { class: days != null && days < 0 ? 'sline expired' : 'sline' },
       splitParts(tier).map(pill),
-      from.length ? h('span', { class: 'via' }, from.flatMap((part, i) => (i ? [' · ', part] : [part]))) : null);
+      from.length ? h('span', { class: 'via' }, from.flatMap((part, i) => (i ? [' · ', part] : [part]))) : null,
+      tag);
   }
 
   function statusBlock(p, withMedallion) {
@@ -2026,7 +2132,7 @@
   };
   // Elite = a real tier: the computed Medallion for the Delta tracker, any typed/card status elsewhere (not lounges).
   const hasStatus = (p) => p.id !== 'lounges'
-    && (p === medallionProgram() ? !!medallionFor(state.mqd).current : p.status.some((line) => line.tier));
+    && (p === medallionProgram() ? !!medallionFor(state.mqd).current : p.status.some((line) => line.tier && !lineExpired(line)));
   const matchesFilter = (p) => filter === 'all' || (filter === 'status' ? hasStatus(p) : categoryOf(p) === filter);
 
   function renderFilters() {
@@ -2157,6 +2263,7 @@
     $('#st-3-l').textContent = soon ? `${soon} expiring soon` : active === 1 ? 'Voucher' : 'Vouchers';
     $('#st-3-l').classList.toggle('warn', soon > 0);
     $('#st-3-btn').setAttribute('aria-label', `${plural(active, 'voucher')}${soon ? `, ${soon} expiring soon` : ''}. Show vouchers`);
+    renderUpcoming();
   }
 
   // Progress ring toward the next Medallion tier, tinted with the current tier's color.
@@ -2259,7 +2366,9 @@
     return h('div', { class: 'sl', 'data-card': line.card || null },
       h('input', { type: 'text', class: 'sl-tier', maxlength: '80', placeholder: 'Gold', 'aria-label': 'Status level', value: line.tier }),
       h('input', { type: 'text', class: 'sl-via', maxlength: '80', placeholder: 'Amex Platinum', 'aria-label': 'Where the status comes from (optional)', value: line.via }),
-      h('button', { type: 'button', class: 'icon-btn sl-del', 'aria-label': 'Remove this status' }, svgIcon(ICON.x)));
+      h('button', { type: 'button', class: 'icon-btn sl-del', 'aria-label': 'Remove this status' }, svgIcon(ICON.x)),
+      h('label', { class: 'sl-exp' }, 'Expires',
+        h('input', { type: 'date', class: 'sl-date', 'aria-label': 'Expiration date (optional)', value: line.exp || '' })));
   }
 
   function syncMedallionToggle() {
@@ -2324,6 +2433,8 @@
       .map((row) => {
         const line = { tier: row.querySelector('.sl-tier').value.trim(), via: row.querySelector('.sl-via').value.trim() };
         if (row.dataset.card) line.card = row.dataset.card;
+        const exp = row.querySelector('.sl-date').value;
+        if (parseISODate(exp)) line.exp = exp;
         return line;
       })
       .filter((line) => line.tier || line.via);
@@ -2377,6 +2488,7 @@
   const detail = $('#detail');
   let detailId = null;
   let memberShown = false;
+  let expEditing = null; // index of the status whose expiration date is being edited
 
   const detailProgram = () => state.programs.find((p) => p.id === detailId);
   const maskNumber = (n) => (n.length <= 4 ? n : `•••• ${n.slice(-4)}`);
@@ -2397,6 +2509,7 @@
     if (!p) return;
     detailId = id;
     memberShown = false;
+    expEditing = null;
     $('#d-av').replaceChildren(avatar(p));
     $('#d-name').textContent = p.name;
     const site = SITES[(catalogFor(p) || {}).id];
@@ -2487,7 +2600,48 @@
   }
 
   // One status (pills + where it's from) with what it gets you and what it normally takes.
-  function perkBlock(p, tierText, via, emptyText) {
+  // Expiration line under a status: date and days left, or an "Add date" prompt; editable in place.
+  function expRow(group, index) {
+    if (expEditing === index) {
+      const input = h('input', { type: 'date', class: 'exp-input', id: 'd-exp-input', 'aria-label': 'Status expiration date' });
+      input.value = group.exp || '';
+      return h('div', { class: 'exp-row editing' },
+        input,
+        h('button', { type: 'button', class: 'add sm', 'data-exp-save': String(index) }, 'Save'),
+        group.exp ? h('button', { type: 'button', class: 'btn-secondary sm', 'data-exp-clear': String(index) }, 'Clear') : null,
+        h('button', { type: 'button', class: 'link', 'data-exp-cancel': '' }, 'Cancel'));
+    }
+    if (!group.exp) {
+      return h('div', { class: 'exp-row' },
+        h('span', { class: 'exp-text' }, 'No expiration date'),
+        h('button', { type: 'button', class: 'link', 'data-exp-edit': String(index) }, 'Add date'));
+    }
+    const date = parseISODate(group.exp);
+    const days = daysUntil(date);
+    const text = days < 0 ? `Expired ${dateFmt.format(date)}`
+      : days === 0 ? `Expires today (${dateFmt.format(date)})`
+        : `Valid through ${dateFmt.format(date)} · ${plural(days, 'day')} left`;
+    return h('div', { class: 'exp-row' },
+      h('span', { class: days < 0 ? 'exp-text danger' : days <= STATUS_SOON_DAYS ? 'exp-text warn' : 'exp-text' }, text),
+      h('button', { type: 'button', class: 'link', 'data-exp-edit': String(index) }, 'Change date'),
+      days >= 0 ? h('button', { type: 'button', class: 'link', 'data-exp-cal': String(index) }, 'Add to calendar') : null);
+  }
+
+  function setStatusExp(p, index, value) {
+    const group = mergedLines(p.status)[index];
+    if (!group) return;
+    for (const line of group.refs) {
+      if (parseISODate(value)) line.exp = value;
+      else delete line.exp;
+    }
+    expEditing = null;
+    scheduleSave();
+    renderDetailStatus(p);
+    renderLevels(p);
+    renderPrograms();
+  }
+
+  function perkBlock(p, tierText, via, emptyText, group, index) {
     const parts = splitParts(tierText || '');
     const from = splitParts(via || '').join(' · ');
     const block = h('div', { class: 'perk-block' }, h('div', { class: 'sline' },
@@ -2503,6 +2657,7 @@
     if (!tiers.length && parts.length && p.id !== 'lounges') {
       block.append(h('p', { class: 'no-perks' }, 'No perk details for this level yet — check the program’s site.'));
     }
+    if (group && parts.length && p.id !== 'lounges') block.append(expRow(group, index));
     return block;
   }
 
@@ -2513,7 +2668,7 @@
       const progress = `${fmt(state.mqd)} MQDs · ${next ? `${fmt(next.min - state.mqd)} to ${next.name}` : 'top tier'}`;
       blocks.push(perkBlock(p, current ? `${current.name} Medallion` : '', progress, current ? null : 'No Medallion status yet'));
     }
-    for (const line of mergedLines(p.status)) blocks.push(perkBlock(p, line.tier, line.via));
+    mergedLines(p.status).forEach((group, i) => blocks.push(perkBlock(p, group.tier, group.via, null, group, i)));
     const heading = h('h3', { class: 'd-label' }, 'Your status');
     if (!blocks.length) {
       $('#d-status').replaceChildren(heading, h('p', { class: 'no-perks' }, benefitsFor(p)
@@ -2529,7 +2684,7 @@
     const tiers = benefitsFor(p);
     $('#d-levels').hidden = !tiers;
     if (!tiers) return;
-    const texts = p.status.flatMap((line) => splitParts(line.tier));
+    const texts = p.status.filter((line) => !lineExpired(line)).flatMap((line) => splitParts(line.tier));
     if (p === medallionProgram()) {
       const current = medallionFor(state.mqd).current;
       if (current) texts.push(`${current.name} Medallion`);
@@ -2557,6 +2712,22 @@
     const btn = e.target.closest('button');
     if (!btn) return;
     const p = detailProgram();
+    const data = btn.dataset;
+    if (data.expEdit != null) {
+      expEditing = Number(data.expEdit);
+      renderDetailStatus(p);
+      const input = $('#d-exp-input');
+      if (input) input.focus();
+      return;
+    }
+    if (data.expSave != null) { setStatusExp(p, Number(data.expSave), $('#d-exp-input').value); return; }
+    if (data.expClear != null) { setStatusExp(p, Number(data.expClear), ''); return; }
+    if (data.expCancel != null) { expEditing = null; renderDetailStatus(p); return; }
+    if (data.expCal != null) {
+      const group = mergedLines(p.status)[Number(data.expCal)];
+      saveCalendar(buildICS([statusItem(p, group)]), `${slugify(`${p.name} ${group.tier}`)}-reminder.ics`, btn);
+      return;
+    }
     switch (btn.id) {
       case 'd-done': detail.close(); break;
       case 'd-edit': detail.close(); openSheet(p.id); break;
@@ -2574,7 +2745,162 @@
       e.preventDefault();
       saveMember();
     }
+    if (e.key === 'Enter' && e.target.id === 'd-exp-input') {
+      e.preventDefault();
+      setStatusExp(detailProgram(), expEditing, e.target.value);
+    }
   });
+
+  /* ---------- Reminders: "Coming up", calendar events, app badge ---------- */
+
+  const slugify = (text) => text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+  function statusItem(p, group) {
+    const date = parseISODate(group.exp);
+    return { kind: 'status', p, group, date, days: daysUntil(date) };
+  }
+
+  // Dated statuses and vouchers, soonest first. By default only what's inside its reminder window (plus
+  // anything that lapsed in the last 30 days); `future: true` returns everything not yet expired.
+  function upcomingItems({ future = false } = {}) {
+    const inWindow = (days, window) => (future ? days >= 0 : days >= -30 && days <= window);
+    const items = [];
+    for (const p of state.programs || []) {
+      for (const group of mergedLines(p.status)) {
+        if (!group.tier || !parseISODate(group.exp) || p.id === 'lounges') continue;
+        const item = statusItem(p, group);
+        if (inWindow(item.days, STATUS_SOON_DAYS)) items.push(item);
+      }
+    }
+    for (const v of state.vouchers) {
+      const date = parseISODate(v.exp);
+      if (!date) continue;
+      const days = daysUntil(date);
+      if (inWindow(days, SOON_DAYS)) items.push({ kind: 'voucher', v, date, days });
+    }
+    return items.sort((a, b) => a.date - b.date);
+  }
+
+  function renderUpcoming() {
+    const setup = !state.programs;
+    const items = setup ? [] : upcomingItems();
+    $('#cal-btn').hidden = setup || !upcomingItems({ future: true }).length;
+    updateBadge(items.filter((i) => i.days <= 30).length);
+    $('#upcoming').hidden = !items.length;
+    if (!items.length) return;
+    $('#up-count').textContent = `· ${items.length}`;
+    $('#up-list').replaceChildren(...items.map((item) => {
+      const when = item.days < 0 ? h('span', { class: 'tag danger' }, 'Expired')
+        : h('span', { class: 'tag warn' }, item.days === 0 ? 'Today' : plural(item.days, 'day'));
+      const verb = item.days < 0 ? 'expired' : 'expires';
+      if (item.kind === 'status') {
+        return h('li', null, h('button', { type: 'button', class: 'up-item', 'data-open': item.p.id },
+          avatar(item.p),
+          h('div', { class: 'up-body' },
+            h('div', { class: 'up-name' }, splitParts(item.group.tier).join(' · ')),
+            h('div', { class: 'up-sub' }, `${item.p.name} · ${verb} ${dateFmt.format(item.date)}`)),
+          when));
+      }
+      return h('li', null, h('button', { type: 'button', class: 'up-item', 'data-voucher': '' },
+        h('span', { class: 'v-ico', 'aria-hidden': 'true' }, svgIcon(ICON.ticket)),
+        h('div', { class: 'up-body' },
+          h('div', { class: 'up-name' }, item.v.name),
+          h('div', { class: 'up-sub' }, `Voucher · ${verb} ${dateFmt.format(item.date)}`)),
+        when));
+    }));
+  }
+
+  // Number on the home-screen icon (installed app, supported devices) for things due within 30 days.
+  function updateBadge(count) {
+    if (!('setAppBadge' in navigator)) return;
+    (count ? navigator.setAppBadge(count) : navigator.clearAppBadge()).catch(() => {});
+  }
+
+  // Calendar file (.ics) with an all-day event on each expiration date and alerts at 9 a.m. 30 days before,
+  // 7 days before, and on the day — reminders that work even when the app is closed.
+  const icsText = (text) => text.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
+  const icsFold = (line) => {
+    const parts = [];
+    let rest = line;
+    while (rest.length > 74) { parts.push(rest.slice(0, 74)); rest = ` ${rest.slice(74)}`; }
+    parts.push(rest);
+    return parts.join('\r\n');
+  };
+  const icsDate = (d) => `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
+
+  function buildICS(items) {
+    const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+    const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Points & Status Tracker//EN', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH'];
+    for (const item of items) {
+      let uid;
+      let subject;
+      let description;
+      if (item.kind === 'status') {
+        const tier = splitParts(item.group.tier).join(' · ');
+        const info = perksFor(item.p, splitParts(item.group.tier)[0]);
+        uid = `status-${slugify(item.p.id)}-${slugify(tier)}`;
+        subject = `${item.p.name} ${tier}`;
+        description = [
+          item.group.via && `From ${splitParts(item.group.via).join(' · ')}.`,
+          info && info.earn && `To requalify: ${info.earn}.`,
+          'Reminder from Points & Status Tracker.',
+        ].filter(Boolean).join('\n');
+      } else {
+        uid = `voucher-${slugify(item.v.name)}-${item.v.exp}`;
+        subject = `Voucher: ${item.v.name}`;
+        description = [item.v.note, 'Use it before it expires. Reminder from Points & Status Tracker.'].filter(Boolean).join('\n');
+      }
+      const end = new Date(item.date);
+      end.setDate(end.getDate() + 1);
+      lines.push('BEGIN:VEVENT', `UID:${uid}@statuspoints.github.io`, `DTSTAMP:${stamp}`,
+        `DTSTART;VALUE=DATE:${icsDate(item.date)}`, `DTEND;VALUE=DATE:${icsDate(end)}`,
+        `SUMMARY:${icsText(`${subject} expires`)}`, `DESCRIPTION:${icsText(description)}`, 'TRANSP:TRANSPARENT');
+      for (const [trigger, when] of [['-P29DT15H', 'in 30 days'], ['-P6DT15H', 'in 7 days'], ['PT9H', 'today']]) {
+        lines.push('BEGIN:VALARM', 'ACTION:DISPLAY', `DESCRIPTION:${icsText(`${subject} expires ${when}`)}`, `TRIGGER:${trigger}`, 'END:VALARM');
+      }
+      lines.push('END:VEVENT');
+    }
+    lines.push('END:VCALENDAR');
+    return `${lines.map(icsFold).join('\r\n')}\r\n`;
+  }
+
+  // iPhone/iPad: open the file so iOS shows its "Add to Calendar" sheet. Elsewhere: download it, then open it.
+  function saveCalendar(ics, name, btn) {
+    const file = new File([ics], name, { type: 'text/calendar' });
+    const url = URL.createObjectURL(file);
+    const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    let opened = false;
+    if (iOS) opened = !!window.open(url, '_blank');
+    if (!opened) {
+      const a = h('a', { href: url, download: name });
+      document.body.append(a);
+      a.click();
+      a.remove();
+    }
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+    const message = opened ? 'Opened in Calendar' : 'Saved — open the file to add it';
+    if (btn && btn.closest('dialog')) { // toasts sit behind open sheets, so confirm on the button instead
+      const label = btn.textContent;
+      btn.textContent = opened ? 'Opened' : 'Saved';
+      setTimeout(() => { if (btn.isConnected) btn.textContent = label; }, 1800);
+    } else {
+      showToast(message);
+    }
+  }
+
+  function addAllToCalendar(btn) {
+    const items = upcomingItems({ future: true });
+    if (!items.length) { showToast('Nothing with an expiration date yet'); return; }
+    saveCalendar(buildICS(items), 'points-status-reminders.ics', btn);
+  }
+
+  $('#upcoming').addEventListener('click', (e) => {
+    if (e.target.closest('#up-cal')) { addAllToCalendar(e.target.closest('#up-cal')); return; }
+    const open = e.target.closest('[data-open]');
+    if (open) { openDetail(open.dataset.open); return; }
+    if (e.target.closest('[data-voucher]')) jumpTo($('#vouchers-section'));
+  });
+  $('#cal-btn').addEventListener('click', (e) => addAllToCalendar(e.currentTarget));
 
   /* ---------- Card tiles ---------- */
 
@@ -2889,7 +3215,9 @@
       for (const line of mergedLines(p.status)) {
         const tier = splitParts(line.tier).join(' · ');
         const via = splitParts(line.via).join(' · ');
-        out.push(`  ${tier && via ? `${tier} (${via})` : tier || via}`);
+        const expDate = parseISODate(line.exp);
+        const expires = expDate ? ` — ${daysUntil(expDate) < 0 ? 'EXPIRED' : 'valid through'} ${dateFmt.format(expDate)}` : '';
+        out.push(`  ${tier && via ? `${tier} (${via})` : tier || via}${expires}`);
         for (const part of splitParts(line.tier)) pushPerks(p, part);
       }
       out.push('');
@@ -2992,6 +3320,7 @@
     $('#vouchers-section').hidden = setup;
     $('#stats').hidden = setup;
     $('#export-btn').hidden = setup;
+    if (setup) renderUpcoming();
     $('#text-btn').hidden = setup;
     if (setup) {
       renderSetup();
