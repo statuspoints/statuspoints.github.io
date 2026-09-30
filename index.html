@@ -1998,7 +1998,7 @@
 
   // Each short perk stays on one line; lines break only between perks.
   const perkLineContent = (tier) => [svgIcon(ICON.check),
-    h('span', null, tier.short.flatMap((perk, i) => [i ? ' · ' : null, h('span', { class: 'nw' }, perk)]))];
+    h('span', null, tier.short.flatMap((perk, i) => [i ? '\u00a0· ' : null, h('span', { class: 'nw' }, perk)]))];
 
   const ICON = {
     spark:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M8 1.5l1.7 4.3 4.3 1.7-4.3 1.7L8 13.5l-1.7-4.3L2 7.5l4.3-1.7z"/></svg>',
@@ -2565,7 +2565,7 @@
 
   // Tiers as colored pills, then where they come from, then a tag if it's expiring soon or expired.
   // "Amex Platinum · thru 12/31/27": short parts never break inside, so lines wrap only between them.
-  const viaSpans = (parts) => parts.flatMap((part, i) => [i ? ' · ' : null, h('span', { class: part.length <= 28 ? 'nw' : null }, part)]);
+  const viaSpans = (parts) => parts.flatMap((part, i) => [i ? '\u00a0· ' : null, h('span', { class: part.length <= 28 ? 'nw' : null }, part)]);
 
   function statusLine(group, p) {
     const { tier, via, exp } = group;
@@ -3298,7 +3298,7 @@
           h('div', { class: 'mqd-count' }, numButton(`prog:${p.id}`, `${p.name} ${track.unit} this year`, 'sm'), h('span', { class: 'of' }, track.unit)),
           h('div', { class: 'next' }, info.value == null ? 'Tap the number to add yours' : next ? nextText(next) : 'Top level reached')),
         bar,
-        h('p', { class: 'prog-legend' }, track.steps.flatMap((step, i) => [i ? ' · ' : null,
+        h('p', { class: 'prog-legend' }, track.steps.flatMap((step, i) => [i ? '\u00a0· ' : null,
           h('span', { class: n >= step ? 'hit' : null }, `${tierLabel(tiers[i].name)} ${fmt(step)}`)])),
         h('p', { class: 'fine' }, `${track.note} Counts start over each qualifying year; anything you earned is kept as a status with its end date.`)));
   }
