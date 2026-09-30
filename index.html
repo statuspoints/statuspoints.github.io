@@ -1333,11 +1333,10 @@
     <div class="install-body">
       <strong>New in your tracker</strong>
       <ul class="news-list">
-        <li><b>What your points are worth</b>: dollar estimates and a total under Programs.</li>
-        <li><b>Transfer partners</b> for Amex, Chase, Citi, Capital One, and Bilt points.</li>
+        <li><b>Card credits</b>: every statement credit on your cards, with Mark used and reminders before they reset.</li>
+        <li><b>Free nights & companion certificates</b>: one tap under Vouchers adds the ones your cards give.</li>
+        <li><b>What your points are worth</b> and <b>transfer partners</b> for your card points.</li>
         <li><b>Send to another device</b> with a private link, at the bottom.</li>
-        <li><b>Keep your status</b>: what it takes to requalify, with year-end nudges.</li>
-        <li><b>More ways to qualify</b>: stays, flights, and points count too.</li>
       </ul>
     </div>
     <button class="icon-btn" id="news-close" type="button" aria-label="Dismiss what’s new"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M2.5 2.5l9 9M11.5 2.5l-9 9"/></svg></button>
@@ -5590,7 +5589,7 @@
 
   // A one-time card listing new features for people who already use the app; new setups skip it.
   const NEWS_KEY = 'status-tracker-news';
-  const NEWS_ID = '2026-10b';
+  const NEWS_ID = '2026-10c';
   const newsSeen = () => { try { return localStorage.getItem(NEWS_KEY) === NEWS_ID; } catch (e) { return true; } };
   const markNewsSeen = () => { try { localStorage.setItem(NEWS_KEY, NEWS_ID); } catch (e) { /* private mode */ } };
   function renderNews() {
