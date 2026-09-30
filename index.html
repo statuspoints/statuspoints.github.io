@@ -573,6 +573,26 @@
   .plan-row .plan-amt { white-space: nowrap; }
   .plan-note { margin: 0 0 10px; font-size: 12.5px; color: var(--muted); }
   .alt-head { margin-top: 10px; }
+  .xfer { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+  .xfer-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    background: none;
+    color: var(--muted);
+    font: inherit;
+    text-align: left;
+  }
+  .xfer-row:disabled { opacity: .72; cursor: default; }
+  .xfer-row.mine { border-color: var(--line); background: var(--card); color: var(--text); cursor: pointer; }
+  .xfer-row .av { width: 30px; height: 30px; font-size: 11px; }
+  .xfer-body { display: grid; min-width: 0; }
+  .xfer-name { font-weight: 600; }
+  .xfer-body small { font-size: 12.5px; color: var(--muted); }
   .mqd-count .or { margin-right: 6px; font-size: 12.5px; color: var(--muted); }
   .d-trend { margin-top: -4px; }
   .d-trend svg { display: block; width: 100%; height: 44px; }
@@ -1460,6 +1480,7 @@
     <section class="d-sec" id="d-status" aria-label="Your status"></section>
     <section class="d-sec" id="d-progress" aria-label="This year's progress" hidden></section>
     <section class="d-sec" id="d-expiry" aria-label="Points expiration" hidden></section>
+    <section class="d-sec" id="d-transfers" aria-label="Transfer partners" hidden></section>
     <section class="d-sec" id="d-levels" aria-label="Status levels"></section>
     <div class="sheet-actions d-actions">
       <a class="ghost-btn" id="d-site" target="_blank" rel="noopener noreferrer">Website ↗</a>
@@ -1885,6 +1906,44 @@
     citi: { bank: true, note: 'Points tied to a card expire 60 days after that card closes or is converted — move or use them first.' },
     bilt: { months: 18, note: 'Paying rent through Bilt or using a Bilt card counts as activity.' },
   };
+
+  // Where each bank's points transfer, as of TRANSFERS_AS_OF: [partner id (or name), bank points, partner points,
+  // note]. Ratios are for the issuers' premium cards; `note` covers the exceptions.
+  const TRANSFERS_AS_OF = 'September 2026';
+  const TRANSFERS = {
+    amex: {
+      partners: [['delta', 1, 1], ['aeroplan', 1, 1], ['flyingblue', 1, 1], ['ba', 1, 1], ['virgin', 1, 1], ['jetblue', 5, 4],
+        ['hilton', 1, 2], ['marriott', 1, 1], ['choice', 1, 1],
+        ['Aer Lingus', 1, 1], ['ANA', 1, 1], ['Avianca', 1, 1], ['Iberia', 1, 1], ['Qantas', 1, 1], ['Qatar', 1, 1],
+        ['Singapore', 1, 1], ['Aeromexico', 1, 1.6], ['Emirates', 5, 4], ['Cathay', 5, 4]],
+    },
+    chase: {
+      partners: [['united', 1, 1], ['southwest', 1, 1], ['jetblue', 1, 1], ['aeroplan', 1, 1], ['flyingblue', 1, 1], ['ba', 1, 1],
+        ['virgin', 1, 1], ['hyatt', 1, 1, '4:3 with Sapphire Preferred or Ink Preferred from Oct 1, 2026 (1:1 with Sapphire Reserve)'],
+        ['marriott', 1, 1], ['ihg', 1, 1], ['wyndham', 1, 1], ['Aer Lingus', 1, 1], ['Iberia', 1, 1], ['Singapore', 1, 1]],
+      note: 'Transfers need a Sapphire Preferred, Sapphire Reserve, or Ink Preferred; move Freedom or Ink Cash points to one first.',
+    },
+    citi: {
+      partners: [['american', 1, 1], ['jetblue', 1, 1], ['flyingblue', 1, 1], ['virgin', 1, 1], ['choice', 1, 1.5], ['wyndham', 1, 1],
+        ['accor', 2, 1], ['Avianca', 1, 1], ['Cathay', 1, 1], ['Etihad', 1, 1], ['EVA', 1, 1], ['JAL', 1, 1], ['Qantas', 1, 1],
+        ['Qatar', 1, 1], ['Singapore', 1, 1], ['Thai', 1, 1], ['Turkish', 1, 1], ['Emirates', 5, 4], ['I Prefer', 1, 2]],
+      note: 'Ratios with Strata Premier or Strata Elite. No-fee Citi cards transfer at 10:7 and can’t move points to American.',
+    },
+    capitalone: {
+      partners: [['aeroplan', 1, 1], ['flyingblue', 1, 1], ['ba', 1, 1], ['virgin', 1, 1], ['jetblue', 5, 3], ['choice', 1, 1],
+        ['wyndham', 1, 1], ['accor', 2, 1], ['Aeromexico', 1, 1], ['Avianca', 1, 1], ['Cathay', 1, 1], ['Etihad', 1, 1],
+        ['Finnair', 1, 1], ['Qantas', 1, 1], ['Qatar', 1, 1], ['Singapore', 1, 1], ['TAP', 1, 1], ['Turkish', 1, 1],
+        ['Emirates', 2, 1.5], ['EVA', 2, 1.5], ['JAL', 2, 1.5], ['I Prefer', 1, 2]],
+    },
+    bilt: {
+      partners: [['united', 1, 1], ['southwest', 1, 1], ['alaska', 1, 1], ['aeroplan', 1, 1], ['flyingblue', 1, 1], ['ba', 1, 1],
+        ['virgin', 1, 1], ['hyatt', 1, 1], ['marriott', 1, 1], ['ihg', 1, 1], ['hilton', 1, 1], ['wyndham', 1, 1], ['accor', 3, 2],
+        ['Aer Lingus', 1, 1], ['Avianca', 1, 1], ['Cathay', 1, 1], ['Emirates', 1, 1], ['Etihad', 1, 1], ['Iberia', 1, 1],
+        ['JAL', 1, 1], ['Qatar', 1, 1], ['TAP', 1, 1], ['Turkish', 1, 1], ['I Prefer', 1, 2]],
+    },
+  };
+  // "1:1", "5:4", "1:1.5" — bank points to partner points.
+  const ratioText = (a, b) => `${a}:${b}`;
 
   // Where to check balances and manage each program.
   const SITES = {
@@ -3396,6 +3455,7 @@
     renderDetailStatus(p);
     renderProgress(p);
     renderExpiry(p);
+    renderTransfers(p);
     renderLevels(p);
   }
 
@@ -3436,6 +3496,49 @@
     box.replaceChildren(svg, h('p', null,
       h('strong', { class: change >= 0 ? 'up' : 'down' }, `${change >= 0 ? '+' : '−'}${fmt(Math.abs(change))}`),
       ` ${p.unit} since ${since} · ${plural(list.length, 'update')}`));
+  }
+
+  // Bank points: where they can go (programs on your list first, with what your balance would become).
+  // Airline and hotel programs: which banks' points top them up, and how many of those you have.
+  function renderTransfers(p) {
+    const box = $('#d-transfers');
+    const c = catalogFor(p);
+    const own = (id) => state.programs.find((x) => catalogFor(x) && catalogFor(x).id === id);
+    const row = (target, a, b, note, balance, unit) => {
+      const mine = typeof target === 'object' && own(target.id);
+      const amount = balance != null ? ` · ${fmt(balance)} → ${fmt(Math.floor((balance * b) / a))}${unit ? ` ${unit}` : ''}` : '';
+      return h('li', null, h('button', { type: 'button', class: mine ? 'xfer-row mine' : 'xfer-row', 'data-open': mine ? mine.id : null, disabled: mine ? null : '' },
+        avatar(target), h('span', { class: 'xfer-body' }, h('span', { class: 'xfer-name' }, target.name),
+          h('small', null, `${ratioText(a, b)}${amount}${note ? ` · ${note}` : ''}`))));
+    };
+    const parts = [];
+    const bank = c && TRANSFERS[c.id];
+    if (bank) {
+      const balance = state.balances[p.id];
+      const programs = bank.partners.filter(([id]) => CATALOG_BY_ID[id]);
+      programs.sort((x, y) => Boolean(own(y[0])) - Boolean(own(x[0])));
+      parts.push(h('h3', { class: 'd-label' }, 'Transfer partners'),
+        h('ul', { class: 'xfer' }, programs.map(([id, a, b, note]) => {
+          const target = CATALOG_BY_ID[id];
+          return row(target, a, b, note, balance, target.unit || 'points');
+        })),
+        h('p', { class: 'fine' }, `Also: ${bank.partners.filter(([id]) => !CATALOG_BY_ID[id]).map(([name, a, b]) => `${name} ${ratioText(a, b)}`).join(' · ')}.`));
+      if (bank.note) parts.push(h('p', { class: 'fine' }, bank.note));
+    } else if (c) {
+      const sources = Object.entries(TRANSFERS).flatMap(([bankId, info]) => info.partners.filter(([id]) => id === c.id).map(([, a, b, note]) => [bankId, a, b, note]));
+      if (sources.length) {
+        sources.sort((x, y) => Boolean(own(y[0])) - Boolean(own(x[0])));
+        parts.push(h('h3', { class: 'd-label' }, 'Top up with card points'),
+          h('ul', { class: 'xfer' }, sources.map(([bankId, a, b, note]) => {
+            const mine = own(bankId);
+            return row(CATALOG_BY_ID[bankId], a, b, note, mine ? state.balances[mine.id] : null, p.unit || 'points');
+          })));
+      }
+    }
+    box.hidden = !parts.length;
+    if (!parts.length) return;
+    parts.push(h('p', { class: 'fine' }, `Ratios are card points to partner points, as of ${TRANSFERS_AS_OF}. Transfers are usually instant and can’t be undone — confirm award space first.`));
+    box.replaceChildren(...parts);
   }
 
   // Whether the balance can expire, and when, from the last time you earned or redeemed.
@@ -3682,6 +3785,7 @@
     if (data.expSave != null) { setStatusExp(p, Number(data.expSave), $('#d-exp-input').value); return; }
     if (data.expClear != null) { setStatusExp(p, Number(data.expClear), ''); return; }
     if (data.expCancel != null) { expEditing = null; renderDetailStatus(p); return; }
+    if (data.open != null) { openDetail(data.open); return; } // a transfer partner on your list
     if (data.expCal != null) {
       const group = mergedLines(p.status)[Number(data.expCal)];
       saveCalendar(buildICS([statusItem(p, group)]), `${slugify(`${p.name} ${group.tier}`)}-reminder.ics`, btn);
