@@ -988,6 +988,21 @@
   .member-input::placeholder { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; letter-spacing: 0; color: var(--faint); }
   .member-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
   .name-input { font-family: inherit; letter-spacing: 0; }
+  #d-memo-input {
+    width: 100%;
+    min-height: 64px;
+    padding: 10px 12px;
+    border: 1px solid var(--field-line);
+    border-radius: 12px;
+    background: var(--field);
+    color: var(--text);
+    font: inherit;
+    font-size: 16px; /* 16px+ keeps iOS from zooming on focus */
+    line-height: 1.45;
+    resize: vertical;
+  }
+  #d-memo-input::placeholder { color: var(--faint); }
+  #d-memo-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
   .who {
     display: inline-flex;
     align-items: center;
@@ -1337,6 +1352,10 @@
       </div>
     </div>
     <section class="d-sec" id="d-member" aria-label="Member number"></section>
+    <section class="d-sec" id="d-memo">
+      <label class="d-label" for="d-memo-input">Notes</label>
+      <textarea id="d-memo-input" rows="2" maxlength="300" placeholder="e.g. 2 suite upgrades left · free night cert expires in March"></textarea>
+    </section>
     <section class="d-sec" id="d-status" aria-label="Your status"></section>
     <section class="d-sec" id="d-progress" aria-label="This year's progress" hidden></section>
     <section class="d-sec" id="d-expiry" aria-label="Points expiration" hidden></section>
@@ -2170,9 +2189,12 @@
   function normalize(raw) {
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
     if (!['programs', 'balances', 'vouchers', 'mqd'].some((k) => k in raw)) return null;
-    const s = { programs: null, cards: [], renewals: {}, notes: '', balances: {}, activity: {}, mqd: 0, progress: {}, members: {}, updated: {}, backedUp: '', vouchers: [] };
+    const s = { programs: null, cards: [], renewals: {}, notes: '', memos: {}, balances: {}, activity: {}, mqd: 0, progress: {}, members: {}, updated: {}, backedUp: '', vouchers: [] };
     if (raw.balances && typeof raw.balances === 'object') {
       for (const [id, v] of Object.entries(raw.balances)) if (isCount(v)) s.balances[id] = Math.floor(v);
+    }
+    if (raw.memos && typeof raw.memos === 'object') { // a free-text note per program
+      for (const [id, v] of Object.entries(raw.memos)) { const memo = str(v, 300); if (memo) s.memos[id] = memo; }
     }
     if (raw.members && typeof raw.members === 'object') { // loyalty member / account numbers
       for (const [id, v] of Object.entries(raw.members)) { const number = str(v, 40); if (number) s.members[id] = number; }
@@ -2254,7 +2276,7 @@
       const s = normalize(JSON.parse(localStorage.getItem(storageKey()) || 'null'));
       if (s) return s;
     } catch (e) { /* corrupt or unavailable storage: start fresh */ }
-    return { programs: null, cards: [], renewals: {}, notes: '', balances: {}, activity: {}, mqd: 0, progress: {}, members: {}, updated: {}, backedUp: '', vouchers: [] }; // null programs → first-run setup
+    return { programs: null, cards: [], renewals: {}, notes: '', memos: {}, balances: {}, activity: {}, mqd: 0, progress: {}, members: {}, updated: {}, backedUp: '', vouchers: [] }; // null programs → first-run setup
   }
 
   const state = load();
@@ -3030,9 +3052,10 @@
     // Everything stored under the program, so Undo can put it all back.
     const saved = {
       balance: state.balances[id], member: state.members[id], progress: state.progress[id],
-      updated: state.updated[id], progUpdated: state.updated[`prog:${id}`], activity: state.activity[id],
+      updated: state.updated[id], progUpdated: state.updated[`prog:${id}`], activity: state.activity[id], memo: state.memos[id],
     };
     delete state.activity[id];
+    delete state.memos[id];
     delete state.balances[id];
     delete state.members[id];
     delete state.progress[id];
@@ -3049,6 +3072,7 @@
       if (saved.updated) state.updated[id] = saved.updated;
       if (saved.progUpdated) state.updated[`prog:${id}`] = saved.progUpdated;
       if (saved.activity) state.activity[id] = saved.activity;
+      if (saved.memo) state.memos[id] = saved.memo;
       scheduleSave();
       renderPrograms();
     });
@@ -3110,6 +3134,7 @@
     }
     $('#d-sub').textContent = sub.join(' · ');
     renderMember(p, false);
+    $('#d-memo-input').value = state.memos[p.id] || '';
     renderDetailStatus(p);
     renderProgress(p);
     renderExpiry(p);
@@ -3369,6 +3394,15 @@
       case 'd-member-copy': copyMember(btn); break;
       default: break;
     }
+  });
+
+  $('#d-memo-input').addEventListener('input', (e) => {
+    const p = detailProgram();
+    if (!p) return;
+    const memo = e.target.value.slice(0, 300);
+    if (memo.trim()) state.memos[p.id] = memo;
+    else delete state.memos[p.id];
+    scheduleSave();
   });
 
   detail.addEventListener('change', (e) => {
@@ -4120,6 +4154,7 @@
       if (!p.unit) out.push(p.name);
       else out.push(`${p.name} — ${balance == null ? 'no balance entered' : `${fmt(balance)} ${p.unit}${updated}`}`);
       if (state.members[p.id]) out.push(`  Member #: ${state.members[p.id]}`);
+      if (state.memos[p.id]) out.push(...state.memos[p.id].trim().split('\n').map((line) => `  Note: ${line}`));
       const expiry = pointsExpiry(p);
       if (expiry && expiry.date) {
         out.push(`  ${p.unit.charAt(0).toUpperCase()}${p.unit.slice(1)} ${expiry.days < 0 ? 'expired' : 'expire'} ${dateFmt.format(expiry.date)} without activity (last activity ${dateFmt.format(parseISODate(state.activity[p.id]))})`);

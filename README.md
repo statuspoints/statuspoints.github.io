@@ -61,6 +61,7 @@ Each program's details say whether its points or miles expire (as of September 2
   - **What your status gets you:** headline perks for your level and what it normally takes to earn or keep it.
   - **All levels** in the program, with yours marked and the next one up opened, so you can see what you'd gain.
   - **Your member number:** masked on screen, with Show and Copy for check-in or booking.
+  - **Notes:** anything worth remembering for that program ("2 suite night awards left"), included in the text export.
   - When you last updated the balance, plus a link to the program's website.
   - Perks cover Delta, United, American, Southwest, Alaska Atmos, Aeroplan, Hilton, Marriott, IHG, Hyatt, Wyndham, Leading Hotels, Omni, Avis, Hertz, and National (as of September 2026).
 - **Filter chips** above the list show All, Elite (programs where you hold status), Airlines, Hotels, Points, or Cars & lounges.
