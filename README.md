@@ -93,4 +93,4 @@ Use **Export as text** at the bottom to save an easy-to-read `.txt` summary of y
 
 ## Updating
 
-Edit and push. Installed copies load the cached version first and fetch the update in the background, so changes appear on the second launch after a deploy. If you add or rename files, list them in `SHELL` in `sw.js` and bump `VERSION`.
+Edit and push. Installed copies load the cached version first and fetch the update in the background. When the new page differs (by ETag), open windows show "A new version is ready — Reload". Otherwise the update appears on the next launch. If you add or rename files, list them in `SHELL` in `sw.js` and bump `VERSION`.

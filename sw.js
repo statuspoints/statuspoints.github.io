@@ -2,7 +2,7 @@
 // Files are served cache-first and refreshed in the background (stale-while-revalidate),
 // so an edit reaches an installed copy on the launch after it's deployed.
 // Bump VERSION when the SHELL list changes so old caches get cleaned up.
-const VERSION = 'v4';
+const VERSION = 'v5';
 const CACHE = `status-tracker-shell-${VERSION}`;
 const SHELL = [
   './',
@@ -56,6 +56,13 @@ self.addEventListener('fetch', (event) => {
         // the worker isn't stopped before it lands.
         if (response.ok && !response.redirected && response.type === 'basic') {
           await cache.put(key.href, response.clone()).catch(() => {});
+          // The page on screen came from an older copy: tell open windows a new version is ready.
+          // ETag first: it tracks the content, while Last-Modified can change on a redeploy of identical files.
+          const tag = (r) => r.headers.get('etag') || r.headers.get('last-modified');
+          if (isNavigation && cached && tag(cached) && tag(response) && tag(cached) !== tag(response)) {
+            const windows = await self.clients.matchAll({ type: 'window' });
+            for (const client of windows) client.postMessage({ type: 'updated' });
+          }
         }
         return response;
       })

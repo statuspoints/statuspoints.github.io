@@ -1550,10 +1550,10 @@
       ['Titanium', '135,000 status points a year', ["150% bonus", "Free economy meal", "Long-haul upgrades"], ['150% bonus points on flights', 'Free meal in economy', 'Upgrades on select long-haul routes', 'oneworld Emerald']],
     ],
     aeroplan: [
-      ['25K', '25,000 Status Qualifying Credits a year (automatic with the Chase Air Canada Aeroplan card)', ["Priority check-in", "Zone 2 boarding", "Free checked bag"], ['Priority check-in and Zone 2 boarding', 'Free checked bag on Air Canada', 'Star Alliance Silver', 'eUpgrade credits through Milestone Benefits']],
-      ['35K', '35,000 SQC a year', ["Star Alliance Gold", "Upgrade priority", "Milestone Benefits"], ['Star Alliance Gold', 'Higher priority for upgrades and standby', 'More Milestone Benefits']],
-      ['50K', '50,000 SQC a year', ["Maple Leaf Lounges", "Star Alliance Gold", "Upgrade priority"], ['Maple Leaf Lounge and Air Canada Café access (plus a guest)', 'Star Alliance Gold', 'Higher upgrade priority']],
-      ['75K', '75,000 SQC a year', ["20 eUpgrades", "Maple Leaf Lounges", "Star Alliance Gold"], ['20 eUpgrade credits a year', 'Maple Leaf Lounge access', 'Star Alliance Gold']],
+      ['25K', '25,000 Status Qualifying Credits a year (automatic with the Chase Air Canada Aeroplan card)', ["Priority check-in", "Zone 2 boarding", "Free checked bag"], ['Priority check-in and Zone 2 boarding', 'Free checked bag on Air Canada', 'Star Alliance Silver', '5 eUpgrade credits a year']],
+      ['35K', '35,000 SQC a year', ["Star Alliance Gold", "10 eUpgrades", "Upgrade priority"], ['Star Alliance Gold', '10 eUpgrade credits a year', 'Higher priority for upgrades and standby', 'More Milestone Benefits']],
+      ['50K', '50,000 SQC a year', ["Maple Leaf Lounges", "Star Alliance Gold", "Upgrade priority"], ['Maple Leaf Lounge and Air Canada Café access (plus a guest)', '15 eUpgrade credits a year', 'Star Alliance Gold', 'Higher upgrade priority']],
+      ['75K', '75,000 SQC a year', ["20 eUpgrades", "Free Preferred seats", "3 free bags"], ['20 eUpgrade credits a year', 'Free Preferred seats on all but Basic fares', '3 free checked bags', 'Maple Leaf Lounge access', 'Star Alliance Gold']],
       ['Super Elite', '125,000 SQC a year', ["Top priority", "Lounges worldwide", "Gift status"], ['Top priority for upgrades and service', 'Star Alliance Gold lounge access worldwide', 'Nominate someone for Aeroplan status']],
     ],
     hilton: [
@@ -4114,15 +4114,17 @@
     return document.querySelector('dialog[open]') || document.body;
   }
 
-  function showToast(message, onUndo) {
+  // `onUndo` adds a button (labeled `actionLabel`, "Undo" by default); `ms` is how long the toast stays up.
+  function showToast(message, onUndo, actionLabel = 'Undo', ms = 5000) {
     const host = topLayer();
     if ($('#toast').parentNode !== host) host.append($('#toast'));
     $('#toast-msg').textContent = message;
     undoAction = onUndo || null;
     $('#toast-undo').hidden = !onUndo;
+    $('#toast-undo').textContent = actionLabel;
     $('#toast').classList.add('show');
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(hideToast, 5000);
+    toastTimer = setTimeout(hideToast, ms);
   }
 
   function hideToast() {
@@ -4226,6 +4228,11 @@
     });
     navigator.serviceWorker.ready.then(() => {
       $('#foot-status').textContent = 'Saved on this device only · works offline';
+    });
+    // The service worker fetched a newer version in the background: offer it now rather than next launch.
+    navigator.serviceWorker.addEventListener('message', (e) => {
+      if (!e.data || e.data.type !== 'updated') return;
+      showToast('A new version is ready', () => { if (saveTimer) saveNow(); location.reload(); }, 'Reload', 15000);
     });
   }
 })();
