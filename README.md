@@ -87,6 +87,11 @@ Pick your cards (setup screen, or **Edit → Choose cards**) and the complimenta
 
 **Annual fee dates:** under the card picker, add the date each card's annual fee posts (it's on your statement). **Coming up** shows it 60 days ahead with what depends on the card ("6 statuses and lounge access depend on it"), and **Add to calendar** adds a yearly event with alerts 30 and 7 days before, so you can decide whether to keep the card before the fee hits.
 
+## Card credits and certificates
+
+- **Card credits:** for each card you hold, a **Card credits** section lists its statement credits (verified September 2026), such as Amex Platinum's $100 quarterly Resy credit or the Sapphire Reserve's $300 travel credit. Tap **Mark used** once you've used one. It resets on its own when the period ends: month, quarter, half-year, calendar year, or card year (from your annual fee date). Unused quarterly, half-year, and yearly credits show in **Coming up** in their last three weeks. Hide credits you don't use, and **Add a credit** for any card the app doesn't list.
+- **Free nights and companion certificates:** under Vouchers, **From your cards** offers one-tap entries for the certificates your cards issue (Hilton, Marriott, IHG, and Hyatt free nights; Delta companion certificates; Atmos companion awards; United award discounts). It fills in what the certificate covers and a 12-month expiration to adjust, so it gets a reminder like any voucher.
+
 ## Sharing a device
 
 Everyone who opens the site on their own phone gets their own tracker automatically. To share one device (a family iPad, say), tap **Add a person** at the bottom. Each person gets a completely separate tracker: programs, statuses, balances, cards, and reminders. Their name appears at the top; tap it to switch people, rename someone, or remove them (with Undo). Backups and exports cover whoever is showing and include their name in the file name.

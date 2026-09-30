@@ -545,7 +545,31 @@
     0% { box-shadow: 0 0 0 0 var(--accent); }
     100% { box-shadow: 0 0 0 14px transparent; }
   }
-  #programs-section, #vouchers-section { scroll-margin-top: 12px; }
+  #programs-section, #vouchers-section, #credits-section { scroll-margin-top: 12px; }
+  #credits-section { margin-top: 26px; }
+  .credits-card { padding: 4px 14px; }
+  .credit-group + .credit-group { border-top: 1px solid var(--line); }
+  .credit-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 0 4px; }
+  .credit-head h3 { margin: 0; font-size: 15px; }
+  .credit-list { margin: 0; padding: 0; list-style: none; }
+  .credit { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid var(--line); }
+  .credit:first-child { border-top: 0; }
+  .credit-body { display: grid; flex: 1; min-width: 0; }
+  .credit-name { font-weight: 600; }
+  .credit-body small { font-size: 12.5px; color: var(--muted); }
+  .credit-body small.warn { color: var(--warn); }
+  .credit.used .credit-name { color: var(--muted); text-decoration: line-through; text-decoration-thickness: 1px; }
+  .credit-use { flex: none; min-height: 34px; padding: 0 12px; border: 1px solid var(--line); border-radius: 999px; background: none; color: var(--text); font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; }
+  .credit-use[aria-pressed="true"] { border-color: transparent; background: var(--accent-soft); color: var(--accent); }
+  .credit-skipped { margin: 4px 0 10px; font-size: 12.5px; color: var(--muted); }
+  .credit-skipped button { padding: 0; border: 0; background: none; color: var(--accent); font: inherit; cursor: pointer; }
+  .credit-add { display: flex; flex-wrap: wrap; gap: 8px; padding: 8px 0 12px; }
+  .credit-add input, .credit-add select { min-width: 0; height: 40px; padding: 0 10px; border: 1px solid var(--field-line); border-radius: 10px; background: var(--field); color: var(--text); font: inherit; font-size: 16px; }
+  .credit-add input[name="name"] { flex: 1 1 160px; }
+  .credit-add input[name="amount"] { flex: 0 1 90px; }
+  .credits-fine { margin-top: 8px; }
+  .cert-suggest { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px 0 4px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+  .cert-chip { min-height: 32px; padding: 0 12px; border: 1px dashed var(--field-line); border-radius: 999px; background: none; color: var(--accent); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
   .confetti { position: fixed; inset: 0; z-index: 30; width: 100%; height: 100%; pointer-events: none; }
 
   /* Medallion "Plan ahead" */
@@ -1396,7 +1420,17 @@
         </div>
         <button class="add" type="submit">Add</button>
       </form>
+      <div class="cert-suggest" id="cert-suggest" hidden></div>
     </div>
+  </section>
+
+  <section id="credits-section" aria-labelledby="h-credits" hidden>
+    <div class="sec-row">
+      <h2 class="sec" id="h-credits">Card credits</h2>
+      <span class="sec-meta" id="c-meta"></span>
+    </div>
+    <div class="card credits-card" id="credits-list"></div>
+    <p class="fine credits-fine" id="credits-fine"></p>
   </section>
 
   <footer class="foot">
@@ -1620,6 +1654,7 @@
   const STATUS_SOON_DAYS = 90; // statuses: more lead time to requalify or use perks
   const KEEP_SOON_DAYS = 100; // year-end push: warn when a status you hold isn't re-earned yet
   const HISTORY_MAX = 60; // balance-history entries kept per program (read while loading saved data)
+  const CREDIT_PERIODS = { month: 'a month', quarter: 'a quarter', half: 'every 6 months', year: 'a year' }; // (read while loading)
   const MAX_VALUE = 999999999999;
   const MQD_GOAL = 28000;
   const TIERS = [
@@ -1938,6 +1973,155 @@
     amex: { bank: true }, chase: { bank: true }, capitalone: { bank: true },
     citi: { bank: true, note: 'Points tied to a card expire 60 days after that card closes or is converted — move or use them first.' },
     bilt: { months: 18, note: 'Paying rent through Bilt or using a Bilt card counts as activity.' },
+  };
+
+  // Statement credits per card, as of CREDITS_AS_OF: [id, name, dollars per period, period, resets, note].
+  // period: 'month' | 'quarter' | 'half' (Jan–Jun, Jul–Dec) | 'year'; resets: 'calendar' or 'card' (card-member year,
+  // counted from your annual fee date when you've added it).
+  const CREDITS_AS_OF = 'September 2026';
+  const FHR = 'prepaid Fine Hotels + Resorts or The Hotel Collection via Amex Travel';
+  const CREDITS = {
+    'amex-platinum': [
+      ['hotel', 'Hotel credit', 300, 'half', 'calendar', FHR],
+      ['airline', 'Airline fee credit', 200, 'year', 'calendar', 'incidental fees on the airline you pick'],
+      ['resy', 'Resy dining', 100, 'quarter', 'calendar', 'U.S. Resy restaurants; enroll'],
+      ['lululemon', 'lululemon', 75, 'quarter', 'calendar', 'U.S. stores and online; enroll'],
+      ['uber', 'Uber Cash', 15, 'month', 'calendar', '$35 in December'],
+      ['entertainment', 'Digital entertainment', 25, 'month', 'calendar', 'streaming and news subscriptions; enroll'],
+      ['walmart', 'Walmart+', 12.95, 'month', 'calendar', 'monthly membership, plus tax'],
+      ['uber-one', 'Uber One', 120, 'year', 'calendar', 'membership billed to the card'],
+      ['equinox', 'Equinox', 300, 'year', 'calendar', 'enroll'],
+      ['oura', 'Oura Ring', 200, 'year', 'calendar', 'at ouraring.com; enroll'],
+      ['clear', 'CLEAR+', 219, 'year', 'calendar', ''],
+    ],
+    'amex-business-platinum': [
+      ['hotel', 'Hotel credit', 300, 'half', 'calendar', FHR],
+      ['airline', 'Airline fee credit', 200, 'year', 'calendar', 'incidental fees on the airline you pick'],
+      ['chatgpt', 'ChatGPT Business', 300, 'year', 'calendar', 'bought directly from OpenAI; enroll'],
+      ['adobe', 'Adobe', 250, 'year', 'calendar', 'after $600 with Adobe; enroll'],
+      ['dell', 'Dell', 150, 'year', 'calendar', 'U.S. purchases; enroll ($1,000 more after $5,000 with Dell)'],
+      ['indeed', 'Indeed', 90, 'quarter', 'calendar', 'enroll'],
+      ['hilton', 'Hilton', 50, 'quarter', 'calendar', 'Hilton for Business; enroll'],
+      ['wireless', 'Wireless', 10, 'month', 'calendar', 'U.S. wireless providers'],
+      ['clear', 'CLEAR+', 219, 'year', 'calendar', ''],
+    ],
+    'amex-gold': [
+      ['resy', 'Resy dining', 50, 'half', 'calendar', 'U.S. Resy restaurants; enroll'],
+      ['dining', 'Dining credit', 10, 'month', 'calendar', 'Grubhub, Five Guys, Cheesecake Factory, Buffalo Wild Wings, Wonder; enroll'],
+      ['uber', 'Uber Cash', 10, 'month', 'calendar', 'U.S. Uber rides or Uber Eats'],
+      ['dunkin', 'Dunkin’', 7, 'month', 'calendar', 'enroll'],
+    ],
+    'hilton-aspire': [
+      ['resort', 'Hilton Resorts credit', 200, 'half', 'calendar', 'booked directly with participating Hilton Resorts'],
+      ['flight', 'Flight credit', 50, 'quarter', 'calendar', 'booked directly with an airline or via Amex Travel'],
+      ['clear', 'CLEAR+', 219, 'year', 'calendar', ''],
+    ],
+    'hilton-surpass': [['hilton', 'Hilton credit', 50, 'quarter', 'calendar', 'charged directly at a Hilton property']],
+    'hilton-business': [['hilton', 'Hilton credit', 60, 'quarter', 'calendar', 'charged directly at a Hilton property']],
+    'bonvoy-brilliant': [['dining', 'Dining credit', 25, 'month', 'calendar', 'restaurants worldwide']],
+    'delta-reserve': [
+      ['stays', 'Delta Stays', 200, 'year', 'calendar', 'prepaid hotels on delta.com'],
+      ['resy', 'Resy / Tock dining', 20, 'month', 'calendar', 'enroll'],
+      ['rideshare', 'Rideshare', 10, 'month', 'calendar', 'Uber, Lyft, Curb, Alto; enroll'],
+    ],
+    'delta-platinum': [
+      ['stays', 'Delta Stays', 150, 'year', 'calendar', 'prepaid hotels on delta.com'],
+      ['resy', 'Resy / Tock dining', 10, 'month', 'calendar', 'enroll'],
+      ['rideshare', 'Rideshare', 10, 'month', 'calendar', 'Uber, Lyft, Curb, Alto; enroll'],
+    ],
+    'delta-gold': [
+      ['stays', 'Delta Stays', 100, 'year', 'calendar', 'prepaid hotels on delta.com'],
+      ['rideshare', 'Rideshare', 10, 'month', 'calendar', 'Uber, Lyft, Curb, Alto; starts after your 2026 renewal; enroll'],
+    ],
+    'delta-reserve-business': [['stays', 'Delta Stays', 250, 'year', 'calendar', 'prepaid hotels on delta.com']],
+    'delta-platinum-business': [['stays', 'Delta Stays', 200, 'year', 'calendar', 'prepaid hotels on delta.com']],
+    'delta-gold-business': [['stays', 'Delta Stays', 150, 'year', 'calendar', 'prepaid hotels on delta.com']],
+    'sapphire-reserve': [
+      ['travel', 'Travel credit', 300, 'year', 'card', 'any travel purchase'],
+      ['edit', 'The Edit hotel credit', 500, 'year', 'calendar', 'two $250 prepaid 2+ night stays'],
+      ['select-hotels', 'Select hotels credit (2026)', 250, 'year', 'calendar', 'IHG, Montage, Pendry, Omni and more via Chase Travel'],
+      ['dining', 'Exclusive Tables dining', 150, 'half', 'calendar', 'Sapphire Reserve Exclusive Tables restaurants'],
+      ['stubhub', 'StubHub / viagogo', 150, 'half', 'calendar', 'activate first'],
+      ['doordash', 'DoorDash', 15, 'month', 'calendar', 'any order from Oct 2026 ($5 before)'],
+      ['lyft', 'Lyft', 10, 'month', 'calendar', 'in the Lyft app'],
+    ],
+    'sapphire-reserve-business': [
+      ['travel', 'Travel credit', 300, 'year', 'card', 'any travel purchase'],
+      ['edit', 'The Edit hotel credit', 500, 'year', 'calendar', 'two $250 prepaid 2+ night stays'],
+      ['ziprecruiter', 'ZipRecruiter', 200, 'half', 'calendar', ''],
+      ['lyft', 'Lyft', 10, 'month', 'calendar', 'in the Lyft app'],
+    ],
+    'sapphire-preferred': [['hotel', 'Chase Travel hotel credit', 100, 'year', 'card', 'a hotel booked through Chase Travel']],
+    'united-club': [
+      ['hotels', 'Renowned Hotels', 200, 'year', 'card', 'prepaid through United Hotels'],
+      ['rideshare', 'Rideshare', 12, 'month', 'calendar', '$18 in December; opt in each year'],
+      ['instacart', 'Instacart', 20, 'month', 'calendar', 'with Instacart+'],
+    ],
+    'united-quest': [
+      ['united', 'United travel credit', 200, 'year', 'card', 'United purchases'],
+      ['hotels', 'Renowned Hotels', 150, 'year', 'card', 'prepaid through United Hotels'],
+      ['jsx', 'JSX', 150, 'year', 'card', 'booked directly with JSX'],
+      ['avis', 'Avis / Budget', 80, 'year', 'card', 'TravelBank cash via cars.united.com'],
+      ['rideshare', 'Rideshare', 8, 'month', 'calendar', '$12 in December; opt in each year'],
+      ['instacart', 'Instacart', 15, 'month', 'calendar', '$10 + $5 with Instacart+'],
+    ],
+    'united-explorer': [
+      ['hotels', 'United Hotels', 100, 'year', 'card', 'two $50 prepaid stays'],
+      ['jsx', 'JSX', 100, 'year', 'card', 'booked directly with JSX'],
+      ['avis', 'Avis / Budget', 50, 'year', 'card', 'two $25 TravelBank credits via cars.united.com'],
+      ['rideshare', 'Rideshare', 5, 'month', 'calendar', 'register each year'],
+      ['instacart', 'Instacart', 10, 'month', 'calendar', 'with Instacart+'],
+    ],
+    'ihg-premier': [['united', 'United TravelBank credit', 50, 'year', 'calendar', 'link the card in MileagePlus']],
+    'chase-aeroplan': [['aircanada', 'Air Canada credit', 100, 'year', 'calendar', 'Air Canada purchases']],
+    'venture-x': [['travel', 'Capital One Travel credit', 300, 'year', 'card', 'bookings through Capital One Travel']],
+    'venture-x-business': [['travel', 'Capital One Travel credit', 300, 'year', 'card', 'bookings through Capital One Travel']],
+    'strata-elite': [
+      ['hotel', 'Hotel credit', 300, 'year', 'calendar', '2+ nights through Citi Travel'],
+      ['splurge', 'Splurge credit', 200, 'year', 'calendar', 'at the merchants you chose'],
+      ['blacklane', 'Blacklane', 100, 'half', 'calendar', ''],
+    ],
+    'strata-premier': [['hotel', 'Hotel credit', 100, 'year', 'calendar', 'one $500+ stay through Citi Travel']],
+    'aadvantage-executive': [
+      ['vacations', 'American Airlines Vacations', 250, 'half', 'calendar', ''],
+      ['avis', 'Avis / Budget', 120, 'year', 'calendar', 'prepaid on avis.com or budget.com'],
+      ['lyft', 'Lyft', 15, 'month', 'calendar', 'after 3 rides that month'],
+    ],
+    'bilt-palladium': [
+      ['hotel', 'Bilt Travel hotel credit', 200, 'half', 'calendar', '2+ nights through Bilt Travel'],
+      ['bilt-cash', 'Bilt Cash', 200, 'year', 'calendar', 'posts Jan 1'],
+    ],
+    'premium-rewards-elite': [
+      ['airline', 'Airline incidentals', 300, 'year', 'calendar', 'bags, seats, lounge day passes'],
+      ['lifestyle', 'Lifestyle credit', 150, 'year', 'calendar', 'streaming, food delivery, fitness, rideshare'],
+    ],
+    'premium-rewards': [['airline', 'Airline incidentals', 100, 'year', 'calendar', 'bags, seats, lounge day passes']],
+    'autograph-journey': [['airline', 'Airline credit', 50, 'year', 'card', 'one $50+ airline purchase']],
+  };
+  // Certificates cards issue: [name, what it's good for, months it stays valid, when it arrives].
+  const HILTON_NIGHT = 'Standard room at most Hilton hotels; can’t add points';
+  const MARRIOTT_35 = 'Up to 35,000 points a night; you can add up to 25,000 points';
+  const HYATT_NIGHT = 'Category 1–4 hotel; check out before it expires';
+  const UNITED_DISCOUNT = '10,000 miles off an award; book before it expires';
+  const CERTS = {
+    'hilton-aspire': [['free night', HILTON_NIGHT, 12, 'each card renewal'], ['free night (spend bonus)', HILTON_NIGHT, 12, 'after $30,000 spend in a calendar year']],
+    'hilton-surpass': [['free night', HILTON_NIGHT, 12, 'after $15,000 spend in a calendar year']],
+    'bonvoy-brilliant': [['85k free night', 'Up to 85,000 points a night; you can add up to 25,000 points', 12, 'each card anniversary']],
+    'bonvoy-business': [['35k free night', MARRIOTT_35, 12, 'each card anniversary'], ['35k free night (spend bonus)', MARRIOTT_35, 12, 'after $60,000 spend in a calendar year']],
+    'bonvoy-boundless': [['35k free night', MARRIOTT_35, 12, 'each card anniversary']],
+    'ihg-premier': [['anniversary night', 'Up to 40,000 points a night; you can add points for pricier hotels', 12, 'each card anniversary']],
+    'ihg-premier-business': [['anniversary night', 'Up to 40,000 points a night (50,000 for nights issued from 2027); you can add points', 12, 'each card anniversary']],
+    'hyatt-card': [['Category 1–4 free night', HYATT_NIGHT, 12, 'each card anniversary'], ['Category 1–4 free night (spend bonus)', HYATT_NIGHT, 12, 'after $15,000 spend in a calendar year']],
+    'delta-platinum': [['companion certificate', 'Main Cabin round trip in the US, Mexico, Caribbean, or Central America; book and fly before it expires', 12, 'each card renewal']],
+    'delta-platinum-business': [['companion certificate', 'Main Cabin round trip in the US, Mexico, Caribbean, or Central America; book and fly before it expires', 12, 'each card renewal']],
+    'delta-reserve': [['companion certificate', 'Round trip in Main, Comfort, or First; book and fly before it expires', 12, 'each card renewal']],
+    'delta-reserve-business': [['companion certificate', 'Round trip in Main, Comfort, or First; book and fly before it expires', 12, 'each card renewal']],
+    'delta-gold': [['$200 flight credit', 'Not for award tickets', 12, 'after $10,000 spend in a calendar year']],
+    'delta-gold-business': [['$200 flight credit', 'Not for award tickets', 12, 'after $10,000 spend in a calendar year']],
+    'atmos-summit': [['Global Companion Award (25K)', 'Up to 25,000 points off a companion’s award; book within a year', 12, 'each card anniversary']],
+    'atmos-ascent': [['companion fare', '$99 plus taxes (from $23); book within 12 months', 12, 'each anniversary, after $6,000 spend in the card year before']],
+    'united-quest': [['10,000-mile award discount', UNITED_DISCOUNT, 12, 'each card anniversary'], ['10,000-mile award discount (spend bonus)', UNITED_DISCOUNT, 12, 'after $20,000 spend in a calendar year']],
+    'united-explorer': [['10,000-mile award discount', UNITED_DISCOUNT, 12, 'after $20,000 spend in a calendar year']],
   };
 
   // Typical cents-per-point values for estimates, from The Points Guy's monthly valuations (VALUES_SOURCE).
@@ -2499,7 +2683,7 @@
   function normalize(raw) {
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
     if (!['programs', 'balances', 'vouchers', 'mqd'].some((k) => k in raw)) return null;
-    const s = { programs: null, cards: [], renewals: {}, notes: '', memos: {}, balances: {}, history: {}, cpp: {}, hideValues: false, activity: {}, mqd: 0, progress: {}, members: {}, updated: {}, backedUp: '', vouchers: [] };
+    const s = { programs: null, cards: [], renewals: {}, creditsUsed: {}, creditsSkipped: {}, customCredits: {}, notes: '', memos: {}, balances: {}, history: {}, cpp: {}, hideValues: false, activity: {}, mqd: 0, progress: {}, members: {}, updated: {}, backedUp: '', vouchers: [] };
     if (raw.balances && typeof raw.balances === 'object') {
       for (const [id, v] of Object.entries(raw.balances)) if (isCount(v)) s.balances[id] = Math.floor(v);
     }
@@ -2509,6 +2693,20 @@
         const clean = list.filter((e) => Array.isArray(e) && typeof e[0] === 'string' && parseISODate(e[0]) && isCount(e[1]))
           .map(([d, v]) => [d, Math.floor(v)]).sort((a, b) => a[0].localeCompare(b[0])).slice(-HISTORY_MAX);
         if (clean.length) s.history[id] = clean;
+      }
+    }
+    if (raw.creditsUsed && typeof raw.creditsUsed === 'object') { // "card:credit" → the period it was used in
+      for (const [k, v] of Object.entries(raw.creditsUsed)) if (typeof v === 'string' && v.length <= 20) s.creditsUsed[k] = v;
+    }
+    if (raw.creditsSkipped && typeof raw.creditsSkipped === 'object') { // credits you've chosen not to track
+      for (const [k, v] of Object.entries(raw.creditsSkipped)) if (v === true) s.creditsSkipped[k] = true;
+    }
+    if (raw.customCredits && typeof raw.customCredits === 'object') { // credits you added: card → [[id, name, $, period]]
+      for (const [cardId, list] of Object.entries(raw.customCredits)) {
+        if (!CARD_BY_ID[cardId] || !Array.isArray(list)) continue;
+        const clean = list.filter((c) => Array.isArray(c) && typeof c[0] === 'string' && str(c[1], 60) && isCount(c[2]) && CREDIT_PERIODS[c[3]])
+          .slice(0, 30).map(([id, name, amount, period]) => [id.slice(0, 20), str(name, 60), Math.floor(amount), period]);
+        if (clean.length) s.customCredits[cardId] = clean;
       }
     }
     if (raw.cpp && typeof raw.cpp === 'object') { // your own cents-per-point value per program
@@ -2605,7 +2803,7 @@
       const stash = `status-tracker-unreadable:${storageKey()}`; // not under KEY, so it's never mistaken for a person
       try { if (raw && !localStorage.getItem(stash)) localStorage.setItem(stash, raw); } catch (err) { /* storage unavailable */ }
     }
-    return { programs: null, cards: [], renewals: {}, notes: '', memos: {}, balances: {}, history: {}, cpp: {}, hideValues: false, activity: {}, mqd: 0, progress: {}, members: {}, updated: {}, backedUp: '', vouchers: [] }; // null programs → first-run setup
+    return { programs: null, cards: [], renewals: {}, creditsUsed: {}, creditsSkipped: {}, customCredits: {}, notes: '', memos: {}, balances: {}, history: {}, cpp: {}, hideValues: false, activity: {}, mqd: 0, progress: {}, members: {}, updated: {}, backedUp: '', vouchers: [] }; // null programs → first-run setup
   }
 
   const state = load();
@@ -4153,6 +4351,13 @@
       const info = pointsExpiry(p);
       if (info && info.date && inWindow(info.days, STATUS_SOON_DAYS)) items.push({ kind: 'points', p, date: info.date, days: info.days, rule: info.rule });
     }
+    if (!future) {
+      for (const x of heldCredits()) {
+        if (!x.used && !x.skipped && x.credit.period !== 'month' && x.days >= 0 && x.days <= 21) {
+          items.push({ kind: 'credit', x, date: x.period.end, days: x.days });
+        }
+      }
+    }
     for (const id of state.cards) {
       if (!state.renewals[id]) continue;
       const date = nextRenewal(state.renewals[id]);
@@ -4183,6 +4388,14 @@
       const when = item.days < 0 ? h('span', { class: 'tag danger' }, 'Expired')
         : h('span', { class: 'tag warn' }, item.days === 0 ? 'Today' : plural(item.days, 'day'));
       const verb = item.days < 0 ? 'expired' : 'expires';
+      if (item.kind === 'credit') {
+        return h('li', null, h('button', { type: 'button', class: 'up-item', 'data-credits': '' },
+          h('span', { class: 'v-ico', 'aria-hidden': 'true' }, svgIcon(ICON.card)),
+          h('div', { class: 'up-body' },
+            h('div', { class: 'up-name' }, `Use your ${creditMoney(item.x.credit.amount)} ${item.x.credit.name}`),
+            h('div', { class: 'up-sub' }, `${item.x.card.name} · resets ${dateFmt.format(item.date)}`)),
+          h('span', { class: 'tag warn' }, item.days === 0 ? 'Today' : plural(item.days, 'day'))));
+      }
       if (item.kind === 'keep') {
         return h('li', null, h('button', { type: 'button', class: 'up-item', 'data-open': item.p.id },
           avatar(item.p),
@@ -4344,6 +4557,7 @@
     const open = e.target.closest('[data-open]');
     if (open) { openDetail(open.dataset.open); return; }
     if (e.target.closest('[data-voucher]')) { jumpTo($('#vouchers-section')); return; }
+    if (e.target.closest('[data-credits]')) { jumpTo($('#credits-section')); return; }
     const renewal = e.target.closest('[data-card-renewal]');
     if (renewal) { openCards(renewal.dataset.cardRenewal); return; }
     if (e.target.closest('[data-backup]')) backUp();
@@ -4545,6 +4759,7 @@
     scheduleSave();
     $(`#cards-renewals [data-next="${CSS.escape(id)}"]`).textContent = renewalText(id); // input untouched while typing
     renderUpcoming();
+    renderCredits(); // card-year credits follow the fee date
   });
 
   $('#cards-picker').addEventListener('click', (e) => {
@@ -4567,6 +4782,8 @@
     renderPrograms();
     renderRenewals();
     renderUpcoming();
+    renderCredits();
+    renderCertSuggest();
   });
 
   $('#cards-done').addEventListener('click', () => cardsSheet.close());
@@ -4639,6 +4856,7 @@
     if (soon) meta.push(h('span', { class: 'warn' }, `${soon} expiring soon`));
     if (expired) meta.push(h('span', { class: 'danger' }, `${expired} expired`));
     $('#v-meta').replaceChildren(...meta.flatMap((m, i) => (i ? [' · ', m] : [m])));
+    renderCertSuggest();
     renderStats();
   }
 
@@ -4727,6 +4945,7 @@
         if (item.kind === 'status') return `- ${splitParts(item.group.tier).join(' · ')} (${item.p.name}) ${item.days < 0 ? 'expired' : 'expires'} ${date}, ${when(item)}`;
         if (item.kind === 'voucher') return `- Voucher: ${item.v.name} ${item.days < 0 ? 'expired' : 'expires'} ${date}, ${when(item)}`;
         if (item.kind === 'card') return `- ${item.card.name} annual fee renews ${date}, ${when(item)}`;
+        if (item.kind === 'credit') return `- Use your ${creditMoney(item.x.credit.amount)} ${item.x.credit.name} (${item.x.card.name}) before it resets ${date}`;
         if (item.kind === 'points') return `- ${item.p.name} ${item.p.unit} ${item.days < 0 ? 'expired' : 'expire'} ${date} without activity, ${when(item)}`;
         return `- Keep ${item.name} (${item.p.name}): ${item.text} by ${date}`;
       }));
@@ -4791,9 +5010,11 @@
     }
 
     if (state.cards.length) {
-      out.push('', 'CARDS', '', ...state.cards.map((id) => {
+      const credits = heldCredits().filter((x) => !x.skipped);
+      out.push('', 'CARDS', '', ...state.cards.flatMap((id) => {
         const iso = state.renewals[id];
-        return `${CARD_BY_ID[id].name}${iso ? ` — annual fee around ${dateFmt.format(nextRenewal(iso))}` : ''}`;
+        return [`${CARD_BY_ID[id].name}${iso ? ` — annual fee around ${dateFmt.format(nextRenewal(iso))}` : ''}`,
+          ...credits.filter((x) => x.card.id === id).map((x) => `  - ${x.credit.name}: ${creditMoney(x.credit.amount)} ${CREDIT_PERIODS[x.credit.period]} — ${x.used ? 'used' : 'not used yet'} (${x.period.label})`)];
       }), '');
     }
     if (state.notes.trim()) out.push('', 'NOTE', '', state.notes.trim(), '');
@@ -5195,6 +5416,157 @@
     applyTheme(theme);
   });
 
+  /* ---------- Card credits ---------- */
+
+  const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const creditId = (cardId, id) => `${cardId}:${id}`;
+  const creditMoney = (n) => (Number.isInteger(n) ? money(n) : `$${n.toFixed(2)}`); // $12.95 stays exact
+
+  // The period a credit is in today: a key that changes when it resets, a label, and its last day.
+  function creditPeriod(cardId, period, resets, date = new Date()) {
+    const y = date.getFullYear();
+    const m = date.getMonth();
+    if (resets === 'card' && period === 'year' && state.renewals[cardId]) {
+      const next = nextRenewal(state.renewals[cardId]); // the card year ends the day before the fee posts again
+      const start = new Date(next.getFullYear() - 1, next.getMonth(), next.getDate());
+      const end = new Date(next.getFullYear(), next.getMonth(), next.getDate() - 1);
+      if (start > date) start.setFullYear(start.getFullYear() - 1);
+      return { key: `A${isoOf(start)}`, label: `card year to ${dateFmt.format(end)}`, end };
+    }
+    if (period === 'month') return { key: `${y}-${m + 1}`, label: MONTH_NAMES[m], end: new Date(y, m + 1, 0) };
+    if (period === 'quarter') {
+      const q = Math.floor(m / 3);
+      return { key: `${y}-Q${q + 1}`, label: `${MONTH_NAMES[q * 3].slice(0, 3)}–${MONTH_NAMES[q * 3 + 2].slice(0, 3)}`, end: new Date(y, q * 3 + 3, 0) };
+    }
+    if (period === 'half') return m < 6 ? { key: `${y}-H1`, label: 'Jan–Jun', end: new Date(y, 6, 0) } : { key: `${y}-H2`, label: 'Jul–Dec', end: new Date(y, 12, 0) };
+    return { key: `${y}`, label: resets === 'card' ? `${y} (add your annual fee date for your card year)` : String(y), end: new Date(y, 12, 0) };
+  }
+
+  // Every credit on the cards you hold: presets plus ones you've added, with where each stands this period.
+  function heldCredits() {
+    return state.cards.flatMap((cardId) => {
+      const card = CARD_BY_ID[cardId];
+      const preset = (CREDITS[cardId] || []).map(([id, name, amount, period, resets, note]) => ({ id, name, amount, period, resets, note }));
+      const custom = (state.customCredits[cardId] || []).map(([id, name, amount, period]) => ({ id, name, amount, period, resets: 'calendar', custom: true }));
+      return [...preset, ...custom].map((credit) => {
+        const key = creditId(cardId, credit.id);
+        const period = creditPeriod(cardId, credit.period, credit.resets);
+        return { card, credit, key, period, used: state.creditsUsed[key] === period.key, skipped: !!state.creditsSkipped[key], days: daysUntil(period.end) };
+      });
+    });
+  }
+
+  let addingCreditFor = null; // card id whose "add a credit" form is open
+
+  function renderCredits() {
+    const section = $('#credits-section');
+    section.hidden = !state.programs || !state.cards.length;
+    if (section.hidden) return;
+    const all = heldCredits();
+    const groups = state.cards.map((cardId) => [CARD_BY_ID[cardId], all.filter((x) => x.card.id === cardId)]);
+    const unusedNow = all.filter((x) => !x.used && !x.skipped).reduce((sum, x) => sum + x.credit.amount, 0);
+    $('#c-meta').textContent = all.length ? `${money(unusedNow)} unused right now` : '';
+    $('#credits-list').replaceChildren(...groups.map(([card, list]) => {
+      const shown = list.filter((x) => !x.skipped);
+      const skipped = list.filter((x) => x.skipped);
+      return h('div', { class: 'credit-group' },
+        h('div', { class: 'credit-head' }, h('h3', null, card.label || card.name),
+          h('button', { type: 'button', class: 'link', 'data-credit-add': card.id }, addingCreditFor === card.id ? 'Cancel' : 'Add a credit')),
+        shown.length ? h('ul', { class: 'credit-list' }, shown.map((x) => {
+          const soon = !x.used && x.credit.period !== 'month' && x.days <= 21;
+          return h('li', { class: x.used ? 'credit used' : 'credit' },
+            h('div', { class: 'credit-body' },
+              h('span', { class: 'credit-name' }, x.credit.name),
+              h('small', null, `${creditMoney(x.credit.amount)} ${CREDIT_PERIODS[x.credit.period]} · ${x.period.label}${x.credit.note ? ` · ${x.credit.note}` : ''}`),
+              soon ? h('small', { class: 'warn' }, x.days === 0 ? 'Resets after today' : `Resets in ${plural(x.days, 'day')} (${dateFmt.format(x.period.end)})`) : null),
+            h('button', { type: 'button', class: 'credit-use', 'data-credit-use': x.key, 'aria-pressed': String(x.used),
+              'aria-label': `${x.credit.name}: ${x.used ? 'used' : 'not used yet'} this period` }, x.used ? '✓ Used' : 'Mark used'),
+            h('button', { type: 'button', class: 'icon-btn', 'data-credit-skip': x.key, 'aria-label': `Stop tracking ${x.credit.name}`, title: 'Don’t track this one' }, svgIcon(ICON.x)));
+        })) : h('p', { class: 'credit-skipped' }, CREDITS[card.id] ? 'Every credit here is hidden.' : 'No statement credits listed for this card — add any you get.'),
+        skipped.length ? h('p', { class: 'credit-skipped' }, 'Not tracking: ', skipped.flatMap((x, i) => [i ? ', ' : null,
+          h('button', { type: 'button', 'data-credit-unskip': x.key }, x.credit.name)]), ' (tap to track again)') : null,
+        addingCreditFor === card.id ? h('form', { class: 'credit-add', 'data-credit-form': card.id },
+          h('input', { name: 'name', maxlength: '60', required: '', placeholder: 'Credit (e.g. Dining)', 'aria-label': 'Credit name' }),
+          h('input', { name: 'amount', inputmode: 'numeric', required: '', placeholder: '$', 'aria-label': 'Dollars each period' }),
+          h('select', { name: 'period', 'aria-label': 'How often' }, Object.entries(CREDIT_PERIODS).map(([v, label]) => h('option', { value: v }, label))),
+          h('button', { class: 'add sm', type: 'submit' }, 'Add')) : null);
+    }));
+    $('#credits-fine').textContent = `Credits as of ${CREDITS_AS_OF}. Most need enrolling and only apply at the listed merchants — check your card’s benefits page. Marking a credit used lasts until it resets.`;
+  }
+
+  $('#credits-list').addEventListener('click', (e) => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    const d = b.dataset;
+    if (d.creditUse) {
+      const x = heldCredits().find((c) => c.key === d.creditUse);
+      if (!x) return;
+      if (x.used) delete state.creditsUsed[x.key];
+      else state.creditsUsed[x.key] = x.period.key;
+    } else if (d.creditSkip) {
+      state.creditsSkipped[d.creditSkip] = true;
+      const x = heldCredits().find((c) => c.key === d.creditSkip);
+      showToast(`Not tracking ${x ? x.credit.name : 'that credit'}`, () => { delete state.creditsSkipped[d.creditSkip]; scheduleSave(); renderCredits(); renderUpcoming(); });
+    } else if (d.creditUnskip) {
+      delete state.creditsSkipped[d.creditUnskip];
+    } else if (d.creditAdd) {
+      addingCreditFor = addingCreditFor === d.creditAdd ? null : d.creditAdd;
+      renderCredits();
+      const input = addingCreditFor && $(`[data-credit-form="${CSS.escape(addingCreditFor)}"] input`);
+      if (input) input.focus();
+      return;
+    } else return;
+    scheduleSave();
+    renderCredits();
+    renderUpcoming();
+  });
+
+  $('#credits-list').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const form = e.target.closest('[data-credit-form]');
+    if (!form) return;
+    const cardId = form.dataset.creditForm;
+    const name = str(form.elements.name.value, 60);
+    const amount = Math.floor(Number(form.elements.amount.value.replace(/[^\d.]/g, '')));
+    if (!name || !(amount > 0)) { form.elements[name ? 'amount' : 'name'].focus(); return; }
+    const list = state.customCredits[cardId] || (state.customCredits[cardId] = []);
+    list.push([`c${Math.random().toString(36).slice(2, 8)}`, name, Math.min(amount, 100000), form.elements.period.value]);
+    addingCreditFor = null;
+    scheduleSave();
+    renderCredits();
+    renderUpcoming();
+  });
+
+  /* ---------- Certificates from your cards (free nights, companion fares) ---------- */
+
+  // Chips under the voucher form that fill it in for a certificate your cards give.
+  function renderCertSuggest() {
+    const box = $('#cert-suggest');
+    const active = new Set(state.vouchers.filter((v) => { const d = parseISODate(v.exp); return !d || daysUntil(d) >= 0; }).map((v) => v.name));
+    const chips = state.cards.flatMap((cardId) => (CERTS[cardId] || []).map(([name, note, months, trigger], i) => {
+      const label = `${CARD_BY_ID[cardId].name} ${name}`;
+      return active.has(label) ? null : h('button', { type: 'button', class: 'cert-chip', 'data-cert': `${cardId}:${i}`, title: `Arrives ${trigger}; good for ${months} months` }, `+ ${label}`);
+    }).filter(Boolean));
+    box.hidden = !chips.length;
+    if (chips.length) box.replaceChildren(h('span', null, 'From your cards:'), ...chips);
+  }
+
+  $('#cert-suggest').addEventListener('click', (e) => {
+    const chip = e.target.closest('[data-cert]');
+    if (!chip) return;
+    const [cardId, i] = chip.dataset.cert.split(/:(?=\d+$)/);
+    const [name, note, months, trigger] = CERTS[cardId][Number(i)];
+    const exp = new Date();
+    exp.setMonth(exp.getMonth() + months);
+    exp.setDate(exp.getDate() - 1);
+    $('#vname').value = `${CARD_BY_ID[cardId].name} ${name}`;
+    $('#vnote').value = note;
+    $('#vexp').value = isoOf(exp);
+    $('#vexp').focus();
+    $('#vexp').scrollIntoView({ block: 'center' });
+    showToast(`Set the date it expires (it arrives ${trigger}), then Add`);
+  });
+
   /* ---------- What's new ---------- */
 
   // A one-time card listing new features for people who already use the app; new setups skip it.
@@ -5267,6 +5639,8 @@
     renderNews();
     renderPeople();
     syncValuesPick();
+    if (!setup) renderCredits();
+    else $('#credits-section').hidden = true;
     if (setup) {
       renderSetup();
     } else {
