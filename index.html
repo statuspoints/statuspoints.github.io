@@ -521,6 +521,8 @@
   .plan-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .plan { margin-top: 10px; padding-top: 12px; border-top: 1px dashed var(--field-line); }
   .plan-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; font-size: 13px; color: var(--muted); }
+  .plan-row label small { margin-left: 6px; font-size: 11.5px; opacity: .8; }
+  .plan-row .plan-amt { white-space: nowrap; }
   .plan-amt { font-family: var(--num-font); font-size: 16px; font-weight: 750; color: var(--text); font-variant-numeric: tabular-nums; }
   .range { display: block; width: 100%; height: 30px; margin: 6px 0 2px; background: transparent; -webkit-appearance: none; appearance: none; cursor: pointer; }
   .range::-webkit-slider-runnable-track { height: 6px; border-radius: 999px; background: var(--track); }
@@ -1389,6 +1391,7 @@
   // benefits as of CARDS_AS_OF. Grants are [program id, tier, note]; tiers joined with " · " show as separate
   // pills. Statuses you only unlock by spending are deliberately left out. `tone` picks the tile colors.
   const CARDS_AS_OF = 'September 2026';
+  // `boost` on Delta cards: dollars of card spend per MQD earned (MQD Boost).
   const AMEX_PLATINUM = [
     ['hilton', 'Gold'],
     ['marriott', 'Gold Elite'],
@@ -1424,11 +1427,11 @@
     { issuer: 'American Express', id: 'bonvoy-business', name: 'Bonvoy Business', tone: 'black', grants: [['marriott', 'Gold Elite']] },
     { issuer: 'Delta SkyMiles (Amex)', id: 'delta-blue', name: 'Delta Blue', tone: 'blue', grants: [] },
     { issuer: 'Delta SkyMiles (Amex)', id: 'delta-gold', name: 'Delta Gold', tone: 'gold', grants: [] },
-    { issuer: 'Delta SkyMiles (Amex)', id: 'delta-platinum', name: 'Delta Platinum', tone: 'platinum', grants: DELTA_PLATINUM },
-    { issuer: 'Delta SkyMiles (Amex)', id: 'delta-reserve', name: 'Delta Reserve', tone: 'black', grants: DELTA_RESERVE },
+    { issuer: 'Delta SkyMiles (Amex)', id: 'delta-platinum', name: 'Delta Platinum', tone: 'platinum', grants: DELTA_PLATINUM, boost: 20 },
+    { issuer: 'Delta SkyMiles (Amex)', id: 'delta-reserve', name: 'Delta Reserve', tone: 'black', grants: DELTA_RESERVE, boost: 10 },
     { issuer: 'Delta SkyMiles (Amex)', id: 'delta-gold-business', name: 'Delta Gold Business', tone: 'gold', grants: [] },
-    { issuer: 'Delta SkyMiles (Amex)', id: 'delta-platinum-business', name: 'Delta Platinum Business', tone: 'platinum', grants: DELTA_PLATINUM },
-    { issuer: 'Delta SkyMiles (Amex)', id: 'delta-reserve-business', name: 'Delta Reserve Business', tone: 'black', grants: DELTA_RESERVE },
+    { issuer: 'Delta SkyMiles (Amex)', id: 'delta-platinum-business', name: 'Delta Platinum Business', tone: 'platinum', grants: DELTA_PLATINUM, boost: 20 },
+    { issuer: 'Delta SkyMiles (Amex)', id: 'delta-reserve-business', name: 'Delta Reserve Business', tone: 'black', grants: DELTA_RESERVE, boost: 10 },
     // Renamed Classic Green on Aug 20, 2026 and closed to new applicants.
     { issuer: 'American Express', id: 'amex-green', name: 'Amex Classic Green', label: 'Amex Classic Green (was Green)', tone: 'green', grants: [] },
     { issuer: 'Chase', id: 'sapphire-reserve', name: 'Sapphire Reserve', tone: 'sapphire', grants: SAPPHIRE_RESERVE },
@@ -2300,6 +2303,7 @@
   }
 
   function medallionPanel() {
+    const boost = boostCard();
     const bar = h('div', {
       class: 'bar',
       id: 'mqd-bar',
@@ -2335,27 +2339,51 @@
           h('label', { for: 'plan-range' }, 'MQDs you expect to add'),
           h('span', { class: 'plan-amt', id: 'plan-amt' })),
         h('input', { type: 'range', class: 'range', id: 'plan-range', min: '0', max: '20000', step: '250', value: String(planMqd) }),
+        boost ? [
+          h('div', { class: 'plan-row' },
+            h('label', { for: 'plan-spend' }, `${boost.name} spend`, h('small', null, `$${boost.boost} = 1 MQD`)),
+            h('span', { class: 'plan-amt', id: 'plan-spend-amt' })),
+          h('input', { type: 'range', class: 'range', id: 'plan-spend', min: '0', max: '100000', step: '1000', value: String(planSpend) }),
+        ] : null,
         h('p', { class: 'plan-result', id: 'plan-result', 'aria-live': 'polite' })));
   }
+
+  // The Delta card you hold with the best MQD Boost (fewest dollars per MQD), if any.
+  const boostCard = () => state.cards.map((id) => CARD_BY_ID[id]).filter((c) => c.boost).sort((a, b) => a.boost - b.boost)[0] || null;
 
   // "Plan ahead": a striped preview on the bar of where expected MQDs would land. Not saved.
   let planOpen = false;
   let planMqd = 0;
+  let planSpend = 0; // card spend, converted at the card's MQD Boost rate
 
   function updatePlan() {
     if (!$('#plan-range')) return;
-    const add = planOpen ? planMqd : 0;
+    const boost = boostCard();
+    const fromSpend = boost ? Math.floor(planSpend / boost.boost) : 0;
+    const add = planOpen ? planMqd + fromSpend : 0;
     const total = state.mqd + add;
     $('#plan-amt').textContent = `+${fmt(planMqd)}`;
+    if (boost) $('#plan-spend-amt').textContent = `$${fmt(planSpend)} · +${fmt(fromSpend)}`;
     $('#mqd-plan').style.width = `${Math.min(total / MQD_GOAL, 1) * 100}%`;
     const now = medallionFor(state.mqd).current;
     const then = medallionFor(total);
+    const held = effectiveMedallion();
     let result;
     if (!add) result = ['Drag to see where upcoming trips or card spend would get you.'];
+    else if (then.current && then.current !== now && held && TIERS.indexOf(then.current) <= TIERS.indexOf(held)) {
+      // A tier you already hold from last year: this is about keeping it for another year.
+      result = [then.current === held ? 'That requalifies you for ' : 'That earns ', h('strong', null, `${then.current.name} Medallion`),
+        ` through ${dateFmt.format(medallionThrough())} with ${fmt(total)} MQDs`, fromSpend ? ` (${fmt(fromSpend)} from card spend)` : '',
+        then.current === held ? '.' : `, after your ${held.name} ends.`];
+    }
     else if (then.current && then.current !== now) {
       const tier = perksFor(medallionProgram(), `${then.current.name} Medallion`);
       result = ['That gets you to ', h('strong', null, `${then.current.name} Medallion`), ` with ${fmt(total)} MQDs`,
+        fromSpend ? ` (${fmt(fromSpend)} from card spend)` : '',
         tier ? ` — ${tier.perks.slice(0, 2).map((perk) => perk.charAt(0).toLowerCase() + perk.slice(1)).join(', ')}, and more.` : '.'];
+    }
+    else if (then.next && held && TIERS.indexOf(held) > TIERS.indexOf(then.current)) {
+      result = [`${fmt(total)} MQDs — still `, h('strong', null, `${fmt(held.min - total)} short`), ` of keeping ${held.name}.`];
     }
     else if (then.next) result = [`${fmt(total)} MQDs — still `, h('strong', null, `${fmt(then.next.min - total)} short`), ` of ${then.next.name}.`];
     else result = [`${fmt(total)} MQDs — you'd keep `, h('strong', null, 'Diamond'), '.'];
@@ -2703,8 +2731,9 @@
   });
 
   $('#programs').addEventListener('input', (e) => {
-    if (e.target.id !== 'plan-range') return;
-    planMqd = Number(e.target.value);
+    if (e.target.id === 'plan-range') planMqd = Number(e.target.value);
+    else if (e.target.id === 'plan-spend') planSpend = Number(e.target.value);
+    else return;
     updatePlan();
   });
 
