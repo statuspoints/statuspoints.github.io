@@ -40,6 +40,10 @@ The first time you open it, pick the programs you have and, optionally, the cred
 | Marriott, Hyatt | nights | end of Feb 2028 |
 | IHG, Wyndham | nights | Dec 31, 2027 |
 
+### What your points are worth
+
+Each balance shows an estimated dollar value ("points · ≈ $480"), and **≈ $4,820 in points & miles** under the Programs heading opens a breakdown. Estimates use The Points Guy's September 2026 valuations of what points are typically worth when redeemed well (cash back is usually less). Set your own value in any program's details, or turn dollar values off at the bottom (**Dollar values: Hide**). Programs with no published value, like Korean Air, count only once you add one.
+
 ### Transfer partners
 
 Open Amex Membership Rewards, Chase Ultimate Rewards, Citi ThankYou, Capital One, or Bilt to see every airline and hotel their points transfer to, with ratios (as of September 2026). Programs on your list come first, with what your balance would become ("120,000 → 240,000 points" to Hilton), and tapping one opens it. Each airline and hotel shows **Top up with card points**: which banks feed it and how much you have. Notes cover the fine print, like Chase transfers needing a Sapphire or Ink Preferred, Chase-to-Hyatt dropping to 4:3 on the Sapphire Preferred and Ink Preferred from Oct 1, 2026, and Citi's lower ratios on no-fee cards.

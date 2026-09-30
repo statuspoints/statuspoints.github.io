@@ -573,6 +573,18 @@
   .plan-row .plan-amt { white-space: nowrap; }
   .plan-note { margin: 0 0 10px; font-size: 12.5px; color: var(--muted); }
   .alt-head { margin-top: 10px; }
+  .worth { display: block; margin: 2px 0 0; padding: 0; border: 0; background: none; color: var(--accent); font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; }
+  .worth-total { margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.02em; }
+  .worth-list { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+  .worth-list li { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--line); }
+  .worth-list .av { width: 30px; height: 30px; font-size: 11px; }
+  .worth-list .w-body { display: grid; flex: 1; min-width: 0; }
+  .worth-list .w-body small { font-size: 12.5px; color: var(--muted); }
+  .worth-list .w-amt { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .worth-inline { color: var(--muted); }
+  .cpp-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .cpp-row label { font-size: 14px; font-weight: 600; }
+  .cpp-row input { max-width: 120px; }
   .xfer { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
   .xfer-row {
     display: flex;
@@ -1335,6 +1347,7 @@
     <div class="sec-row">
       <div>
         <h2 class="sec" id="h-programs">Programs <span class="count" id="p-count"></span></h2>
+        <button class="worth" id="worth-btn" type="button" hidden></button>
         <p class="sec-sub" id="p-hint">Tap a program for perks &amp; member number</p>
       </div>
       <div class="sec-actions">
@@ -1413,6 +1426,11 @@
         Restore from backup
       </button>
     </div>
+    <div class="theme-pick" id="values-pick" role="group" aria-label="Dollar values">
+      <span>Dollar values</span>
+      <button type="button" data-values="show" aria-pressed="true">Show</button>
+      <button type="button" data-values="hide" aria-pressed="false">Hide</button>
+    </div>
     <div class="theme-pick" role="group" aria-label="Appearance">
       <span>Appearance</span>
       <button type="button" data-theme-pick="auto" aria-pressed="true">Auto</button>
@@ -1480,6 +1498,7 @@
     <section class="d-sec" id="d-status" aria-label="Your status"></section>
     <section class="d-sec" id="d-progress" aria-label="This year's progress" hidden></section>
     <section class="d-sec" id="d-expiry" aria-label="Points expiration" hidden></section>
+    <section class="d-sec" id="d-worth" aria-label="What it's worth" hidden></section>
     <section class="d-sec" id="d-transfers" aria-label="Transfer partners" hidden></section>
     <section class="d-sec" id="d-levels" aria-label="Status levels"></section>
     <div class="sheet-actions d-actions">
@@ -1504,6 +1523,20 @@
     <div class="sheet-actions">
       <span class="spacer"></span>
       <button class="add" id="perks-done" type="button">Done</button>
+    </div>
+  </div>
+</dialog>
+<dialog class="sheet" id="worth-sheet" aria-labelledby="worth-title">
+  <div class="sheet-body">
+    <div class="grab" aria-hidden="true"></div>
+    <h2 id="worth-title" tabindex="-1" autofocus>What your points are worth</h2>
+    <p class="worth-total" id="worth-total"></p>
+    <ul class="worth-list" id="worth-list"></ul>
+    <p class="fine" id="worth-fine"></p>
+    <div class="sheet-actions">
+      <button class="btn-secondary" id="worth-hide" type="button">Hide dollar values</button>
+      <span class="spacer"></span>
+      <button class="add" id="worth-done" type="button">Done</button>
     </div>
   </div>
 </dialog>
@@ -1907,6 +1940,15 @@
     bilt: { months: 18, note: 'Paying rent through Bilt or using a Bilt card counts as activity.' },
   };
 
+  // Typical cents-per-point values for estimates, from The Points Guy's monthly valuations (VALUES_SOURCE).
+  // Programs without one (e.g. Korean Air) show no dollar value unless you set your own.
+  const VALUES_SOURCE = 'The Points Guy, September 2026';
+  const VALUES = {
+    delta: 1.2, united: 1.2, american: 1.45, southwest: 1.25, alaska: 1.55, jetblue: 1.35, aeroplan: 1.5, flyingblue: 1.4,
+    ba: 1.4, virgin: 1.45, hilton: 0.4, marriott: 0.75, ihg: 0.6, hyatt: 1.65, wyndham: 0.7, choice: 0.85, accor: 2.3,
+    amex: 2.0, chase: 2.05, citi: 1.9, capitalone: 1.85, bilt: 2.2,
+  };
+
   // Where each bank's points transfer, as of TRANSFERS_AS_OF: [partner id (or name), bank points, partner points,
   // note]. Ratios are for the issuers' premium cards; `note` covers the exceptions.
   const TRANSFERS_AS_OF = 'September 2026';
@@ -1973,6 +2015,11 @@
   const benefitsFor = (p) => { const c = catalogFor(p); return (c && BENEFITS[c.id]) || null; };
   const trackFor = (p) => { const c = catalogFor(p); return (c && TRACKS[c.id]) || null; };
   const expiryFor = (p) => { const c = catalogFor(p); return (p.unit && c && EXPIRY[c.id]) || null; };
+  // Cents per point: yours if set, else the published typical value; null when neither exists.
+  const cppFor = (p) => { if (!p.unit) return null; if (state.cpp[p.id]) return state.cpp[p.id]; const c = catalogFor(p); return (c && VALUES[c.id]) || null; };
+  const valueOf = (p) => { const cpp = cppFor(p); const bal = state.balances[p.id]; return cpp && bal ? (bal * cpp) / 100 : null; };
+  const moneyFmt = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+  const money = (n) => moneyFmt.format(Math.round(n));
 
   // When a balance runs out if nothing happens: null if it can't (never expires, or you're exempt) or no last
   // activity date is known. `exempt` names what protects it.
@@ -2451,7 +2498,7 @@
   function normalize(raw) {
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
     if (!['programs', 'balances', 'vouchers', 'mqd'].some((k) => k in raw)) return null;
-    const s = { programs: null, cards: [], renewals: {}, notes: '', memos: {}, balances: {}, history: {}, activity: {}, mqd: 0, progress: {}, members: {}, updated: {}, backedUp: '', vouchers: [] };
+    const s = { programs: null, cards: [], renewals: {}, notes: '', memos: {}, balances: {}, history: {}, cpp: {}, hideValues: false, activity: {}, mqd: 0, progress: {}, members: {}, updated: {}, backedUp: '', vouchers: [] };
     if (raw.balances && typeof raw.balances === 'object') {
       for (const [id, v] of Object.entries(raw.balances)) if (isCount(v)) s.balances[id] = Math.floor(v);
     }
@@ -2463,6 +2510,10 @@
         if (clean.length) s.history[id] = clean;
       }
     }
+    if (raw.cpp && typeof raw.cpp === 'object') { // your own cents-per-point value per program
+      for (const [id, v] of Object.entries(raw.cpp)) if (typeof v === 'number' && v > 0 && v <= 100) s.cpp[id] = v;
+    }
+    if (raw.hideValues === true) s.hideValues = true;
     if (raw.memos && typeof raw.memos === 'object') { // a free-text note per program
       for (const [id, v] of Object.entries(raw.memos)) { const memo = str(v, 300); if (memo) s.memos[id] = memo; }
     }
@@ -2553,7 +2604,7 @@
       const stash = `status-tracker-unreadable:${storageKey()}`; // not under KEY, so it's never mistaken for a person
       try { if (raw && !localStorage.getItem(stash)) localStorage.setItem(stash, raw); } catch (err) { /* storage unavailable */ }
     }
-    return { programs: null, cards: [], renewals: {}, notes: '', memos: {}, balances: {}, history: {}, activity: {}, mqd: 0, progress: {}, members: {}, updated: {}, backedUp: '', vouchers: [] }; // null programs → first-run setup
+    return { programs: null, cards: [], renewals: {}, notes: '', memos: {}, balances: {}, history: {}, cpp: {}, hideValues: false, activity: {}, mqd: 0, progress: {}, members: {}, updated: {}, backedUp: '', vouchers: [] }; // null programs → first-run setup
   }
 
   const state = load();
@@ -2690,7 +2741,13 @@
       }
       paintNum(btn);
       input.replaceWith(btn);
-      if (field.startsWith('bal:')) renderUpcoming(); // a changed balance resets a points-expiry clock
+      if (field.startsWith('bal:')) {
+        renderUpcoming(); // a changed balance resets a points-expiry clock
+        const program = state.programs.find((x) => x.id === field.slice(4));
+        const unit = btn.closest('.bal') && btn.closest('.bal').querySelector('.unit');
+        if (program && unit) unit.replaceChildren(...unitLine(program).filter(Boolean));
+        renderWorth();
+      }
       if (field === 'mqd') {
         updateMedallion();
         // Crossed into a higher Medallion tier: celebrate.
@@ -2905,6 +2962,12 @@
       h('div', { class: 'mini-bar', 'aria-hidden': 'true' }, h('i', { style: `width:${Math.round(info.toNext * 100)}%` })));
   }
 
+  // Under a balance: "points · ≈ $480", plus its age when it's getting stale.
+  function unitLine(p) {
+    const value = state.hideValues ? null : valueOf(p);
+    return [p.unit, value ? h('span', { class: 'worth-inline' }, ` · ≈ ${money(value)}`) : null, staleNote(p)];
+  }
+
   // " · 5 mo old" under a balance nobody has touched in 4+ months, so it gets refreshed before you rely on it.
   function staleNote(p) {
     const updated = parseISODate(state.updated[p.id]);
@@ -2936,7 +2999,7 @@
     if (p.unit) {
       main.append(h('div', { class: 'bal' },
         numButton(`bal:${p.id}`, `${p.name} balance`),
-        h('div', { class: 'unit' }, p.unit, staleNote(p))));
+        h('div', { class: 'unit' }, ...unitLine(p))));
     }
     return h('li', { class: 'row' }, main, withMedallion ? medallionPanel() : null);
   }
@@ -3007,7 +3070,35 @@
     if (medallionId && !editMode) updateMedallion();
     renderNotes();
     renderStats();
+    renderWorth();
   }
+
+  // "≈ $4,820 in points & miles" under the Programs heading; opens the breakdown.
+  function renderWorth() {
+    const valued = (state.programs || []).filter((p) => valueOf(p));
+    const total = valued.reduce((sum, p) => sum + valueOf(p), 0);
+    $('#worth-btn').hidden = state.hideValues || editMode || !valued.length;
+    $('#worth-btn').textContent = `≈ ${money(total)} in points & miles ›`;
+    for (const btn of document.querySelectorAll('[data-values]')) btn.setAttribute('aria-pressed', String((btn.dataset.values === 'hide') === state.hideValues));
+    if (!$('#worth-sheet').open) return;
+    $('#worth-total').textContent = `≈ ${money(total)}`;
+    $('#worth-list').replaceChildren(...valued.sort((a, b) => valueOf(b) - valueOf(a)).map((p) => h('li', null, avatar(p),
+      h('span', { class: 'w-body' }, h('span', null, p.name), h('small', null, `${fmt(state.balances[p.id])} ${p.unit} × ${cppFor(p)}¢${state.cpp[p.id] ? ' (yours)' : ''}`)),
+      h('span', { class: 'w-amt' }, money(valueOf(p))))));
+    const unvalued = (state.programs || []).filter((p) => p.unit && state.balances[p.id] && !cppFor(p)).map((p) => p.name);
+    $('#worth-fine').textContent = `Estimates of what points are typically worth when redeemed well, from ${VALUES_SOURCE}; cash-back value is usually lower. Set your own value in a program’s details.`
+      + (unvalued.length ? ` Not included (no value yet): ${unvalued.join(', ')}.` : '');
+  }
+  function setHideValues(hide) {
+    state.hideValues = hide;
+    scheduleSave();
+    renderPrograms();
+  }
+  $('#worth-btn').addEventListener('click', () => { $('#worth-sheet').showModal(); renderWorth(); });
+  $('#worth-done').addEventListener('click', () => $('#worth-sheet').close());
+  $('#worth-hide').addEventListener('click', () => { $('#worth-sheet').close(); setHideValues(true); showToast('Dollar values hidden — turn them back on at the bottom', () => setHideValues(false)); });
+  $('#worth-sheet').addEventListener('click', (e) => { if (e.target === $('#worth-sheet')) $('#worth-sheet').close(); });
+  $('#values-pick').addEventListener('click', (e) => { const b = e.target.closest('[data-values]'); if (b) setHideValues(b.dataset.values === 'hide'); });
 
   // Delta grants a tier as soon as you qualify, for the rest of that Medallion year and all of the next: qualifying
   // in 2026 means status through Jan 31, 2028. MQDs start over every January 1.
@@ -3455,6 +3546,7 @@
     renderDetailStatus(p);
     renderProgress(p);
     renderExpiry(p);
+    renderDetailWorth(p);
     renderTransfers(p);
     renderLevels(p);
   }
@@ -3496,6 +3588,27 @@
     box.replaceChildren(svg, h('p', null,
       h('strong', { class: change >= 0 ? 'up' : 'down' }, `${change >= 0 ? '+' : '−'}${fmt(Math.abs(change))}`),
       ` ${p.unit} since ${since} · ${plural(list.length, 'update')}`));
+  }
+
+  // "≈ $1,440 at 1.2¢ per mile", with a field for your own value.
+  function renderDetailWorth(p) {
+    const box = $('#d-worth');
+    box.hidden = !p.unit || state.hideValues;
+    if (box.hidden) return;
+    const c = catalogFor(p);
+    const typical = c && VALUES[c.id];
+    const input = h('input', { type: 'number', class: 'exp-input', id: 'd-cpp', min: '0.01', max: '100', step: '0.05', inputmode: 'decimal', placeholder: typical ? String(typical) : '¢', 'aria-label': `Your value for ${p.name} ${p.unit}, in cents each` });
+    input.value = state.cpp[p.id] ? String(state.cpp[p.id]) : '';
+    box.replaceChildren(h('h3', { class: 'd-label' }, 'What it’s worth'), worthLine(p),
+      h('div', { class: 'cpp-row' }, h('label', { for: 'd-cpp' }, 'Your value (¢ each)'), input),
+      h('p', { class: 'fine' }, typical ? `Typical value ${typical}¢ from ${VALUES_SOURCE}. Leave blank to use it.` : 'No published value for this program — add your own to include it in your total.'));
+  }
+  function worthLine(p) {
+    const value = valueOf(p);
+    const cpp = cppFor(p);
+    const unit = p.unit === 'points' ? 'point' : p.unit === 'miles' ? 'mile' : p.unit;
+    return h('p', { class: 'exp-rule', id: 'd-worth-line' }, value ? `≈ ${money(value)} at ${cpp}¢ per ${unit}${state.cpp[p.id] ? ' (your value)' : ''}`
+      : cpp ? `${cpp}¢ per ${unit} — add a balance to see its value` : 'Not valued');
   }
 
   // Bank points: where they can go (programs on your list first, with what your balance would become).
@@ -3802,6 +3915,20 @@
       case 'd-member-copy': copyMember(btn); break;
       default: break;
     }
+  });
+
+  detail.addEventListener('input', (e) => {
+    if (e.target.id !== 'd-cpp') return;
+    const p = detailProgram();
+    const v = Number(e.target.value);
+    if (e.target.value.trim() && v > 0 && v <= 100) state.cpp[p.id] = Math.round(v * 100) / 100;
+    else delete state.cpp[p.id];
+    scheduleSave();
+    $('#d-worth-line').replaceWith(worthLine(p)); // the field stays put while typing
+    renderWorth();
+    const row = document.querySelector(`#programs [data-field="bal:${CSS.escape(p.id)}"]`);
+    const unit = row && row.closest('.bal').querySelector('.unit');
+    if (unit) unit.replaceChildren(...unitLine(p).filter(Boolean));
   });
 
   $('#d-memo-input').addEventListener('input', (e) => {
@@ -4599,6 +4726,8 @@
       }));
     }
     out.push('', '', 'PROGRAMS', '');
+    const valued = state.hideValues ? [] : state.programs.filter((p) => valueOf(p));
+    if (valued.length) out.push(`Estimated value ≈ ${money(valued.reduce((sum, p) => sum + valueOf(p), 0))} (typical values from ${VALUES_SOURCE})`, '');
 
     const medallion = medallionProgram();
     const pushPerks = (p, tierText) => {
@@ -4609,7 +4738,7 @@
       const balance = state.balances[p.id];
       const updated = balance != null && state.updated[p.id] ? ` (updated ${dateFmt.format(parseISODate(state.updated[p.id]))})` : '';
       if (!p.unit) out.push(p.name);
-      else out.push(`${p.name} — ${balance == null ? 'no balance entered' : `${fmt(balance)} ${p.unit}${updated}`}`);
+      else out.push(`${p.name} — ${balance == null ? 'no balance entered' : `${fmt(balance)} ${p.unit}${!state.hideValues && valueOf(p) ? ` (≈ ${money(valueOf(p))})` : ''}${updated}`}`);
       if (state.members[p.id]) out.push(`  Member #: ${state.members[p.id]}`);
       if (state.memos[p.id]) out.push(...state.memos[p.id].trim().split('\n').map((line) => `  Note: ${line}`));
       const expiry = pointsExpiry(p);
