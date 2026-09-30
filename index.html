@@ -553,8 +553,8 @@
   .credit-head::-webkit-details-marker { display: none; }
   .credit-head::after { content: ""; flex: none; width: 7px; height: 7px; margin-left: 4px; border: solid var(--muted); border-width: 0 1.6px 1.6px 0; transform: rotate(45deg) translateY(-2px); transition: transform .2s ease; }
   .credit-group[open] > .credit-head::after { transform: rotate(225deg) translateY(-2px); }
-  .credit-head h3 { flex: 1; min-width: 0; }
-  .credit-sum { font-size: 13px; color: var(--muted); white-space: nowrap; }
+  .credit-title { display: grid; flex: 1; min-width: 0; gap: 2px; }
+  .credit-sum { font-size: 13px; color: var(--muted); }
   .credit-sum.warn { color: var(--warn); font-weight: 600; }
   .credit-add-link { display: block; margin: 2px 0 12px; }
   .credit-head h3 { margin: 0; font-size: 15px; }
@@ -5481,9 +5481,9 @@
       const soon = shown.filter((x) => !x.used && x.credit.period !== 'month' && x.days <= 21).length;
       const open = addingCreditFor === card.id || (creditOpen.has(card.id) ? creditOpen.get(card.id) : soon > 0);
       return h('details', { class: 'credit-group', 'data-credit-group': card.id, open: open ? '' : null },
-        h('summary', { class: 'credit-head' }, h('h3', null, card.label || card.name),
+        h('summary', { class: 'credit-head' }, h('span', { class: 'credit-title' }, h('h3', null, card.label || card.name),
           h('span', { class: soon ? 'credit-sum warn' : 'credit-sum' }, shown.length
-            ? `${money(unused)} unused${soon ? ` · ${soon} resetting soon` : ''}` : 'No credits listed')),
+            ? `${money(unused)} unused${soon ? ` · ${soon} resetting soon` : ''}` : 'No credits listed'))),
         shown.length ? h('ul', { class: 'credit-list' }, shown.map((x) => {
           const soon = !x.used && x.credit.period !== 'month' && x.days <= 21;
           return h('li', { class: x.used ? 'credit used' : 'credit' },
