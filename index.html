@@ -1529,6 +1529,7 @@
   const SOON_DAYS = 60; // vouchers: flag and remind this many days out
   const STATUS_SOON_DAYS = 90; // statuses: more lead time to requalify or use perks
   const KEEP_SOON_DAYS = 100; // year-end push: warn when a status you hold isn't re-earned yet
+  const HISTORY_MAX = 60; // balance-history entries kept per program (read while loading saved data)
   const MAX_VALUE = 999999999999;
   const MQD_GOAL = 28000;
   const TIERS = [
@@ -2396,10 +2397,17 @@
   }
 
   function load() {
+    let raw = null;
     try {
-      const s = normalize(JSON.parse(localStorage.getItem(storageKey()) || 'null'));
+      raw = localStorage.getItem(storageKey());
+      const s = normalize(JSON.parse(raw || 'null'));
       if (s) return s;
-    } catch (e) { /* corrupt or unavailable storage: start fresh */ }
+    } catch (e) {
+      // Saved data this version can't read: keep an untouched copy before starting fresh, so nothing is lost.
+      console.error('Points & Status Tracker: could not read saved data', e);
+      const stash = `status-tracker-unreadable:${storageKey()}`; // not under KEY, so it's never mistaken for a person
+      try { if (raw && !localStorage.getItem(stash)) localStorage.setItem(stash, raw); } catch (err) { /* storage unavailable */ }
+    }
     return { programs: null, cards: [], renewals: {}, notes: '', memos: {}, balances: {}, history: {}, activity: {}, mqd: 0, progress: {}, members: {}, updated: {}, backedUp: '', vouchers: [] }; // null programs → first-run setup
   }
 
@@ -2446,7 +2454,6 @@
   }
 
   // Balance history for the trend in a program's details: one entry per day (the day's last value), capped.
-  const HISTORY_MAX = 60;
   function recordBalance(id, previous, value) {
     const list = state.history[id] || (state.history[id] = []);
     const today = todayISO();
