@@ -1265,6 +1265,8 @@
         <li><b>Points expiration</b>: see which balances can expire and get reminded before they do.</li>
         <li><b>Card annual fee dates</b> (Edit → Choose cards) with reminders.</li>
         <li><b>Share a device</b>: Add a person at the bottom gives each person their own tracker.</li>
+        <li><b>Keep your status</b>: progress shows what it takes to requalify, with year-end reminders in Coming up.</li>
+        <li><b>Appearance</b>: pick Light or Dark at the bottom, or follow your device.</li>
       </ul>
     </div>
     <button class="icon-btn" id="news-close" type="button" aria-label="Dismiss what’s new"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M2.5 2.5l9 9M11.5 2.5l-9 9"/></svg></button>
@@ -1521,6 +1523,7 @@
   const SAVE_DELAY = 400;
   const SOON_DAYS = 60; // vouchers: flag and remind this many days out
   const STATUS_SOON_DAYS = 90; // statuses: more lead time to requalify or use perks
+  const KEEP_SOON_DAYS = 100; // year-end push: warn when a status you hold isn't re-earned yet
   const MAX_VALUE = 999999999999;
   const MQD_GOAL = 28000;
   const TIERS = [
@@ -1939,8 +1942,12 @@
     const n = value || 0;
     const also = track.also || {};
     // The next level still to earn: the first count not reached, or a reached one that also needs spend.
-    const nextIndex = track.steps.findIndex((step, i) => n < step || also[i]);
+    let nextIndex = track.steps.findIndex((step, i) => n < step || also[i]);
     if (nextIndex < 0) return { track, tiers, value, n, next: null, toNext: 1 };
+    // Holding a level from last year that this year's count hasn't re-earned yet: keeping it comes first.
+    const keep = keepIndex(p, track);
+    const keeping = keep >= nextIndex && n < track.steps[keep] && !also[keep];
+    if (keeping) nextIndex = keep;
     const at = track.steps[nextIndex];
     const prev = nextIndex > 0 ? track.steps[nextIndex - 1] : 0;
     return {
@@ -1948,13 +1955,31 @@
       tiers,
       value,
       n,
-      next: { name: tierLabel(tiers[nextIndex].name), at, left: Math.max(at - n, 0), also: also[nextIndex] },
-      toNext: Math.min((n - prev) / (at - prev), 1),
+      next: { name: tierLabel(tiers[nextIndex].name), at, left: Math.max(at - n, 0), also: also[nextIndex], keep: keeping },
+      toNext: Math.max(0, Math.min((n - prev) / (at - prev), 1)),
     };
   }
 
-  // "7 to Gold", or "Diamond Reserve also needs $18,000 on stays" once the count is there.
-  const nextText = (next) => (next.left ? `${fmt(next.left)} to ${next.name}` : `${next.name} also needs ${next.also}`);
+  // The highest level you hold that runs out before a level earned this year would: dated statuses you typed
+  // or kept from last year (card statuses renew with the card). -1 if none needs earning again.
+  function keepIndex(p, track) {
+    const tiers = benefitsFor(p);
+    if (!tiers) return -1;
+    const earnedThru = isoOf(track.thru(qualYear(track)));
+    let best = -1;
+    for (const line of p.status) {
+      if (!line.tier || !line.exp || line.card || lineExpired(line) || line.exp >= earnedThru) continue;
+      for (const part of splitParts(line.tier)) best = Math.max(best, findTier(tiers, part));
+    }
+    return best;
+  }
+
+  // Last day of the qualifying year a track is in (Dec 31, or the end of February for American).
+  const qualYearEnd = (track) => new Date(qualYear(track) + 1, (track.starts || 1) - 1, 0);
+
+  // "7 to Gold", "8 to keep Platinum", or "Diamond Reserve also needs $18,000 on stays" once the count is there.
+  const nextText = (next) => (!next.left ? `${next.name} also needs ${next.also}`
+    : `${fmt(next.left)} to ${next.keep ? 'keep ' : ''}${next.name}`);
 
   // Index of the level a status text refers to, or -1.
   function findTier(tiers, text) {
@@ -3695,6 +3720,26 @@
       const days = daysUntil(date);
       if (inWindow(days, SOON_DAYS)) items.push({ kind: 'voucher', v, date, days });
     }
+    if (!future) {
+      for (const p of state.programs || []) {
+        const info = progressInfo(p);
+        if (info && info.value != null && info.next && info.next.keep) {
+          const date = qualYearEnd(info.track);
+          const days = daysUntil(date);
+          if (days >= 0 && days <= KEEP_SOON_DAYS) items.push({ kind: 'keep', p, date, days, text: `${fmt(info.next.left)} ${info.track.unit} to go`, name: info.next.name });
+        }
+      }
+      const delta = medallionProgram();
+      const held = delta && effectiveMedallion();
+      const current = medallionFor(state.mqd).current;
+      const heldLine = held && delta.status.find((line) => line.exp && !lineExpired(line) && line.exp < isoOf(medallionThrough())
+        && findTier(benefitsFor(delta), line.tier) === findTier(benefitsFor(delta), `${held.name} Medallion`));
+      if (heldLine && TIERS.indexOf(held) > TIERS.indexOf(current)) {
+        const date = new Date(mqdYear(), 11, 31);
+        const days = daysUntil(date);
+        if (days <= KEEP_SOON_DAYS) items.push({ kind: 'keep', p: delta, date, days, text: `$${fmt(held.min - state.mqd)} MQDs to go`, name: `${held.name} Medallion` });
+      }
+    }
     for (const p of state.programs || []) {
       const info = pointsExpiry(p);
       if (info && info.date && inWindow(info.days, STATUS_SOON_DAYS)) items.push({ kind: 'points', p, date: info.date, days: info.days, rule: info.rule });
@@ -3729,6 +3774,14 @@
       const when = item.days < 0 ? h('span', { class: 'tag danger' }, 'Expired')
         : h('span', { class: 'tag warn' }, item.days === 0 ? 'Today' : plural(item.days, 'day'));
       const verb = item.days < 0 ? 'expired' : 'expires';
+      if (item.kind === 'keep') {
+        return h('li', null, h('button', { type: 'button', class: 'up-item', 'data-open': item.p.id },
+          avatar(item.p),
+          h('div', { class: 'up-body' },
+            h('div', { class: 'up-name' }, `Keep ${item.name}`),
+            h('div', { class: 'up-sub' }, `${item.p.name} · ${item.text} by ${dateFmt.format(item.date)}`)),
+          h('span', { class: 'tag warn' }, item.days === 0 ? 'Today' : plural(item.days, 'day'))));
+      }
       if (item.kind === 'points') {
         return h('li', null, h('button', { type: 'button', class: 'up-item', 'data-open': item.p.id },
           avatar(item.p),
@@ -4590,7 +4643,7 @@
 
   // A one-time card listing new features for people who already use the app; new setups skip it.
   const NEWS_KEY = 'status-tracker-news';
-  const NEWS_ID = '2026-09';
+  const NEWS_ID = '2026-10';
   const newsSeen = () => { try { return localStorage.getItem(NEWS_KEY) === NEWS_ID; } catch (e) { return true; } };
   const markNewsSeen = () => { try { localStorage.setItem(NEWS_KEY, NEWS_ID); } catch (e) { /* private mode */ } };
   function renderNews() {
