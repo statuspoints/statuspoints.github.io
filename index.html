@@ -572,6 +572,11 @@
   .plan-row label small { margin-left: 6px; font-size: 11.5px; opacity: .8; }
   .plan-row .plan-amt { white-space: nowrap; }
   .plan-note { margin: 0 0 10px; font-size: 12.5px; color: var(--muted); }
+  .d-trend { margin-top: -4px; }
+  .d-trend svg { display: block; width: 100%; height: 44px; }
+  .d-trend p { margin: 4px 0 0; font-size: 12.5px; color: var(--muted); }
+  .d-trend strong.up { color: var(--accent); }
+  .d-trend strong.down { color: var(--warn); }
   .plan-amt { font-family: var(--num-font); font-size: 16px; font-weight: 750; color: var(--text); font-variant-numeric: tabular-nums; }
   .range { display: block; width: 100%; height: 30px; margin: 6px 0 2px; background: transparent; -webkit-appearance: none; appearance: none; cursor: pointer; }
   .range::-webkit-slider-runnable-track { height: 6px; border-radius: 999px; background: var(--track); }
@@ -1438,6 +1443,7 @@
         <p class="d-sub" id="d-sub"></p>
       </div>
     </div>
+    <div class="d-trend" id="d-trend" hidden></div>
     <section class="d-sec" id="d-member" aria-label="Member number"></section>
     <section class="d-sec" id="d-memo">
       <label class="d-label" for="d-memo-input">Notes</label>
@@ -2299,9 +2305,17 @@
   function normalize(raw) {
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
     if (!['programs', 'balances', 'vouchers', 'mqd'].some((k) => k in raw)) return null;
-    const s = { programs: null, cards: [], renewals: {}, notes: '', memos: {}, balances: {}, activity: {}, mqd: 0, progress: {}, members: {}, updated: {}, backedUp: '', vouchers: [] };
+    const s = { programs: null, cards: [], renewals: {}, notes: '', memos: {}, balances: {}, history: {}, activity: {}, mqd: 0, progress: {}, members: {}, updated: {}, backedUp: '', vouchers: [] };
     if (raw.balances && typeof raw.balances === 'object') {
       for (const [id, v] of Object.entries(raw.balances)) if (isCount(v)) s.balances[id] = Math.floor(v);
+    }
+    if (raw.history && typeof raw.history === 'object') { // [date, balance] pairs per program, oldest first
+      for (const [id, list] of Object.entries(raw.history)) {
+        if (!Array.isArray(list)) continue;
+        const clean = list.filter((e) => Array.isArray(e) && parseISODate(e[0]) && isCount(e[1]))
+          .map(([d, v]) => [d, Math.floor(v)]).sort((a, b) => a[0].localeCompare(b[0])).slice(-HISTORY_MAX);
+        if (clean.length) s.history[id] = clean;
+      }
     }
     if (raw.memos && typeof raw.memos === 'object') { // a free-text note per program
       for (const [id, v] of Object.entries(raw.memos)) { const memo = str(v, 300); if (memo) s.memos[id] = memo; }
@@ -2386,7 +2400,7 @@
       const s = normalize(JSON.parse(localStorage.getItem(storageKey()) || 'null'));
       if (s) return s;
     } catch (e) { /* corrupt or unavailable storage: start fresh */ }
-    return { programs: null, cards: [], renewals: {}, notes: '', memos: {}, balances: {}, activity: {}, mqd: 0, progress: {}, members: {}, updated: {}, backedUp: '', vouchers: [] }; // null programs → first-run setup
+    return { programs: null, cards: [], renewals: {}, notes: '', memos: {}, balances: {}, history: {}, activity: {}, mqd: 0, progress: {}, members: {}, updated: {}, backedUp: '', vouchers: [] }; // null programs → first-run setup
   }
 
   const state = load();
@@ -2431,6 +2445,18 @@
     return Object.prototype.hasOwnProperty.call(store, id) ? store[id] : null;
   }
 
+  // Balance history for the trend in a program's details: one entry per day (the day's last value), capped.
+  const HISTORY_MAX = 60;
+  function recordBalance(id, previous, value) {
+    const list = state.history[id] || (state.history[id] = []);
+    const today = todayISO();
+    // The first change also keeps the balance it replaced, dated when it was entered.
+    if (!list.length && previous != null && state.updated[id] && state.updated[id] < today) list.push([state.updated[id], previous]);
+    if (list.length && list[list.length - 1][0] === today) list[list.length - 1][1] = value;
+    else list.push([today, value]);
+    if (list.length > HISTORY_MAX) list.splice(0, list.length - HISTORY_MAX);
+  }
+
   function setField(field, value) {
     if (field === 'mqd') {
       state.mqd = value ?? 0;
@@ -2445,6 +2471,7 @@
         const rule = program && expiryFor(program);
         if (!(rule && rule.earnOnly && value < store[id])) state.activity[id] = todayISO();
       }
+      if (kind === 'bal' && value != null && value !== store[id]) recordBalance(id, store[id], value);
       if (value == null) delete store[id];
       else store[id] = value;
       state.updated[kind === 'prog' ? field : id] = todayISO();
@@ -3179,8 +3206,10 @@
     const saved = {
       balance: state.balances[id], member: state.members[id], progress: state.progress[id],
       updated: state.updated[id], progUpdated: state.updated[`prog:${id}`], activity: state.activity[id], memo: state.memos[id],
+      history: state.history[id],
     };
     delete state.activity[id];
+    delete state.history[id];
     delete state.memos[id];
     delete state.balances[id];
     delete state.members[id];
@@ -3199,6 +3228,7 @@
       if (saved.progUpdated) state.updated[`prog:${id}`] = saved.progUpdated;
       if (saved.activity) state.activity[id] = saved.activity;
       if (saved.memo) state.memos[id] = saved.memo;
+      if (saved.history) state.history[id] = saved.history;
       scheduleSave();
       renderPrograms();
     });
@@ -3259,6 +3289,7 @@
       sub.push('Status program');
     }
     $('#d-sub').textContent = sub.join(' · ');
+    renderTrend(p);
     renderMember(p, false);
     $('#d-memo-input').value = state.memos[p.id] || '';
     renderDetailStatus(p);
@@ -3276,6 +3307,34 @@
         : info.days <= STATUS_SOON_DAYS ? ['exp-text warn', `Expire ${dateFmt.format(info.date)} · ${plural(info.days, 'day')} left — ${reset} to reset the clock`]
           : ['exp-text', `Safe until ${dateFmt.format(info.date)} · ${plural(info.days, 'day')} left`];
     return h('span', { class: text[0], id: 'd-expiry-verdict', 'aria-live': 'polite' }, text[1]);
+  }
+
+  // A small line of the balance over time, with the change since the first entry ("+12,000 since Mar 2").
+  function renderTrend(p) {
+    const box = $('#d-trend');
+    const list = p.unit ? state.history[p.id] || [] : [];
+    box.hidden = list.length < 2;
+    if (box.hidden) return;
+    const times = list.map(([d]) => parseISODate(d).getTime());
+    const values = list.map(([, v]) => v);
+    const t0 = times[0];
+    const span = Math.max(times[times.length - 1] - t0, 1);
+    const lo = Math.min(...values);
+    const range = Math.max(Math.max(...values) - lo, 1);
+    const W = 300;
+    const H = 44;
+    const pts = list.map((_, i) => [((times[i] - t0) / span) * (W - 8) + 4, H - 4 - ((values[i] - lo) / range) * (H - 8)]);
+    const line = pts.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
+    const [lx, ly] = pts[pts.length - 1];
+    const change = values[values.length - 1] - values[0];
+    const svg = svgIcon(`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">`
+      + `<polygon points="4,${H} ${line} ${lx.toFixed(1)},${H}" fill="var(--accent-soft)"/>`
+      + `<polyline points="${line}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`
+      + `<circle cx="${lx.toFixed(1)}" cy="${ly.toFixed(1)}" r="3" fill="var(--accent)"/></svg>`);
+    const since = dateFmt.format(parseISODate(list[0][0]));
+    box.replaceChildren(svg, h('p', null,
+      h('strong', { class: change >= 0 ? 'up' : 'down' }, `${change >= 0 ? '+' : '−'}${fmt(Math.abs(change))}`),
+      ` ${p.unit} since ${since} · ${plural(list.length, 'update')}`));
   }
 
   // Whether the balance can expire, and when, from the last time you earned or redeemed.
