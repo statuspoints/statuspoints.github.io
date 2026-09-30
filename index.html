@@ -549,7 +549,14 @@
   #credits-section { margin-top: 26px; }
   .credits-card { padding: 4px 14px; }
   .credit-group + .credit-group { border-top: 1px solid var(--line); }
-  .credit-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 0 4px; }
+  .credit-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 0; cursor: pointer; list-style: none; }
+  .credit-head::-webkit-details-marker { display: none; }
+  .credit-head::after { content: ""; flex: none; width: 7px; height: 7px; margin-left: 4px; border: solid var(--muted); border-width: 0 1.6px 1.6px 0; transform: rotate(45deg) translateY(-2px); transition: transform .2s ease; }
+  .credit-group[open] > .credit-head::after { transform: rotate(225deg) translateY(-2px); }
+  .credit-head h3 { flex: 1; min-width: 0; }
+  .credit-sum { font-size: 13px; color: var(--muted); white-space: nowrap; }
+  .credit-sum.warn { color: var(--warn); font-weight: 600; }
+  .credit-add-link { display: block; margin: 2px 0 12px; }
   .credit-head h3 { margin: 0; font-size: 15px; }
   .credit-list { margin: 0; padding: 0; list-style: none; }
   .credit { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid var(--line); }
@@ -5457,6 +5464,7 @@
   }
 
   let addingCreditFor = null; // card id whose "add a credit" form is open
+  const creditOpen = new Map(); // card id → open/closed once you've tapped it (otherwise: open if something resets soon)
 
   function renderCredits() {
     const section = $('#credits-section');
@@ -5469,9 +5477,13 @@
     $('#credits-list').replaceChildren(...groups.map(([card, list]) => {
       const shown = list.filter((x) => !x.skipped);
       const skipped = list.filter((x) => x.skipped);
-      return h('div', { class: 'credit-group' },
-        h('div', { class: 'credit-head' }, h('h3', null, card.label || card.name),
-          h('button', { type: 'button', class: 'link', 'data-credit-add': card.id }, addingCreditFor === card.id ? 'Cancel' : 'Add a credit')),
+      const unused = shown.filter((x) => !x.used).reduce((sum, x) => sum + x.credit.amount, 0);
+      const soon = shown.filter((x) => !x.used && x.credit.period !== 'month' && x.days <= 21).length;
+      const open = addingCreditFor === card.id || (creditOpen.has(card.id) ? creditOpen.get(card.id) : soon > 0);
+      return h('details', { class: 'credit-group', 'data-credit-group': card.id, open: open ? '' : null },
+        h('summary', { class: 'credit-head' }, h('h3', null, card.label || card.name),
+          h('span', { class: soon ? 'credit-sum warn' : 'credit-sum' }, shown.length
+            ? `${money(unused)} unused${soon ? ` · ${soon} resetting soon` : ''}` : 'No credits listed')),
         shown.length ? h('ul', { class: 'credit-list' }, shown.map((x) => {
           const soon = !x.used && x.credit.period !== 'month' && x.days <= 21;
           return h('li', { class: x.used ? 'credit used' : 'credit' },
@@ -5489,12 +5501,19 @@
           h('input', { name: 'name', maxlength: '60', required: '', placeholder: 'Credit (e.g. Dining)', 'aria-label': 'Credit name' }),
           h('input', { name: 'amount', inputmode: 'numeric', required: '', placeholder: '$', 'aria-label': 'Dollars each period' }),
           h('select', { name: 'period', 'aria-label': 'How often' }, Object.entries(CREDIT_PERIODS).map(([v, label]) => h('option', { value: v }, label))),
-          h('button', { class: 'add sm', type: 'submit' }, 'Add')) : null);
+          h('button', { class: 'add sm', type: 'submit' }, 'Add')) : null,
+        h('button', { type: 'button', class: 'link credit-add-link', 'data-credit-add': card.id }, addingCreditFor === card.id ? 'Cancel' : 'Add a credit'));
     }));
     $('#credits-fine').textContent = `Credits as of ${CREDITS_AS_OF}. Most need enrolling and only apply at the listed merchants — check your card’s benefits page. Marking a credit used lasts until it resets.`;
   }
 
   $('#credits-list').addEventListener('click', (e) => {
+    const summary = e.target.closest('summary');
+    if (summary) { // remember what you opened or closed across re-renders
+      const group = summary.parentElement;
+      setTimeout(() => creditOpen.set(group.dataset.creditGroup, group.open));
+      return;
+    }
     const b = e.target.closest('button');
     if (!b) return;
     const d = b.dataset;
