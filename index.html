@@ -346,7 +346,7 @@
   .via { font-size: 12.5px; line-height: 1.35; color: var(--muted); overflow-wrap: anywhere; }
   .sline.expired .pill { opacity: .55; text-decoration: line-through; }
   .via .nw { white-space: nowrap; } /* keep "Sapphire Reserve", "thru 12/31/27" whole; wrap between them */
-  .no-status { margin-top: 3px; font-size: 13px; color: var(--faint); }
+  .no-status { margin-top: 3px; font-size: 13px; color: var(--muted); }
   .bal { flex: none; text-align: right; }
   .unit { margin-top: 2px; font-size: 11.5px; color: var(--muted); }
   .empty-row { padding: 26px 16px; text-align: center; font-size: 14px; color: var(--muted); }
@@ -2328,6 +2328,9 @@
   const lineExpired = (line) => { const days = daysLeft(line.exp); return days != null && days < 0; };
 
   // Tiers as colored pills, then where they come from, then a tag if it's expiring soon or expired.
+  // "Amex Platinum · thru 12/31/27": short parts never break inside, so lines wrap only between them.
+  const viaSpans = (parts) => parts.flatMap((part, i) => [i ? ' · ' : null, h('span', { class: part.length <= 28 ? 'nw' : null }, part)]);
+
   function statusLine(group, p) {
     const { tier, via, exp } = group;
     const days = tier ? daysLeft(exp) : null;
@@ -2336,20 +2339,22 @@
     // longer-lasting status at that level makes the countdown moot.
     const calm = days != null && (days > STATUS_SOON_DAYS || (days >= 0 && outlasted(p, group)));
     if (calm && !parts.some((part) => /\bthru\b/i.test(part))) parts.push(`thru ${mdy(parseISODate(exp))}`);
-    const from = parts.map((part) => h('span', { class: part.length <= 28 ? 'nw' : null }, part));
+    const from = viaSpans(parts);
     let tag = null;
     if (days != null && days < 0) tag = h('span', { class: 'tag danger' }, 'Expired');
     else if (days != null && !calm) tag = h('span', { class: 'tag warn' }, days === 0 ? 'Expires today' : `${plural(days, 'day')} left`);
     return h('div', { class: days != null && days < 0 ? 'sline expired' : 'sline' },
       splitParts(tier).map(pill),
-      from.length ? h('span', { class: 'via' }, from.flatMap((part, i) => (i ? [' · ', part] : [part]))) : null,
+      from.length ? h('span', { class: 'via' }, from) : null,
       tag);
   }
 
   function statusBlock(p, withMedallion) {
-    const lines = mergedLines(p.status).map((group) => statusLine(group, p));
+    // The row is a summary: a dated status you keep longer through another one is left to the detail sheet.
+    const lines = mergedLines(p.status).filter((group) => !(group.exp && daysLeft(group.exp) >= 0 && outlasted(p, group)))
+      .map((group) => statusLine(group, p));
     const earned = newlyEarned(p);
-    if (earned) lines.unshift(h('div', { class: 'sline' }, pill(earned.tier.name), h('span', { class: 'via' }, earned.via)));
+    if (earned) lines.unshift(statusLine({ tier: earned.tier.name, via: earned.via }, p));
     if (withMedallion) lines.unshift(h('div', { class: 'sline', id: 'medallion-status' }));
     return lines.length ? h('div', { class: 'slines' }, lines) : null;
   }
@@ -2635,7 +2640,7 @@
     const { current, next } = medallionFor(mqd);
 
     $('#medallion-status').replaceChildren(...(current
-      ? [pill(`${current.name} Medallion`), h('span', { class: 'via' }, `earned in ${mqdYear()} · thru ${mdy(medallionThrough())}`)]
+      ? [pill(`${current.name} Medallion`), h('span', { class: 'via' }, viaSpans([`earned in ${mqdYear()}`, `thru ${mdy(medallionThrough())}`]))]
       : [h('span', { class: 'via' }, `No Medallion earned in ${mqdYear()} yet`)]));
     const top = topTier(medallionProgram());
     $('#medallion-perks').hidden = !top;
@@ -4141,7 +4146,9 @@
 
   /* ---------- Install hint ---------- */
 
-  const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  // iPadOS reports itself as a Mac, so a touch-screen "Mac" counts too (unless the browser says it's Android).
+  const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1 && !/Android/i.test(navigator.userAgent));
   const IS_STANDALONE = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
   const HINT_KEY = 'status-tracker-install-tip';
   let installPrompt = null; // Chrome/Edge/Android: the browser's own install dialog
