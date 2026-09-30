@@ -1982,7 +1982,7 @@
     const at = track.steps[nextIndex];
     // Skipping levels you hold: the bar runs from zero rather than from a threshold you haven't counted to.
     const below = nextIndex > 0 ? track.steps[nextIndex - 1] : 0;
-    const prev = n < below ? 0 : below;
+    const prev = keeping || nextIndex - 1 <= held || n < below ? 0 : below;
     // How far the second path is from the same level ("or 3 stays"), when it's in play.
     const alt = track.alt;
     const altAt = alt && a != null ? alt.steps[nextIndex] : null;
@@ -2006,7 +2006,7 @@
     const earnedThru = isoOf(track.thru(qualYear(track)));
     let best = -1;
     for (const line of p.status) {
-      if (!line.tier || lineExpired(line) || (line.exp && line.exp < earnedThru)) continue;
+      if (!line.tier || lineExpired(line) || (line.exp && !line.card && line.exp < earnedThru)) continue;
       for (const part of splitParts(line.tier)) best = Math.max(best, findTier(tiers, part));
     }
     return best;
@@ -2365,7 +2365,7 @@
     if (raw.history && typeof raw.history === 'object') { // [date, balance] pairs per program, oldest first
       for (const [id, list] of Object.entries(raw.history)) {
         if (!Array.isArray(list)) continue;
-        const clean = list.filter((e) => Array.isArray(e) && parseISODate(e[0]) && isCount(e[1]))
+        const clean = list.filter((e) => Array.isArray(e) && typeof e[0] === 'string' && parseISODate(e[0]) && isCount(e[1]))
           .map(([d, v]) => [d, Math.floor(v)]).sort((a, b) => a[0].localeCompare(b[0])).slice(-HISTORY_MAX);
         if (clean.length) s.history[id] = clean;
       }
@@ -3379,7 +3379,7 @@
   // A small line of the balance over time, with the change since the first entry ("+12,000 since Mar 2").
   function renderTrend(p) {
     const box = $('#d-trend');
-    const list = p.unit ? state.history[p.id] || [] : [];
+    const list = p.unit && state.balances[p.id] != null ? state.history[p.id] || [] : [];
     box.hidden = list.length < 2;
     if (box.hidden) return;
     const times = list.map(([d]) => parseISODate(d).getTime());
@@ -3869,7 +3869,9 @@
       const current = medallionFor(state.mqd).current;
       const heldLine = held && delta.status.find((line) => line.exp && !lineExpired(line) && line.exp < isoOf(medallionThrough())
         && findTier(benefitsFor(delta), line.tier) === findTier(benefitsFor(delta), `${held.name} Medallion`));
-      if (heldLine && TIERS.indexOf(held) > TIERS.indexOf(current)) {
+      const heldIndex = held ? findTier(benefitsFor(delta), `${held.name} Medallion`) : -1;
+      if (heldLine && state.updated.mqd && TIERS.indexOf(held) > TIERS.indexOf(current)
+        && !coveredThrough(delta, heldIndex, isoOf(medallionThrough()))) {
         const date = new Date(mqdYear(), 11, 31);
         const days = daysUntil(date);
         if (days <= KEEP_SOON_DAYS) items.push({ kind: 'keep', p: delta, date, days, text: `$${fmt(held.min - state.mqd)} MQDs to go`, name: `${held.name} Medallion` });
@@ -4301,7 +4303,7 @@
   /* ---------- Vouchers ---------- */
 
   function parseISODate(s) {
-    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || '');
+    const m = typeof s === 'string' && /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
     if (!m) return null;
     if (Number(m[1]) < 1900) return null; // half-typed years ("0002") aren't dates
     const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
@@ -4442,7 +4444,22 @@
   function summaryText() {
     const now = new Date();
     const who = people.list.length > 1 ? ` — ${personName(activePerson()).toUpperCase()}` : '';
-    const out = [`POINTS & STATUS TRACKER${who}`, `Exported ${todayFmt.format(now)} at ${timeFmt.format(now)}`, '', '', 'PROGRAMS', ''];
+    const out = [`POINTS & STATUS TRACKER${who}`, `Exported ${todayFmt.format(now)} at ${timeFmt.format(now)}`, ''];
+
+    // The same items as "Coming up", so the most time-sensitive things lead the file.
+    const soon = upcomingItems();
+    if (soon.length) {
+      const when = (item) => (item.days < 0 ? `${plural(-item.days, 'day')} ago` : item.days === 0 ? 'today' : `in ${plural(item.days, 'day')}`);
+      out.push('', 'COMING UP', '', ...soon.map((item) => {
+        const date = dateFmt.format(item.date);
+        if (item.kind === 'status') return `- ${splitParts(item.group.tier).join(' · ')} (${item.p.name}) ${item.days < 0 ? 'expired' : 'expires'} ${date}, ${when(item)}`;
+        if (item.kind === 'voucher') return `- Voucher: ${item.v.name} ${item.days < 0 ? 'expired' : 'expires'} ${date}, ${when(item)}`;
+        if (item.kind === 'card') return `- ${item.card.name} annual fee renews ${date}, ${when(item)}`;
+        if (item.kind === 'points') return `- ${item.p.name} ${item.p.unit} ${item.days < 0 ? 'expired' : 'expire'} ${date} without activity, ${when(item)}`;
+        return `- Keep ${item.name} (${item.p.name}): ${item.text} by ${date}`;
+      }));
+    }
+    out.push('', '', 'PROGRAMS', '');
 
     const medallion = medallionProgram();
     const pushPerks = (p, tierText) => {
