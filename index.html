@@ -2032,7 +2032,7 @@
   // "7 to Gold", "8 to keep Platinum", or "Diamond Reserve also needs $18,000 on stays" once the count is there.
   function nextText(next, track) {
     if (!next.left || next.altLeft === 0) return `${next.name} also needs ${next.also}`;
-    const or = next.altLeft != null && track ? ` (or ${fmt(next.altLeft)} ${track.alt.unit})` : '';
+    const or = next.altLeft != null && track ? ` ${track.unit} (or ${fmt(next.altLeft)} ${track.alt.unit})` : '';
     return `${fmt(next.left)}${or} to ${next.keep ? 'keep ' : ''}${next.name}`;
   }
   // "18 nights · 6 stays": what's been entered for this qualifying year.
