@@ -8,6 +8,7 @@
 <meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#FAFAF7" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0E1420" media="(prefers-color-scheme: dark)">
+<script>/* Apply a chosen Light/Dark theme before first paint. */try{var t=localStorage.getItem('status-tracker-theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}</script>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="icon" href="icon-192.png" type="image/png" sizes="192x192">
@@ -64,8 +65,9 @@
     --num-font: ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     color-scheme: light;
   }
+  /* Dark theme: follows the system unless the viewer picked Light or Dark (html[data-theme]). */
   @media (prefers-color-scheme: dark) {
-    :root {
+    :root:not([data-theme="light"]) {
       --bg: #0E1420;
       --card: #16202F;
       --text: #E8ECF4;
@@ -111,6 +113,52 @@
       --plan-b: rgba(127, 166, 217, .18);
       color-scheme: dark;
     }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0E1420;
+    --card: #16202F;
+    --text: #E8ECF4;
+    --accent: #7FA6D9;
+    --accent-2: #B3CCEE;
+    --muted: #97A3B5;
+    --faint: #66748A;
+    --line: #223046;
+    --inset: #111A28;
+    --track: #26354D;
+    --field: #111A28;
+    --field-line: #2D3C54;
+    --chip-bg: rgba(232, 236, 244, .08);
+    --dots: rgba(127, 166, 217, .4);
+    --hover: rgba(127, 166, 217, .08);
+    --accent-soft: rgba(127, 166, 217, .15);
+    --callout: rgba(127, 166, 217, .07);
+    --on-accent: #0E1420;
+    --warn: #F0A254;
+    --warn-soft: rgba(240, 162, 84, .14);
+    --danger: #F28B7F;
+    --danger-soft: rgba(242, 139, 127, .13);
+    --shadow: none;
+    --hero-a: #19304D;
+    --hero-b: #16273F;
+    --hero-glow: rgba(127, 166, 217, .22);
+    --hero-border: rgba(127, 166, 217, .16);
+    --hero-shadow: none;
+    --t-base-bg: rgba(127, 166, 217, .13);
+    --t-base-fg: #AFC9EC;
+    --t-silver-bg: rgba(203, 211, 222, .12);
+    --t-silver-fg: #CBD3DE;
+    --t-gold-bg: rgba(242, 196, 102, .14);
+    --t-gold-fg: #F2C466;
+    --t-plat-bg: rgba(170, 182, 240, .15);
+    --t-plat-fg: #BAC5F2;
+    --t-diam-bg: rgba(110, 212, 226, .14);
+    --t-diam-fg: #86DDE8;
+    --toast-bg: #E8ECF4;
+    --toast-fg: #0E1420;
+    --toast-accent: #1B3A5C;
+    --plan-a: rgba(127, 166, 217, .42);
+    --plan-b: rgba(127, 166, 217, .18);
+    color-scheme: dark;
   }
 
   * { box-sizing: border-box; }
@@ -523,6 +571,7 @@
   .plan-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; font-size: 13px; color: var(--muted); }
   .plan-row label small { margin-left: 6px; font-size: 11.5px; opacity: .8; }
   .plan-row .plan-amt { white-space: nowrap; }
+  .plan-note { margin: 0 0 10px; font-size: 12.5px; color: var(--muted); }
   .plan-amt { font-family: var(--num-font); font-size: 16px; font-weight: 750; color: var(--text); font-variant-numeric: tabular-nums; }
   .range { display: block; width: 100%; height: 30px; margin: 6px 0 2px; background: transparent; -webkit-appearance: none; appearance: none; cursor: pointer; }
   .range::-webkit-slider-runnable-track { height: 6px; border-radius: 999px; background: var(--track); }
@@ -1064,6 +1113,20 @@
   .person-name { overflow: hidden; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
   .person-body small { font-size: 12.5px; color: var(--muted); }
   .sheet .people-add { display: flex; gap: 8px; padding: 0; }
+  .theme-pick { display: flex; align-items: center; justify-content: center; gap: 4px; margin: 14px 0 4px; font-size: 13px; color: var(--muted); }
+  .theme-pick span { margin-right: 6px; }
+  .theme-pick button {
+    min-height: 32px;
+    padding: 0 12px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: none;
+    color: var(--muted);
+    font: inherit;
+    cursor: pointer;
+  }
+  .theme-pick button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); color: var(--text); font-weight: 600; }
+  .stale { color: var(--warn); }
   .icon-spacer { flex: none; width: 36px; }
   @media (max-width: 480px) { /* the switcher sits under the date instead of squeezing the title */
     .hero-top { flex-wrap: wrap; row-gap: 10px; }
@@ -1315,6 +1378,12 @@
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 10.5v-8M4.5 6L8 2.5 11.5 6M3 13.5h10"/></svg>
         Restore from backup
       </button>
+    </div>
+    <div class="theme-pick" role="group" aria-label="Appearance">
+      <span>Appearance</span>
+      <button type="button" data-theme-pick="auto" aria-pressed="true">Auto</button>
+      <button type="button" data-theme-pick="light" aria-pressed="false">Light</button>
+      <button type="button" data-theme-pick="dark" aria-pressed="false">Dark</button>
     </div>
     <p id="foot-status">Saved on this device only</p>
     <p id="backup-status" hidden></p>
@@ -2559,6 +2628,7 @@
       h('button', { type: 'button', class: 'plan-toggle', id: 'plan-toggle', 'aria-expanded': String(planOpen), 'aria-controls': 'plan' },
         svgIcon(ICON.spark), 'Plan ahead'),
       h('div', { class: 'plan', id: 'plan', hidden: planOpen ? null : '' },
+        boost ? h('p', { class: 'plan-note' }, `Your ${boost.name} adds a $2,500 MQD Headstart every Medallion year — make sure it’s in your total above.`) : null,
         h('div', { class: 'plan-row' },
           h('label', { for: 'plan-range' }, 'MQDs you expect to add'),
           h('span', { class: 'plan-amt', id: 'plan-amt' })),
@@ -2632,6 +2702,16 @@
       h('div', { class: 'mini-bar', 'aria-hidden': 'true' }, h('i', { style: `width:${Math.round(info.toNext * 100)}%` })));
   }
 
+  // " · 5 mo old" under a balance nobody has touched in 4+ months, so it gets refreshed before you rely on it.
+  function staleNote(p) {
+    const updated = parseISODate(state.updated[p.id]);
+    if (state.balances[p.id] == null || !updated) return null;
+    const days = -daysUntil(updated);
+    if (days < 120) return null;
+    return h('span', { class: 'stale', title: `Last updated ${dateFmt.format(updated)}` },
+      ` · ${days < 365 ? `${Math.floor(days / 30.4)} mo` : `${Math.floor(days / 365)} yr`} old`);
+  }
+
   function programRow(p, index, withMedallion) {
     if (editMode) {
       const last = index === state.programs.length - 1;
@@ -2653,7 +2733,7 @@
     if (p.unit) {
       main.append(h('div', { class: 'bal' },
         numButton(`bal:${p.id}`, `${p.name} balance`),
-        h('div', { class: 'unit' }, p.unit)));
+        h('div', { class: 'unit' }, p.unit, staleNote(p))));
     }
     return h('li', { class: 'row' }, main, withMedallion ? medallionPanel() : null);
   }
@@ -4480,6 +4560,30 @@
     if (!input) return;
     if (e.key === 'Enter') { e.preventDefault(); saveRename(input.dataset.renameInput); }
     else if (e.key === 'Escape') { e.preventDefault(); renaming = null; renderPeople(); }
+  });
+
+  /* ---------- Appearance ---------- */
+
+  // Auto follows the device; Light or Dark sticks on this device (for every person on it).
+  const THEME_KEY = 'status-tracker-theme';
+  const THEME_COLORS = { light: '#FAFAF7', dark: '#0E1420' };
+  function applyTheme(theme) {
+    if (theme === 'auto') delete document.documentElement.dataset.theme;
+    else document.documentElement.dataset.theme = theme;
+    for (const meta of document.querySelectorAll('meta[name="theme-color"]')) { // the browser/status bar color
+      meta.content = THEME_COLORS[theme === 'auto' ? (meta.media.includes('dark') ? 'dark' : 'light') : theme];
+    }
+    for (const btn of document.querySelectorAll('[data-theme-pick]')) btn.setAttribute('aria-pressed', String(btn.dataset.themePick === theme));
+  }
+  let theme = 'auto';
+  try { const saved = localStorage.getItem(THEME_KEY); if (saved === 'light' || saved === 'dark') theme = saved; } catch (e) { /* default */ }
+  applyTheme(theme);
+  document.querySelector('.theme-pick').addEventListener('click', (e) => {
+    const pick = e.target.closest('[data-theme-pick]');
+    if (!pick) return;
+    theme = pick.dataset.themePick;
+    try { if (theme === 'auto') localStorage.removeItem(THEME_KEY); else localStorage.setItem(THEME_KEY, theme); } catch (err) { /* this visit only */ }
+    applyTheme(theme);
   });
 
   /* ---------- What's new ---------- */

@@ -67,6 +67,8 @@ Each program's details say whether its points or miles expire (as of September 2
 - **Filter chips** above the list show All, Elite (programs where you hold status), Airlines, Hotels, Points, or Cars & lounges.
 - **Header tiles** are tappable: Elite statuses filters the list, Medallion jumps to your Delta progress, Vouchers jumps to your vouchers.
 - **Plan ahead** (under the Medallion bar): drag to add expected MQDs (and Delta card spend) and see which tier you'd reach or keep. It's a preview only and isn't saved.
+- **Appearance** at the bottom: Auto (follows your device), Light, or Dark.
+- A balance you haven't updated in 4+ months shows how old it is ("· 5 mo old") so you know to refresh it.
 - Reaching a new level, whether a Medallion tier or one earned from a progress count, gets a little confetti. All motion is skipped if your device has Reduce Motion on.
 
 ### Card presets
