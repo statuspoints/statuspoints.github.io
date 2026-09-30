@@ -63,6 +63,8 @@ The first time you open it, pick the programs you have and, optionally, the cred
 
 Pick your cards (setup screen, or **Edit → Choose cards**) and the complimentary statuses and lounge access they come with are filled in automatically, adding programs like Avis or National if needed. Tap a card again to take its statuses off; statuses you typed yourself are never touched. Presets cover 61 cards from Amex (including every Delta SkyMiles card), Chase, Capital One, Citi, Barclays, Bilt, Bank of America, and Wells Fargo — searchable in the picker — based on published benefits as of September 2026. Cards with no elite status (e.g. Sapphire Preferred, Venture) are included so everyone can find theirs (`CARDS` in `index.html`). Statuses you only unlock by spending are left out, and most card statuses need enrolling with the issuer.
 
+**Annual fee dates:** under the card picker, add the date each card's annual fee posts (it's on your statement). **Coming up** shows it 60 days ahead with what depends on the card ("6 statuses and lounge access depend on it"), and **Add to calendar** adds a yearly event with alerts 30 and 7 days before, so you can decide whether to keep the card before the fee hits.
+
 ## Your data
 
 Everything — your program list, statuses, balances, MQDs, and vouchers — is saved only in your browser's local storage (`status-tracker-v2`) on that device. Nothing is uploaded, nothing syncs between devices, and each person who opens the site has their own separate tracker.
