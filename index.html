@@ -863,6 +863,10 @@
   .install-body { flex: 1; min-width: 0; font-size: 13px; line-height: 1.4; color: var(--muted); }
   .install-body strong { display: block; font-size: 14px; color: var(--text); }
   .install .add.sm { height: 36px; padding: 0 14px; font-size: 14px; }
+  .news { align-items: flex-start; }
+  .news-list { margin: 6px 0 0; padding-left: 18px; }
+  .news-list li + li { margin-top: 4px; }
+  .news-list b { color: var(--text); font-weight: 600; }
 
   /* "Coming up": expiring statuses and vouchers */
   .upcoming { margin-top: 16px; }
@@ -1188,6 +1192,19 @@
     </div>
     <button class="add sm" id="install-btn" type="button" hidden>Install</button>
     <button class="icon-btn" id="install-close" type="button" aria-label="Dismiss this tip"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M2.5 2.5l9 9M11.5 2.5l-9 9"/></svg></button>
+  </div>
+
+  <div class="card install news" id="news" role="note" hidden>
+    <div class="install-body">
+      <strong>New in your tracker</strong>
+      <ul class="news-list">
+        <li>Enter nights or points in a program to see <b>progress to the next level</b> — earned levels count with real end dates.</li>
+        <li><b>Points expiration</b>: see which balances can expire and get reminded before they do.</li>
+        <li><b>Card annual fee dates</b> (Edit → Choose cards) with reminders.</li>
+        <li><b>Share a device</b>: Add a person at the bottom gives each person their own tracker.</li>
+      </ul>
+    </div>
+    <button class="icon-btn" id="news-close" type="button" aria-label="Dismiss what’s new"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M2.5 2.5l9 9M11.5 2.5l-9 9"/></svg></button>
   </div>
 
   <section class="card upcoming" id="upcoming" aria-labelledby="up-title" hidden>
@@ -1748,7 +1765,7 @@
     ihg: { months: 12, exemptIfElite: true },
     wyndham: { months: 18, cards: ['wyndham-earner-premier'], note: 'Points also expire 4 years after they’re earned, whatever your activity. Earner Premier cardholders are exempt from both.' },
     choice: { months: 18, exemptIfElite: true },
-    accor: { months: 12, note: 'Only earning counts as activity here — redeeming doesn’t reset the clock.' },
+    accor: { months: 12, earnOnly: true, note: 'Only earning counts as activity here — redeeming doesn’t reset the clock.' },
     amex: { bank: true }, chase: { bank: true }, capitalone: { bank: true },
     citi: { bank: true, note: 'Points expire 60 days after your last ThankYou card closes.' },
     bilt: { months: 18, note: 'Paying rent through Bilt or using a Bilt card counts as activity.' },
@@ -2328,8 +2345,13 @@
     } else {
       const [kind, id] = field.split(/:(.*)/s);
       const store = kind === 'prog' ? state.progress : state.balances;
-      // A balance that goes up or down means you earned or redeemed — that resets an inactivity clock.
-      if (kind === 'bal' && store[id] != null && value != null && value !== store[id]) state.activity[id] = todayISO();
+      // A balance that goes up or down means you earned or redeemed — that resets an inactivity clock (only a
+      // rise does where just earning counts).
+      if (kind === 'bal' && store[id] != null && value != null && value !== store[id]) {
+        const program = (state.programs || []).find((x) => x.id === id);
+        const rule = program && expiryFor(program);
+        if (!(rule && rule.earnOnly && value < store[id])) state.activity[id] = todayISO();
+      }
       if (value == null) delete store[id];
       else store[id] = value;
       state.updated[kind === 'prog' ? field : id] = todayISO();
@@ -3141,6 +3163,17 @@
     renderLevels(p);
   }
 
+  // "Safe until …" / "Expire … — earn or redeem to reset" for a balance with an inactivity clock.
+  function expiryVerdict(p) {
+    const info = pointsExpiry(p);
+    const reset = info.rule.earnOnly ? 'earn any amount' : 'earn or redeem any amount';
+    const text = !info.date ? ['exp-text', 'Add your last activity date for a reminder before they expire.']
+      : info.days < 0 ? ['exp-text danger', `Expired ${dateFmt.format(info.date)} — contact the program; some reinstate points.`]
+        : info.days <= STATUS_SOON_DAYS ? ['exp-text warn', `Expire ${dateFmt.format(info.date)} · ${plural(info.days, 'day')} left — ${reset} to reset the clock`]
+          : ['exp-text', `Safe until ${dateFmt.format(info.date)} · ${plural(info.days, 'day')} left`];
+    return h('span', { class: text[0], id: 'd-expiry-verdict', 'aria-live': 'polite' }, text[1]);
+  }
+
   // Whether the balance can expire, and when, from the last time you earned or redeemed.
   function renderExpiry(p) {
     const box = $('#d-expiry');
@@ -3159,12 +3192,7 @@
       parts.push(h('p', { class: 'exp-rule' }, `${unit} expire after ${rule.months} months with no earning or redeeming.`));
       const input = h('input', { type: 'date', class: 'exp-input', id: 'd-activity', max: todayISO(), 'aria-label': 'Last activity date' });
       input.value = state.activity[p.id] || '';
-      const verdict = !info.date ? h('span', { class: 'exp-text' }, 'Add your last activity date for a reminder before they expire.')
-        : info.days < 0 ? h('span', { class: 'exp-text danger' }, `Expired ${dateFmt.format(info.date)} — contact the program; some reinstate points.`)
-          : info.days <= STATUS_SOON_DAYS
-            ? h('span', { class: 'exp-text warn' }, `Expire ${dateFmt.format(info.date)} · ${plural(info.days, 'day')} left — earn or redeem any amount to reset the clock`)
-            : h('span', { class: 'exp-text' }, `Safe until ${dateFmt.format(info.date)} · ${plural(info.days, 'day')} left`);
-      parts.push(h('div', { class: 'activity-row' }, h('label', { for: 'd-activity' }, 'Last activity'), input), verdict);
+      parts.push(h('div', { class: 'activity-row' }, h('label', { for: 'd-activity' }, 'Last activity'), input), expiryVerdict(p));
     }
     if (rule.note) parts.push(h('p', { class: 'fine' }, rule.note));
     box.replaceChildren(...parts);
@@ -3411,9 +3439,8 @@
     if (parseISODate(e.target.value)) state.activity[p.id] = e.target.value;
     else delete state.activity[p.id];
     scheduleSave();
-    renderExpiry(p);
+    $('#d-expiry-verdict').replaceWith(expiryVerdict(p)); // the input stays put, so typing a date isn't interrupted
     renderUpcoming();
-    $('#d-activity').focus();
   });
 
   detail.addEventListener('keydown', (e) => {
@@ -3885,6 +3912,7 @@
   }
 
   function finishSetup(setup) {
+    markNewsSeen(); // everything is new to a new tracker
     state.programs = setup.programs;
     state.cards = setup.cards;
     state.notes = setup.notes;
@@ -3942,6 +3970,11 @@
 
   $('#cards-change').addEventListener('click', () => openCards());
 
+  function renewalText(id) {
+    const next = state.renewals[id] ? nextRenewal(state.renewals[id]) : null;
+    return next ? `Next: ${dateFmt.format(next)} · ${plural(daysUntil(next), 'day')}` : 'No date yet';
+  }
+
   // Annual-fee dates for the cards you hold, for a reminder before each fee posts.
   function renderRenewals() {
     const held = state.cards.map((id) => CARD_BY_ID[id]);
@@ -3953,10 +3986,8 @@
       h('ul', { class: 'renewals' }, held.map((card) => {
         const input = h('input', { type: 'date', class: 'exp-input', 'data-renewal': card.id, 'aria-label': `${card.name} annual fee date` });
         input.value = state.renewals[card.id] || '';
-        const next = state.renewals[card.id] ? nextRenewal(state.renewals[card.id]) : null;
         return h('li', null,
-          h('span', { class: 'renewal-name' }, card.label || card.name,
-            h('small', null, next ? `Next: ${dateFmt.format(next)} · ${plural(daysUntil(next), 'day')}` : 'No date yet')),
+          h('span', { class: 'renewal-name' }, card.label || card.name, h('small', { 'data-next': card.id }, renewalText(card.id))),
           input);
       })));
   }
@@ -3964,13 +3995,12 @@
   $('#cards-renewals').addEventListener('change', (e) => {
     const input = e.target.closest('[data-renewal]');
     if (!input) return;
-    if (parseISODate(input.value)) state.renewals[input.dataset.renewal] = input.value;
-    else delete state.renewals[input.dataset.renewal];
+    const id = input.dataset.renewal;
+    if (parseISODate(input.value)) state.renewals[id] = input.value;
+    else delete state.renewals[id];
     scheduleSave();
-    renderRenewals();
+    $(`#cards-renewals [data-next="${CSS.escape(id)}"]`).textContent = renewalText(id); // input untouched while typing
     renderUpcoming();
-    const again = $(`#cards-renewals [data-renewal="${CSS.escape(input.dataset.renewal)}"]`);
-    if (again) again.focus();
   });
 
   $('#cards-picker').addEventListener('click', (e) => {
@@ -4003,6 +4033,7 @@
   function parseISODate(s) {
     const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || '');
     if (!m) return null;
+    if (Number(m[1]) < 1900) return null; // half-typed years ("0002") aren't dates
     const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
     return d.getMonth() === Number(m[2]) - 1 && d.getDate() === Number(m[3]) ? d : null; // e.g. Feb 30 → null
   }
@@ -4311,6 +4342,7 @@
 
   const peopleSheet = $('#people-sheet');
   let renaming = null; // id of the person whose name is being edited
+  let recentRemovals = []; // people removed in the current Undo window
 
   // What's saved for someone: their program count, or null if they haven't set up yet.
   function programCount(id) {
@@ -4421,14 +4453,21 @@
     // Removing someone deletes their tracker from this device; Undo puts it back.
     const id = remove.dataset.remove;
     const index = people.list.findIndex((person) => person.id === id);
+    if (index < 0 || id === people.active) return;
     const [person] = people.list.splice(index, 1);
     let saved = null;
     try { saved = localStorage.getItem(storageKey(id)); localStorage.removeItem(storageKey(id)); } catch (err) { /* nothing stored */ }
+    // Removals within the Undo window stack up, so a quick second tap can't make the first one permanent.
+    recentRemovals = recentRemovals.filter((r) => Date.now() - r.at < 8000);
+    recentRemovals.push({ person, index, saved, at: Date.now() });
     savePeople();
     renderPeople();
-    showToast(`Removed ${whose(person)} tracker`, () => {
-      people.list.splice(Math.min(index, people.list.length), 0, person);
-      try { if (saved) localStorage.setItem(storageKey(id), saved); } catch (err) { /* storage full */ }
+    showToast(recentRemovals.length > 1 ? `Removed ${recentRemovals.length} trackers` : `Removed ${whose(person)} tracker`, () => {
+      for (const r of recentRemovals.reverse()) {
+        people.list.splice(Math.min(r.index, people.list.length), 0, r.person);
+        try { if (r.saved) localStorage.setItem(storageKey(r.person.id), r.saved); } catch (err) { /* storage full */ }
+      }
+      recentRemovals = [];
       savePeople();
       renderPeople();
     }, 'Undo', 8000);
@@ -4440,6 +4479,18 @@
     if (e.key === 'Enter') { e.preventDefault(); saveRename(input.dataset.renameInput); }
     else if (e.key === 'Escape') { e.preventDefault(); renaming = null; renderPeople(); }
   });
+
+  /* ---------- What's new ---------- */
+
+  // A one-time card listing new features for people who already use the app; new setups skip it.
+  const NEWS_KEY = 'status-tracker-news';
+  const NEWS_ID = '2026-09';
+  const newsSeen = () => { try { return localStorage.getItem(NEWS_KEY) === NEWS_ID; } catch (e) { return true; } };
+  const markNewsSeen = () => { try { localStorage.setItem(NEWS_KEY, NEWS_ID); } catch (e) { /* private mode */ } };
+  function renderNews() {
+    $('#news').hidden = !state.programs || newsSeen();
+  }
+  $('#news-close').addEventListener('click', () => { markNewsSeen(); $('#news').hidden = true; });
 
   /* ---------- Install hint ---------- */
 
@@ -4498,6 +4549,7 @@
     if (setup) renderUpcoming();
     $('#text-btn').hidden = setup;
     renderInstallHint();
+    renderNews();
     renderPeople();
     if (setup) {
       renderSetup();
