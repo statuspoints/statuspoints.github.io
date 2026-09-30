@@ -572,6 +572,8 @@
   .plan-row label small { margin-left: 6px; font-size: 11.5px; opacity: .8; }
   .plan-row .plan-amt { white-space: nowrap; }
   .plan-note { margin: 0 0 10px; font-size: 12.5px; color: var(--muted); }
+  .alt-head { margin-top: 10px; }
+  .mqd-count .or { margin-right: 6px; font-size: 12.5px; color: var(--muted); }
   .d-trend { margin-top: -4px; }
   .d-trend svg { display: block; width: 100%; height: 44px; }
   .d-trend p { margin: 4px 0 0; font-size: 12.5px; color: var(--muted); }
@@ -1807,18 +1809,19 @@
 
   // Progress toward each level this qualifying year: the metric and one threshold per BENEFITS tier (same order).
   // `also` names levels that need something we don't track (spend), so a count alone doesn't award them.
+  // `alt` is a second way to qualify (stays, flights, points), per level; `with` = main count that path also needs.
   // `thru` gives the last day a level earned in qualifying year y stays valid; `starts` is the month (1–12) a
   // qualifying year begins when it isn't January.
   const endOf = (years, month) => (y) => new Date(y + years, month, 0); // last day of `month`, `years` after y
   const TRACKS = {
-    hilton: { unit: 'nights', steps: [10, 25, 50, 80], also: { 3: '$18,000 on stays' }, thru: endOf(2, 3), note: 'Counting nights. Hilton also counts stays or spend; Diamond Reserve also needs $18,000 on stays.' },
+    hilton: { unit: 'nights', steps: [10, 25, 50, 80], alt: { unit: 'stays', steps: [4, 15, 25, 40] }, also: { 3: '$18,000 on stays' }, thru: endOf(2, 3), note: 'Nights or stays count (so does spend, not tracked here). Diamond Reserve also needs $18,000 on stays.' },
     marriott: { unit: 'nights', steps: [10, 25, 50, 75, 100], also: { 4: '$23,000 on stays' }, thru: endOf(2, 2), note: 'Elite night credits, including credits from Marriott cards. Ambassador also needs $23,000 on stays.' },
-    ihg: { unit: 'nights', steps: [10, 20, 40, 70], thru: endOf(1, 12), note: 'Qualifying nights (qualifying points also count instead).' },
-    hyatt: { unit: 'nights', steps: [10, 30, 60], thru: endOf(2, 2), note: 'Qualifying nights (base points also count instead).' },
+    ihg: { unit: 'nights', steps: [10, 20, 40, 70], alt: { unit: 'qualifying points', steps: [null, 40000, 60000, 120000] }, thru: endOf(1, 12), note: 'Qualifying nights, or qualifying points from Gold up.' },
+    hyatt: { unit: 'nights', steps: [10, 30, 60], alt: { unit: 'base points', steps: [25000, 50000, 100000] }, thru: endOf(2, 2), note: 'Qualifying nights, or base points.' },
     wyndham: { unit: 'nights', steps: [5, 15, 40], thru: endOf(1, 12), note: 'Qualified nights.' },
-    united: { unit: 'PQP', steps: [6000, 12000, 18000, 28000], thru: endOf(2, 1), note: 'PQP alone. With enough Premier qualifying flights, each level needs less PQP.' },
+    united: { unit: 'PQP', steps: [6000, 12000, 18000, 28000], alt: { unit: 'flights', steps: [15, 30, 45, 60], with: [5000, 10000, 15000, 22000] }, thru: endOf(2, 1), note: 'PQP alone, or fewer PQP plus Premier qualifying flights (15/30/45/60 flights with 5,000/10,000/15,000/22,000 PQP).' },
     american: { unit: 'Loyalty Points', steps: [40000, 75000, 125000, 200000], starts: 3, thru: endOf(2, 3), note: 'American’s qualifying year runs March 1 through the end of February.' },
-    southwest: { unit: 'tier points', steps: [35000, 70000], thru: endOf(1, 12), note: 'Tier qualifying points (20 or 40 one-way flights also qualify).' },
+    southwest: { unit: 'tier points', steps: [35000, 70000], alt: { unit: 'flights', steps: [20, 40] }, thru: endOf(1, 12), note: 'Tier qualifying points, or qualifying one-way flights.' },
     alaska: { unit: 'status points', steps: [20000, 40000, 80000, 135000], thru: endOf(1, 12), note: 'Status points this calendar year.' },
     aeroplan: { unit: 'SQC', steps: [25000, 35000, 50000, 75000, 125000], thru: endOf(1, 12), note: 'Status Qualifying Credits this calendar year.' },
   };
@@ -1896,15 +1899,30 @@
   }
   const tierLabel = (name) => name.replace(/\b(Elite|Medallion|Premier)\b/g, '').replace(/\s+/g, ' ').trim();
 
+  // The second count (stays, flights, points) is stored beside the first under "<id>+alt".
+  const altKey = (id) => `${id}+alt`;
+  // Whether count n (and second count a) reaches level i by either path.
+  function reachesLevel(track, n, a, i) {
+    if (n >= track.steps[i]) return true;
+    const alt = track.alt;
+    if (!alt || a == null || alt.steps[i] == null || a < alt.steps[i]) return false;
+    return !alt.with || n >= alt.with[i];
+  }
+  // When either count was last entered (their qualifying year decides what they earned).
+  function progressStamp(p) {
+    const dates = [state.updated[`prog:${p.id}`], state.updated[`prog:${altKey(p.id)}`]].filter((d) => parseISODate(d));
+    return dates.length ? parseISODate(dates.sort().pop()) : null;
+  }
+
   // The level a progress count has already earned — programs award it as soon as you qualify, through `thru`.
   function earnedTier(p) {
     const info = progressInfo(p);
-    if (!info || info.value == null) return null;
-    const { track, tiers, n } = info;
+    if (!info || !info.entered) return null;
+    const { track, tiers, n, a } = info;
     let best = -1;
-    track.steps.forEach((step, i) => { if (n >= step && !(track.also && track.also[i])) best = i; });
+    track.steps.forEach((step, i) => { if (reachesLevel(track, n, a, i) && !(track.also && track.also[i])) best = i; });
     if (best < 0) return null;
-    const year = qualYear(track, parseISODate(state.updated[`prog:${p.id}`]) || new Date());
+    const year = qualYear(track, progressStamp(p) || new Date());
     const thru = track.thru(year);
     return { index: best, tier: tiers[best], year, thru, via: `earned in ${qualLabel(track, year)} · thru ${mdy(thru)}` };
   }
@@ -1946,27 +1964,38 @@
     if (!track || !tiers) return null;
     const value = state.progress[p.id];
     const n = value || 0;
+    const a = track.alt ? state.progress[altKey(p.id)] : undefined;
+    const entered = value != null || a != null;
     const also = track.also || {};
     // The next level still to earn: the first count not reached (or reached but also needing spend), above any
     // level you already hold for at least as long — e.g. Gold from a card makes Diamond the next goal.
     const held = heldThroughIndex(p, track);
-    let nextIndex = track.steps.findIndex((step, i) => i > held && (n < step || also[i]));
-    if (nextIndex < 0) return { track, tiers, value, n, next: null, toNext: 1 };
+    // Reaching a level (by either path) covers every level below it, e.g. IHG Gold on points means Silver too.
+    let top = -1;
+    track.steps.forEach((step, i) => { if (!also[i] && reachesLevel(track, n, a, i)) top = i; });
+    let nextIndex = track.steps.findIndex((step, i) => i > Math.max(held, top) && (!reachesLevel(track, n, a, i) || also[i]));
+    if (nextIndex < 0) return { track, tiers, value, n, a, entered, next: null, toNext: 1 };
     // Holding a level from last year that this year's count hasn't re-earned yet: keeping it comes first.
     const keep = keepIndex(p, track);
-    const keeping = keep >= nextIndex && n < track.steps[keep] && !also[keep];
+    const keeping = keep >= nextIndex && keep > top && !also[keep];
     if (keeping) nextIndex = keep;
     const at = track.steps[nextIndex];
     // Skipping levels you hold: the bar runs from zero rather than from a threshold you haven't counted to.
     const below = nextIndex > 0 ? track.steps[nextIndex - 1] : 0;
     const prev = n < below ? 0 : below;
+    // How far the second path is from the same level ("or 3 stays"), when it's in play.
+    const alt = track.alt;
+    const altAt = alt && a != null ? alt.steps[nextIndex] : null;
+    const altLeft = altAt != null && (!alt.with || n >= alt.with[nextIndex]) ? Math.max(altAt - a, 0) : null;
     return {
       track,
       tiers,
       value,
       n,
-      next: { name: tierLabel(tiers[nextIndex].name), at, left: Math.max(at - n, 0), also: also[nextIndex], keep: keeping },
-      toNext: Math.max(0, Math.min((n - prev) / (at - prev), 1)),
+      a,
+      entered,
+      next: { name: tierLabel(tiers[nextIndex].name), at, left: Math.max(at - n, 0), also: also[nextIndex], keep: keeping, altLeft },
+      toNext: Math.max(0, Math.min(Math.max((n - prev) / (at - prev), altAt ? a / altAt : 0), 1)),
     };
   }
 
@@ -2001,8 +2030,14 @@
   const qualYearEnd = (track) => new Date(qualYear(track) + 1, (track.starts || 1) - 1, 0);
 
   // "7 to Gold", "8 to keep Platinum", or "Diamond Reserve also needs $18,000 on stays" once the count is there.
-  const nextText = (next) => (!next.left ? `${next.name} also needs ${next.also}`
-    : `${fmt(next.left)} to ${next.keep ? 'keep ' : ''}${next.name}`);
+  function nextText(next, track) {
+    if (!next.left || next.altLeft === 0) return `${next.name} also needs ${next.also}`;
+    const or = next.altLeft != null && track ? ` (or ${fmt(next.altLeft)} ${track.alt.unit})` : '';
+    return `${fmt(next.left)}${or} to ${next.keep ? 'keep ' : ''}${next.name}`;
+  }
+  // "18 nights · 6 stays": what's been entered for this qualifying year.
+  const countsText = (info) => [info.value != null ? `${fmt(info.n)} ${info.track.unit}` : null,
+    info.a != null ? `${fmt(info.a)} ${info.track.alt.unit}` : null].filter(Boolean).join(' · ');
 
   // Index of the level a status text refers to, or -1.
   function findTier(tiers, text) {
@@ -2554,7 +2589,7 @@
     const finish = (commit, refocus) => {
       if (done) return;
       done = true;
-      const counted = field.startsWith('prog:') ? state.programs.find((p) => p.id === field.slice(5)) : null;
+      const counted = field.startsWith('prog:') ? state.programs.find((p) => p.id === field.slice(5).replace(/\+alt$/, '')) : null;
       const earnedBefore = counted && earnedTier(counted);
       if (commit) {
         const parsed = parseEntry(input.value);
@@ -2587,7 +2622,7 @@
           showToast(`${earned.tier.name} earned — yours through ${dateFmt.format(earned.thru)}`);
         }
         if (open) {
-          const again = $('#d-progress .num');
+          const again = $(`#d-progress [data-field="${CSS.escape(field)}"]`);
           if (refocus && again) again.focus();
           return;
         }
@@ -2770,10 +2805,10 @@
   // "18 nights · 7 to Gold" with a small bar, once you've entered a count in the program's details.
   function progressMini(p) {
     const info = progressInfo(p);
-    if (!info || info.value == null) return null;
+    if (!info || !info.entered) return null;
     return h('div', { class: 'prog-mini' },
-      h('div', null, h('strong', null, `${fmt(info.n)} ${info.track.unit}`),
-        info.next ? ` · ${nextText(info.next)}` : ' · top level reached'),
+      h('div', null, h('strong', null, countsText(info)),
+        info.next ? ` · ${nextText(info.next, info.track)}` : ' · top level reached'),
       h('div', { class: 'mini-bar', 'aria-hidden': 'true' }, h('i', { style: `width:${Math.round(info.toNext * 100)}%` })));
   }
 
@@ -2910,12 +2945,15 @@
     const delta = medallionProgram();
     for (const p of state.programs) {
       const track = trackFor(p);
-      const stamp = parseISODate(state.updated[`prog:${p.id}`]);
-      if (!track || state.progress[p.id] == null || !stamp || qualYear(track, stamp) >= qualYear(track, now)) continue;
+      const stamp = progressStamp(p);
+      const counted = state.progress[p.id] != null || state.progress[altKey(p.id)] != null;
+      if (!track || !counted || !stamp || qualYear(track, stamp) >= qualYear(track, now)) continue;
       const earned = earnedTier(p);
       if (earned) keep(p, earned.index, earned.tier.name, `earned in ${qualLabel(track, earned.year)}`, earned.thru);
-      delete state.progress[p.id];
-      delete state.updated[`prog:${p.id}`];
+      for (const id of [p.id, altKey(p.id)]) {
+        delete state.progress[id];
+        delete state.updated[`prog:${id}`];
+      }
       changed = true;
     }
     const stamp = parseISODate(state.updated.mqd);
@@ -3240,6 +3278,9 @@
     delete state.progress[id];
     delete state.updated[id];
     delete state.updated[`prog:${id}`];
+    const altSaved = { count: state.progress[altKey(id)], stamp: state.updated[`prog:${altKey(id)}`] };
+    delete state.progress[altKey(id)];
+    delete state.updated[`prog:${altKey(id)}`];
     sheet.close();
     scheduleSave();
     renderPrograms();
@@ -3250,6 +3291,8 @@
       if (saved.progress != null) state.progress[id] = saved.progress;
       if (saved.updated) state.updated[id] = saved.updated;
       if (saved.progUpdated) state.updated[`prog:${id}`] = saved.progUpdated;
+      if (altSaved.count != null) state.progress[altKey(id)] = altSaved.count;
+      if (altSaved.stamp) state.updated[`prog:${altKey(id)}`] = altSaved.stamp;
       if (saved.activity) state.activity[id] = saved.activity;
       if (saved.memo) state.memos[id] = saved.memo;
       if (saved.history) state.history[id] = saved.history;
@@ -3393,8 +3436,16 @@
     const info = progressInfo(p);
     box.hidden = !info || p === medallionProgram();
     if (box.hidden) return;
-    const { track, tiers, n, next } = info;
+    const { track, tiers, n, a, next } = info;
     const max = track.steps[track.steps.length - 1];
+    const alt = track.alt;
+    // Second path: its own count plus a legend of what each level needs that way.
+    const altRow = alt ? [
+      h('div', { class: 'mqd-head alt-head' },
+        h('div', { class: 'mqd-count' }, h('span', { class: 'or' }, 'or'), numButton(`prog:${altKey(p.id)}`, `${p.name} ${alt.unit} this year`, 'sm'), h('span', { class: 'of' }, alt.unit))),
+      h('p', { class: 'prog-legend' }, alt.steps.flatMap((step, i) => (step == null ? [] : [h('span', { class: reachesLevel(track, n, a, i) ? 'hit' : null },
+        `${tierLabel(tiers[i].name)} ${fmt(step)}${alt.with ? ` + ${fmt(alt.with[i])} ${track.unit}` : ''}`)])).flatMap((el, i) => [i ? '\u00a0· ' : null, el])),
+    ] : null;
     const bar = h('div', { class: 'bar', role: 'img', 'aria-label': `${fmt(n)} of ${fmt(max)} ${track.unit}` },
       h('div', { class: 'fill', style: `width:${Math.min(n / max, 1) * 100}%` }),
       track.steps.slice(0, -1).map((step) => h('span', { class: n >= step ? 'dot hit' : 'dot', style: `left:${(step / max) * 100}%` })));
@@ -3403,10 +3454,11 @@
       h('div', { class: 'delta prog-box' },
         h('div', { class: 'mqd-head' },
           h('div', { class: 'mqd-count' }, numButton(`prog:${p.id}`, `${p.name} ${track.unit} this year`, 'sm'), h('span', { class: 'of' }, track.unit)),
-          h('div', { class: 'next' }, info.value == null ? 'Tap the number to add yours' : next ? nextText(next) : 'Top level reached')),
+          h('div', { class: 'next' }, !info.entered ? 'Tap the number to add yours' : next ? nextText(next, track) : 'Top level reached')),
         bar,
         h('p', { class: 'prog-legend' }, track.steps.flatMap((step, i) => [i ? '\u00a0· ' : null,
           h('span', { class: n >= step ? 'hit' : null }, `${tierLabel(tiers[i].name)} ${fmt(step)}`)])),
+        altRow,
         h('p', { class: 'fine' }, `${track.note} Counts start over each qualifying year; anything you earned is kept as a status with its end date.`)));
   }
 
@@ -3805,10 +3857,11 @@
     if (!future) {
       for (const p of state.programs || []) {
         const info = progressInfo(p);
-        if (info && info.value != null && info.next && info.next.keep) {
+        if (info && info.entered && info.next && info.next.keep) {
           const date = qualYearEnd(info.track);
           const days = daysUntil(date);
-          if (days >= 0 && days <= KEEP_SOON_DAYS) items.push({ kind: 'keep', p, date, days, text: `${fmt(info.next.left)} ${info.track.unit} to go`, name: info.next.name });
+          const or = info.next.altLeft != null ? ` (or ${fmt(info.next.altLeft)} ${info.track.alt.unit})` : '';
+          if (days >= 0 && days <= KEEP_SOON_DAYS) items.push({ kind: 'keep', p, date, days, text: `${fmt(info.next.left)} ${info.track.unit}${or} to go`, name: info.next.name });
         }
       }
       const delta = medallionProgram();
@@ -4413,8 +4466,8 @@
         pushPerks(p, earnedNow.tier.name);
       }
       const prog = progressInfo(p);
-      if (prog && prog.value != null) {
-        out.push(`  ${qualLabel(prog.track, qualYear(prog.track))} progress: ${fmt(prog.n)} ${prog.track.unit}${prog.next ? ` · ${nextText(prog.next)}` : ' · top level'}`);
+      if (prog && prog.entered) {
+        out.push(`  ${qualLabel(prog.track, qualYear(prog.track))} progress: ${countsText(prog)}${prog.next ? ` · ${nextText(prog.next, prog.track)}` : ' · top level'}`);
       }
       if (p === medallion) {
         const { current } = medallionFor(state.mqd);
