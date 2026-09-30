@@ -74,9 +74,13 @@ Pick your cards (setup screen, or **Edit → Choose cards**) and the complimenta
 
 **Annual fee dates:** under the card picker, add the date each card's annual fee posts (it's on your statement). **Coming up** shows it 60 days ahead with what depends on the card ("6 statuses and lounge access depend on it"), and **Add to calendar** adds a yearly event with alerts 30 and 7 days before, so you can decide whether to keep the card before the fee hits.
 
+## Sharing a device
+
+Everyone who opens the site on their own phone gets their own tracker automatically. To share one device (a family iPad, say), tap **Add a person** at the bottom. Each person gets a completely separate tracker: programs, statuses, balances, cards, and reminders. Their name appears at the top; tap it to switch people, rename someone, or remove them (with Undo). Backups and exports cover whoever is showing and include their name in the file name.
+
 ## Your data
 
-Everything — your program list, statuses, balances, MQDs, and vouchers — is saved only in your browser's local storage (`status-tracker-v2`) on that device. Nothing is uploaded, nothing syncs between devices, and each person who opens the site has their own separate tracker.
+Everything — your program list, statuses, balances, MQDs, and vouchers — is saved only in your browser's local storage (`status-tracker-v2`, plus `status-tracker-v2:<id>` for each extra person on the device) on that device. Nothing is uploaded, nothing syncs between devices, and each person who opens the site has their own separate tracker.
 
 The app reminds you in **Coming up** to save a backup if you've never made one, or if your last one is two months old and your data has changed since.
 

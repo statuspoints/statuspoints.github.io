@@ -987,6 +987,70 @@
   }
   .member-input::placeholder { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; letter-spacing: 0; color: var(--faint); }
   .member-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .name-input { font-family: inherit; letter-spacing: 0; }
+  .who {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    flex: none;
+    max-width: 40%;
+    min-height: 36px;
+    margin-left: auto;
+    padding: 4px 10px 4px 4px;
+    border: 1px solid rgba(255, 255, 255, .22);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .12);
+    color: #F4F7FB;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .who:hover { background: rgba(255, 255, 255, .18); }
+  .who svg { flex: none; width: 11px; height: 11px; opacity: .8; }
+  .who-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .who-dot {
+    display: inline-grid;
+    place-items: center;
+    flex: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: var(--on-accent);
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .who .who-dot { background: rgba(255, 255, 255, .92); color: #1B3A5C; }
+  .people { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+  .person { display: flex; align-items: center; gap: 6px; }
+  .person-pick {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+    min-height: 52px;
+    padding: 8px 12px 8px 8px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--card);
+    color: var(--text);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+  .person-pick[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+  .person-body { display: grid; min-width: 0; }
+  .person-name { overflow: hidden; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+  .person-body small { font-size: 12.5px; color: var(--muted); }
+  .sheet .people-add { display: flex; gap: 8px; padding: 0; }
+  .icon-spacer { flex: none; width: 36px; }
+  @media (max-width: 480px) { /* the switcher sits under the date instead of squeezing the title */
+    .hero-top { flex-wrap: wrap; row-gap: 10px; }
+    .hero-top > div { flex: 1 1 200px; min-width: 0; }
+    .who { order: 3; max-width: calc(100% - 52px); margin-left: 52px; }
+  }
   .add.sm, .btn-secondary.sm { flex: none; padding: 0 16px; }
   .perk-block { padding: 12px 14px; border-radius: 14px; background: var(--inset); }
   .perk-block + .perk-block { margin-top: 8px; }
@@ -1093,6 +1157,7 @@
         <h1>Points &amp; Status Tracker</h1>
         <p class="sub" id="today"></p>
       </div>
+      <button class="who" id="who-btn" type="button" hidden></button>
     </div>
     <div class="stats" id="stats" hidden>
       <button class="stat" type="button" id="st-1-btn" data-go="status"><span class="stat-v" id="st-1"></span><span class="stat-l" id="st-1-l"></span></button>
@@ -1210,6 +1275,10 @@
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2.5v8M4.5 7L8 10.5 11.5 7M3 13.5h10"/></svg>
         Back up data
       </button>
+      <button class="ghost-btn" id="people-btn" type="button">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="5.5" r="2.5"/><path d="M1.75 13.5a4.25 4.25 0 0 1 8.5 0M11 3.25a2.5 2.5 0 0 1 0 4.5M12.25 9.5a4.25 4.25 0 0 1 2 4"/></svg>
+        <span id="people-btn-label">Add a person</span>
+      </button>
       <button class="ghost-btn" id="import-btn" type="button">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 10.5v-8M4.5 6L8 2.5 11.5 6M3 13.5h10"/></svg>
         Restore from backup
@@ -1294,6 +1363,23 @@
     <div class="sheet-actions">
       <span class="spacer"></span>
       <button class="add" id="perks-done" type="button">Done</button>
+    </div>
+  </div>
+</dialog>
+<dialog class="sheet" id="people-sheet" aria-labelledby="people-title">
+  <div class="sheet-body">
+    <div class="grab" aria-hidden="true"></div>
+    <h2 id="people-title" tabindex="-1" autofocus>People on this device</h2>
+    <p class="setup-sub">Everyone gets their own tracker — programs, statuses, balances, and reminders stay separate. Switch anytime with the name at the top.</p>
+    <ul class="people" id="people-list"></ul>
+    <form class="people-add" id="people-add" autocomplete="off">
+      <input type="text" class="member-input name-input" id="people-name" maxlength="30" placeholder="Add someone (e.g. Alex)" aria-label="Name of the person to add" enterkeyhint="done">
+      <button class="add sm" type="submit">Add</button>
+    </form>
+    <p class="fine">Each person's data stays in this browser on this device. Back up each tracker separately (switch to them, then Back up data).</p>
+    <div class="sheet-actions">
+      <span class="spacer"></span>
+      <button class="add" id="people-done" type="button">Done</button>
     </div>
   </div>
 </dialog>
@@ -1813,6 +1899,7 @@
     spark:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M8 1.5l1.7 4.3 4.3 1.7-4.3 1.7L8 13.5l-1.7-4.3L2 7.5l4.3-1.7z"/></svg>',
     x:'<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M2.5 2.5l9 9M11.5 2.5l-9 9"/></svg>',
     up: '<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 11.5v-9M3 6.5l4-4 4 4"/></svg>',
+    chevron: '<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 5.25L7 8.75l3.5-3.5"/></svg>',
     down: '<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 2.5v9M3 7.5l4 4 4-4"/></svg>',
     plus: '<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M7 2v10M2 7h10"/></svg>',
     pencil: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 2.5l2.5 2.5L6 12.5 2.5 13.5l1-3.5z"/></svg>',
@@ -2126,9 +2213,45 @@
     return s;
   }
 
+  // People on this device each get their own saved tracker: the first under KEY (so existing data stays put),
+  // others under `${KEY}:<id>`. The list and who's showing live under PEOPLE_KEY.
+  const PEOPLE_KEY = 'status-tracker-people';
+  function readPeople() {
+    const list = [];
+    let active = 'me';
+    let hasMine = false; // data saved under the first tracker's key
+    try {
+      hasMine = !!localStorage.getItem(KEY);
+      const raw = JSON.parse(localStorage.getItem(PEOPLE_KEY) || 'null');
+      if (raw && Array.isArray(raw.list)) {
+        for (const person of raw.list) {
+          if (person && typeof person.id === 'string' && /^[a-z0-9-]{1,20}$/.test(person.id) && !list.some((x) => x.id === person.id)) {
+            list.push({ id: person.id, name: str(person.name, 30) });
+          }
+        }
+        if (typeof raw.active === 'string') active = raw.active;
+      }
+      // Any saved tracker missing from the list (e.g. the list itself was lost) comes back, so none is orphaned.
+      for (let i = 0; i < localStorage.length; i++) {
+        const id = (localStorage.key(i) || '').startsWith(`${KEY}:`) ? localStorage.key(i).slice(KEY.length + 1) : '';
+        if (/^[a-z0-9-]{1,20}$/.test(id) && !list.some((x) => x.id === id)) list.push({ id, name: '' });
+      }
+    } catch (e) { /* storage unavailable: just one tracker */ }
+    if (!list.some((person) => person.id === 'me') && (!list.length || hasMine)) list.unshift({ id: 'me', name: '' });
+    return { active: list.some((person) => person.id === active) ? active : list[0].id, list };
+  }
+  const people = readPeople();
+  const storageKey = (id = people.active) => (id === 'me' ? KEY : `${KEY}:${id}`);
+  const activePerson = () => people.list.find((person) => person.id === people.active);
+  const personName = (person) => person.name || (person.id === 'me' ? 'Me' : 'Unnamed');
+  const whose = (person) => (person.name ? `${person.name}’s` : 'your'); // "Alex’s tracker" / "your tracker"
+  function savePeople() {
+    try { localStorage.setItem(PEOPLE_KEY, JSON.stringify(people)); } catch (e) { /* private mode: lasts this visit */ }
+  }
+
   function load() {
     try {
-      const s = normalize(JSON.parse(localStorage.getItem(KEY) || 'null'));
+      const s = normalize(JSON.parse(localStorage.getItem(storageKey()) || 'null'));
       if (s) return s;
     } catch (e) { /* corrupt or unavailable storage: start fresh */ }
     return { programs: null, cards: [], renewals: {}, notes: '', balances: {}, activity: {}, mqd: 0, progress: {}, members: {}, updated: {}, backedUp: '', vouchers: [] }; // null programs → first-run setup
@@ -2146,8 +2269,8 @@
     clearTimeout(saveTimer);
     saveTimer = 0;
     try {
-      if (state.programs) localStorage.setItem(KEY, JSON.stringify(state));
-      else localStorage.removeItem(KEY); // not set up yet
+      if (state.programs) localStorage.setItem(storageKey(), JSON.stringify(state));
+      else localStorage.removeItem(storageKey()); // not set up yet
     } catch (e) {
       showToast('Couldn’t save — browser storage is unavailable');
     }
@@ -3983,7 +4106,8 @@
   // A plain-text summary meant for reading (not for restoring — that's the JSON backup).
   function summaryText() {
     const now = new Date();
-    const out = ['POINTS & STATUS TRACKER', `Exported ${todayFmt.format(now)} at ${timeFmt.format(now)}`, '', '', 'PROGRAMS', ''];
+    const who = people.list.length > 1 ? ` — ${personName(activePerson()).toUpperCase()}` : '';
+    const out = [`POINTS & STATUS TRACKER${who}`, `Exported ${todayFmt.format(now)} at ${timeFmt.format(now)}`, '', '', 'PROGRAMS', ''];
 
     const medallion = medallionProgram();
     const pushPerks = (p, tierText) => {
@@ -4049,15 +4173,18 @@
     return out.join('\n');
   }
 
+  // "alex-" in file names when several people share the device, so their files are easy to tell apart.
+  const fileTag = () => (people.list.length > 1 ? `${slugify(personName(activePerson())) || activePerson().id}-` : '');
+
   $('#text-btn').addEventListener('click', () => {
     // Leading byte-order mark so Quick Look / Notepad read the "—" and "·" as UTF-8.
-    saveFile(`points-status-${todayISO()}.txt`, `﻿${summaryText()}`, 'text/plain;charset=utf-8');
+    saveFile(`points-status-${fileTag()}${todayISO()}.txt`, `﻿${summaryText()}`, 'text/plain;charset=utf-8');
   });
 
   function backUp() {
     state.backedUp = todayISO();
     const json = JSON.stringify({ app: 'points-status-tracker', exportedAt: new Date().toISOString(), data: state }, null, 2);
-    saveFile(`points-status-backup-${todayISO()}.json`, json, 'application/json');
+    saveFile(`points-status-backup-${fileTag()}${todayISO()}.json`, json, 'application/json');
     renderStats(); // refreshes "Coming up" and the footer's last-backup line
   }
 
@@ -4144,6 +4271,140 @@
     if (action) action();
   });
 
+  /* ---------- People on this device ---------- */
+
+  const peopleSheet = $('#people-sheet');
+  let renaming = null; // id of the person whose name is being edited
+
+  // What's saved for someone: their program count, or null if they haven't set up yet.
+  function programCount(id) {
+    if (id === people.active) return state.programs ? state.programs.length : null;
+    try {
+      const saved = JSON.parse(localStorage.getItem(storageKey(id)) || 'null');
+      return saved && Array.isArray(saved.programs) ? saved.programs.length : null;
+    } catch (e) { return null; }
+  }
+
+  function renderPeople() {
+    const many = people.list.length > 1;
+    const me = activePerson();
+    $('#who-btn').hidden = !many;
+    if (many) {
+      $('#who-btn').replaceChildren(h('span', { class: 'who-dot', 'aria-hidden': 'true' }, personName(me).charAt(0).toUpperCase()),
+        h('span', { class: 'who-name' }, personName(me)), svgIcon(ICON.chevron));
+      $('#who-btn').setAttribute('aria-label', `Showing ${whose(me)} tracker. Switch person`);
+    }
+    $('#people-btn-label').textContent = many ? `People on this device (${people.list.length})` : 'Add a person';
+    if (!peopleSheet.open) return;
+    $('#people-list').replaceChildren(...people.list.map((person) => {
+      const active = person.id === people.active;
+      const count = programCount(person.id);
+      const summary = [active ? 'Showing now' : null, count == null ? 'Not set up yet' : plural(count, 'program')].filter(Boolean).join(' · ');
+      if (renaming === person.id) {
+        const input = h('input', { type: 'text', class: 'member-input name-input', id: 'person-rename', maxlength: '30', 'aria-label': 'Name', enterkeyhint: 'done', 'data-rename-input': person.id });
+        input.value = person.name;
+        return h('li', { class: 'person' }, input,
+          h('button', { type: 'button', class: 'add sm', 'data-rename-save': person.id }, 'Save'));
+      }
+      return h('li', { class: 'person' },
+        h('button', { type: 'button', class: 'person-pick', 'data-person': person.id, 'aria-pressed': String(active) },
+          h('span', { class: 'who-dot', 'aria-hidden': 'true' }, personName(person).charAt(0).toUpperCase()),
+          h('span', { class: 'person-body' }, h('span', { class: 'person-name' }, personName(person)), h('small', null, summary))),
+        h('button', { type: 'button', class: 'icon-btn', 'data-rename': person.id, 'aria-label': `Rename ${personName(person)}` }, svgIcon(ICON.pencil)),
+        active ? h('span', { class: 'icon-spacer', 'aria-hidden': 'true' }) : h('button', { type: 'button', class: 'icon-btn', 'data-remove': person.id, 'aria-label': `Remove ${personName(person)} and their tracker` }, svgIcon(ICON.x)));
+    }));
+    const input = $('#person-rename');
+    if (input) { input.focus(); input.select(); }
+  }
+
+  function openPeople() {
+    renaming = null;
+    $('#people-name').value = '';
+    peopleSheet.showModal();
+    renderPeople();
+  }
+
+  // Shows someone else's tracker: saves this one, loads theirs, and starts from the top.
+  function switchPerson(id) {
+    if (id === people.active) return;
+    if (saveTimer) saveNow();
+    people.active = id;
+    savePeople();
+    const next = load();
+    for (const key of Object.keys(state)) delete state[key];
+    Object.assign(state, next);
+    for (const open of document.querySelectorAll('dialog[open]')) open.close();
+    editMode = false;
+    filter = 'all';
+    planOpen = false;
+    planMqd = 0;
+    planSpend = 0;
+    picked.clear();
+    pickedCards.clear();
+    rollOver();
+    intro = true;
+    renderAll();
+    scrollTo(0, 0);
+    showToast(state.programs ? `Showing ${whose(activePerson())} tracker` : `Let’s set up ${whose(activePerson())} tracker`);
+  }
+
+  function saveRename(id) {
+    const input = $('#person-rename');
+    const person = people.list.find((x) => x.id === id);
+    if (input && person) person.name = str(input.value, 30);
+    renaming = null;
+    savePeople();
+    renderPeople();
+  }
+
+  $('#people-btn').addEventListener('click', openPeople);
+  $('#who-btn').addEventListener('click', openPeople);
+  $('#people-done').addEventListener('click', () => peopleSheet.close());
+
+  $('#people-add').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const name = str($('#people-name').value, 30);
+    if (!name) { $('#people-name').focus(); return; }
+    const taken = new Set(people.list.map((person) => person.id));
+    let id;
+    do { id = `u${Math.random().toString(36).slice(2, 8)}`; } while (taken.has(id));
+    people.list.push({ id, name });
+    switchPerson(id); // saves the list and opens their setup
+  });
+
+  peopleSheet.addEventListener('click', (e) => {
+    if (e.target === peopleSheet) { peopleSheet.close(); return; }
+    const pick = e.target.closest('[data-person]');
+    if (pick) { switchPerson(pick.dataset.person); return; }
+    const rename = e.target.closest('[data-rename]');
+    if (rename) { renaming = rename.dataset.rename; renderPeople(); return; }
+    const save = e.target.closest('[data-rename-save]');
+    if (save) { saveRename(save.dataset.renameSave); return; }
+    const remove = e.target.closest('[data-remove]');
+    if (!remove) return;
+    // Removing someone deletes their tracker from this device; Undo puts it back.
+    const id = remove.dataset.remove;
+    const index = people.list.findIndex((person) => person.id === id);
+    const [person] = people.list.splice(index, 1);
+    let saved = null;
+    try { saved = localStorage.getItem(storageKey(id)); localStorage.removeItem(storageKey(id)); } catch (err) { /* nothing stored */ }
+    savePeople();
+    renderPeople();
+    showToast(`Removed ${whose(person)} tracker`, () => {
+      people.list.splice(Math.min(index, people.list.length), 0, person);
+      try { if (saved) localStorage.setItem(storageKey(id), saved); } catch (err) { /* storage full */ }
+      savePeople();
+      renderPeople();
+    }, 'Undo', 8000);
+  });
+
+  peopleSheet.addEventListener('keydown', (e) => {
+    const input = e.target.closest('[data-rename-input]');
+    if (!input) return;
+    if (e.key === 'Enter') { e.preventDefault(); saveRename(input.dataset.renameInput); }
+    else if (e.key === 'Escape') { e.preventDefault(); renaming = null; renderPeople(); }
+  });
+
   /* ---------- Install hint ---------- */
 
   // iPadOS reports itself as a Mac, so a touch-screen "Mac" counts too (unless the browser says it's Android).
@@ -4201,6 +4462,7 @@
     if (setup) renderUpcoming();
     $('#text-btn').hidden = setup;
     renderInstallHint();
+    renderPeople();
     if (setup) {
       renderSetup();
     } else {
