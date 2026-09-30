@@ -1056,7 +1056,7 @@
   }
   #d-memo-input::placeholder { color: var(--faint); }
   #d-memo-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
-  .who {
+  .person-chip {
     display: inline-flex;
     align-items: center;
     gap: 7px;
@@ -1074,10 +1074,10 @@
     font-weight: 600;
     cursor: pointer;
   }
-  .who:hover { background: rgba(255, 255, 255, .18); }
-  .who svg { flex: none; width: 11px; height: 11px; opacity: .8; }
-  .who-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .who-dot {
+  .person-chip:hover { background: rgba(255, 255, 255, .18); }
+  .person-chip svg { flex: none; width: 11px; height: 11px; opacity: .8; }
+  .person-chip-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .person-dot {
     display: inline-grid;
     place-items: center;
     flex: none;
@@ -1089,7 +1089,7 @@
     font-size: 13px;
     font-weight: 700;
   }
-  .who .who-dot { background: rgba(255, 255, 255, .92); color: #1B3A5C; }
+  .person-chip .person-dot { background: rgba(255, 255, 255, .92); color: #1B3A5C; }
   .people { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
   .person { display: flex; align-items: center; gap: 6px; }
   .person-pick {
@@ -1131,7 +1131,7 @@
   @media (max-width: 480px) { /* the switcher sits under the date instead of squeezing the title */
     .hero-top { flex-wrap: wrap; row-gap: 10px; }
     .hero-top > div { flex: 1 1 200px; min-width: 0; }
-    .who { order: 3; max-width: calc(100% - 52px); margin-left: 52px; }
+    .person-chip { order: 3; max-width: calc(100% - 52px); margin-left: 52px; }
   }
   .add.sm, .btn-secondary.sm { flex: none; padding: 0 16px; }
   .perk-block { padding: 12px 14px; border-radius: 14px; background: var(--inset); }
@@ -1239,7 +1239,7 @@
         <h1>Points &amp; Status Tracker</h1>
         <p class="sub" id="today"></p>
       </div>
-      <button class="who" id="who-btn" type="button" hidden></button>
+      <button class="person-chip" id="person-chip" type="button" hidden></button>
     </div>
     <div class="stats" id="stats" hidden>
       <button class="stat" type="button" id="st-1-btn" data-go="status"><span class="stat-v" id="st-1"></span><span class="stat-l" id="st-1-l"></span></button>
@@ -4438,11 +4438,11 @@
   function renderPeople() {
     const many = people.list.length > 1;
     const me = activePerson();
-    $('#who-btn').hidden = !many;
+    $('#person-chip').hidden = !many;
     if (many) {
-      $('#who-btn').replaceChildren(h('span', { class: 'who-dot', 'aria-hidden': 'true' }, personName(me).charAt(0).toUpperCase()),
-        h('span', { class: 'who-name' }, personName(me)), svgIcon(ICON.chevron));
-      $('#who-btn').setAttribute('aria-label', `Showing ${whose(me)} tracker. Switch person`);
+      $('#person-chip').replaceChildren(h('span', { class: 'person-dot', 'aria-hidden': 'true' }, personName(me).charAt(0).toUpperCase()),
+        h('span', { class: 'person-chip-name' }, personName(me)), svgIcon(ICON.chevron));
+      $('#person-chip').setAttribute('aria-label', `Showing ${whose(me)} tracker. Switch person`);
     }
     $('#people-btn-label').textContent = many ? `People on this device (${people.list.length})` : 'Add a person';
     if (!peopleSheet.open) return;
@@ -4458,7 +4458,7 @@
       }
       return h('li', { class: 'person' },
         h('button', { type: 'button', class: 'person-pick', 'data-person': person.id, 'aria-pressed': String(active) },
-          h('span', { class: 'who-dot', 'aria-hidden': 'true' }, personName(person).charAt(0).toUpperCase()),
+          h('span', { class: 'person-dot', 'aria-hidden': 'true' }, personName(person).charAt(0).toUpperCase()),
           h('span', { class: 'person-body' }, h('span', { class: 'person-name' }, personName(person)), h('small', null, summary))),
         h('button', { type: 'button', class: 'icon-btn', 'data-rename': person.id, 'aria-label': `Rename ${personName(person)}` }, svgIcon(ICON.pencil)),
         active ? h('span', { class: 'icon-spacer', 'aria-hidden': 'true' }) : h('button', { type: 'button', class: 'icon-btn', 'data-remove': person.id, 'aria-label': `Remove ${personName(person)} and their tracker` }, svgIcon(ICON.x)));
@@ -4508,7 +4508,7 @@
   }
 
   $('#people-btn').addEventListener('click', openPeople);
-  $('#who-btn').addEventListener('click', openPeople);
+  $('#person-chip').addEventListener('click', openPeople);
   $('#people-done').addEventListener('click', () => peopleSheet.close());
 
   $('#people-add').addEventListener('submit', (e) => {
