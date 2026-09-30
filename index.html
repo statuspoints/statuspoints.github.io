@@ -839,6 +839,22 @@
   .perk-src .pill { min-height: 18px; padding: 0 7px; font-size: 11px; }
   .perks-empty { margin: 0; font-size: 14px; color: var(--muted); }
 
+  /* Progress toward the next tier (nights, PQP, Loyalty Points…) */
+  .prog-mini { margin-top: 8px; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .prog-mini strong { color: var(--text); font-weight: 650; }
+  .mini-bar { max-width: 220px; height: 4px; margin-top: 5px; border-radius: 999px; background: var(--track); overflow: hidden; }
+  .mini-bar i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
+  .prog-box { margin-top: 0; }
+  .prog-legend { margin: 10px 0 0; font-size: 12px; line-height: 1.5; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .prog-legend .hit { color: var(--accent); font-weight: 650; }
+  .prog-box .fine { margin-top: 6px; }
+
+  /* Install hint */
+  .install { display: flex; align-items: center; gap: 10px; margin-top: 16px; padding: 12px 8px 12px 14px; }
+  .install-body { flex: 1; min-width: 0; font-size: 13px; line-height: 1.4; color: var(--muted); }
+  .install-body strong { display: block; font-size: 14px; color: var(--text); }
+  .install .add.sm { height: 36px; padding: 0 14px; font-size: 14px; }
+
   /* "Coming up": expiring statuses and vouchers */
   .upcoming { margin-top: 16px; }
   .up-head { display: flex; align-items: center; gap: 10px; padding: 14px 16px 6px; }
@@ -1031,7 +1047,7 @@
     transition: opacity .18s, transform .18s, visibility 0s .18s;
   }
   .toast.show { opacity: 1; visibility: visible; transform: translate(-50%, 0); transition: opacity .18s, transform .18s; }
-  .toast-msg { min-width: 0; padding: 6px 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .toast-msg { min-width: 0; padding: 6px 0; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
   .toast button {
     flex: none;
     padding: 6px 10px;
@@ -1070,6 +1086,15 @@
       <button class="stat" type="button" id="st-3-btn" data-go="vouchers"><span class="stat-v" id="st-3"></span><span class="stat-l" id="st-3-l"></span></button>
     </div>
   </header>
+
+  <div class="card install" id="install" role="note" hidden>
+    <div class="install-body">
+      <strong>Put it on your Home Screen</strong>
+      <span id="install-text"></span>
+    </div>
+    <button class="add sm" id="install-btn" type="button" hidden>Install</button>
+    <button class="icon-btn" id="install-close" type="button" aria-label="Dismiss this tip"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M2.5 2.5l9 9M11.5 2.5l-9 9"/></svg></button>
+  </div>
 
   <section class="card upcoming" id="upcoming" aria-labelledby="up-title" hidden>
     <div class="up-head">
@@ -1177,6 +1202,7 @@
       </button>
     </div>
     <p id="foot-status">Saved on this device only</p>
+    <p id="backup-status" hidden></p>
     <input type="file" id="import-file" accept="application/json,.json" hidden>
   </footer>
 </main>
@@ -1229,6 +1255,7 @@
     </div>
     <section class="d-sec" id="d-member" aria-label="Member number"></section>
     <section class="d-sec" id="d-status" aria-label="Your status"></section>
+    <section class="d-sec" id="d-progress" aria-label="This year's progress" hidden></section>
     <section class="d-sec" id="d-levels" aria-label="Status levels"></section>
     <div class="sheet-actions d-actions">
       <a class="ghost-btn" id="d-site" target="_blank" rel="noopener noreferrer">Website ↗</a>
@@ -1340,7 +1367,9 @@
     ] },
   ];
   const CATALOG_ITEMS = CATALOG.flatMap((g) => g.items);
-  const CATALOG_BY_ID = Object.fromEntries(CATALOG_ITEMS.map((c) => [c.id, c]));
+  // Null-prototype maps, so a stored id like "constructor" finds nothing instead of a built-in.
+  const byId = (list) => Object.assign(Object.create(null), Object.fromEntries(list.map((c) => [c.id, c])));
+  const CATALOG_BY_ID = byId(CATALOG_ITEMS);
   const catalogByName = (name) => CATALOG_ITEMS.find((c) => c.name.toLowerCase() === name.trim().toLowerCase());
 
   // Filter chip categories; programs added by hand that aren't in the catalog fall under "Other".
@@ -1364,7 +1393,7 @@
   const DELTA_PLATINUM = [['delta', 'MQD Headstart $2,500 · MQD Boost $1 per $20']];
   const DELTA_RESERVE = [
     ['delta', 'MQD Headstart $2,500 · MQD Boost $1 per $10'],
-    ['lounges', 'Sky Club (15 visits/yr) · Centurion on Delta flights'],
+    ['lounges', 'Sky Club (15 visits/yr) · Centurion & Escape on Delta flights'],
   ];
   const SAPPHIRE_RESERVE = [
     ['ihg', 'Platinum Elite', 'thru 12/31/27', '2027-12-31'], // 4th item: expiration date
@@ -1374,15 +1403,15 @@
   ];
   const CARDS = [
     { issuer: 'American Express', id: 'amex-platinum', name: 'Amex Platinum', tone: 'platinum', grants: AMEX_PLATINUM },
-    { issuer: 'American Express', id: 'amex-business-platinum', name: 'Amex Business Platinum', tone: 'platinum', grants: AMEX_PLATINUM.filter(([id]) => id !== 'lhw') },
+    { issuer: 'American Express', id: 'amex-business-platinum', name: 'Amex Business Platinum', tone: 'platinum', grants: AMEX_PLATINUM },
     { issuer: 'American Express', id: 'schwab-platinum', name: 'Schwab Platinum', tone: 'platinum', grants: AMEX_PLATINUM },
     { issuer: 'American Express', id: 'morgan-stanley-platinum', name: 'Morgan Stanley Platinum', tone: 'platinum', grants: AMEX_PLATINUM },
     { issuer: 'American Express', id: 'amex-gold', name: 'Amex Gold', tone: 'gold', grants: [['hertz', 'Five Star']] },
-    { issuer: 'American Express', id: 'hilton-aspire', name: 'Hilton Aspire', tone: 'black', grants: [['hilton', 'Diamond']] },
+    { issuer: 'American Express', id: 'hilton-aspire', name: 'Hilton Aspire', tone: 'black', grants: [['hilton', 'Diamond'], ['national', 'Emerald Club Executive']] },
     { issuer: 'American Express', id: 'hilton-surpass', name: 'Hilton Surpass', tone: 'slate', grants: [['hilton', 'Gold']] },
     { issuer: 'American Express', id: 'hilton-business', name: 'Hilton Business', tone: 'slate', grants: [['hilton', 'Gold']] },
     { issuer: 'American Express', id: 'hilton-amex', name: 'Hilton Honors Amex', label: 'Hilton Honors (no fee)', tone: 'blue', grants: [['hilton', 'Silver']] },
-    { issuer: 'American Express', id: 'bonvoy-brilliant', name: 'Bonvoy Brilliant', tone: 'black', grants: [['marriott', 'Platinum Elite']] },
+    { issuer: 'American Express', id: 'bonvoy-brilliant', name: 'Bonvoy Brilliant', tone: 'black', grants: [['marriott', 'Platinum Elite'], ['lounges', 'Priority Pass']] },
     { issuer: 'American Express', id: 'bonvoy-bevy', name: 'Bonvoy Bevy', tone: 'bronze', grants: [['marriott', 'Gold Elite']] },
     { issuer: 'American Express', id: 'bonvoy-business', name: 'Bonvoy Business', tone: 'black', grants: [['marriott', 'Gold Elite']] },
     { issuer: 'Delta SkyMiles (Amex)', id: 'delta-blue', name: 'Delta Blue', tone: 'blue', grants: [] },
@@ -1392,15 +1421,16 @@
     { issuer: 'Delta SkyMiles (Amex)', id: 'delta-gold-business', name: 'Delta Gold Business', tone: 'gold', grants: [] },
     { issuer: 'Delta SkyMiles (Amex)', id: 'delta-platinum-business', name: 'Delta Platinum Business', tone: 'platinum', grants: DELTA_PLATINUM },
     { issuer: 'Delta SkyMiles (Amex)', id: 'delta-reserve-business', name: 'Delta Reserve Business', tone: 'black', grants: DELTA_RESERVE },
-    { issuer: 'American Express', id: 'amex-green', name: 'Amex Green', tone: 'green', grants: [] },
+    // Renamed Classic Green on Aug 20, 2026 and closed to new applicants.
+    { issuer: 'American Express', id: 'amex-green', name: 'Amex Classic Green', label: 'Amex Classic Green (was Green)', tone: 'green', grants: [] },
     { issuer: 'Chase', id: 'sapphire-reserve', name: 'Sapphire Reserve', tone: 'sapphire', grants: SAPPHIRE_RESERVE },
     { issuer: 'Chase', id: 'sapphire-preferred', name: 'Sapphire Preferred', tone: 'blue', grants: [] },
     { issuer: 'Chase', id: 'sapphire-reserve-business', name: 'Sapphire Reserve for Business', tone: 'black', grants: SAPPHIRE_RESERVE },
     { issuer: 'Chase', id: 'freedom-unlimited', name: 'Freedom Unlimited', tone: 'blue', grants: [] },
     { issuer: 'Chase', id: 'freedom-flex', name: 'Freedom Flex', tone: 'slate', grants: [] },
     { issuer: 'Chase', id: 'ink-preferred', name: 'Ink Business Preferred', tone: 'black', grants: [] },
-    // Automatic 25K every year since the September 2026 refresh (it used to need $15k spend).
-    { issuer: 'Chase', id: 'chase-aeroplan', name: 'Chase Aeroplan', tone: 'black', grants: [['aeroplan', '25K']] },
+    // Renamed in the Sept 10, 2026 refresh, which made 25K automatic every year (it used to need $15k spend).
+    { issuer: 'Chase', id: 'chase-aeroplan', name: 'Chase Air Canada Aeroplan', label: 'Air Canada Aeroplan (Chase)', tone: 'black', grants: [['aeroplan', '25K']] },
     { issuer: 'Chase', id: 'united-explorer', name: 'United Explorer', tone: 'sapphire', grants: [['lounges', '2 United Club passes/yr']] },
     { issuer: 'Chase', id: 'united-quest', name: 'United Quest', tone: 'slate', grants: [] },
     { issuer: 'Chase', id: 'southwest-priority', name: 'Southwest Priority', tone: 'sapphire', grants: [] },
@@ -1429,7 +1459,7 @@
     { issuer: 'Capital One', id: 'venture', name: 'Venture', tone: 'slate', grants: [] },
     { issuer: 'Capital One', id: 'ventureone', name: 'VentureOne', tone: 'blue', grants: [] },
     { issuer: 'Capital One', id: 'savor', name: 'Savor', tone: 'bronze', grants: [] },
-    { issuer: 'Citi', id: 'aadvantage-executive', name: 'AAdvantage Executive', tone: 'black', grants: [
+    { issuer: 'Citi', id: 'aadvantage-executive', name: 'AAdvantage Executive', label: 'AAdvantage Executive World Legend', tone: 'black', grants: [
       ['omni', 'Champion'],
       ['avis', "President's Club"],
       ['lounges', 'Admirals Club membership'],
@@ -1444,6 +1474,7 @@
     { issuer: 'Barclays', id: 'wyndham-earner', name: 'Wyndham Earner', tone: 'blue', grants: [['wyndham', 'Gold']] },
     { issuer: 'Barclays', id: 'wyndham-earner-plus', name: 'Wyndham Earner Plus', tone: 'sapphire', grants: [['wyndham', 'Platinum']] },
     { issuer: 'Barclays', id: 'wyndham-earner-business', name: 'Wyndham Earner Business', tone: 'black', grants: [['wyndham', 'Diamond']] },
+    { issuer: 'Barclays', id: 'wyndham-earner-premier', name: 'Wyndham Earner Premier', tone: 'platinum', grants: [['wyndham', 'Diamond']] },
     // Palladium's Bilt Gold comes from meeting the welcome-offer spend, so it isn't auto-applied.
     { issuer: 'Bilt', id: 'bilt-blue', name: 'Bilt Blue', tone: 'blue', grants: [] },
     { issuer: 'Bilt', id: 'bilt-obsidian', name: 'Bilt Obsidian', tone: 'black', grants: [] },
@@ -1455,7 +1486,7 @@
     { issuer: 'Bank of America', id: 'atmos-ascent', name: 'Atmos Ascent', tone: 'blue', grants: [] },
     { issuer: 'Wells Fargo', id: 'autograph-journey', name: 'Autograph Journey', tone: 'black', grants: [] },
   ];
-  const CARD_BY_ID = Object.fromEntries(CARDS.map((c) => [c.id, c]));
+  const CARD_BY_ID = byId(CARDS);
   const PERK_SHORT = {
     delta: 'MQD Headstart', aeroplan: 'Aeroplan', hyatt: 'Hyatt', lhw: 'LHW', omni: 'Omni',
     hertz: 'Hertz', avis: 'Avis', national: 'National', lounges: 'Lounges',
@@ -1492,8 +1523,8 @@
       ['Executive Platinum', '200,000 Loyalty Points a year', ["Upgrades 100 hrs out", "Award upgrades", "oneworld Emerald"], ['Upgrades clearing 100 hours out', 'Upgrades on award tickets too', 'oneworld Emerald', 'More Loyalty Point Rewards, like systemwide upgrades']],
     ],
     southwest: [
-      ['A-List', '20 flights or 35,000 tier points a year', ["Seat pick at booking", "Priority lanes", "Free standby"], ['Pick a Preferred or Standard seat at booking', 'Free Extra Legroom seat within 48 hours of departure (when available)', 'Priority check-in and security lanes', 'Free same-day standby']],
-      ['A-List Preferred', '40 flights or 70,000 tier points a year', ["Any seat incl. Extra Legroom", "Board first", "Double points"], ['Pick any seat, including Extra Legroom, at booking', 'Board before Group 1', 'Double points on flights', 'Free same-day standby']],
+      ['A-List', '20 flights or 35,000 tier points a year', ["1st checked bag free", "Seat pick at booking", "Priority lanes"], ['First checked bag free', 'Pick a Preferred or Standard seat at booking', 'Free Extra Legroom seat within 48 hours of departure (when available)', 'Priority check-in and security lanes', 'Free same-day standby']],
+      ['A-List Preferred', '40 flights or 70,000 tier points a year', ["2 free checked bags", "Any seat incl. Extra Legroom", "Board first"], ['2 free checked bags', 'Pick any seat, including Extra Legroom, at booking', 'Board before Group 1', 'Double points on flights', 'Free inflight Wi-Fi', 'Free same-day standby']],
     ],
     alaska: [
       ['Silver', '20,000 status points a year', ["Free upgrades", "Preferred seats", "1 free bag"], ['1 free checked bag', 'Preferred seats', 'Complimentary upgrades on Alaska, Hawaiian, and eligible American flights', 'oneworld Ruby']],
@@ -1502,17 +1533,17 @@
       ['Titanium', '135,000 status points a year', ["150% bonus", "Free economy meal", "Long-haul upgrades"], ['150% bonus points on flights', 'Free meal in economy', 'Upgrades on select long-haul routes', 'oneworld Emerald']],
     ],
     aeroplan: [
-      ['25K', '25,000 Status Qualifying Credits a year (automatic with the Chase Aeroplan card)', ["Priority check-in", "Zone 2 boarding", "Free checked bag"], ['Priority check-in and Zone 2 boarding', 'Free checked bag on Air Canada', 'Star Alliance Silver', 'eUpgrade credits through Milestone Benefits']],
+      ['25K', '25,000 Status Qualifying Credits a year (automatic with the Chase Air Canada Aeroplan card)', ["Priority check-in", "Zone 2 boarding", "Free checked bag"], ['Priority check-in and Zone 2 boarding', 'Free checked bag on Air Canada', 'Star Alliance Silver', 'eUpgrade credits through Milestone Benefits']],
       ['35K', '35,000 SQC a year', ["Star Alliance Gold", "Upgrade priority", "Milestone Benefits"], ['Star Alliance Gold', 'Higher priority for upgrades and standby', 'More Milestone Benefits']],
       ['50K', '50,000 SQC a year', ["Maple Leaf Lounges", "Star Alliance Gold", "Upgrade priority"], ['Maple Leaf Lounge and Air Canada Café access (plus a guest)', 'Star Alliance Gold', 'Higher upgrade priority']],
       ['75K', '75,000 SQC a year', ["20 eUpgrades", "Maple Leaf Lounges", "Star Alliance Gold"], ['20 eUpgrade credits a year', 'Maple Leaf Lounge access', 'Star Alliance Gold']],
       ['Super Elite', '125,000 SQC a year', ["Top priority", "Lounges worldwide", "Gift status"], ['Top priority for upgrades and service', 'Star Alliance Gold lounge access worldwide', 'Nominate someone for Aeroplan status']],
     ],
     hilton: [
-      ['Silver', '10 nights or 4 stays a year', ["20% bonus", "5th night free", "Bottled water"], ['20% bonus points on stays', '5th night free on standard-room reward stays', 'Complimentary bottled water']],
+      ['Silver', '10 nights, 4 stays, or $2,500 on stays a year', ["20% bonus", "5th night free", "Bottled water"], ['20% bonus points on stays', '5th night free on standard-room reward stays', 'Complimentary bottled water']],
       ['Gold', '25 nights, 15 stays, or $6,000 on stays a year', ["Breakfast / F&B credit", "Room upgrades", "80% bonus"], ['80% bonus points on stays', 'Daily food & beverage credit in the U.S. (continental breakfast elsewhere)', 'Space-available room upgrades', '5th night free on reward stays']],
-      ['Diamond', '50 nights a year', ["Breakfast / F&B credit", "Executive lounge", "Suite upgrades"], ['100% bonus points on stays', 'Daily food & beverage credit or breakfast', 'Executive lounge access', 'Space-available upgrades up to a one-bedroom suite', '48-hour room guarantee']],
-      ['Diamond Reserve', '80 nights (or 40 stays) plus $18,000 on stays a year', ["4 p.m. checkout", "Premium club", "120% bonus"], ['120% bonus points on stays', 'Guaranteed 4 p.m. late checkout', 'Premium club access', 'Everything in Diamond']],
+      ['Diamond', '50 nights, 25 stays, or $11,500 on stays a year', ["Breakfast / F&B credit", "Executive lounge", "Suite upgrades"], ['100% bonus points on stays', 'Daily food & beverage credit or breakfast', 'Executive lounge access', 'Space-available upgrades up to a one-bedroom suite', '48-hour room guarantee']],
+      ['Diamond Reserve', '80 nights plus $18,000 on stays a year', ["Confirmed upgrade", "4 p.m. checkout", "120% bonus"], ['A Confirmable Upgrade Reward to lock in a better room (up to a one-bedroom suite) when you book', 'Guaranteed 4 p.m. late checkout', '120% bonus points on stays', 'Premium Club and executive lounge access', 'Upgrades confirmed up to 3 days before arrival, ahead of Diamond', '24/7 dedicated service line', 'Everything in Diamond']],
     ],
     marriott: [
       ['Silver Elite', '10 nights a year', ["10% bonus", "Priority late checkout"], ['10% bonus points', 'Priority late checkout', 'Dedicated elite reservation line']],
@@ -1530,7 +1561,7 @@
     hyatt: [
       ['Discoverist', '10 nights or 25,000 base points a year', ["Preferred room", "2 p.m. checkout", "Premium Wi-Fi"], ['10% bonus points', 'Preferred room upgrade (when available)', '2 p.m. late checkout (when available)', 'Premium internet and daily bottled water']],
       ['Explorist', '30 nights or 50,000 base points a year', ["Best-room upgrade", "2 p.m. checkout", "20% bonus"], ['20% bonus points', 'Upgrade to the best available room, excluding suites', '2 p.m. late checkout (when available)', '72-hour room guarantee']],
-      ['Globalist', '60 nights or 100,000 base points a year', ["Free breakfast", "Suite upgrades", "Club lounge"], ['30% bonus points', 'Suite upgrades and club lounge access', 'Free daily breakfast', '4 p.m. late checkout (when available)', 'No resort fees and free parking on award stays']],
+      ['Globalist', '60 nights or 100,000 base points a year', ["Free breakfast", "Suite upgrades", "Club lounge"], ['30% bonus points', 'Suite upgrades and club lounge access', 'Free daily breakfast', 'Guaranteed 4 p.m. late checkout (at resorts, when available)', 'No resort fees on any stay; free parking on award stays']],
     ],
     wyndham: [
       ['Gold', '5 qualified nights a year', ["Late checkout", "Preferred room", "10% bonus"], ['10% bonus points', 'Late checkout (when available)', 'Preferred room choice']],
@@ -1548,14 +1579,36 @@
       ["President's Club", null, ["Guaranteed upgrade", "Free extra driver", "24/7 service line"], ['Guaranteed car-class upgrade', 'Free additional driver', 'Priority service and a dedicated 24/7 line', 'Bonus points on rentals']],
     ],
     hertz: [
-      ['Five Star', null, ["Wider car choice", "Skip the counter", "25% bonus"], ['Pick from a wider selection of cars', 'Occasional upgrades', '25% bonus points', 'Skip the counter']],
-      ["President's Circle", null, ["Guaranteed upgrade", "Pick your car", "50% bonus"], ['Guaranteed one-class upgrade (up to full-size)', 'Pick from the President’s Circle area', '50% bonus points', 'Dedicated service line']],
+      ['Five Star', '3 rentals or $1,000 a year', ["Wider car choice", "Skip the counter", "25% bonus"], ['Pick from a wider selection of cars', 'Occasional upgrades', '25% bonus points', 'Skip the counter']],
+      ["President's Circle", '15 rentals or $3,000 a year', ["Guaranteed upgrade", "Pick your car", "50% bonus"], ['Guaranteed one-class upgrade (up to full-size)', 'Pick from the President’s Circle area', '50% bonus points', 'Dedicated service line']],
     ],
     national: [
-      ['Executive', '12 paid rentals or 40 paid days a year', ["Pick any Executive car", "Midsize price", "Skip the counter"], ['Pick any car in the Executive Area and pay the midsize rate', 'Guaranteed upgrade when you book midsize', 'Skip the counter'], ['exec']],
-      ['Executive Elite', '25 paid rentals or 85 paid days a year', ["Guaranteed full-size", "Private terminal delivery"], ['Guaranteed full-size car when you book midsize', 'Car delivered to private aviation terminals at many locations', 'Everything in Executive'], ['exec elite']],
+      ['Executive', '12 paid rentals or 40 paid days a year', ["Pick any Executive car", "Midsize price", "Skip the counter"], ['Book midsize, pick any car in the Executive Area, and pay the midsize rate', 'Guaranteed one-class upgrade when you book full-size or above', 'Skip the counter'], ['exec']],
+      ['Executive Elite', '25 paid rentals or 85 paid days a year', ["Guaranteed car", "Free day every 5 rentals"], ['A guaranteed car (up to full-size) when you book 24 hours ahead', 'A free rental day for every 5 rentals, on any car class with no blackout dates', 'Everything in Executive'], ['exec elite']],
     ],
   };
+
+  // Progress toward each level this qualifying year: the metric and one threshold per BENEFITS tier (same order).
+  // `also` names levels that need something we don't track (spend), so a count alone doesn't award them.
+  // `thru` gives the last day a level earned in qualifying year y stays valid; `starts` is the month (1–12) a
+  // qualifying year begins when it isn't January.
+  const endOf = (years, month) => (y) => new Date(y + years, month, 0); // last day of `month`, `years` after y
+  const TRACKS = {
+    hilton: { unit: 'nights', steps: [10, 25, 50, 80], also: { 3: '$18,000 on stays' }, thru: endOf(2, 3), note: 'Counting nights. Hilton also counts stays or spend; Diamond Reserve also needs $18,000 on stays.' },
+    marriott: { unit: 'nights', steps: [10, 25, 50, 75, 100], also: { 4: '$23,000 on stays' }, thru: endOf(2, 2), note: 'Elite night credits, including credits from Marriott cards. Ambassador also needs $23,000 on stays.' },
+    ihg: { unit: 'nights', steps: [10, 20, 40, 70], thru: endOf(1, 12), note: 'Qualifying nights (qualifying points also count instead).' },
+    hyatt: { unit: 'nights', steps: [10, 30, 60], thru: endOf(2, 2), note: 'Qualifying nights (base points also count instead).' },
+    wyndham: { unit: 'nights', steps: [5, 15, 40], thru: endOf(1, 12), note: 'Qualified nights.' },
+    united: { unit: 'PQP', steps: [6000, 12000, 18000, 28000], thru: endOf(2, 1), note: 'PQP alone. With enough Premier qualifying flights, each level needs less PQP.' },
+    american: { unit: 'Loyalty Points', steps: [40000, 75000, 125000, 200000], starts: 3, thru: endOf(2, 3), note: 'American’s qualifying year runs March 1 through the end of February.' },
+    southwest: { unit: 'tier points', steps: [35000, 70000], thru: endOf(1, 12), note: 'Tier qualifying points (20 or 40 one-way flights also qualify).' },
+    alaska: { unit: 'status points', steps: [20000, 40000, 80000, 135000], thru: endOf(1, 12), note: 'Status points this calendar year.' },
+    aeroplan: { unit: 'SQC', steps: [25000, 35000, 50000, 75000, 125000], thru: endOf(1, 12), note: 'Status Qualifying Credits this calendar year.' },
+  };
+
+  // The qualifying year a date falls in, named by the year it starts; "2026", or "2026–27" for American.
+  const qualYear = (track, d = new Date()) => d.getFullYear() - (d.getMonth() + 1 < (track.starts || 1) ? 1 : 0);
+  const qualLabel = (track, y) => (track.starts ? `${y}–${String(y + 1).slice(2)}` : String(y));
 
   // Where to check balances and manage each program.
   const SITES = {
@@ -1583,6 +1636,77 @@
 
   const catalogFor = (p) => CATALOG_BY_ID[p.id] || catalogByName(p.name);
   const benefitsFor = (p) => { const c = catalogFor(p); return (c && BENEFITS[c.id]) || null; };
+  const trackFor = (p) => { const c = catalogFor(p); return (c && TRACKS[c.id]) || null; };
+  const tierLabel = (name) => name.replace(/\b(Elite|Medallion|Premier)\b/g, '').replace(/\s+/g, ' ').trim();
+
+  // The level a progress count has already earned — programs award it as soon as you qualify, through `thru`.
+  function earnedTier(p) {
+    const info = progressInfo(p);
+    if (!info || info.value == null) return null;
+    const { track, tiers, n } = info;
+    let best = -1;
+    track.steps.forEach((step, i) => { if (n >= step && !(track.also && track.also[i])) best = i; });
+    if (best < 0) return null;
+    const year = qualYear(track, parseISODate(state.updated[`prog:${p.id}`]) || new Date());
+    const thru = track.thru(year);
+    return { index: best, tier: tiers[best], year, thru, via: `earned in ${qualLabel(track, year)} · thru ${mdy(thru)}` };
+  }
+
+  // Whether a status on the list (typed, card-granted or kept from last year) at level `index` or higher lasts
+  // through `iso`; no end date counts as lasting.
+  function coveredThrough(p, index, iso) {
+    const tiers = benefitsFor(p);
+    return !!tiers && p.status.some((line) => line.tier && (!line.exp || line.exp >= iso)
+      && splitParts(line.tier).some((part) => findTier(tiers, part) >= index));
+  }
+
+  // An earned level worth showing: higher, or longer-lasting, than the statuses already on the list.
+  function newlyEarned(p) {
+    const earned = earnedTier(p);
+    return earned && !coveredThrough(p, earned.index, isoOf(earned.thru)) ? earned : null;
+  }
+
+  // An expiring status you'll keep anyway: the same or a higher level lasts longer (requalified, or a card gives
+  // it), so it needs no reminder.
+  function outlasted(p, group) {
+    const tiers = benefitsFor(p);
+    if (!tiers || !group.exp) return false;
+    const index = Math.max(-1, ...splitParts(group.tier).map((part) => findTier(tiers, part)));
+    if (index < 0) return false;
+    const earned = earnedTier(p);
+    if (earned && earned.index >= index && isoOf(earned.thru) > group.exp) return true;
+    const current = p === medallionProgram() && medallionFor(state.mqd).current;
+    if (current && findTier(tiers, `${current.name} Medallion`) >= index && isoOf(medallionThrough()) > group.exp) return true;
+    const dayAfter = parseISODate(group.exp);
+    dayAfter.setDate(dayAfter.getDate() + 1);
+    return coveredThrough(p, index, isoOf(dayAfter));
+  }
+
+  // Where a progress count stands: the next level, how far to go, and progress toward it (0–1).
+  function progressInfo(p) {
+    const track = trackFor(p);
+    const tiers = benefitsFor(p);
+    if (!track || !tiers) return null;
+    const value = state.progress[p.id];
+    const n = value || 0;
+    const also = track.also || {};
+    // The next level still to earn: the first count not reached, or a reached one that also needs spend.
+    const nextIndex = track.steps.findIndex((step, i) => n < step || also[i]);
+    if (nextIndex < 0) return { track, tiers, value, n, next: null, toNext: 1 };
+    const at = track.steps[nextIndex];
+    const prev = nextIndex > 0 ? track.steps[nextIndex - 1] : 0;
+    return {
+      track,
+      tiers,
+      value,
+      n,
+      next: { name: tierLabel(tiers[nextIndex].name), at, left: Math.max(at - n, 0), also: also[nextIndex] },
+      toNext: Math.min((n - prev) / (at - prev), 1),
+    };
+  }
+
+  // "7 to Gold", or "Diamond Reserve also needs $18,000 on stays" once the count is there.
+  const nextText = (next) => (next.left ? `${fmt(next.left)} to ${next.name}` : `${next.name} also needs ${next.also}`);
 
   // Index of the level a status text refers to, or -1.
   function findTier(tiers, text) {
@@ -1612,7 +1736,10 @@
       const current = medallionFor(state.mqd).current;
       if (current) texts.push(`${current.name} Medallion`);
     }
-    return new Set(texts.map((t) => findTier(tiers, t)).filter((i) => i >= 0));
+    const held = new Set(texts.map((t) => findTier(tiers, t)).filter((i) => i >= 0));
+    const earned = earnedTier(p);
+    if (earned) held.add(earned.index);
+    return held;
   }
 
   // Your highest level in a program — its perks generally include the ones below it.
@@ -1634,6 +1761,7 @@
     pencil: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 2.5l2.5 2.5L6 12.5 2.5 13.5l1-3.5z"/></svg>',
     check: '<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7.5l2.6 2.6L11 4.5"/></svg>',
     lounge: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 10V7.5A2.5 2.5 0 0 1 7 5h6a2.5 2.5 0 0 1 2.5 2.5V10"/><path d="M3 10.5a1.5 1.5 0 0 1 3 0V12h8v-1.5a1.5 1.5 0 0 1 3 0V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M5 15v1.5M15 15v1.5"/></svg>',
+    download: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3.5v9M6 8.5l4 4 4-4M4 16.5h12"/></svg>',
     ticket: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h11A1.5 1.5 0 0 1 17 6.5V8a2 2 0 0 0 0 4v1.5a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 3 13.5V12a2 2 0 0 0 0-4z"/><path d="M12.5 5.5v9" stroke-dasharray="1.6 1.8"/></svg>',
   };
 
@@ -1710,7 +1838,7 @@
   function confetti(from) {
     if (reduceMotion.matches || !from) return;
     const canvas = h('canvas', { class: 'confetti', 'aria-hidden': 'true' });
-    document.body.append(canvas);
+    topLayer().append(canvas);
     const dpr = window.devicePixelRatio || 1;
     canvas.width = innerWidth * dpr;
     canvas.height = innerHeight * dpr;
@@ -1794,7 +1922,7 @@
     const out = [];
     for (const p of list) {
       const name = str(p && p.name, 60);
-      if (!name || typeof p.id !== 'string' || !p.id || seen.has(p.id)) continue;
+      if (!name || typeof p.id !== 'string' || !/^[a-z0-9][a-z0-9-]{0,39}$/.test(p.id) || seen.has(p.id)) continue;
       seen.add(p.id);
       const program = {
         id: p.id,
@@ -1872,7 +2000,7 @@
     s.cards = s.cards.filter((id) => id !== cardId);
     for (const p of s.programs) p.status = p.status.filter((line) => line.card !== cardId);
     s.programs = s.programs.filter((p) => !(p.addedBy && !s.cards.includes(p.addedBy)
-      && !p.status.length && s.balances[p.id] == null && !(s.members || {})[p.id]));
+      && !p.status.length && s.balances[p.id] == null && !(s.members || {})[p.id] && (s.progress || {})[p.id] == null));
   }
 
   // The previous version's example list had one hand-typed "Avis / Hertz / National" row. If it's still exactly
@@ -1897,13 +2025,17 @@
   function normalize(raw) {
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
     if (!['programs', 'balances', 'vouchers', 'mqd'].some((k) => k in raw)) return null;
-    const s = { programs: null, cards: [], notes: '', balances: {}, mqd: 0, members: {}, updated: {}, vouchers: [] };
+    const s = { programs: null, cards: [], notes: '', balances: {}, mqd: 0, progress: {}, members: {}, updated: {}, backedUp: '', vouchers: [] };
     if (raw.balances && typeof raw.balances === 'object') {
       for (const [id, v] of Object.entries(raw.balances)) if (isCount(v)) s.balances[id] = Math.floor(v);
     }
     if (raw.members && typeof raw.members === 'object') { // loyalty member / account numbers
       for (const [id, v] of Object.entries(raw.members)) { const number = str(v, 40); if (number) s.members[id] = number; }
     }
+    if (raw.progress && typeof raw.progress === 'object') { // this year's nights / PQP / Loyalty Points toward status
+      for (const [id, v] of Object.entries(raw.progress)) if (isCount(v)) s.progress[id] = Math.floor(v);
+    }
+    if (parseISODate(raw.backedUp)) s.backedUp = raw.backedUp; // last JSON backup
     if (raw.updated && typeof raw.updated === 'object') { // when each balance was last changed (YYYY-MM-DD)
       for (const [id, v] of Object.entries(raw.updated)) if (parseISODate(v)) s.updated[id] = v;
     }
@@ -1935,7 +2067,7 @@
       const s = normalize(JSON.parse(localStorage.getItem(KEY) || 'null'));
       if (s) return s;
     } catch (e) { /* corrupt or unavailable storage: start fresh */ }
-    return { programs: null, cards: [], notes: '', balances: {}, mqd: 0, members: {}, updated: {}, vouchers: [] }; // null programs → first-run setup
+    return { programs: null, cards: [], notes: '', balances: {}, mqd: 0, progress: {}, members: {}, updated: {}, backedUp: '', vouchers: [] }; // null programs → first-run setup
   }
 
   const state = load();
@@ -1962,6 +2094,8 @@
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') {
       if (saveTimer) saveNow();
+    } else if (rollOver()) {
+      renderAll(); // a new qualifying year started while backgrounded
     } else {
       renderToday();
       renderVouchers(); // days-left may have rolled over while backgrounded
@@ -1970,10 +2104,12 @@
 
   /* ---------- Editable numbers ---------- */
 
+  // Fields: "mqd", "bal:<program id>" (balance), "prog:<program id>" (this year's progress toward status).
   function getField(field) {
     if (field === 'mqd') return state.mqd;
-    const id = field.slice(4); // "bal:<id>"
-    return Object.prototype.hasOwnProperty.call(state.balances, id) ? state.balances[id] : null;
+    const [kind, id] = field.split(/:(.*)/s);
+    const store = kind === 'prog' ? state.progress : state.balances;
+    return Object.prototype.hasOwnProperty.call(store, id) ? store[id] : null;
   }
 
   function setField(field, value) {
@@ -1981,10 +2117,11 @@
       state.mqd = value ?? 0;
       state.updated.mqd = todayISO();
     } else {
-      const id = field.slice(4);
-      if (value == null) delete state.balances[id];
-      else state.balances[id] = value;
-      state.updated[id] = todayISO();
+      const [kind, id] = field.split(/:(.*)/s);
+      const store = kind === 'prog' ? state.progress : state.balances;
+      if (value == null) delete store[id];
+      else store[id] = value;
+      state.updated[kind === 'prog' ? field : id] = todayISO();
     }
     scheduleSave();
   }
@@ -2040,6 +2177,8 @@
     const finish = (commit, refocus) => {
       if (done) return;
       done = true;
+      const counted = field.startsWith('prog:') ? state.programs.find((p) => p.id === field.slice(5)) : null;
+      const earnedBefore = counted && earnedTier(counted);
       if (commit) {
         const parsed = parseEntry(input.value);
         if (parsed && parsed.value !== before) setField(field, parsed.value);
@@ -2054,6 +2193,25 @@
         if (TIERS.indexOf(now) > was) {
           confetti($('.delta'));
           showToast(`Welcome to ${now.name} Medallion!`);
+        }
+      } else if (counted) {
+        renderPrograms();
+        const open = detail.open && detailProgram() === counted;
+        if (open) {
+          renderDetailStatus(counted);
+          renderProgress(counted);
+          renderLevels(counted);
+        }
+        // Reached a new level: celebrate, and say how long it lasts.
+        const earned = earnedTier(counted);
+        if (earned && (!earnedBefore || earned.index > earnedBefore.index)) {
+          confetti(open ? $('#d-progress .prog-box') : null);
+          showToast(`${earned.tier.name} earned — yours through ${dateFmt.format(earned.thru)}`);
+        }
+        if (open) {
+          const again = $('#d-progress .num');
+          if (refocus && again) again.focus();
+          return;
         }
       }
       if (refocus) btn.focus();
@@ -2103,12 +2261,18 @@
   const lineExpired = (line) => { const days = daysLeft(line.exp); return days != null && days < 0; };
 
   // Tiers as colored pills, then where they come from, then a tag if it's expiring soon or expired.
-  function statusLine({ tier, via, exp }) {
-    const from = splitParts(via).map((part) => h('span', { class: part.length <= 28 ? 'nw' : null }, part));
+  function statusLine(group, p) {
+    const { tier, via, exp } = group;
     const days = tier ? daysLeft(exp) : null;
+    const parts = splitParts(via);
+    // Far-off end dates show as "thru 2/28/28"; within STATUS_SOON_DAYS the tag counts down instead, unless a
+    // longer-lasting status at that level makes the countdown moot.
+    const calm = days != null && (days > STATUS_SOON_DAYS || (days >= 0 && outlasted(p, group)));
+    if (calm && !parts.some((part) => /\bthru\b/i.test(part))) parts.push(`thru ${mdy(parseISODate(exp))}`);
+    const from = parts.map((part) => h('span', { class: part.length <= 28 ? 'nw' : null }, part));
     let tag = null;
     if (days != null && days < 0) tag = h('span', { class: 'tag danger' }, 'Expired');
-    else if (days != null && days <= STATUS_SOON_DAYS) tag = h('span', { class: 'tag warn' }, days === 0 ? 'Expires today' : `${plural(days, 'day')} left`);
+    else if (days != null && !calm) tag = h('span', { class: 'tag warn' }, days === 0 ? 'Expires today' : `${plural(days, 'day')} left`);
     return h('div', { class: days != null && days < 0 ? 'sline expired' : 'sline' },
       splitParts(tier).map(pill),
       from.length ? h('span', { class: 'via' }, from.flatMap((part, i) => (i ? [' · ', part] : [part]))) : null,
@@ -2116,7 +2280,9 @@
   }
 
   function statusBlock(p, withMedallion) {
-    const lines = mergedLines(p.status).map(statusLine);
+    const lines = mergedLines(p.status).map((group) => statusLine(group, p));
+    const earned = newlyEarned(p);
+    if (earned) lines.unshift(h('div', { class: 'sline' }, pill(earned.tier.name), h('span', { class: 'via' }, earned.via)));
     if (withMedallion) lines.unshift(h('div', { class: 'sline', id: 'medallion-status' }));
     return lines.length ? h('div', { class: 'slines' }, lines) : null;
   }
@@ -2144,7 +2310,7 @@
     return h('div', { class: 'delta' },
       h('div', { class: 'mqd-head' },
         h('div', { class: 'mqd-count' },
-          h('span', { class: 'mqd-label' }, 'MQDs'),
+          h('span', { class: 'mqd-label' }, `${mqdYear()} MQDs`),
           numButton('mqd', 'Delta MQDs', 'sm'),
           h('span', { class: 'of' }, `/ ${fmt(MQD_GOAL)}`)),
         h('div', { class: 'next', id: 'mqd-next' })),
@@ -2192,6 +2358,16 @@
     return tier ? h('div', { class: 'perk-line' }, perkLineContent(tier)) : null;
   }
 
+  // "18 nights · 7 to Gold" with a small bar, once you've entered a count in the program's details.
+  function progressMini(p) {
+    const info = progressInfo(p);
+    if (!info || info.value == null) return null;
+    return h('div', { class: 'prog-mini' },
+      h('div', null, h('strong', null, `${fmt(info.n)} ${info.track.unit}`),
+        info.next ? ` · ${nextText(info.next)}` : ' · top level reached'),
+      h('div', { class: 'mini-bar', 'aria-hidden': 'true' }, h('i', { style: `width:${Math.round(info.toNext * 100)}%` })));
+  }
+
   function programRow(p, index, withMedallion) {
     if (editMode) {
       const last = index === state.programs.length - 1;
@@ -2209,7 +2385,7 @@
     const main = h('div', { class: status ? 'row-main' : 'row-main solo' },
       h('button', { type: 'button', class: 'who-open', 'data-open': p.id },
         avatar(p),
-        h('div', { class: 'who' }, h('div', { class: 'name' }, p.name), status, perkLine(p, withMedallion))));
+        h('div', { class: 'who' }, h('div', { class: 'name' }, p.name), status, perkLine(p, withMedallion), progressMini(p))));
     if (p.unit) {
       main.append(h('div', { class: 'bal' },
         numButton(`bal:${p.id}`, `${p.name} balance`),
@@ -2230,7 +2406,7 @@
   };
   // Elite = a real tier: the computed Medallion for the Delta tracker, any typed/card status elsewhere (not lounges).
   const hasStatus = (p) => p.id !== 'lounges'
-    && (p === medallionProgram() ? !!medallionFor(state.mqd).current : p.status.some((line) => line.tier && !lineExpired(line)));
+    && (p === medallionProgram() ? !!medallionFor(state.mqd).current : p.status.some((line) => line.tier && !lineExpired(line)) || !!earnedTier(p));
   const matchesFilter = (p) => filter === 'all' || (filter === 'status' ? hasStatus(p) : categoryOf(p) === filter);
 
   function renderFilters() {
@@ -2286,6 +2462,72 @@
     renderStats();
   }
 
+  // Delta grants a tier as soon as you qualify, for the rest of that Medallion year and all of the next: qualifying
+  // in 2026 means status through Jan 31, 2028. MQDs start over every January 1.
+  const mqdYear = () => new Date().getFullYear();
+  const medallionThrough = () => new Date(mqdYear() + 2, 0, 31);
+  const mdy = (d) => `${d.getMonth() + 1}/${d.getDate()}/${String(d.getFullYear()).slice(2)}`;
+
+  // Highest Medallion you hold: earned this year, or one you entered from last year (e.g. Platinum thru 1/31/27).
+  function effectiveMedallion() {
+    const p = medallionProgram();
+    const tier = p && topTier(p);
+    return tier ? TIERS.find((t) => tier.name.startsWith(t.name)) || null : null;
+  }
+
+  // A new qualifying year: counts start over, and a level earned with last year's count is kept as a regular
+  // status with its end date, so it keeps counting (and shows up in reminders) until it lapses.
+  function rollOver() {
+    if (!state.programs) return false;
+    const now = new Date();
+    const kept = [];
+    let changed = false;
+    // Adds the earned level unless a status at least as high already lasts as long.
+    const keep = (p, index, tier, via, thru) => {
+      const exp = isoOf(thru);
+      if (!coveredThrough(p, index, exp)) p.status.unshift({ tier, via, exp });
+      kept.push(p === delta ? tier : `${p.name} ${tier}`);
+    };
+    const delta = medallionProgram();
+    for (const p of state.programs) {
+      const track = trackFor(p);
+      const stamp = parseISODate(state.updated[`prog:${p.id}`]);
+      if (!track || state.progress[p.id] == null || !stamp || qualYear(track, stamp) >= qualYear(track, now)) continue;
+      const earned = earnedTier(p);
+      if (earned) keep(p, earned.index, earned.tier.name, `earned in ${qualLabel(track, earned.year)}`, earned.thru);
+      delete state.progress[p.id];
+      delete state.updated[`prog:${p.id}`];
+      changed = true;
+    }
+    const stamp = parseISODate(state.updated.mqd);
+    if (state.mqd > 0 && stamp && stamp.getFullYear() < now.getFullYear()) {
+      const current = medallionFor(state.mqd).current;
+      const tiers = delta && benefitsFor(delta);
+      if (current && tiers) {
+        const year = stamp.getFullYear();
+        keep(delta, findTier(tiers, `${current.name} Medallion`), `${current.name} Medallion`, `earned in ${year}`, new Date(year + 2, 0, 31));
+      }
+      state.mqd = 0;
+      delete state.updated.mqd;
+      changed = true;
+    }
+    if (!changed) return false;
+    saveNow();
+    if (kept.length) {
+      showToast(kept.length > 1 ? `New qualifying year: the ${kept.length} statuses you earned stay on your list until they end`
+        : `New qualifying year: ${kept[0]} stays on your list until it ends`);
+    }
+    return true;
+  }
+
+  // "3,000 to Platinum", or "10,000 to keep Gold" while a tier held from last year is above this year's next one.
+  function mqdNextText(mqd = state.mqd) {
+    const { next } = medallionFor(mqd);
+    const held = effectiveMedallion();
+    if (!next) return 'Diamond — top tier';
+    return held && held.min >= next.min ? `${fmt(held.min - mqd)} to keep ${held.name}` : `${fmt(next.min - mqd)} to ${next.name}`;
+  }
+
   function medallionFor(mqd) {
     let current = null;
     for (const t of TIERS) {
@@ -2300,15 +2542,13 @@
     const mqd = state.mqd;
     const { current, next } = medallionFor(mqd);
 
-    $('#medallion-status').replaceChildren(current
-      ? pill(`${current.name} Medallion`)
-      : h('span', { class: 'via' }, 'No Medallion status yet'));
+    $('#medallion-status').replaceChildren(...(current
+      ? [pill(`${current.name} Medallion`), h('span', { class: 'via' }, `earned in ${mqdYear()} · thru ${mdy(medallionThrough())}`)]
+      : [h('span', { class: 'via' }, `No Medallion earned in ${mqdYear()} yet`)]));
     const top = topTier(medallionProgram());
     $('#medallion-perks').hidden = !top;
     if (top) $('#medallion-perks').replaceChildren(...perkLineContent(top));
-    $('#mqd-next').textContent = next
-      ? `${fmt(next.min - mqd)} to ${next.name}`
-      : 'Diamond — top tier';
+    $('#mqd-next').textContent = mqdNextText(mqd);
 
     const fill = $('#mqd-fill');
     void fill.offsetWidth; // a freshly built bar animates up from empty
@@ -2345,14 +2585,15 @@
     $('#st-1-btn').setAttribute('aria-label', `${plural(statuses, 'elite status', 'elite statuses')}. See what they get you`);
     if (medallion) {
       const { current, next } = medallionFor(state.mqd);
+      const shown = effectiveMedallion() || current; // your highest active tier; the ring tracks this year's MQDs
       const low = current ? current.min : 0;
       const progress = next ? Math.max(0, Math.min(1, (state.mqd - low) / (next.min - low))) : 1;
-      $('#st-2').replaceChildren(ring(progress, current), current ? current.name : 'None');
+      $('#st-2').replaceChildren(ring(progress, shown), shown ? shown.name : 'None');
       $('#st-2').classList.add('tier');
-      $('#st-2-l').replaceChildren(ring(progress, current), 'Medallion');
+      $('#st-2-l').replaceChildren(ring(progress, shown), 'Medallion');
       $('#st-2-btn').dataset.go = 'medallion';
-      $('#st-2-btn').setAttribute('aria-label', `${current ? current.name : 'No'} Medallion, `
-        + `${next ? `${fmt(next.min - state.mqd)} MQDs to ${next.name}` : 'top tier'}. Show progress`);
+      $('#st-2-btn').setAttribute('aria-label', `${shown ? shown.name : 'No'} Medallion. ${fmt(state.mqd)} MQDs this year, `
+        + `${mqdNextText()}. Show progress`);
     } else {
       $('#st-2').replaceChildren(String(state.programs.length));
       $('#st-2').classList.remove('tier');
@@ -2564,20 +2805,27 @@
     const index = state.programs.findIndex((p) => p.id === sheetId);
     if (index < 0) return;
     const [removed] = state.programs.splice(index, 1);
-    const balance = state.balances[removed.id];
-    const member = state.members[removed.id];
-    const updated = state.updated[removed.id];
-    delete state.balances[removed.id];
-    delete state.members[removed.id];
-    delete state.updated[removed.id];
+    const { id } = removed;
+    // Everything stored under the program, so Undo can put it all back.
+    const saved = {
+      balance: state.balances[id], member: state.members[id], progress: state.progress[id],
+      updated: state.updated[id], progUpdated: state.updated[`prog:${id}`],
+    };
+    delete state.balances[id];
+    delete state.members[id];
+    delete state.progress[id];
+    delete state.updated[id];
+    delete state.updated[`prog:${id}`];
     sheet.close();
     scheduleSave();
     renderPrograms();
     showToast(`Removed “${removed.name}”`, () => {
       state.programs.splice(Math.min(index, state.programs.length), 0, removed);
-      if (balance != null) state.balances[removed.id] = balance;
-      if (member) state.members[removed.id] = member;
-      if (updated) state.updated[removed.id] = updated;
+      if (saved.balance != null) state.balances[id] = saved.balance;
+      if (saved.member) state.members[id] = saved.member;
+      if (saved.progress != null) state.progress[id] = saved.progress;
+      if (saved.updated) state.updated[id] = saved.updated;
+      if (saved.progUpdated) state.updated[`prog:${id}`] = saved.progUpdated;
       scheduleSave();
       renderPrograms();
     });
@@ -2640,7 +2888,31 @@
     $('#d-sub').textContent = sub.join(' · ');
     renderMember(p, false);
     renderDetailStatus(p);
+    renderProgress(p);
     renderLevels(p);
+  }
+
+  // This year's count toward the next level, editable in place, with the full ladder of thresholds.
+  function renderProgress(p) {
+    const box = $('#d-progress');
+    const info = progressInfo(p);
+    box.hidden = !info || p === medallionProgram();
+    if (box.hidden) return;
+    const { track, tiers, n, next } = info;
+    const max = track.steps[track.steps.length - 1];
+    const bar = h('div', { class: 'bar', role: 'img', 'aria-label': `${fmt(n)} of ${fmt(max)} ${track.unit}` },
+      h('div', { class: 'fill', style: `width:${Math.min(n / max, 1) * 100}%` }),
+      track.steps.slice(0, -1).map((step) => h('span', { class: n >= step ? 'dot hit' : 'dot', style: `left:${(step / max) * 100}%` })));
+    box.replaceChildren(
+      h('h3', { class: 'd-label' }, `${qualLabel(track, qualYear(track))} progress`),
+      h('div', { class: 'delta prog-box' },
+        h('div', { class: 'mqd-head' },
+          h('div', { class: 'mqd-count' }, numButton(`prog:${p.id}`, `${p.name} ${track.unit} this year`, 'sm'), h('span', { class: 'of' }, track.unit)),
+          h('div', { class: 'next' }, info.value == null ? 'Tap the number to add yours' : next ? nextText(next) : 'Top level reached')),
+        bar,
+        h('p', { class: 'prog-legend' }, track.steps.flatMap((step, i) => [i ? ' · ' : null,
+          h('span', { class: n >= step ? 'hit' : null }, `${tierLabel(tiers[i].name)} ${fmt(step)}`)])),
+        h('p', { class: 'fine' }, `${track.note} Counts start over each qualifying year; anything you earned is kept as a status with its end date.`)));
   }
 
   function renderMember(p, editing) {
@@ -2704,7 +2976,7 @@
 
   // One status (pills + where it's from) with what it gets you and what it normally takes.
   // Expiration line under a status: date and days left, or an "Add date" prompt; editable in place.
-  function expRow(group, index) {
+  function expRow(group, index, p) {
     if (expEditing === index) {
       const input = h('input', { type: 'date', class: 'exp-input', id: 'd-exp-input', 'aria-label': 'Status expiration date' });
       input.value = group.exp || '';
@@ -2721,11 +2993,13 @@
     }
     const date = parseISODate(group.exp);
     const days = daysUntil(date);
+    const renewed = days >= 0 && outlasted(p, group);
     const text = days < 0 ? `Expired ${dateFmt.format(date)}`
-      : days === 0 ? `Expires today (${dateFmt.format(date)})`
-        : `Valid through ${dateFmt.format(date)} · ${plural(days, 'day')} left`;
+      : renewed ? `Valid through ${dateFmt.format(date)} · you keep this level longer through another status`
+        : days === 0 ? `Expires today (${dateFmt.format(date)})`
+          : `Valid through ${dateFmt.format(date)} · ${plural(days, 'day')} left`;
     return h('div', { class: 'exp-row' },
-      h('span', { class: days < 0 ? 'exp-text danger' : days <= STATUS_SOON_DAYS ? 'exp-text warn' : 'exp-text' }, text),
+      h('span', { class: days < 0 ? 'exp-text danger' : days <= STATUS_SOON_DAYS && !renewed ? 'exp-text warn' : 'exp-text' }, text),
       h('button', { type: 'button', class: 'link', 'data-exp-edit': String(index) }, 'Change date'),
       days >= 0 ? h('button', { type: 'button', class: 'link', 'data-exp-cal': String(index) }, 'Add to calendar') : null);
   }
@@ -2751,28 +3025,34 @@
       parts.map(pill),
       emptyText ? h('span', { class: 'via' }, emptyText) : null,
       from ? h('span', { class: 'via' }, from) : null));
-    const tiers = parts.map((t) => perksFor(p, t)).filter(Boolean);
+    // A status you keep longer through another one shows just its dates; its perks are listed with that one.
+    const tiers = group && group.exp && daysLeft(group.exp) >= 0 && outlasted(p, group) ? [] : parts.map((t) => perksFor(p, t)).filter(Boolean);
     for (const tier of tiers) {
       if (tiers.length > 1) block.append(h('p', { class: 'earn' }, tier.name));
       block.append(h('ul', { class: 'perks' }, tier.perks.map((perk) => h('li', null, perk))));
       if (tier.earn) block.append(h('p', { class: 'earn' }, `Normally requires ${tier.earn}`));
     }
-    if (!tiers.length && parts.length && p.id !== 'lounges') {
+    if (!tiers.length && parts.length && p.id !== 'lounges' && !(group && outlasted(p, group))) {
       block.append(h('p', { class: 'no-perks' }, 'No perk details for this level yet — check the program’s site.'));
     }
-    if (group && parts.length && p.id !== 'lounges') block.append(expRow(group, index));
+    if (group && parts.length && p.id !== 'lounges') block.append(expRow(group, index, p));
     return block;
   }
 
   function renderDetailStatus(p) {
     const blocks = [];
     if (p === medallionProgram()) {
-      const { current, next } = medallionFor(state.mqd);
-      const progress = `${fmt(state.mqd)} MQDs · ${next ? `${fmt(next.min - state.mqd)} to ${next.name}` : 'top tier'}`;
-      blocks.push(perkBlock(p, current ? `${current.name} Medallion` : '', progress, current ? null : 'No Medallion status yet'));
+      const { current } = medallionFor(state.mqd);
+      const progress = `${current ? `earned in ${mqdYear()} · thru ${mdy(medallionThrough())} · ` : ''}${fmt(state.mqd)} MQDs · ${mqdNextText()}`;
+      blocks.push(perkBlock(p, current ? `${current.name} Medallion` : '', progress, current ? null : `No Medallion earned in ${mqdYear()} yet`));
     }
+    const earned = newlyEarned(p);
+    if (earned) blocks.push(perkBlock(p, earned.tier.name, earned.via));
     mergedLines(p.status).forEach((group, i) => blocks.push(perkBlock(p, group.tier, group.via, null, group, i)));
     const heading = h('h3', { class: 'd-label' }, 'Your status');
+    if (p === medallionProgram() && !p.status.some((line) => /medallion/i.test(line.tier))) {
+      blocks.push(h('p', { class: 'fine' }, 'Still hold a higher tier from last year? Add it with Edit — e.g. Level “Platinum Medallion”, expires Jan 31 — so it counts until then.'));
+    }
     if (!blocks.length) {
       $('#d-status').replaceChildren(heading, h('p', { class: 'no-perks' }, benefitsFor(p)
         ? 'No status here yet — the levels below show what each one gets you.'
@@ -2900,6 +3180,8 @@
         const tier = current && perksFor(p, `${current.name} Medallion`);
         if (tier) tier.perks.forEach((perk) => add(p, perk, tier.name, ''));
       }
+      const earned = newlyEarned(p);
+      if (earned) earned.tier.perks.forEach((perk) => add(p, perk, earned.tier.name, earned.via));
       for (const group of mergedLines(p.status)) {
         if (!group.tier || (group.exp && daysLeft(group.exp) < 0)) continue;
         const via = splitParts(group.via).join(' · ');
@@ -2988,8 +3270,14 @@
     const inWindow = (days, window) => (future ? days >= 0 : days >= -30 && days <= window);
     const items = [];
     for (const p of state.programs || []) {
-      for (const group of mergedLines(p.status)) {
-        if (!group.tier || !parseISODate(group.exp) || p.id === 'lounges') continue;
+      // Levels earned this year count too, so the calendar export covers when they end.
+      const earned = [];
+      const count = newlyEarned(p);
+      if (count) earned.push({ tier: count.tier.name, via: `earned in ${qualLabel(trackFor(p), count.year)}`, exp: isoOf(count.thru) });
+      const medallion = p === medallionProgram() && medallionFor(state.mqd).current;
+      if (medallion) earned.push({ tier: `${medallion.name} Medallion`, via: `earned in ${mqdYear()}`, exp: isoOf(medallionThrough()) });
+      for (const group of [...earned, ...mergedLines(p.status)]) {
+        if (!group.tier || !parseISODate(group.exp) || p.id === 'lounges' || outlasted(p, group)) continue;
         const item = statusItem(p, group);
         if (inWindow(item.days, STATUS_SOON_DAYS)) items.push(item);
       }
@@ -3006,12 +3294,21 @@
   function renderUpcoming() {
     const setup = !state.programs;
     const items = setup ? [] : upcomingItems();
+    const backup = setup ? null : backupDue();
+    renderBackupStatus();
     $('#cal-btn').hidden = setup || !upcomingItems({ future: true }).length;
     updateBadge(items.filter((i) => i.days <= 30).length);
-    $('#upcoming').hidden = !items.length;
-    if (!items.length) return;
-    $('#up-count').textContent = `· ${items.length}`;
-    $('#up-list').replaceChildren(...items.map((item) => {
+    $('#upcoming').hidden = !items.length && !backup;
+    if ($('#upcoming').hidden) return;
+    $('#up-cal').hidden = !items.length;
+    $('#up-count').textContent = `· ${items.length + (backup ? 1 : 0)}`;
+    const backupRow = backup && h('li', null, h('button', { type: 'button', class: 'up-item', 'data-backup': '' },
+      h('span', { class: 'v-ico', 'aria-hidden': 'true' }, svgIcon(ICON.download)),
+      h('div', { class: 'up-body' },
+        h('div', { class: 'up-name' }, 'Back up your data'),
+        h('div', { class: 'up-sub' }, backup === 'never' ? 'It’s only saved on this device — tap to save a backup file' : `Last backup ${relativeDay(state.backedUp)} — tap to save a fresh one`)),
+      h('span', { class: 'tag warn' }, backup === 'never' ? 'Never' : 'Due')));
+    $('#up-list').replaceChildren(...(backupRow ? [backupRow] : []), ...items.map((item) => {
       const when = item.days < 0 ? h('span', { class: 'tag danger' }, 'Expired')
         : h('span', { class: 'tag warn' }, item.days === 0 ? 'Today' : plural(item.days, 'day'));
       const verb = item.days < 0 ? 'expired' : 'expires';
@@ -3041,18 +3338,29 @@
   // Calendar file (.ics) with an all-day event on each expiration date and alerts at 9 a.m. 30 days before,
   // 7 days before, and on the day — reminders that work even when the app is closed.
   const icsText = (text) => text.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
+  // Lines longer than 75 bytes continue on the next line after a space (RFC 5545), never mid-character.
+  const utf8Size = (ch) => { const c = ch.codePointAt(0); return c < 0x80 ? 1 : c < 0x800 ? 2 : c < 0x10000 ? 3 : 4; };
   const icsFold = (line) => {
     const parts = [];
-    let rest = line;
-    while (rest.length > 74) { parts.push(rest.slice(0, 74)); rest = ` ${rest.slice(74)}`; }
-    parts.push(rest);
-    return parts.join('\r\n');
+    let part = '';
+    let bytes = 0;
+    for (const ch of line) {
+      const size = utf8Size(ch);
+      if (bytes + size > (parts.length ? 74 : 75)) { parts.push(part); part = ''; bytes = 0; }
+      part += ch;
+      bytes += size;
+    }
+    parts.push(part);
+    return parts.join('\r\n ');
   };
+  // A readable, stable id piece; text with no Latin letters or digits falls back to a short hash.
+  const uidPart = (text) => slugify(text) || [...text].reduce((h, ch) => Math.imul(h ^ ch.codePointAt(0), 16777619) >>> 0, 2166136261).toString(36);
   const icsDate = (d) => `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
 
   function buildICS(items) {
     const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
     const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Points & Status Tracker//EN', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH'];
+    const used = new Set();
     for (const item of items) {
       let uid;
       let subject;
@@ -3060,18 +3368,21 @@
       if (item.kind === 'status') {
         const tier = splitParts(item.group.tier).join(' · ');
         const info = perksFor(item.p, splitParts(item.group.tier)[0]);
-        uid = `status-${slugify(item.p.id)}-${slugify(tier)}`;
+        uid = `status-${uidPart(item.p.id)}-${uidPart(tier)}`;
         subject = `${item.p.name} ${tier}`;
         description = [
-          item.group.via && `From ${splitParts(item.group.via).join(' · ')}.`,
+          item.group.via && (/^earned\b/i.test(item.group.via) ? `Earned ${item.group.via.slice(7)}.` : `From ${splitParts(item.group.via).join(' · ')}.`),
           info && info.earn && `To requalify: ${info.earn}.`,
           'Reminder from Points & Status Tracker.',
         ].filter(Boolean).join('\n');
       } else {
-        uid = `voucher-${slugify(item.v.name)}-${item.v.exp}`;
+        uid = `voucher-${uidPart(item.v.name)}-${item.v.exp}`;
         subject = `Voucher: ${item.v.name}`;
         description = [item.v.note, 'Use it before it expires. Reminder from Points & Status Tracker.'].filter(Boolean).join('\n');
       }
+      // Same id twice (two identical vouchers) would make calendars keep only one event.
+      for (let n = 2, base = uid; used.has(uid); n++) uid = `${base}-${n}`;
+      used.add(uid);
       const end = new Date(item.date);
       end.setDate(end.getDate() + 1);
       lines.push('BEGIN:VEVENT', `UID:${uid}@statuspoints.github.io`, `DTSTAMP:${stamp}`,
@@ -3090,9 +3401,8 @@
   function saveCalendar(ics, name, btn) {
     const file = new File([ics], name, { type: 'text/calendar' });
     const url = URL.createObjectURL(file);
-    const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     let opened = false;
-    if (iOS) opened = !!window.open(url, '_blank');
+    if (IS_IOS) opened = !!window.open(url, '_blank');
     if (!opened) {
       const a = h('a', { href: url, download: name });
       document.body.append(a);
@@ -3120,7 +3430,8 @@
     if (e.target.closest('#up-cal')) { addAllToCalendar(e.target.closest('#up-cal')); return; }
     const open = e.target.closest('[data-open]');
     if (open) { openDetail(open.dataset.open); return; }
-    if (e.target.closest('[data-voucher]')) jumpTo($('#vouchers-section'));
+    if (e.target.closest('[data-voucher]')) { jumpTo($('#vouchers-section')); return; }
+    if (e.target.closest('[data-backup]')) backUp();
   });
   $('#cal-btn').addEventListener('click', (e) => addAllToCalendar(e.currentTarget));
 
@@ -3282,7 +3593,7 @@
     const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || '');
     if (!m) return null;
     const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
-    return Number.isNaN(d.getTime()) ? null : d;
+    return d.getMonth() === Number(m[2]) - 1 && d.getDate() === Number(m[3]) ? d : null; // e.g. Feb 30 → null
   }
 
   function daysUntil(date) {
@@ -3386,9 +3697,12 @@
 
   /* ---------- Backup & restore ---------- */
 
-  function todayISO() {
-    const d = new Date();
+  function isoOf(d) {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+
+  function todayISO() {
+    return isoOf(new Date());
   }
 
   // Phones: hand the file to the share sheet (Save to Files, Notes, AirDrop, email). Elsewhere: download it.
@@ -3428,10 +3742,18 @@
       if (!p.unit) out.push(p.name);
       else out.push(`${p.name} — ${balance == null ? 'no balance entered' : `${fmt(balance)} ${p.unit}${updated}`}`);
       if (state.members[p.id]) out.push(`  Member #: ${state.members[p.id]}`);
+      const earnedNow = newlyEarned(p);
+      if (earnedNow) {
+        out.push(`  ${earnedNow.tier.name} (${earnedNow.via})`);
+        pushPerks(p, earnedNow.tier.name);
+      }
+      const prog = progressInfo(p);
+      if (prog && prog.value != null) {
+        out.push(`  ${qualLabel(prog.track, qualYear(prog.track))} progress: ${fmt(prog.n)} ${prog.track.unit}${prog.next ? ` · ${nextText(prog.next)}` : ' · top level'}`);
+      }
       if (p === medallion) {
-        const { current, next } = medallionFor(state.mqd);
-        out.push(`  ${current ? `${current.name} Medallion` : 'No Medallion status yet'} · ${fmt(state.mqd)} MQDs · `
-          + (next ? `${fmt(next.min - state.mqd)} to ${next.name}` : 'top tier'));
+        const { current } = medallionFor(state.mqd);
+        out.push(`  ${current ? `${current.name} Medallion earned in ${mqdYear()} (valid through ${dateFmt.format(medallionThrough())})` : `No Medallion earned in ${mqdYear()} yet`} · ${fmt(state.mqd)} MQDs · ${mqdNextText()}`);
         if (current) pushPerks(p, `${current.name} Medallion`);
       }
       for (const line of mergedLines(p.status)) {
@@ -3469,10 +3791,30 @@
     saveFile(`points-status-${todayISO()}.txt`, `﻿${summaryText()}`, 'text/plain;charset=utf-8');
   });
 
-  $('#export-btn').addEventListener('click', () => {
+  function backUp() {
+    state.backedUp = todayISO();
     const json = JSON.stringify({ app: 'points-status-tracker', exportedAt: new Date().toISOString(), data: state }, null, 2);
     saveFile(`points-status-backup-${todayISO()}.json`, json, 'application/json');
-  });
+    renderStats(); // refreshes "Coming up" and the footer's last-backup line
+  }
+
+  $('#export-btn').addEventListener('click', backUp);
+
+  // Your data only lives on this device. Nudge a backup once you've been entering data for two weeks without one,
+  // or when the last backup is 60+ days old and things have changed since.
+  function backupDue() {
+    if (!state.programs) return null;
+    const dates = Object.values(state.updated).filter((d) => parseISODate(d)).sort();
+    if (!dates.length) return null;
+    if (!state.backedUp) return daysUntil(parseISODate(dates[0])) <= -14 ? 'never' : null;
+    return daysUntil(parseISODate(state.backedUp)) <= -60 && dates[dates.length - 1] > state.backedUp ? 'stale' : null;
+  }
+
+  function renderBackupStatus() {
+    const el = $('#backup-status');
+    el.hidden = !state.programs;
+    el.textContent = state.backedUp ? `Last backup: ${relativeDay(state.backedUp)}` : 'No backup yet — your data lives only on this device';
+  }
 
   $('#import-btn').addEventListener('click', () => $('#import-file').click());
 
@@ -3493,6 +3835,7 @@
     const previous = clone(state);
     Object.assign(state, next);
     editMode = false;
+    rollOver();
     saveNow();
     intro = true;
     renderAll();
@@ -3508,7 +3851,14 @@
   let toastTimer = 0;
   let undoAction = null;
 
+  // Open sheets sit in the browser's top layer, so toasts and confetti go inside the open one to stay visible.
+  function topLayer() {
+    return document.querySelector('dialog[open]') || document.body;
+  }
+
   function showToast(message, onUndo) {
+    const host = topLayer();
+    if ($('#toast').parentNode !== host) host.append($('#toast'));
     $('#toast-msg').textContent = message;
     undoAction = onUndo || null;
     $('#toast-undo').hidden = !onUndo;
@@ -3529,6 +3879,45 @@
     if (action) action();
   });
 
+  /* ---------- Install hint ---------- */
+
+  const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const IS_STANDALONE = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  const HINT_KEY = 'status-tracker-install-tip';
+  let installPrompt = null; // Chrome/Edge/Android: the browser's own install dialog
+
+  function hintDismissed() {
+    try { return localStorage.getItem(HINT_KEY) === 'dismissed'; } catch (e) { return true; }
+  }
+
+  function renderInstallHint() {
+    const show = !IS_STANDALONE && !hintDismissed() && !!state.programs && (IS_IOS || !!installPrompt);
+    $('#install').hidden = !show;
+    if (!show) return;
+    $('#install-btn').hidden = !installPrompt;
+    $('#install-text').textContent = installPrompt
+      ? 'Install it to open like an app — it works offline too.'
+      : 'Tap the Share button, then “Add to Home Screen”, to open it like an app — it works offline too.';
+  }
+
+  addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    installPrompt = e;
+    renderInstallHint();
+  });
+  addEventListener('appinstalled', () => { installPrompt = null; renderInstallHint(); });
+  $('#install-btn').addEventListener('click', async () => {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    try { await installPrompt.userChoice; } catch (e) { /* dismissed */ }
+    installPrompt = null;
+    renderInstallHint();
+  });
+  $('#install-close').addEventListener('click', () => {
+    try { localStorage.setItem(HINT_KEY, 'dismissed'); } catch (e) { /* private mode: hide for this visit */ }
+    $('#install').hidden = true;
+  });
+
   /* ---------- Boot ---------- */
 
   function renderToday() {
@@ -3544,6 +3933,7 @@
     $('#export-btn').hidden = setup;
     if (setup) renderUpcoming();
     $('#text-btn').hidden = setup;
+    renderInstallHint();
     if (setup) {
       renderSetup();
     } else {
@@ -3565,10 +3955,10 @@
 
   $('#catalog-names').replaceChildren(...CATALOG_ITEMS.map((c) => h('option', { value: c.name })));
   renderToday();
+  rollOver();
   renderAll();
 
-  const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
-  if (standalone && navigator.storage && navigator.storage.persist) {
+  if (IS_STANDALONE && navigator.storage && navigator.storage.persist) {
     navigator.storage.persist().catch(() => {});
   }
 

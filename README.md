@@ -11,7 +11,7 @@ Open the site in your phone's browser, then:
 - **iPhone (Safari):** Share → **Add to Home Screen**
 - **Android (Chrome):** ⋮ menu → **Install app** (or **Add to Home screen**)
 
-It launches full-screen from the home screen and works with no network.
+It launches full-screen from the home screen and works with no network. The app shows a one-time tip with these steps (or an **Install** button where the browser supports it) until you install it or dismiss the tip.
 
 ## Make it yours
 
@@ -22,10 +22,27 @@ The first time you open it, pick the programs you have and, optionally, the cred
 - **Under every status** in the list, a one-line summary of what it gets you (e.g. "✓ Breakfast / F&B credit · Room upgrades · 80% bonus") — for your highest level in that program.
 - **Your perks** (the **Perks** button, or tap the Elite statuses tile): every benefit across all your statuses in one place, grouped into Food & breakfast, Lounges, Upgrades, Check-in & checkout, Airport/seats/bags, Bonus points & miles, Car rental, and more. Search it ("breakfast", "late checkout", "lounge") to see which status covers you; tap a source to open that program.
 
+### Progress toward status
+
+- **Delta:** type your MQDs for the year. The row shows the Medallion you've earned, e.g. "Gold Medallion · earned in 2026 · thru 1/31/28" (Delta status earned in a year lasts through January 31 two years later). If you still hold a higher tier from last year, add it with Edit, for example "Platinum Medallion" expiring Jan 31. The bar then shows what it takes to keep it ("10,000 to keep Platinum"). **Plan ahead** previews expected MQDs.
+- **Hilton, Marriott, IHG, Hyatt, Wyndham, United, American, Southwest, Alaska Atmos, and Aeroplan:** open the program and tap the number in its progress section (e.g. **2026 progress**) to enter this year's nights, PQP, Loyalty Points, tier points, status points, or SQC. The row shows "42 nights · 8 to Platinum". Once you reach a level, it counts as your status with its real end date, for example "Platinum Elite · earned in 2026 · thru 2/28/28". Levels that also need spend (Hilton Diamond Reserve, Marriott Ambassador) are never awarded from a count alone.
+- **New qualifying year:** counts start over (American's year starts March 1; the others January 1). Anything you earned with last year's count stays on your list as a status with its end date, so it keeps counting and gets reminders.
+
+| Program | Counted in | Status earned in 2026 lasts through |
+| --- | --- | --- |
+| Delta | MQDs | Jan 31, 2028 |
+| United | PQP | Jan 31, 2028 |
+| American | Loyalty Points (Mar–Feb year) | Mar 31, 2028 (for Mar 2026–Feb 2027) |
+| Southwest, Alaska, Aeroplan | tier points, status points, SQC | Dec 31, 2027 |
+| Hilton | nights | Mar 31, 2028 |
+| Marriott, Hyatt | nights | end of Feb 2028 |
+| IHG, Wyndham | nights | Dec 31, 2027 |
+
 ### Expiration dates & reminders
 
 - Add an expiration date to any status from its detail sheet (**Add date**) or in **Edit**. Statuses noted "thru 12/31/27" (like IHG Platinum from the Sapphire Reserve) get their date automatically.
-- **Coming up** at the top lists statuses expiring within 90 days and vouchers within 60 (plus anything that lapsed in the last month). Rows show "48 days left" or "Expired"; expired statuses stop counting as elite.
+- **Coming up** at the top lists statuses expiring within 90 days and vouchers within 60 (plus anything that lapsed in the last month). Rows show "48 days left" or "Expired"; expired statuses stop counting as elite. A status you keep anyway (you've requalified, or a card gives the same level) is left out, so reminders are only for things you'd actually lose.
+- Statuses with a far-off end date show it on the row ("thru 2/28/28").
 - **Add to calendar** saves every upcoming expiration as calendar events with alerts 30 days before, 7 days before, and on the day (9 a.m.) — real reminders even when the app is closed. On iPhone it opens straight into Calendar; elsewhere it downloads a `.ics` file to open.
 - On devices that support it, the installed app's icon shows a badge for anything due within 30 days.
 
@@ -44,11 +61,13 @@ The first time you open it, pick the programs you have and, optionally, the cred
 
 ### Card presets
 
-Pick your cards (setup screen, or **Edit → Choose cards**) and the complimentary statuses and lounge access they come with are filled in automatically, adding programs like Avis or National if needed. Tap a card again to take its statuses off; statuses you typed yourself are never touched. Presets cover 60 cards from Amex (including every Delta SkyMiles card), Chase, Capital One, Citi, Barclays, Bilt, Bank of America, and Wells Fargo — searchable in the picker — based on published benefits as of September 2026. Cards with no elite status (e.g. Sapphire Preferred, Venture) are included so everyone can find theirs (`CARDS` in `index.html`). Statuses you only unlock by spending are left out, and most card statuses need enrolling with the issuer.
+Pick your cards (setup screen, or **Edit → Choose cards**) and the complimentary statuses and lounge access they come with are filled in automatically, adding programs like Avis or National if needed. Tap a card again to take its statuses off; statuses you typed yourself are never touched. Presets cover 61 cards from Amex (including every Delta SkyMiles card), Chase, Capital One, Citi, Barclays, Bilt, Bank of America, and Wells Fargo — searchable in the picker — based on published benefits as of September 2026. Cards with no elite status (e.g. Sapphire Preferred, Venture) are included so everyone can find theirs (`CARDS` in `index.html`). Statuses you only unlock by spending are left out, and most card statuses need enrolling with the issuer.
 
 ## Your data
 
 Everything — your program list, statuses, balances, MQDs, and vouchers — is saved only in your browser's local storage (`status-tracker-v2`) on that device. Nothing is uploaded, nothing syncs between devices, and each person who opens the site has their own separate tracker.
+
+The app reminds you in **Coming up** to save a backup if you've never made one, or if your last one is two months old and your data has changed since.
 
 Use **Export as text** at the bottom to save an easy-to-read `.txt` summary of your programs, balances, statuses, Medallion progress, vouchers, and cards. Use **Back up data** to save a backup file (on a phone it opens the share sheet — save it to Files or AirDrop it), and **Restore from backup** to load it on a new device. Deleting the home-screen app or clearing the browser's website data erases your data, so keep a backup.
 

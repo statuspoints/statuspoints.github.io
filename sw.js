@@ -2,7 +2,7 @@
 // Files are served cache-first and refreshed in the background (stale-while-revalidate),
 // so an edit reaches an installed copy on the launch after it's deployed.
 // Bump VERSION when the SHELL list changes so old caches get cleaned up.
-const VERSION = 'v3';
+const VERSION = 'v4';
 const CACHE = `status-tracker-shell-${VERSION}`;
 const SHELL = [
   './',
@@ -35,9 +35,14 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET' || new URL(request.url).origin !== self.location.origin) return;
   const isNavigation = request.mode === 'navigate';
 
+  // One cache entry per file: query strings (?utm=…, cache-busters) are dropped from the key, so an old entry
+  // saved under some query can't shadow the fresh copy.
+  const key = new URL(request.url);
+  key.search = '';
+
   event.respondWith((async () => {
     const cache = await caches.open(CACHE);
-    const cached = (await cache.match(request, { ignoreSearch: true }))
+    const cached = (await cache.match(key.href))
       || (isNavigation ? await cache.match('./index.html') : undefined);
 
     // Revalidate with the server (a cheap 304 when nothing changed) rather than trusting the browser's HTTP
@@ -46,10 +51,11 @@ self.addEventListener('fetch', (event) => {
       ? new Request(request.url, { cache: 'no-cache', credentials: 'same-origin' })
       : new Request(request, { cache: 'no-cache' });
     const refresh = fetch(fresh)
-      .then((response) => {
-        // Redirected responses can't be replayed for navigations, so don't cache them.
+      .then(async (response) => {
+        // Redirected responses can't be replayed for navigations, so don't cache them. The write is awaited so
+        // the worker isn't stopped before it lands.
         if (response.ok && !response.redirected && response.type === 'basic') {
-          cache.put(request, response.clone());
+          await cache.put(key.href, response.clone()).catch(() => {});
         }
         return response;
       })
