@@ -1135,6 +1135,8 @@
   .theme-pick button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); color: var(--text); font-weight: 600; }
   .stale { color: var(--warn); }
   .icon-spacer { flex: none; width: 36px; }
+  .receive-options { display: grid; gap: 10px; }
+  .receive-options .add, .receive-options .btn-secondary { width: 100%; }
   @media (max-width: 480px) { /* the switcher sits under the date instead of squeezing the title */
     .hero-top { flex-wrap: wrap; row-gap: 10px; }
     .hero-top > div { flex: 1 1 200px; min-width: 0; }
@@ -1378,6 +1380,10 @@
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2.5v8M4.5 7L8 10.5 11.5 7M3 13.5h10"/></svg>
         Back up data
       </button>
+      <button class="ghost-btn" id="send-btn" type="button">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="1.75" width="7" height="12.5" rx="1.5"/><path d="M7 11.75h2"/></svg>
+        Send to another device
+      </button>
       <button class="ghost-btn" id="people-btn" type="button">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="5.5" r="2.5"/><path d="M1.75 13.5a4.25 4.25 0 0 1 8.5 0M11 3.25a2.5 2.5 0 0 1 0 4.5M12.25 9.5a4.25 4.25 0 0 1 2 4"/></svg>
         <span id="people-btn-label">Add a person</span>
@@ -1478,6 +1484,34 @@
       <span class="spacer"></span>
       <button class="add" id="perks-done" type="button">Done</button>
     </div>
+  </div>
+</dialog>
+<dialog class="sheet" id="send-sheet" aria-labelledby="send-title">
+  <div class="sheet-body">
+    <div class="grab" aria-hidden="true"></div>
+    <h2 id="send-title" tabindex="-1" autofocus>Send to another device</h2>
+    <p class="setup-sub">Open this link on your phone, tablet, or computer to copy your tracker there. Nothing is uploaded: everything travels inside the link itself.</p>
+    <p class="fine" id="send-warn">The link holds your whole tracker, member numbers included, so send it only to yourself or someone you trust. Opening it asks before changing anything.</p>
+    <p class="cards-status" id="send-status" role="status"></p>
+    <div class="sheet-actions">
+      <button class="btn-secondary" id="send-cancel" type="button">Cancel</button>
+      <span class="spacer"></span>
+      <button class="btn-secondary" id="send-copy" type="button" disabled>Copy link</button>
+      <button class="add" id="send-share" type="button" disabled hidden>Share link</button>
+    </div>
+  </div>
+</dialog>
+<dialog class="sheet" id="receive-sheet" aria-labelledby="receive-title">
+  <div class="sheet-body">
+    <div class="grab" aria-hidden="true"></div>
+    <h2 id="receive-title" tabindex="-1" autofocus>Copy this tracker here?</h2>
+    <p class="setup-sub" id="receive-summary"></p>
+    <div class="receive-options">
+      <button class="add" id="receive-person" type="button">Add as another person</button>
+      <button class="btn-secondary" id="receive-replace" type="button">Replace the tracker on this device</button>
+      <button class="link" id="receive-cancel" type="button">Cancel</button>
+    </div>
+    <p class="fine">Replacing can be undone right after. Adding a person keeps everyone's tracker separate — switch with the name at the top.</p>
   </div>
 </dialog>
 <dialog class="sheet" id="people-sheet" aria-labelledby="people-title">
@@ -4576,6 +4610,11 @@
       showToast('That file isn’t a Points & Status backup');
       return;
     }
+    replaceTracker(next, 'Backup restored');
+  });
+
+  // Swaps in another tracker for whoever is showing, with Undo.
+  function replaceTracker(next, message) {
     const previous = clone(state);
     Object.assign(state, next);
     editMode = false;
@@ -4583,12 +4622,116 @@
     saveNow();
     intro = true;
     renderAll();
-    showToast('Backup restored', () => {
+    showToast(message, () => {
       Object.assign(state, previous);
       saveNow();
       renderAll();
     });
+  }
+
+  /* ---------- Send to another device: the tracker travels in the link's #fragment, never to a server ---------- */
+
+  const toB64url = (bytes) => {
+    let bin = '';
+    for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+    return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  };
+  const fromB64url = (text) => Uint8Array.from(atob(text.replace(/-/g, '+').replace(/_/g, '/')), (c) => c.charCodeAt(0));
+  const pipeBytes = async (bytes, stream) => new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(stream)).arrayBuffer());
+
+  // "z…" = deflate-compressed JSON (most browsers), "j…" = plain JSON where compression isn't available.
+  async function trackerLink() {
+    const payload = { app: 'points-status-tracker', v: 1, name: activePerson().name, data: state };
+    const bytes = new TextEncoder().encode(JSON.stringify(payload));
+    const packed = 'CompressionStream' in window ? `z${toB64url(await pipeBytes(bytes, new CompressionStream('deflate-raw')))}` : `j${toB64url(bytes)}`;
+    return `${location.origin}${location.pathname}#import=${packed}`;
+  }
+
+  async function readTrackerLink(packed) {
+    const bytes = fromB64url(packed.slice(1));
+    const json = packed[0] === 'z' ? await pipeBytes(bytes, new DecompressionStream('deflate-raw')) : bytes;
+    const payload = JSON.parse(new TextDecoder().decode(json));
+    const data = payload && payload.app === 'points-status-tracker' ? normalize(payload.data) : null;
+    return data && data.programs ? { data, name: str(payload.name, 30) } : null;
+  }
+
+  const sendSheet = $('#send-sheet');
+  let sendUrl = '';
+  $('#send-btn').addEventListener('click', async () => {
+    if (!state.programs) { showToast('Set up your tracker first'); return; }
+    sendUrl = '';
+    $('#send-copy').disabled = true;
+    $('#send-share').disabled = true;
+    $('#send-share').hidden = !navigator.share;
+    $('#send-status').textContent = 'Preparing the link…';
+    sendSheet.showModal();
+    if (saveTimer) saveNow();
+    try {
+      sendUrl = await trackerLink(); // ready before the tap, so sharing happens inside the tap
+      $('#send-status').textContent = `Link ready (${Math.ceil(sendUrl.length / 1024)} KB).`;
+      $('#send-copy').disabled = false;
+      $('#send-share').disabled = false;
+    } catch (err) {
+      $('#send-status').textContent = 'Couldn’t make the link on this browser — use Back up data instead.';
+    }
   });
+  $('#send-share').addEventListener('click', async () => {
+    if (!sendUrl) return;
+    try {
+      await navigator.share({ title: 'Points & Status Tracker', url: sendUrl });
+      sendSheet.close();
+    } catch (err) { /* dismissed */ }
+  });
+  $('#send-copy').addEventListener('click', async () => {
+    if (!sendUrl) return;
+    try {
+      await navigator.clipboard.writeText(sendUrl);
+      $('#send-status').textContent = 'Link copied — paste it into a message to yourself, then open it on the other device.';
+    } catch (err) {
+      $('#send-status').textContent = 'Couldn’t copy on this browser — use Share link or Back up data instead.';
+    }
+  });
+  $('#send-cancel').addEventListener('click', () => sendSheet.close());
+  sendSheet.addEventListener('click', (e) => { if (e.target === sendSheet) sendSheet.close(); });
+
+  // Opening a link made above: ask before changing anything, unless this device has nothing set up yet.
+  const receiveSheet = $('#receive-sheet');
+  let received = null;
+  async function receiveFromLink() {
+    const match = /^#import=([zj][A-Za-z0-9_-]+)$/.exec(location.hash);
+    if (!match) return;
+    history.replaceState(null, '', location.pathname + location.search); // a reload won't ask again
+    try { received = await readTrackerLink(match[1]); } catch (err) { received = null; }
+    if (!received) { showToast('That link couldn’t be read — it may have been cut off'); return; }
+    if (!state.programs) { replaceTracker(received.data, 'Tracker copied to this device'); received = null; return; }
+    const { data, name } = received;
+    const dates = Object.values(data.updated).filter((d) => parseISODate(d)).sort();
+    $('#receive-summary').textContent = [
+      name ? `${name}’s tracker` : 'A tracker',
+      `with ${plural(data.programs.length, 'program')}`,
+      data.cards.length ? `and ${plural(data.cards.length, 'card')}` : '',
+      dates.length ? `· last updated ${dateFmt.format(parseISODate(dates[dates.length - 1]))}` : '',
+    ].filter(Boolean).join(' ');
+    receiveSheet.showModal();
+  }
+  $('#receive-replace').addEventListener('click', () => {
+    receiveSheet.close();
+    if (received) replaceTracker(received.data, 'Tracker copied to this device');
+    received = null;
+  });
+  $('#receive-person').addEventListener('click', () => {
+    receiveSheet.close();
+    if (!received) return;
+    const taken = new Set(people.list.map((person) => person.id));
+    let id;
+    do { id = `u${Math.random().toString(36).slice(2, 8)}`; } while (taken.has(id));
+    try { localStorage.setItem(storageKey(id), JSON.stringify(received.data)); } catch (err) { showToast('Not enough storage on this device'); return; }
+    people.list.push({ id, name: received.name || 'Imported' });
+    received = null;
+    switchPerson(id);
+  });
+  $('#receive-cancel').addEventListener('click', () => { receiveSheet.close(); received = null; });
+  addEventListener('hashchange', receiveFromLink);
 
   /* ---------- Toast ---------- */
 
@@ -4885,6 +5028,7 @@
   renderToday();
   rollOver();
   renderAll();
+  receiveFromLink();
 
   if (IS_STANDALONE && navigator.storage && navigator.storage.persist) {
     navigator.storage.persist().catch(() => {});

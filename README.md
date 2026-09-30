@@ -83,6 +83,10 @@ Pick your cards (setup screen, or **Edit → Choose cards**) and the complimenta
 
 Everyone who opens the site on their own phone gets their own tracker automatically. To share one device (a family iPad, say), tap **Add a person** at the bottom. Each person gets a completely separate tracker: programs, statuses, balances, cards, and reminders. Their name appears at the top; tap it to switch people, rename someone, or remove them (with Undo). Backups and exports cover whoever is showing and include their name in the file name.
 
+## Moving to another device
+
+**Send to another device** (at the bottom) makes a link that carries your whole tracker. Share it to yourself (Messages, AirDrop, email), open it on the other device, and choose **Add as another person** or **Replace the tracker on this device**. A device with nothing set up yet takes it right away. Nothing is uploaded: the data rides in the part of the link after `#`, which browsers never send to a server. The link includes member numbers, so only send it to yourself or someone you trust.
+
 ## Your data
 
 Everything — your program list, statuses, balances, MQDs, and vouchers — is saved only in your browser's local storage (`status-tracker-v2`, plus `status-tracker-v2:<id>` for each extra person on the device) on that device. Nothing is uploaded, nothing syncs between devices, and each person who opens the site has their own separate tracker.
