@@ -1,6 +1,6 @@
 # Points & Status Tracker
 
-A personal airline and hotel loyalty tracker: point balances, elite status, Delta Medallion progress, and voucher expirations. One self-contained `index.html`, no frameworks or external requests, and it works offline once loaded.
+A personal airline and hotel loyalty tracker: point balances, elite status and progress toward the next level, what each status gets you, and reminders before statuses, points, vouchers, or card annual fees come due. One self-contained `index.html`, no frameworks or external requests, and it works offline once loaded.
 
 **Live app:** https://statuspoints.github.io/
 
@@ -66,8 +66,8 @@ Each program's details say whether its points or miles expire (as of September 2
   - Perks cover Delta, United, American, Southwest, Alaska Atmos, Aeroplan, Hilton, Marriott, IHG, Hyatt, Wyndham, Leading Hotels, Omni, Avis, Hertz, and National (as of September 2026).
 - **Filter chips** above the list show All, Elite (programs where you hold status), Airlines, Hotels, Points, or Cars & lounges.
 - **Header tiles** are tappable: Elite statuses filters the list, Medallion jumps to your Delta progress, Vouchers jumps to your vouchers.
-- **Plan ahead** (under the Medallion bar): drag the slider to add expected MQDs and see which tier you'd reach. It's a preview only and isn't saved.
-- Reaching a new Medallion tier gets a little confetti. All motion is skipped if your device has Reduce Motion on.
+- **Plan ahead** (under the Medallion bar): drag to add expected MQDs (and Delta card spend) and see which tier you'd reach or keep. It's a preview only and isn't saved.
+- Reaching a new level, whether a Medallion tier or one earned from a progress count, gets a little confetti. All motion is skipped if your device has Reduce Motion on.
 
 ### Card presets
 
@@ -85,7 +85,7 @@ Everything — your program list, statuses, balances, MQDs, and vouchers — is 
 
 The app reminds you in **Coming up** to save a backup if you've never made one, or if your last one is two months old and your data has changed since.
 
-Use **Export as text** at the bottom to save an easy-to-read `.txt` summary of your programs, balances, statuses, Medallion progress, vouchers, and cards. Use **Back up data** to save a backup file (on a phone it opens the share sheet — save it to Files or AirDrop it), and **Restore from backup** to load it on a new device. Deleting the home-screen app or clearing the browser's website data erases your data, so keep a backup.
+Use **Export as text** at the bottom to save an easy-to-read `.txt` summary of your programs, balances, notes, statuses and their perks, progress, points expiration dates, vouchers, and cards with their annual fee dates. Use **Back up data** to save a backup file (on a phone it opens the share sheet — save it to Files or AirDrop it), and **Restore from backup** to load it on a new device. Deleting the home-screen app or clearing the browser's website data erases your data, so keep a backup.
 
 ## Files
 

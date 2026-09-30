@@ -4178,8 +4178,9 @@
         const via = splitParts(line.via).join(' · ');
         const expDate = parseISODate(line.exp);
         const expires = expDate ? ` — ${daysUntil(expDate) < 0 ? 'EXPIRED' : 'valid through'} ${dateFmt.format(expDate)}` : '';
-        out.push(`  ${tier && via ? `${tier} (${via})` : tier || via}${expires}`);
-        for (const part of splitParts(line.tier)) pushPerks(p, part);
+        const kept = expDate && daysUntil(expDate) >= 0 && outlasted(p, line); // a longer-lasting status covers it
+        out.push(`  ${tier && via ? `${tier} (${via})` : tier || via}${expires}${kept ? ' (you keep this level longer through another status)' : ''}`);
+        if (!kept) for (const part of splitParts(line.tier)) pushPerks(p, part);
       }
       out.push('');
     }
