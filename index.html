@@ -1431,7 +1431,7 @@
       <button type="button" data-values="show" aria-pressed="true">Show</button>
       <button type="button" data-values="hide" aria-pressed="false">Hide</button>
     </div>
-    <div class="theme-pick" role="group" aria-label="Appearance">
+    <div class="theme-pick" id="theme-pick" role="group" aria-label="Appearance">
       <span>Appearance</span>
       <button type="button" data-theme-pick="auto" aria-pressed="true">Auto</button>
       <button type="button" data-theme-pick="light" aria-pressed="false">Light</button>
@@ -2394,6 +2394,7 @@
     const seen = new Set();
     const out = [];
     for (const p of list) {
+      if (out.length >= 200) break; // no real tracker has more; keeps a hostile import from flooding the page
       const name = str(p && p.name, 60);
       if (!name || typeof p.id !== 'string' || !/^[a-z0-9][a-z0-9-]{0,39}$/.test(p.id) || seen.has(p.id)) continue;
       seen.add(p.id);
@@ -2965,7 +2966,7 @@
   // Under a balance: "points · ≈ $480", plus its age when it's getting stale.
   function unitLine(p) {
     const value = state.hideValues ? null : valueOf(p);
-    return [p.unit, value ? h('span', { class: 'worth-inline' }, ` · ≈ ${money(value)}`) : null, staleNote(p)];
+    return [p.unit, value >= 1 ? h('span', { class: 'worth-inline' }, ` · ≈ ${money(value)}`) : null, staleNote(p)];
   }
 
   // " · 5 mo old" under a balance nobody has touched in 4+ months, so it gets refreshed before you rely on it.
@@ -3079,7 +3080,7 @@
     const total = valued.reduce((sum, p) => sum + valueOf(p), 0);
     $('#worth-btn').hidden = state.hideValues || editMode || !valued.length;
     $('#worth-btn').textContent = `≈ ${money(total)} in points & miles ›`;
-    for (const btn of document.querySelectorAll('[data-values]')) btn.setAttribute('aria-pressed', String((btn.dataset.values === 'hide') === state.hideValues));
+    syncValuesPick();
     if (!$('#worth-sheet').open) return;
     $('#worth-total').textContent = `≈ ${money(total)}`;
     $('#worth-list').replaceChildren(...valued.sort((a, b) => valueOf(b) - valueOf(a)).map((p) => h('li', null, avatar(p),
@@ -3090,9 +3091,14 @@
       + (unvalued.length ? ` Not included (no value yet): ${unvalued.join(', ')}.` : '');
   }
   function setHideValues(hide) {
+    if (!state.programs) return;
     state.hideValues = hide;
     scheduleSave();
-    renderPrograms();
+    renderAll();
+  }
+  function syncValuesPick() {
+    $('#values-pick').hidden = !state.programs;
+    for (const btn of document.querySelectorAll('[data-values]')) btn.setAttribute('aria-pressed', String((btn.dataset.values === 'hide') === state.hideValues));
   }
   $('#worth-btn').addEventListener('click', () => { $('#worth-sheet').showModal(); renderWorth(); });
   $('#worth-done').addEventListener('click', () => $('#worth-sheet').close());
@@ -3597,7 +3603,7 @@
     if (box.hidden) return;
     const c = catalogFor(p);
     const typical = c && VALUES[c.id];
-    const input = h('input', { type: 'number', class: 'exp-input', id: 'd-cpp', min: '0.01', max: '100', step: '0.05', inputmode: 'decimal', placeholder: typical ? String(typical) : '¢', 'aria-label': `Your value for ${p.name} ${p.unit}, in cents each` });
+    const input = h('input', { type: 'text', class: 'exp-input', id: 'd-cpp', inputmode: 'decimal', autocomplete: 'off', placeholder: typical ? String(typical) : '¢', 'aria-label': `Your value for ${p.name} ${p.unit}, in cents each` });
     input.value = state.cpp[p.id] ? String(state.cpp[p.id]) : '';
     box.replaceChildren(h('h3', { class: 'd-label' }, 'What it’s worth'), worthLine(p),
       h('div', { class: 'cpp-row' }, h('label', { for: 'd-cpp' }, 'Your value (¢ each)'), input),
@@ -3920,8 +3926,8 @@
   detail.addEventListener('input', (e) => {
     if (e.target.id !== 'd-cpp') return;
     const p = detailProgram();
-    const v = Number(e.target.value);
-    if (e.target.value.trim() && v > 0 && v <= 100) state.cpp[p.id] = Math.round(v * 100) / 100;
+    const v = Math.round(Number(e.target.value.trim().replace(',', '.')) * 100) / 100; // "1,5" works too
+    if (e.target.value.trim() && v > 0 && v <= 100) state.cpp[p.id] = v;
     else delete state.cpp[p.id];
     scheduleSave();
     $('#d-worth-line').replaceWith(worthLine(p)); // the field stays put while typing
@@ -4872,18 +4878,38 @@
   };
   const fromB64url = (text) => Uint8Array.from(atob(text.replace(/-/g, '+').replace(/_/g, '/')), (c) => c.charCodeAt(0));
   const pipeBytes = async (bytes, stream) => new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(stream)).arrayBuffer());
+  // Unpacks a link, stopping at LINK_MAX_BYTES so a hostile link can't expand into gigabytes and hang the page.
+  const LINK_MAX_BYTES = 2_000_000;
+  async function inflateCapped(bytes) {
+    const reader = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw')).getReader();
+    const chunks = [];
+    let size = 0;
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      size += value.length;
+      if (size > LINK_MAX_BYTES) { reader.cancel(); throw new Error('link too large'); }
+      chunks.push(value);
+    }
+    const out = new Uint8Array(size);
+    let at = 0;
+    for (const chunk of chunks) { out.set(chunk, at); at += chunk.length; }
+    return out;
+  }
 
   // "z…" = deflate-compressed JSON (most browsers), "j…" = plain JSON where compression isn't available.
   async function trackerLink() {
     const payload = { app: 'points-status-tracker', v: 1, name: activePerson().name, data: state };
     const bytes = new TextEncoder().encode(JSON.stringify(payload));
-    const packed = 'CompressionStream' in window ? `z${toB64url(await pipeBytes(bytes, new CompressionStream('deflate-raw')))}` : `j${toB64url(bytes)}`;
+    let packed = `j${toB64url(bytes)}`;
+    try { packed = `z${toB64url(await pipeBytes(bytes, new CompressionStream('deflate-raw')))}`; } catch (err) { /* older browser: plain link */ }
     return `${location.origin}${location.pathname}#import=${packed}`;
   }
 
   async function readTrackerLink(packed) {
     const bytes = fromB64url(packed.slice(1));
-    const json = packed[0] === 'z' ? await pipeBytes(bytes, new DecompressionStream('deflate-raw')) : bytes;
+    if (bytes.length > LINK_MAX_BYTES) throw new Error('link too large');
+    const json = packed[0] === 'z' ? await inflateCapped(bytes) : bytes;
     const payload = JSON.parse(new TextDecoder().decode(json));
     const data = payload && payload.app === 'points-status-tracker' ? normalize(payload.data) : null;
     return data && data.programs ? { data, name: str(payload.name, 30) } : null;
@@ -4935,6 +4961,7 @@
     const match = /^#import=([zj][A-Za-z0-9_-]+)$/.exec(location.hash);
     if (!match) return;
     history.replaceState(null, '', location.pathname + location.search); // a reload won't ask again
+    if (match[1][0] === 'z' && !('DecompressionStream' in window)) { showToast('This browser is too old to open that link — update it, or use a backup file'); return; }
     try { received = await readTrackerLink(match[1]); } catch (err) { received = null; }
     if (!received) { showToast('That link couldn’t be read — it may have been cut off'); return; }
     if (!state.programs) { replaceTracker(received.data, 'Tracker copied to this device'); received = null; return; }
@@ -5160,7 +5187,7 @@
   let theme = 'auto';
   try { const saved = localStorage.getItem(THEME_KEY); if (saved === 'light' || saved === 'dark') theme = saved; } catch (e) { /* default */ }
   applyTheme(theme);
-  document.querySelector('.theme-pick').addEventListener('click', (e) => {
+  $('#theme-pick').addEventListener('click', (e) => {
     const pick = e.target.closest('[data-theme-pick]');
     if (!pick) return;
     theme = pick.dataset.themePick;
@@ -5239,6 +5266,7 @@
     renderInstallHint();
     renderNews();
     renderPeople();
+    syncValuesPick();
     if (setup) {
       renderSetup();
     } else {
