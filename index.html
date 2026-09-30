@@ -3506,7 +3506,8 @@
     const own = (id) => state.programs.find((x) => catalogFor(x) && catalogFor(x).id === id);
     const row = (target, a, b, note, balance, unit) => {
       const mine = typeof target === 'object' && own(target.id);
-      const amount = balance != null ? ` · ${fmt(balance)} → ${fmt(Math.floor((balance * b) / a))}${unit ? ` ${unit}` : ''}` : '';
+      // "85,000 → 170,000 points" only where the ratio changes the number; 1:1 speaks for itself.
+      const amount = balance != null && a !== b ? ` · ${fmt(balance)} → ${fmt(Math.floor((balance * b) / a))}${unit ? ` ${unit}` : ''}` : '';
       return h('li', null, h('button', { type: 'button', class: mine ? 'xfer-row mine' : 'xfer-row', 'data-open': mine ? mine.id : null, disabled: mine ? null : '' },
         avatar(target), h('span', { class: 'xfer-body' }, h('span', { class: 'xfer-name' }, target.name),
           h('small', null, `${ratioText(a, b)}${amount}${note ? ` · ${note}` : ''}`))));
