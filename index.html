@@ -953,6 +953,11 @@
   .d-title { flex: 1; min-width: 0; }
   .d-sub { margin: 2px 0 0; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
   .d-sec { display: grid; gap: 10px; }
+  .exp-ok { display: flex; align-items: flex-start; gap: 8px; margin: 0; font-size: 14px; }
+  .exp-ok svg { flex: none; width: 14px; height: 14px; margin-top: 3px; color: var(--accent); }
+  .exp-rule { margin: 0; font-size: 14px; }
+  .activity-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .activity-row label { font-size: 14px; font-weight: 600; }
   .d-label { margin: 0; font-size: 11.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
   .member-row { display: flex; align-items: center; gap: 8px; min-height: 44px; }
   .member-num {
@@ -1265,6 +1270,7 @@
     <section class="d-sec" id="d-member" aria-label="Member number"></section>
     <section class="d-sec" id="d-status" aria-label="Your status"></section>
     <section class="d-sec" id="d-progress" aria-label="This year's progress" hidden></section>
+    <section class="d-sec" id="d-expiry" aria-label="Points expiration" hidden></section>
     <section class="d-sec" id="d-levels" aria-label="Status levels"></section>
     <div class="sheet-actions d-actions">
       <a class="ghost-btn" id="d-site" target="_blank" rel="noopener noreferrer">Website ↗</a>
@@ -1621,6 +1627,28 @@
   const qualYear = (track, d = new Date()) => d.getFullYear() - (d.getMonth() + 1 < (track.starts || 1) ? 1 : 0);
   const qualLabel = (track, y) => (track.starts ? `${y}–${String(y + 1).slice(2)}` : String(y));
 
+  // How each program's points or miles expire, as of EXPIRY_AS_OF. `months`: that long with no earning or
+  // redeeming and the balance is gone. `exemptIfElite`: any active status in the program stops the clock, as does
+  // holding one of `cards`. `from`: a paused policy — nothing expires before that date.
+  const EXPIRY_AS_OF = 'September 2026';
+  const EXPIRY = {
+    delta: { never: true }, united: { never: true }, southwest: { never: true }, jetblue: { never: true }, virgin: { never: true },
+    alaska: { never: true, note: 'An account with no activity for 24 months is locked until you call Alaska, but the points stay.' },
+    american: { months: 24, cards: ['aadvantage-executive'], note: 'Members under 21 and primary AAdvantage credit cardholders are exempt.' },
+    aeroplan: { months: 18, from: '2026-11-30', exemptIfElite: true, cards: ['chase-aeroplan'], note: 'Expiration is paused until Nov 30, 2026. Elite members and primary Aeroplan cardholders are exempt.' },
+    flyingblue: { months: 24 },
+    ba: { months: 36 },
+    koreanair: { note: 'SKYPASS miles expire 10 years after they’re earned (Dec 31 of the 10th year), and activity doesn’t extend them — check your account for the next batch due.' },
+    hilton: { months: 24 }, marriott: { months: 24 }, hyatt: { months: 24 },
+    ihg: { months: 12, exemptIfElite: true },
+    wyndham: { months: 18, cards: ['wyndham-earner-premier'], note: 'Points also expire 4 years after they’re earned, whatever your activity. Earner Premier cardholders are exempt from both.' },
+    choice: { months: 18, exemptIfElite: true },
+    accor: { months: 12, note: 'Only earning counts as activity here — redeeming doesn’t reset the clock.' },
+    amex: { bank: true }, chase: { bank: true }, capitalone: { bank: true },
+    citi: { bank: true, note: 'Points expire 60 days after your last ThankYou card closes.' },
+    bilt: { months: 18, note: 'Paying rent through Bilt or using a Bilt card counts as activity.' },
+  };
+
   // Where to check balances and manage each program.
   const SITES = {
     delta: 'www.delta.com', united: 'www.united.com', american: 'www.aa.com', southwest: 'www.southwest.com',
@@ -1648,6 +1676,24 @@
   const catalogFor = (p) => CATALOG_BY_ID[p.id] || catalogByName(p.name);
   const benefitsFor = (p) => { const c = catalogFor(p); return (c && BENEFITS[c.id]) || null; };
   const trackFor = (p) => { const c = catalogFor(p); return (c && TRACKS[c.id]) || null; };
+  const expiryFor = (p) => { const c = catalogFor(p); return (p.unit && c && EXPIRY[c.id]) || null; };
+
+  // When a balance runs out if nothing happens: null if it can't (never expires, or you're exempt) or no last
+  // activity date is known. `exempt` names what protects it.
+  function pointsExpiry(p) {
+    const rule = expiryFor(p);
+    if (!rule || !rule.months) return null;
+    const card = (rule.cards || []).map((id) => CARD_BY_ID[id]).find((c) => state.cards.includes(c.id));
+    if (card) return { rule, exempt: `your ${card.name} card` };
+    if (rule.exemptIfElite && hasStatus(p)) return { rule, exempt: 'your elite status' };
+    const last = parseISODate(state.activity[p.id]);
+    if (!last) return { rule, date: null };
+    const date = new Date(last.getFullYear(), last.getMonth() + rule.months, last.getDate());
+    if (date.getDate() !== last.getDate()) date.setDate(0); // Aug 31 + 18 months → end of Feb, not early March
+    const floor = parseISODate(rule.from);
+    const until = floor && floor > date ? floor : date;
+    return { rule, date: until, days: daysUntil(until) };
+  }
   const tierLabel = (name) => name.replace(/\b(Elite|Medallion|Premier)\b/g, '').replace(/\s+/g, ' ').trim();
 
   // The level a progress count has already earned — programs award it as soon as you qualify, through `thru`.
@@ -2037,7 +2083,7 @@
   function normalize(raw) {
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
     if (!['programs', 'balances', 'vouchers', 'mqd'].some((k) => k in raw)) return null;
-    const s = { programs: null, cards: [], renewals: {}, notes: '', balances: {}, mqd: 0, progress: {}, members: {}, updated: {}, backedUp: '', vouchers: [] };
+    const s = { programs: null, cards: [], renewals: {}, notes: '', balances: {}, activity: {}, mqd: 0, progress: {}, members: {}, updated: {}, backedUp: '', vouchers: [] };
     if (raw.balances && typeof raw.balances === 'object') {
       for (const [id, v] of Object.entries(raw.balances)) if (isCount(v)) s.balances[id] = Math.floor(v);
     }
@@ -2046,6 +2092,9 @@
     }
     if (raw.progress && typeof raw.progress === 'object') { // this year's nights / PQP / Loyalty Points toward status
       for (const [id, v] of Object.entries(raw.progress)) if (isCount(v)) s.progress[id] = Math.floor(v);
+    }
+    if (raw.activity && typeof raw.activity === 'object') { // last earn/redeem per program, for points expiration
+      for (const [id, v] of Object.entries(raw.activity)) if (parseISODate(v)) s.activity[id] = v;
     }
     if (parseISODate(raw.backedUp)) s.backedUp = raw.backedUp; // last JSON backup
     if (raw.updated && typeof raw.updated === 'object') { // when each balance was last changed (YYYY-MM-DD)
@@ -2082,7 +2131,7 @@
       const s = normalize(JSON.parse(localStorage.getItem(KEY) || 'null'));
       if (s) return s;
     } catch (e) { /* corrupt or unavailable storage: start fresh */ }
-    return { programs: null, cards: [], renewals: {}, notes: '', balances: {}, mqd: 0, progress: {}, members: {}, updated: {}, backedUp: '', vouchers: [] }; // null programs → first-run setup
+    return { programs: null, cards: [], renewals: {}, notes: '', balances: {}, activity: {}, mqd: 0, progress: {}, members: {}, updated: {}, backedUp: '', vouchers: [] }; // null programs → first-run setup
   }
 
   const state = load();
@@ -2134,6 +2183,8 @@
     } else {
       const [kind, id] = field.split(/:(.*)/s);
       const store = kind === 'prog' ? state.progress : state.balances;
+      // A balance that goes up or down means you earned or redeemed — that resets an inactivity clock.
+      if (kind === 'bal' && store[id] != null && value != null && value !== store[id]) state.activity[id] = todayISO();
       if (value == null) delete store[id];
       else store[id] = value;
       state.updated[kind === 'prog' ? field : id] = todayISO();
@@ -2200,6 +2251,7 @@
       }
       paintNum(btn);
       input.replaceWith(btn);
+      if (field.startsWith('bal:')) renderUpcoming(); // a changed balance resets a points-expiry clock
       if (field === 'mqd') {
         updateMedallion();
         // Crossed into a higher Medallion tier: celebrate.
@@ -2850,8 +2902,9 @@
     // Everything stored under the program, so Undo can put it all back.
     const saved = {
       balance: state.balances[id], member: state.members[id], progress: state.progress[id],
-      updated: state.updated[id], progUpdated: state.updated[`prog:${id}`],
+      updated: state.updated[id], progUpdated: state.updated[`prog:${id}`], activity: state.activity[id],
     };
+    delete state.activity[id];
     delete state.balances[id];
     delete state.members[id];
     delete state.progress[id];
@@ -2867,6 +2920,7 @@
       if (saved.progress != null) state.progress[id] = saved.progress;
       if (saved.updated) state.updated[id] = saved.updated;
       if (saved.progUpdated) state.updated[`prog:${id}`] = saved.progUpdated;
+      if (saved.activity) state.activity[id] = saved.activity;
       scheduleSave();
       renderPrograms();
     });
@@ -2930,7 +2984,37 @@
     renderMember(p, false);
     renderDetailStatus(p);
     renderProgress(p);
+    renderExpiry(p);
     renderLevels(p);
+  }
+
+  // Whether the balance can expire, and when, from the last time you earned or redeemed.
+  function renderExpiry(p) {
+    const box = $('#d-expiry');
+    const rule = expiryFor(p);
+    box.hidden = !rule;
+    if (!rule) return;
+    const unit = p.unit === 'miles' ? 'Miles' : 'Points';
+    const ok = (text) => h('p', { class: 'exp-ok' }, svgIcon(ICON.check), text);
+    const parts = [h('h3', { class: 'd-label' }, `Do your ${unit.toLowerCase()} expire?`)];
+    const info = pointsExpiry(p);
+    if (rule.never) parts.push(ok(`${unit} don’t expire.`));
+    else if (rule.bank) parts.push(ok(`${unit} don’t expire while your card account is open.`));
+    else if (!rule.months) parts.push(h('p', { class: 'exp-rule' }, `${unit} expire on a fixed schedule.`));
+    else if (info.exempt) parts.push(ok(`Safe — ${info.exempt} keeps them from expiring (otherwise ${rule.months} months without activity).`));
+    else {
+      parts.push(h('p', { class: 'exp-rule' }, `${unit} expire after ${rule.months} months with no earning or redeeming.`));
+      const input = h('input', { type: 'date', class: 'exp-input', id: 'd-activity', max: todayISO(), 'aria-label': 'Last activity date' });
+      input.value = state.activity[p.id] || '';
+      const verdict = !info.date ? h('span', { class: 'exp-text' }, 'Add your last activity date for a reminder before they expire.')
+        : info.days < 0 ? h('span', { class: 'exp-text danger' }, `Expired ${dateFmt.format(info.date)} — contact the program; some reinstate points.`)
+          : info.days <= STATUS_SOON_DAYS
+            ? h('span', { class: 'exp-text warn' }, `Expire ${dateFmt.format(info.date)} · ${plural(info.days, 'day')} left — earn or redeem any amount to reset the clock`)
+            : h('span', { class: 'exp-text' }, `Safe until ${dateFmt.format(info.date)} · ${plural(info.days, 'day')} left`);
+      parts.push(h('div', { class: 'activity-row' }, h('label', { for: 'd-activity' }, 'Last activity'), input), verdict);
+    }
+    if (rule.note) parts.push(h('p', { class: 'fine' }, rule.note));
+    box.replaceChildren(...parts);
   }
 
   // This year's count toward the next level, editable in place, with the full ladder of thresholds.
@@ -3159,6 +3243,17 @@
     }
   });
 
+  detail.addEventListener('change', (e) => {
+    if (e.target.id !== 'd-activity') return;
+    const p = detailProgram();
+    if (parseISODate(e.target.value)) state.activity[p.id] = e.target.value;
+    else delete state.activity[p.id];
+    scheduleSave();
+    renderExpiry(p);
+    renderUpcoming();
+    $('#d-activity').focus();
+  });
+
   detail.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && e.target.id === 'd-member-input') {
       e.preventDefault();
@@ -3329,6 +3424,10 @@
       const days = daysUntil(date);
       if (inWindow(days, SOON_DAYS)) items.push({ kind: 'voucher', v, date, days });
     }
+    for (const p of state.programs || []) {
+      const info = pointsExpiry(p);
+      if (info && info.date && inWindow(info.days, STATUS_SOON_DAYS)) items.push({ kind: 'points', p, date: info.date, days: info.days, rule: info.rule });
+    }
     for (const id of state.cards) {
       if (!state.renewals[id]) continue;
       const date = nextRenewal(state.renewals[id]);
@@ -3359,6 +3458,14 @@
       const when = item.days < 0 ? h('span', { class: 'tag danger' }, 'Expired')
         : h('span', { class: 'tag warn' }, item.days === 0 ? 'Today' : plural(item.days, 'day'));
       const verb = item.days < 0 ? 'expired' : 'expires';
+      if (item.kind === 'points') {
+        return h('li', null, h('button', { type: 'button', class: 'up-item', 'data-open': item.p.id },
+          avatar(item.p),
+          h('div', { class: 'up-body' },
+            h('div', { class: 'up-name' }, `${item.p.name} ${item.p.unit}`),
+            h('div', { class: 'up-sub' }, `${item.days < 0 ? 'Expired' : 'Expire'} ${dateFmt.format(item.date)} · earn or redeem any amount to reset`)),
+          when));
+      }
       if (item.kind === 'card') {
         return h('li', null, h('button', { type: 'button', class: 'up-item', 'data-card-renewal': item.card.id },
           h('span', { class: 'v-ico', 'aria-hidden': 'true' }, svgIcon(ICON.card)),
@@ -3430,6 +3537,14 @@
           info && info.earn && `To requalify: ${info.earn}.`,
           'Reminder from Points & Status Tracker.',
         ].filter(Boolean).join('\n');
+      } else if (item.kind === 'points') {
+        uid = `points-${uidPart(item.p.id)}`;
+        subject = `${item.p.name} ${item.p.unit}`;
+        description = [
+          `${item.p.name} ${item.p.unit} expire after ${item.rule.months} months with no activity.`,
+          'Earn or redeem any amount before this date to reset the clock.',
+          'Reminder from Points & Status Tracker.',
+        ].join('\n');
       } else if (item.kind === 'card') {
         uid = `card-${item.card.id}`;
         subject = item.card.name;
@@ -3448,7 +3563,7 @@
       used.add(uid);
       const end = new Date(item.date);
       end.setDate(end.getDate() + 1);
-      const verb = item.kind === 'card' ? 'renews' : 'expires';
+      const verb = item.kind === 'card' ? 'renews' : item.kind === 'points' ? 'expire' : 'expires';
       lines.push('BEGIN:VEVENT', `UID:${uid}@statuspoints.github.io`, `DTSTAMP:${stamp}`,
         `DTSTART;VALUE=DATE:${icsDate(item.date)}`, `DTEND;VALUE=DATE:${icsDate(end)}`,
         ...(item.kind === 'card' ? ['RRULE:FREQ=YEARLY'] : []), // the fee comes back every year
@@ -3876,6 +3991,10 @@
       if (!p.unit) out.push(p.name);
       else out.push(`${p.name} — ${balance == null ? 'no balance entered' : `${fmt(balance)} ${p.unit}${updated}`}`);
       if (state.members[p.id]) out.push(`  Member #: ${state.members[p.id]}`);
+      const expiry = pointsExpiry(p);
+      if (expiry && expiry.date) {
+        out.push(`  ${p.unit.charAt(0).toUpperCase()}${p.unit.slice(1)} ${expiry.days < 0 ? 'expired' : 'expire'} ${dateFmt.format(expiry.date)} without activity (last activity ${dateFmt.format(parseISODate(state.activity[p.id]))})`);
+      }
       const earnedNow = newlyEarned(p);
       if (earnedNow) {
         out.push(`  ${earnedNow.tier.name} (${earnedNow.via})`);

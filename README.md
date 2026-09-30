@@ -38,6 +38,15 @@ The first time you open it, pick the programs you have and, optionally, the cred
 | Marriott, Hyatt | nights | end of Feb 2028 |
 | IHG, Wyndham | nights | Dec 31, 2027 |
 
+### Points that expire
+
+Each program's details say whether its points or miles expire (as of September 2026):
+
+- **Never:** Delta, United, Southwest, Alaska Atmos, JetBlue, Virgin Atlantic; card points (Amex, Chase, Capital One, Citi) while the card account is open.
+- **After inactivity:** IHG and Accor 12 months; Aeroplan, Wyndham, Choice, and Bilt 18 months; American, Flying Blue, Hilton, Marriott, and Hyatt 24 months; British Airways 36 months. Add your last activity date to see "Safe until…". Changing a balance counts as activity automatically. When the date is within 90 days, it shows in **Coming up** and the calendar export.
+- **Exemptions it knows about:** elite status keeps IHG, Aeroplan, and Choice points alive. The AAdvantage Executive, Chase Aeroplan, and Wyndham Earner Premier cards do the same for their programs. Aeroplan's expiration is paused until Nov 30, 2026.
+- **Fixed dates:** Korean Air miles expire 10 years after they're earned, and Wyndham points 4 years after, whatever your activity. Check those programs' statements.
+
 ### Expiration dates & reminders
 
 - Add an expiration date to any status from its detail sheet (**Add date**) or in **Edit**. Statuses noted "thru 12/31/27" (like IHG Platinum from the Sapphire Reserve) get their date automatically.
