@@ -1947,15 +1947,19 @@
     const value = state.progress[p.id];
     const n = value || 0;
     const also = track.also || {};
-    // The next level still to earn: the first count not reached, or a reached one that also needs spend.
-    let nextIndex = track.steps.findIndex((step, i) => n < step || also[i]);
+    // The next level still to earn: the first count not reached (or reached but also needing spend), above any
+    // level you already hold for at least as long — e.g. Gold from a card makes Diamond the next goal.
+    const held = heldThroughIndex(p, track);
+    let nextIndex = track.steps.findIndex((step, i) => i > held && (n < step || also[i]));
     if (nextIndex < 0) return { track, tiers, value, n, next: null, toNext: 1 };
     // Holding a level from last year that this year's count hasn't re-earned yet: keeping it comes first.
     const keep = keepIndex(p, track);
     const keeping = keep >= nextIndex && n < track.steps[keep] && !also[keep];
     if (keeping) nextIndex = keep;
     const at = track.steps[nextIndex];
-    const prev = nextIndex > 0 ? track.steps[nextIndex - 1] : 0;
+    // Skipping levels you hold: the bar runs from zero rather than from a threshold you haven't counted to.
+    const below = nextIndex > 0 ? track.steps[nextIndex - 1] : 0;
+    const prev = n < below ? 0 : below;
     return {
       track,
       tiers,
@@ -1964,6 +1968,19 @@
       next: { name: tierLabel(tiers[nextIndex].name), at, left: Math.max(at - n, 0), also: also[nextIndex], keep: keeping },
       toNext: Math.max(0, Math.min((n - prev) / (at - prev), 1)),
     };
+  }
+
+  // The highest level you hold at least as long as one earned this year would last (card statuses count).
+  function heldThroughIndex(p, track) {
+    const tiers = benefitsFor(p);
+    if (!tiers) return -1;
+    const earnedThru = isoOf(track.thru(qualYear(track)));
+    let best = -1;
+    for (const line of p.status) {
+      if (!line.tier || lineExpired(line) || (line.exp && line.exp < earnedThru)) continue;
+      for (const part of splitParts(line.tier)) best = Math.max(best, findTier(tiers, part));
+    }
+    return best;
   }
 
   // The highest level you hold that runs out before a level earned this year would: dated statuses you typed
