@@ -1302,11 +1302,11 @@
     <div class="install-body">
       <strong>New in your tracker</strong>
       <ul class="news-list">
-        <li><b>Progress</b> to your next level, and what it takes to keep the one you have.</li>
-        <li><b>Points expiration</b> and <b>card annual fee</b> reminders.</li>
-        <li><b>Year-end nudges</b> in Coming up when a status isn’t re-earned yet.</li>
-        <li><b>Share a device</b>: Add a person, at the bottom.</li>
-        <li><b>Light or Dark</b> appearance, at the bottom.</li>
+        <li><b>What your points are worth</b>: dollar estimates and a total under Programs.</li>
+        <li><b>Transfer partners</b> for Amex, Chase, Citi, Capital One, and Bilt points.</li>
+        <li><b>Send to another device</b> with a private link, at the bottom.</li>
+        <li><b>Keep your status</b>: what it takes to requalify, with year-end nudges.</li>
+        <li><b>More ways to qualify</b>: stays, flights, and points count too.</li>
       </ul>
     </div>
     <button class="icon-btn" id="news-close" type="button" aria-label="Dismiss what’s new"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M2.5 2.5l9 9M11.5 2.5l-9 9"/></svg></button>
@@ -5172,7 +5172,7 @@
 
   // A one-time card listing new features for people who already use the app; new setups skip it.
   const NEWS_KEY = 'status-tracker-news';
-  const NEWS_ID = '2026-10';
+  const NEWS_ID = '2026-10b';
   const newsSeen = () => { try { return localStorage.getItem(NEWS_KEY) === NEWS_ID; } catch (e) { return true; } };
   const markNewsSeen = () => { try { localStorage.setItem(NEWS_KEY, NEWS_ID); } catch (e) { /* private mode */ } };
   function renderNews() {
