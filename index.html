@@ -1353,7 +1353,7 @@
       { id: 'aeroplan', name: 'Air Canada Aeroplan', unit: 'points', mark: ['AC', '#C8102E'] },
       { id: 'flyingblue', name: 'Air France-KLM Flying Blue', unit: 'miles', mark: ['AF', '#0B2A6F'] },
       { id: 'ba', name: 'British Airways Club', unit: 'Avios', mark: ['BA', '#0B4EA2'] },
-      { id: 'koreanair', name: 'Korean Air SkyPass', unit: 'miles', mark: ['KE', '#1470B3'] },
+      { id: 'koreanair', name: 'Korean Air SKYPASS', unit: 'miles', mark: ['KE', '#1470B3'] },
       { id: 'virgin', name: 'Virgin Atlantic Flying Club', unit: 'points', mark: ['VS', '#B8002C'] },
     ] },
     { group: 'Hotels', items: [
@@ -2999,7 +2999,7 @@
     const rule = expiryFor(p);
     box.hidden = !rule;
     if (!rule) return;
-    const unit = p.unit === 'miles' ? 'Miles' : 'Points';
+    const unit = p.unit === 'points' ? 'Points' : `${p.unit.charAt(0).toUpperCase()}${p.unit.slice(1)}`; // Miles, Avios
     const ok = (text) => h('p', { class: 'exp-ok' }, svgIcon(ICON.check), text);
     const parts = [h('h3', { class: 'd-label' }, `Do your ${unit.toLowerCase()} expire?`)];
     const info = pointsExpiry(p);
