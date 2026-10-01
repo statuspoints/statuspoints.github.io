@@ -604,6 +604,20 @@
   .plan-row .plan-amt { white-space: nowrap; }
   .plan-note { margin: 0 0 10px; font-size: 12.5px; color: var(--muted); }
   .alt-head { margin-top: 10px; }
+  .list-tools { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 10px; }
+  .view-pick { display: inline-flex; padding: 3px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); }
+  .view-pick button { min-height: 30px; padding: 0 14px; border: 0; border-radius: 999px; background: none; color: var(--muted); font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; }
+  .view-pick button[aria-pressed="true"] { background: var(--accent-soft); color: var(--text); }
+  .simple-status { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin-top: 4px; }
+  .quick-list { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
+  .quick-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .quick-row .av { width: 32px; height: 32px; font-size: 11px; }
+  .quick-name { display: grid; flex: 1; min-width: 0; }
+  .quick-name span { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .quick-name small { font-size: 12px; color: var(--muted); }
+  .quick-input { width: 120px; height: 40px; padding: 0 10px; border: 1px solid var(--field-line); border-radius: 10px; background: var(--field); color: var(--text); font: inherit; font-size: 16px; font-variant-numeric: tabular-nums; text-align: right; }
+  .quick-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .quick-unit { width: 44px; font-size: 12px; color: var(--muted); }
   .worth { display: block; margin: 2px 0 0; padding: 0; border: 0; background: none; color: var(--accent); font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; }
   .worth-total { margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.02em; }
   .worth-list { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
@@ -1388,6 +1402,13 @@
       </div>
     </div>
     <div class="filters" id="filters" role="group" aria-label="Show programs" hidden></div>
+    <div class="list-tools" id="list-tools">
+      <div class="view-pick" id="view-pick" role="group" aria-label="List view">
+        <button type="button" data-view="simple" aria-pressed="false">Simple</button>
+        <button type="button" data-view="detailed" aria-pressed="true">Detailed</button>
+      </div>
+      <button class="pill-btn" id="quick-btn" type="button">Update balances</button>
+    </div>
     <ul class="card programs" id="programs"></ul>
     <div class="cards-edit" id="cards-edit" hidden>
       <span>Your cards<strong id="cards-summary">none</strong></span>
@@ -1565,6 +1586,19 @@
       <button class="add" id="perks-done" type="button">Done</button>
     </div>
   </div>
+</dialog>
+<dialog class="sheet" id="quick-sheet" aria-labelledby="quick-title">
+  <form id="quick-form" autocomplete="off">
+    <div class="grab" aria-hidden="true"></div>
+    <h2 id="quick-title" tabindex="-1">Update balances</h2>
+    <p class="setup-sub">Type today’s numbers from each app or statement, then Save once. A blank field clears that balance.</p>
+    <ul class="quick-list" id="quick-list"></ul>
+    <div class="sheet-actions">
+      <button class="btn-secondary" id="quick-cancel" type="button">Cancel</button>
+      <span class="spacer"></span>
+      <button class="add" type="submit">Save</button>
+    </div>
+  </form>
 </dialog>
 <dialog class="sheet" id="worth-sheet" aria-labelledby="worth-title">
   <div class="sheet-body">
@@ -2689,7 +2723,7 @@
   function normalize(raw) {
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
     if (!['programs', 'balances', 'vouchers', 'mqd'].some((k) => k in raw)) return null;
-    const s = { programs: null, cards: [], renewals: {}, creditsUsed: {}, creditsSkipped: {}, customCredits: {}, notes: '', memos: {}, balances: {}, history: {}, cpp: {}, hideValues: false, activity: {}, mqd: 0, progress: {}, members: {}, updated: {}, backedUp: '', vouchers: [] };
+    const s = { programs: null, view: 'detailed', cards: [], renewals: {}, creditsUsed: {}, creditsSkipped: {}, customCredits: {}, notes: '', memos: {}, balances: {}, history: {}, cpp: {}, hideValues: false, activity: {}, mqd: 0, progress: {}, members: {}, updated: {}, backedUp: '', vouchers: [] };
     if (raw.balances && typeof raw.balances === 'object') {
       for (const [id, v] of Object.entries(raw.balances)) if (isCount(v)) s.balances[id] = Math.floor(v);
     }
@@ -2719,6 +2753,7 @@
       for (const [id, v] of Object.entries(raw.cpp)) if (typeof v === 'number' && v > 0 && v <= 100) s.cpp[id] = v;
     }
     if (raw.hideValues === true) s.hideValues = true;
+    if (raw.view === 'simple') s.view = 'simple'; // program list: 'simple' (name, status, balance) or 'detailed'
     if (raw.memos && typeof raw.memos === 'object') { // a free-text note per program
       for (const [id, v] of Object.entries(raw.memos)) { const memo = str(v, 300); if (memo) s.memos[id] = memo; }
     }
@@ -2809,7 +2844,7 @@
       const stash = `status-tracker-unreadable:${storageKey()}`; // not under KEY, so it's never mistaken for a person
       try { if (raw && !localStorage.getItem(stash)) localStorage.setItem(stash, raw); } catch (err) { /* storage unavailable */ }
     }
-    return { programs: null, cards: [], renewals: {}, creditsUsed: {}, creditsSkipped: {}, customCredits: {}, notes: '', memos: {}, balances: {}, history: {}, cpp: {}, hideValues: false, activity: {}, mqd: 0, progress: {}, members: {}, updated: {}, backedUp: '', vouchers: [] }; // null programs → first-run setup
+    return { programs: null, view: 'detailed', cards: [], renewals: {}, creditsUsed: {}, creditsSkipped: {}, customCredits: {}, notes: '', memos: {}, balances: {}, history: {}, cpp: {}, hideValues: false, activity: {}, mqd: 0, progress: {}, members: {}, updated: {}, backedUp: '', vouchers: [] }; // null programs → first-run setup
   }
 
   const state = load();
@@ -3197,6 +3232,14 @@
             h('button', { type: 'button', class: 'icon-btn', 'data-move': '-1', 'data-id': p.id, 'aria-label': `Move ${p.name} up`, disabled: index === 0 ? '' : null }, svgIcon(ICON.up)),
             h('button', { type: 'button', class: 'icon-btn', 'data-move': '1', 'data-id': p.id, 'aria-label': `Move ${p.name} down`, disabled: last ? '' : null }, svgIcon(ICON.down)))));
     }
+    if (state.view === 'simple') {
+      const simple = simpleStatus(p);
+      const main = h('div', { class: simple ? 'row-main' : 'row-main solo' },
+        h('button', { type: 'button', class: 'who-open', 'data-open': p.id },
+          avatar(p), h('div', { class: 'who' }, h('div', { class: 'name' }, p.name), simple)));
+      if (p.unit) main.append(h('div', { class: 'bal' }, numButton(`bal:${p.id}`, `${p.name} balance`), h('div', { class: 'unit' }, ...unitLine(p))));
+      return h('li', { class: 'row' }, main);
+    }
     const status = statusBlock(p, withMedallion);
     const main = h('div', { class: status ? 'row-main' : 'row-main solo' },
       h('button', { type: 'button', class: 'who-open', 'data-open': p.id },
@@ -3211,6 +3254,36 @@
   }
 
   const medallionProgram = () => state.programs.find((p) => p.medallion); // one tracker, on the first flagged program
+
+  // Simple view: your highest active level and when it ends ("Platinum Elite · thru 2/28/28"), or the Medallion
+  // you hold with this year's MQDs.
+  function simpleStatus(p) {
+    if (p === medallionProgram()) {
+      const shown = effectiveMedallion() || medallionFor(state.mqd).current;
+      return h('div', { class: 'simple-status' }, shown ? pill(`${shown.name} Medallion`) : null,
+        h('span', { class: 'via' }, `${fmt(state.mqd)} MQDs in ${mqdYear()}`));
+    }
+    const tiers = benefitsFor(p);
+    const active = mergedLines(p.status).filter((g) => g.tier && !(g.exp && daysLeft(g.exp) < 0));
+    const earned = newlyEarned(p);
+    let best = null; // { index, exp } — the highest level; among equals, the one lasting longest (no end date wins)
+    const consider = (index, exp) => {
+      if (index < 0) return;
+      if (!best || index > best.index || (index === best.index && best.exp && (!exp || exp > best.exp))) best = { index, exp };
+    };
+    if (tiers) {
+      for (const g of active) for (const part of splitParts(g.tier)) consider(findTier(tiers, part), g.exp || null);
+      if (earned) consider(earned.index, isoOf(earned.thru));
+    }
+    if (best) {
+      return h('div', { class: 'simple-status' }, pill(tiers[best.index].name),
+        best.exp ? h('span', { class: 'via' }, `thru ${mdy(parseISODate(best.exp))}`) : null);
+    }
+    if (!active.length) return null;
+    const g = active[0]; // a level we have no data for (custom programs, lounges): show it as entered
+    return h('div', { class: 'simple-status' }, splitParts(g.tier).slice(0, 3).map(pill),
+      g.exp ? h('span', { class: 'via' }, `thru ${mdy(parseISODate(g.exp))}`) : null);
+  }
 
   /* ---------- Filter chips ---------- */
 
@@ -3277,7 +3350,76 @@
     renderNotes();
     renderStats();
     renderWorth();
+    renderListTools();
   }
+
+  function renderListTools() {
+    $('#list-tools').hidden = editMode || !state.programs || !state.programs.length;
+    for (const btn of document.querySelectorAll('[data-view]')) btn.setAttribute('aria-pressed', String(btn.dataset.view === state.view));
+    $('#quick-btn').hidden = !(state.programs || []).some((p) => p.unit) && !medallionProgram();
+  }
+  $('#view-pick').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-view]');
+    if (!b || b.dataset.view === state.view) return;
+    state.view = b.dataset.view;
+    scheduleSave();
+    renderPrograms();
+  });
+
+  // One screen to type every balance (and Delta MQDs), saved together.
+  const quickSheet = $('#quick-sheet');
+  function openQuick() {
+    const rows = [];
+    const medallion = medallionProgram();
+    for (const p of state.programs) {
+      if (!p.unit) continue;
+      const value = state.balances[p.id];
+      rows.push(quickRow(p, `bal:${p.id}`, p.name, p.unit, value, state.updated[p.id]));
+      if (p === medallion) rows.push(quickRow(p, 'mqd', `${p.name} MQDs (${mqdYear()})`, 'MQDs', state.mqd, state.updated.mqd));
+    }
+    if (medallion && !medallion.unit) rows.push(quickRow(medallion, 'mqd', `${medallion.name} MQDs (${mqdYear()})`, 'MQDs', state.mqd, state.updated.mqd));
+    $('#quick-list').replaceChildren(...rows);
+    quickSheet.showModal();
+    const first = $('#quick-list input');
+    if (first) { first.focus(); first.select(); }
+  }
+  function quickRow(p, field, name, unit, value, updated) {
+    const input = h('input', { class: 'quick-input', 'data-quick': field, inputmode: 'numeric', enterkeyhint: 'next', 'aria-label': `${name} ${unit}` });
+    input.value = value == null ? '' : fmt(value);
+    return h('li', { class: 'quick-row' }, avatar(p),
+      h('span', { class: 'quick-name' }, h('span', null, name), h('small', null, updated ? `updated ${relativeDay(updated)}` : 'not entered yet')),
+      input, h('span', { class: 'quick-unit' }, unit));
+  }
+  $('#quick-btn').addEventListener('click', openQuick);
+  $('#quick-cancel').addEventListener('click', () => quickSheet.close());
+  quickSheet.addEventListener('click', (e) => { if (e.target === quickSheet) quickSheet.close(); });
+  quickSheet.addEventListener('focusin', (e) => { if (e.target.matches('.quick-input')) e.target.select(); });
+  quickSheet.addEventListener('keydown', (e) => { // Enter moves down the list; Save on the last one
+    if (e.key !== 'Enter' || !e.target.matches('.quick-input')) return;
+    const inputs = [...quickSheet.querySelectorAll('.quick-input')];
+    const next = inputs[inputs.indexOf(e.target) + 1];
+    if (next) { e.preventDefault(); next.focus(); }
+  });
+  $('#quick-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    let changed = 0;
+    for (const input of quickSheet.querySelectorAll('[data-quick]')) {
+      const parsed = parseEntry(input.value);
+      if (!parsed) continue; // no digits at all: leave it as it was
+      const field = input.dataset.quick;
+      const before = field === 'mqd' ? state.mqd : (state.balances[field.slice(4)] ?? null);
+      const after = field === 'mqd' ? (parsed.value ?? 0) : parsed.value;
+      if (after === before) continue;
+      setField(field, after);
+      changed++;
+    }
+    quickSheet.close();
+    if (!changed) { showToast('No changes'); return; }
+    saveNow();
+    renderPrograms();
+    renderUpcoming();
+    showToast(`Updated ${plural(changed, 'balance')}`);
+  });
 
   // "≈ $4,820 in points & miles" under the Programs heading; opens the breakdown.
   function renderWorth() {

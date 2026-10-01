@@ -15,6 +15,8 @@ It launches full-screen from the home screen and works with no network. The app 
 
 ## Make it yours
 
+**Simple or Detailed:** above the list, **Simple** shows just each program, your highest status with its end date, and your balance. **Detailed** adds perks, progress, and the Medallion tracker. **Update balances** opens one screen with every balance (and Delta MQDs) to type in and save at once.
+
 The first time you open it, pick the programs you have and, optionally, the credit cards you hold (or tap **Use the example setup**). Tap **Edit** on the program list anytime to add, rename, reorder, or delete programs, set your own status levels and where they come from, and write a note under the list. Tap any number to update a balance.
 
 ### Knowing your perks
