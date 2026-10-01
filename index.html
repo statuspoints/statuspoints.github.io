@@ -3259,9 +3259,19 @@
   // you hold with this year's MQDs.
   function simpleStatus(p) {
     if (p === medallionProgram()) {
-      const shown = effectiveMedallion() || medallionFor(state.mqd).current;
+      const current = medallionFor(state.mqd).current;
+      const shown = effectiveMedallion() || current;
+      // When the tier you hold ends: this year's earned tier lasts through medallionThrough(); a tier you entered
+      // from last year ends on its own date (or never, from a card).
+      let thru = null;
+      if (shown && shown === current) thru = isoOf(medallionThrough());
+      else if (shown) {
+        const tiers = benefitsFor(p);
+        const lines = p.status.filter((l) => !lineExpired(l) && tiers && findTier(tiers, l.tier) === findTier(tiers, `${shown.name} Medallion`));
+        thru = lines.some((l) => !l.exp) ? null : lines.map((l) => l.exp).sort().pop() || null;
+      }
       return h('div', { class: 'simple-status' }, shown ? pill(`${shown.name} Medallion`) : null,
-        h('span', { class: 'via' }, `${fmt(state.mqd)} MQDs in ${mqdYear()}`));
+        h('span', { class: 'via' }, [thru ? `thru ${mdy(parseISODate(thru))}` : null, `${fmt(state.mqd)} MQDs in ${mqdYear()}`].filter(Boolean).join(' · ')));
     }
     const tiers = benefitsFor(p);
     const active = mergedLines(p.status).filter((g) => g.tier && !(g.exp && daysLeft(g.exp) < 0));
@@ -3387,7 +3397,7 @@
     const input = h('input', { class: 'quick-input', 'data-quick': field, inputmode: 'numeric', enterkeyhint: 'next', 'aria-label': `${name} ${unit}` });
     input.value = value == null ? '' : fmt(value);
     return h('li', { class: 'quick-row' }, avatar(p),
-      h('span', { class: 'quick-name' }, h('span', null, name), h('small', null, updated ? `updated ${relativeDay(updated)}` : 'not entered yet')),
+      h('span', { class: 'quick-name' }, h('span', null, name), updated || value == null ? h('small', null, updated ? `updated ${relativeDay(updated)}` : 'not entered yet') : null),
       input, h('span', { class: 'quick-unit' }, unit));
   }
   $('#quick-btn').addEventListener('click', openQuick);
