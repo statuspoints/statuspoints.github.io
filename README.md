@@ -15,6 +15,8 @@ It launches full-screen from the home screen and works with no network. The app 
 
 ## Make it yours
 
+**Update from a screenshot:** tap **Screenshot** above the list and choose a screenshot of your account page from an airline, hotel, or card app or website. The app reads it on your device; the image is never uploaded. The first time, the open-source Tesseract text reader (about 6 MB) downloads from jsDelivr. It works out the program and reads the balance, status and its end date, this year's progress (MQDs, nights, PQP, and so on), and member number. You review it all, adjust anything misread, and tap **Update** (with Undo). You can also paste text copied from a screenshot (on iPhone, press and hold the text in Photos).
+
 **Simple or Detailed:** above the list, **Simple** shows just each program, your highest status with its end date, and your balance. **Detailed** adds perks, progress, and the Medallion tracker. **Update balances** opens one screen with every balance (and Delta MQDs) to type in and save at once.
 
 The first time you open it, pick the programs you have and, optionally, the credit cards you hold (or tap **Use the example setup**). Tap **Edit** on the program list anytime to add, rename, reorder, or delete programs, set your own status levels and where they come from, and write a note under the list. Tap any number to update a balance.
