@@ -1613,7 +1613,7 @@
     <h2 id="scan-title" tabindex="-1">Update from a screenshot</h2>
     <div id="scan-start">
       <p class="setup-sub">Take a screenshot of your account page in an airline, hotel, or card app or website, then choose it. The app reads the program, balance, status, and progress — you check everything before it changes.</p>
-      <label class="add scan-pick" for="scan-file">Choose screenshot</label>
+      <button class="add scan-pick" id="scan-pick" type="button">Choose screenshot</button>
       <input type="file" id="scan-file" accept="image/*" hidden>
       <details class="scan-paste">
         <summary>Or paste text instead</summary>
@@ -1765,6 +1765,22 @@
       { id: 'ba', name: 'British Airways Club', unit: 'Avios', mark: ['BA', '#0B4EA2'] },
       { id: 'koreanair', name: 'Korean Air SKYPASS', unit: 'miles', mark: ['KE', '#1470B3'] },
       { id: 'virgin', name: 'Virgin Atlantic Flying Club', unit: 'points', mark: ['VS', '#B8002C'] },
+      { id: 'emirates', name: 'Emirates Skywards', unit: 'miles', mark: ['EK', '#C8102E'] },
+      { id: 'singapore', name: 'Singapore KrisFlyer', unit: 'miles', mark: ['SQ', '#1D2F5C'] },
+      { id: 'qatar', name: 'Qatar Privilege Club', unit: 'Avios', mark: ['QR', '#5C0632'] },
+      { id: 'turkish', name: 'Turkish Miles&Smiles', unit: 'miles', mark: ['TK', '#C8102E'] },
+      { id: 'lufthansa', name: 'Lufthansa Miles & More', unit: 'miles', mark: ['LH', '#05164D'] },
+      { id: 'cathay', name: 'Cathay Asia Miles', unit: 'miles', mark: ['CX', '#006564'] },
+      { id: 'qantas', name: 'Qantas Frequent Flyer', unit: 'points', mark: ['QF', '#C8102E'] },
+      { id: 'ana', name: 'ANA Mileage Club', unit: 'miles', mark: ['NH', '#13448F'] },
+      { id: 'jal', name: 'JAL Mileage Bank', unit: 'miles', mark: ['JL', '#B5122B'] },
+      { id: 'avianca', name: 'Avianca LifeMiles', unit: 'miles', mark: ['LM', '#C8102E'] },
+      { id: 'etihad', name: 'Etihad Guest', unit: 'miles', mark: ['EY', '#7A6440'] },
+      { id: 'iberia', name: 'Iberia Club', unit: 'Avios', mark: ['IB', '#C8102E'] },
+      { id: 'aerlingus', name: 'Aer Lingus AerClub', unit: 'Avios', mark: ['EI', '#00805A'] },
+      { id: 'aeromexico', name: 'Aeromexico Rewards', unit: 'points', mark: ['AM', '#0B2343'] },
+      { id: 'latam', name: 'LATAM Pass', unit: 'miles', mark: ['LA', '#1B0088'] },
+      { id: 'frontier', name: 'Frontier Miles', unit: 'miles', mark: ['F9', '#00704A'] },
     ] },
     { group: 'Hotels', items: [
       { id: 'hilton', name: 'Hilton Honors', unit: 'points', mark: ['H', '#104C97'] },
@@ -1776,6 +1792,10 @@
       { id: 'accor', name: 'Accor ALL', unit: 'points', mark: ['A', '#23205A'] },
       { id: 'lhw', name: 'Leading Hotels of the World', unit: '', mark: ['LHW', '#6B5638'] },
       { id: 'omni', name: 'Omni Select Guest', unit: '', mark: ['O', '#2E4A45'] },
+      { id: 'bestwestern', name: 'Best Western Rewards', unit: 'points', mark: ['BW', '#003C7E'] },
+      { id: 'sonesta', name: 'Sonesta Travel Pass', unit: 'points', mark: ['SO', '#6B2C3E'] },
+      { id: 'iprefer', name: 'I Prefer Hotel Rewards', unit: 'points', mark: ['IP', '#2B2B2B'] },
+      { id: 'shangrila', name: 'Shangri-La Circle', unit: 'points', mark: ['SL', '#7D6436'] },
     ] },
     { group: 'Credit card points', items: [
       { id: 'amex', name: 'Amex Membership Rewards', unit: 'points', mark: ['MR', '#006FCF'] },
@@ -1783,6 +1803,9 @@
       { id: 'citi', name: 'Citi ThankYou Points', unit: 'points', mark: ['TY', '#0A5E9E'] },
       { id: 'capitalone', name: 'Capital One Miles', unit: 'miles', mark: ['C1', '#0B4B73'] },
       { id: 'bilt', name: 'Bilt Rewards', unit: 'points', mark: ['B', '#1F1F1F'] },
+      { id: 'wellsfargo', name: 'Wells Fargo Rewards', unit: 'points', mark: ['WF', '#C8102E'] },
+      { id: 'usbank', name: 'U.S. Bank Altitude', unit: 'points', mark: ['USB', '#0C2074'] },
+      { id: 'bofa', name: 'Bank of America Rewards', unit: 'points', mark: ['BoA', '#012169'] },
     ] },
     { group: 'Car rental & lounges', items: [
       { id: 'avis', name: 'Avis Preferred', unit: '', mark: ['AV', '#C8102E'] },
@@ -2225,32 +2248,32 @@
     amex: {
       partners: [['delta', 1, 1], ['aeroplan', 1, 1], ['flyingblue', 1, 1], ['ba', 1, 1], ['virgin', 1, 1], ['jetblue', 5, 4],
         ['hilton', 1, 2], ['marriott', 1, 1], ['choice', 1, 1],
-        ['Aer Lingus', 1, 1], ['ANA', 1, 1], ['Avianca', 1, 1], ['Iberia', 1, 1], ['Qantas', 1, 1], ['Qatar', 1, 1],
-        ['Singapore', 1, 1], ['Aeromexico', 1, 1.6], ['Emirates', 5, 4], ['Cathay', 5, 4]],
+        ['aerlingus', 1, 1], ['ana', 1, 1], ['avianca', 1, 1], ['iberia', 1, 1], ['qantas', 1, 1], ['qatar', 1, 1],
+        ['singapore', 1, 1], ['aeromexico', 1, 1.6], ['emirates', 5, 4], ['cathay', 5, 4]],
     },
     chase: {
       partners: [['united', 1, 1], ['southwest', 1, 1], ['jetblue', 1, 1], ['aeroplan', 1, 1], ['flyingblue', 1, 1], ['ba', 1, 1],
         ['virgin', 1, 1], ['hyatt', 1, 1, '4:3 with Sapphire Preferred or Ink Preferred from Oct 1, 2026 (1:1 with Sapphire Reserve)'],
-        ['marriott', 1, 1], ['ihg', 1, 1], ['wyndham', 1, 1], ['Aer Lingus', 1, 1], ['Iberia', 1, 1], ['Singapore', 1, 1]],
+        ['marriott', 1, 1], ['ihg', 1, 1], ['wyndham', 1, 1], ['aerlingus', 1, 1], ['iberia', 1, 1], ['singapore', 1, 1]],
       note: 'Transfers need a Sapphire Preferred, Sapphire Reserve, or Ink Preferred; move Freedom or Ink Cash points to one first.',
     },
     citi: {
       partners: [['american', 1, 1], ['jetblue', 1, 1], ['flyingblue', 1, 1], ['virgin', 1, 1], ['choice', 1, 1.5], ['wyndham', 1, 1],
-        ['accor', 2, 1], ['Avianca', 1, 1], ['Cathay', 1, 1], ['Etihad', 1, 1], ['EVA', 1, 1], ['JAL', 1, 1], ['Qantas', 1, 1],
-        ['Qatar', 1, 1], ['Singapore', 1, 1], ['Thai', 1, 1], ['Turkish', 1, 1], ['Emirates', 5, 4], ['I Prefer', 1, 2]],
+        ['accor', 2, 1], ['avianca', 1, 1], ['cathay', 1, 1], ['etihad', 1, 1], ['EVA', 1, 1], ['jal', 1, 1], ['qantas', 1, 1],
+        ['qatar', 1, 1], ['singapore', 1, 1], ['Thai', 1, 1], ['turkish', 1, 1], ['emirates', 5, 4], ['iprefer', 1, 2]],
       note: 'Ratios with Strata Premier or Strata Elite. No-fee Citi cards transfer at 10:7 and can’t move points to American.',
     },
     capitalone: {
       partners: [['aeroplan', 1, 1], ['flyingblue', 1, 1], ['ba', 1, 1], ['virgin', 1, 1], ['jetblue', 5, 3], ['choice', 1, 1],
-        ['wyndham', 1, 1], ['accor', 2, 1], ['Aeromexico', 1, 1], ['Avianca', 1, 1], ['Cathay', 1, 1], ['Etihad', 1, 1],
-        ['Finnair', 1, 1], ['Qantas', 1, 1], ['Qatar', 1, 1], ['Singapore', 1, 1], ['TAP', 1, 1], ['Turkish', 1, 1],
-        ['Emirates', 2, 1.5], ['EVA', 2, 1.5], ['JAL', 2, 1.5], ['I Prefer', 1, 2]],
+        ['wyndham', 1, 1], ['accor', 2, 1], ['aeromexico', 1, 1], ['avianca', 1, 1], ['cathay', 1, 1], ['etihad', 1, 1],
+        ['Finnair', 1, 1], ['qantas', 1, 1], ['qatar', 1, 1], ['singapore', 1, 1], ['TAP', 1, 1], ['turkish', 1, 1],
+        ['emirates', 2, 1.5], ['EVA', 2, 1.5], ['jal', 2, 1.5], ['iprefer', 1, 2]],
     },
     bilt: {
       partners: [['united', 1, 1], ['southwest', 1, 1], ['alaska', 1, 1], ['aeroplan', 1, 1], ['flyingblue', 1, 1], ['ba', 1, 1],
         ['virgin', 1, 1], ['hyatt', 1, 1], ['marriott', 1, 1], ['ihg', 1, 1], ['hilton', 1, 1], ['wyndham', 1, 1], ['accor', 3, 2],
-        ['Aer Lingus', 1, 1], ['Avianca', 1, 1], ['Cathay', 1, 1], ['Emirates', 1, 1], ['Etihad', 1, 1], ['Iberia', 1, 1],
-        ['JAL', 1, 1], ['Qatar', 1, 1], ['TAP', 1, 1], ['Turkish', 1, 1], ['I Prefer', 1, 2]],
+        ['aerlingus', 1, 1], ['avianca', 1, 1], ['cathay', 1, 1], ['emirates', 1, 1], ['etihad', 1, 1], ['iberia', 1, 1],
+        ['jal', 1, 1], ['qatar', 1, 1], ['TAP', 1, 1], ['turkish', 1, 1], ['iprefer', 1, 2]],
     },
   };
   // "1:1", "5:4", "1:1.5" — bank points to partner points.
@@ -2266,6 +2289,12 @@
     omni: 'www.omnihotels.com', amex: 'www.americanexpress.com', chase: 'www.chase.com', citi: 'www.citi.com',
     capitalone: 'www.capitalone.com', bilt: 'www.bilt.com', avis: 'www.avis.com', hertz: 'www.hertz.com',
     national: 'www.nationalcar.com', enterprise: 'www.enterprise.com',
+    emirates: 'www.emirates.com', singapore: 'www.singaporeair.com', qatar: 'www.qatarairways.com', turkish: 'www.turkishairlines.com',
+    lufthansa: 'www.miles-and-more.com', cathay: 'www.cathaypacific.com', qantas: 'www.qantas.com', ana: 'www.ana.co.jp',
+    jal: 'www.jal.co.jp', avianca: 'www.lifemiles.com', etihad: 'www.etihad.com', iberia: 'www.iberia.com', aerlingus: 'www.aerlingus.com',
+    aeromexico: 'www.aeromexico.com', latam: 'www.latamairlines.com', frontier: 'www.flyfrontier.com', bestwestern: 'www.bestwestern.com',
+    sonesta: 'www.sonesta.com', iprefer: 'www.iprefer.com', shangrila: 'www.shangri-la.com', wellsfargo: 'www.wellsfargo.com',
+    usbank: 'www.usbank.com', bofa: 'www.bankofamerica.com',
   };
 
   // Tier lookup: "Gold Elite", "Gold" and "Gold Medallion" all find the right level. Longest alias wins, so
@@ -3433,88 +3462,244 @@
     ihg: ['ihg one rewards', 'one rewards', 'ihg'], hyatt: ['world of hyatt', 'hyatt', 'globalist', 'explorist', 'discoverist'],
     wyndham: ['wyndham rewards', 'wyndham'], choice: ['choice privileges', 'choice hotels'], accor: ['live limitless', 'accor'],
     amex: ['membership rewards', 'american express'], chase: ['ultimate rewards', 'chase'], citi: ['thankyou', 'citi'],
-    capitalone: ['capital one'], bilt: ['bilt'], avis: ['avis preferred', 'avis'], hertz: ['gold plus rewards', 'hertz'],
+    capitalone: ['capital one', 'venture miles', 'venture x'], bilt: ['bilt'],
+    emirates: ['emirates skywards', 'skywards', 'emirates'], singapore: ['krisflyer', 'singapore airlines'],
+    qatar: ['privilege club', 'qatar airways', 'qpoints'], turkish: ['miles&smiles', 'miles & smiles', 'turkish airlines'],
+    lufthansa: ['miles & more', 'miles and more', 'lufthansa'], cathay: ['asia miles', 'cathay'], qantas: ['qantas frequent flyer', 'qantas'],
+    ana: ['ana mileage club', 'all nippon'], jal: ['jal mileage bank', 'japan airlines', 'jmb'], avianca: ['lifemiles', 'avianca'],
+    etihad: ['etihad guest', 'etihad'], iberia: ['iberia club', 'iberia'], aerlingus: ['aerclub', 'aer lingus'],
+    aeromexico: ['aeromexico rewards', 'aeromexico', 'aeroméxico'], latam: ['latam pass', 'latam'], frontier: ['frontier miles', 'frontier airlines'],
+    bestwestern: ['best western rewards', 'best western'], sonesta: ['sonesta travel pass', 'sonesta'], iprefer: ['i prefer', 'preferred hotels'],
+    shangrila: ['shangri-la circle', 'shangri-la'], wellsfargo: ['wells fargo rewards', 'wells fargo'], usbank: ['altitude points', 'u.s. bank', 'us bank'],
+    bofa: ['bank of america', 'preferred rewards'], enterprise: ['enterprise plus', 'enterprise'],
+    lhw: ['leaders club', 'leading hotels'], omni: ['select guest', 'omni hotels'], avis: ['avis preferred', 'avis'], hertz: ['gold plus rewards', 'hertz'],
     national: ['emerald club', 'national car'],
   };
-  // This year's count, by the unit each program tracks (the number next to these words, on the same line).
-  const SCAN_UNITS = {
-    nights: /(\d[\d,]*)[ \t]*(?:qualifying[ \t]+|elite[ \t]+)?nights?\b|\bnights?\b[^\d\n]{0,24}(\d[\d,]*)/i,
-    PQP: /(\d[\d,]*)[ \t]*PQP\b|\bPQP\b[^\d\n]{0,24}(\d[\d,]*)/i,
-    'Loyalty Points': /(\d[\d,]*)[ \t]*Loyalty Points|Loyalty Points[^\d\n]{0,24}(\d[\d,]*)/i,
-    'tier points': /(\d[\d,]*)[ \t]*tier (?:qualifying )?points|tier (?:qualifying )?points[^\d\n]{0,24}(\d[\d,]*)/i,
-    'status points': /(\d[\d,]*)[ \t]*status points|status points[^\d\n]{0,24}(\d[\d,]*)/i,
-    SQC: /(\d[\d,]*)[ \t]*SQC\b|\bSQC\b[^\d\n]{0,24}(\d[\d,]*)/i,
+  // Status names for programs without perk details (lowest to highest), so screenshots can still be read.
+  const STATUS_NAMES = {
+    flyingblue: ['Explorer', 'Silver', 'Gold', 'Platinum', 'Ultimate'],
+    ba: ['Blue', 'Bronze', 'Silver', 'Gold', 'Gold Guest List'],
+    koreanair: ['Morning Calm', 'Morning Calm Select', 'Morning Calm Premium', 'Million Miler'],
+    virgin: ['Red', 'Silver', 'Gold'],
+    jetblue: ['Mosaic 1', 'Mosaic 2', 'Mosaic 3', 'Mosaic 4'],
+    emirates: ['Blue', 'Silver', 'Gold', 'Platinum'],
+    singapore: ['Elite Silver', 'Elite Gold', 'PPS Club', 'Solitaire PPS Club'],
+    qatar: ['Burgundy', 'Silver', 'Gold', 'Platinum'],
+    turkish: ['Classic', 'Classic Plus', 'Elite', 'Elite Plus'],
+    lufthansa: ['Frequent Traveller', 'Senator', 'HON Circle'],
+    cathay: ['Green', 'Silver', 'Gold', 'Diamond'],
+    qantas: ['Bronze', 'Silver', 'Gold', 'Platinum', 'Platinum One'],
+    ana: ['Bronze', 'Platinum', 'Diamond'],
+    jal: ['JMB Crystal', 'JMB Sapphire', 'JGC Premier', 'JMB Diamond'],
+    avianca: ['Red Plus', 'Silver', 'Gold', 'Diamond', 'Magno'],
+    etihad: ['Bronze', 'Silver', 'Gold', 'Platinum'],
+    iberia: ['Clásica', 'Plata', 'Oro', 'Platino', 'Infinita', 'Infinita Prime'],
+    aerlingus: ['Green', 'Silver', 'Platinum', 'Concierge'],
+    aeromexico: ['Classic', 'Gold', 'Platinum', 'Titanium'],
+    latam: ['Gold', 'Platinum', 'Black', 'Black Signature'],
+    frontier: ['Elite Silver', 'Elite Gold', 'Elite Platinum', 'Elite Diamond'],
+    choice: ['Gold', 'Platinum', 'Diamond', 'Titanium'],
+    accor: ['Classic', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Limitless'],
+    bestwestern: ['Blue', 'Gold', 'Platinum', 'Diamond', 'Diamond Select'],
+    sonesta: ['Bronze', 'Silver', 'Gold', 'Platinum'],
+    iprefer: ['Silver', 'Gold', 'Titanium'],
+    shangrila: ['Gold', 'Jade', 'Diamond', 'Polaris'],
+    enterprise: ['Silver', 'Gold', 'Platinum'],
+  };
+  // Programs whose sites write dates day-first (31/03/2027).
+  const DAY_FIRST = new Set(['ba', 'virgin', 'flyingblue', 'accor']);
+
+  // Labels for this year's counts, by the unit each program tracks (TRACKS[...].unit / .alt.unit), and for MQDs.
+  const SCAN_LABELS = {
+    nights: /\b(?:qualifying |elite |)nights?\b(?!.*\b(?:free|award|certificate|cert)\b)|\bnight credits?\b/i,
+    stays: /\b(?:qualifying |)stays\b(?! and events)/i,
+    PQP: /\bPQP\b|premier qualifying points/i,
+    flights: /\bPQF\b|qualifying flights|one-way flights|\bflights\b/i,
+    'Loyalty Points': /loyalty points/i,
+    'tier points': /tier (?:qualifying )?points|\bTQP\b/i,
+    'status points': /status points/i,
+    SQC: /\bSQC\b|status qualifying credits/i,
+    'base points': /base points/i,
+    'qualifying points': /qualifying points/i,
+    MQD: /\bMQDs?\b|medallion qualification dollars/i,
   };
   const SCAN_MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
   const toNumber = (text) => Number(String(text).replace(/[^\d]/g, ''));
 
-  // Pulls program, balance, status, end date, this year's count, MQDs, and member number out of an account screen's text.
-  function parseAccountText(text) {
+  // Text from a screenshot, tidied: trademark marks dropped, "26.948" read as 26,948, O/l misread inside numbers.
+  function cleanScanText(text) {
+    return String(text || '')
+      .replace(/[®™©•·|]/g, ' ')
+      .replace(/\b[\dOolI]{1,3}(?:[,.][\dOolI]{3})+\b/g, (n) => (/\d/.test(n) ? n.replace(/[Oo]/g, '0').replace(/[lI]/g, '1') : n))
+      .replace(/(^|[^$\d.,])(\d{1,3}(?:\.\d{3})+)(?![\d.,])/g, (all, pre, n) => `${pre}${n.replace(/\./g, ',')}`)
+      .replace(/[ \t]+/g, ' ');
+  }
+
+  // Everyday words on account screens: never treated as a misspelled program name ("points" is not "Qpoints").
+  const SCAN_COMMON = new Set(['points', 'miles', 'member', 'members', 'rewards', 'status', 'account', 'balance', 'elite', 'platinum',
+    'diamond', 'silver', 'nights', 'stays', 'number', 'travel', 'hotels', 'flights', 'select', 'premier', 'redeem', 'offers', 'profile']);
+
+  // One edit apart ("skymiies" vs "skymiles"), for OCR slips in program names.
+  function nearWord(a, b) {
+    if (Math.abs(a.length - b.length) > 1) return false;
+    let i = 0;
+    let j = 0;
+    let edits = 0;
+    while (i < a.length && j < b.length) {
+      if (a[i] === b[j]) { i++; j++; continue; }
+      if (++edits > 1) return false;
+      if (a.length > b.length) i++;
+      else if (b.length > a.length) j++;
+      else { i++; j++; }
+    }
+    return edits + (a.length - i) + (b.length - j) <= 1;
+  }
+
+  // The levels a program uses, for recognizing status in a screenshot: BENEFITS where we have perks, else names.
+  function scanTiersFor(id) {
+    if (BENEFITS[id]) return BENEFITS[id];
+    // Matched by their full names: at some airlines "Elite" or "Plus" is a level of its own.
+    return (STATUS_NAMES[id] || []).map((name) => ({ name, aliases: [normTier(name)] }));
+  }
+
+  // Numbers on a line that are amounts (not "of 15,000" targets or "8 more to go"), in reading order.
+  function lineNumbers(line, dollars) {
+    const out = [];
+    for (const m of line.matchAll(/(\$?)\s?(\d{1,3}(?:,\d{3})+|\d+)(?:\.\d{1,2})?/g)) {
+      const before = line.slice(Math.max(0, m.index - 8), m.index).toLowerCase();
+      const after = line.slice(m.index + m[0].length, m.index + m[0].length + 14).toLowerCase();
+      if (/(of|\/|out of|need|needed|reach)\s*\$?\s*$/.test(before) || /^\s*(more|left|to go|remaining|away|needed|%)/.test(after)) continue;
+      if (dollars === false && m[1]) continue;
+      if (!m[1] && /^\d{4}$/.test(m[2]) && Number(m[2]) >= 1990 && Number(m[2]) <= 2100) continue; // a year, as in "in 2026"
+      out.push(toNumber(m[2]));
+    }
+    return out;
+  }
+
+  // The number that goes with a label: on its line, or on a short line just above or below it.
+  function labeledNumber(lines, label, dollars) {
+    // A line that's just a value, maybe with its target ("$11,240 of $15,000") and a word or two.
+    const short = (line) => line && /^\W*\$?\d[\d,]*(?:\.\d{1,2})?(?:\s*(?:of|\/)\s*\$?\d[\d,]*)?\W*(?:[a-z]+\W*){0,3}$/i.test(line.trim());
+    for (let i = 0; i < lines.length; i++) {
+      if (!label.test(lines[i]) || /lifetime|member since/i.test(lines[i])) continue;
+      const here = lineNumbers(lines[i], dollars);
+      if (here.length) return { value: here[0], line: i };
+      for (const j of [i + 1, i - 1]) {
+        if (short(lines[j]) && !/lifetime/i.test(lines[j])) { const near = lineNumbers(lines[j], dollars); if (near.length) return { value: near[0], line: j }; }
+      }
+    }
+    return null;
+  }
+
+  // A date after "through", "valid until", "expires"… as YYYY-MM-DD ("Feb 2028" means its last day).
+  function scanDate(text, dayFirst) {
     const lower = text.toLowerCase();
-    // Program: most (and most specific) signs; a program already on your list wins ties.
+    const trigger = /(?:valid through|valid thru|valid until|good through|status ends|expiration(?: date)?|expires(?: on)?|through|thru|until)\s*:?\s*/g;
+    for (const t of lower.matchAll(trigger)) {
+      const rest = lower.slice(t.index + t[0].length, t.index + t[0].length + 24);
+      let y; let mo; let d;
+      let m = /^([a-z]{3})[a-z]*\.?\s+(\d{1,2}),?\s+(\d{4})/.exec(rest);
+      if (m) [y, mo, d] = [Number(m[3]), SCAN_MONTHS.indexOf(m[1]) + 1, Number(m[2])];
+      else if ((m = /^(\d{1,2})\s+([a-z]{3})[a-z]*\.?,?\s+(\d{4})/.exec(rest))) [y, mo, d] = [Number(m[3]), SCAN_MONTHS.indexOf(m[2]) + 1, Number(m[1])];
+      else if ((m = /^(\d{1,2})[/.](\d{1,2})[/.](\d{2,4})/.exec(rest))) {
+        const [a, b] = [Number(m[1]), Number(m[2])];
+        y = Number(m[3].length === 2 ? `20${m[3]}` : m[3]);
+        [mo, d] = dayFirst || a > 12 ? [b, a] : [a, b]; // 31/03/2027 can only be day-first
+      }
+      else if ((m = /^(\d{4})-(\d{2})-(\d{2})/.exec(rest))) [y, mo, d] = [Number(m[1]), Number(m[2]), Number(m[3])];
+      else if ((m = /^([a-z]{3})[a-z]*\.?\s+(\d{4})/.exec(rest))) { y = Number(m[2]); mo = SCAN_MONTHS.indexOf(m[1]) + 1; d = new Date(y, mo, 0).getDate(); }
+      if (!y || mo < 1) continue;
+      const iso = `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      if (parseISODate(iso)) return iso;
+    }
+    return null;
+  }
+
+  // Pulls program, balance, status, end date, this year's counts, MQDs, and member number out of an account
+  // screen's text. Built to tolerate OCR: labels above or below values, stray marks, near-miss spellings.
+  function parseAccountText(rawText) {
+    const text = cleanScanText(rawText);
+    const lower = text.toLowerCase();
+    const lines = text.split(/\n/).map((l) => l.trim()).filter(Boolean);
+    // Program: each sign is weighed by where it appears — the header (first lines) counts double and lines about
+    // transferring or partners barely count, so a Chase page listing "IHG, Hyatt, United…" stays Chase. Near-miss
+    // spellings count a little less; a program already on your list wins ties.
     let programId = null;
     let best = 0;
     for (const [id, signs] of Object.entries(SCAN_SIGNS)) {
-      let score = 0;
-      for (const sign of signs) if (new RegExp(`(^|[^a-z])${sign.replace(/[-]/g, '\\-')}([^a-z]|$)`).test(lower)) score += sign.length;
+      const hits = [];
+      lines.forEach((line, i) => {
+        const ll = line.toLowerCase();
+        const lineWords = ll.split(/[^a-z0-9]+/);
+        const weight = (i < 3 ? 2 : 1) * (/transfer|partner|redeem with|book with|airline and hotel/.test(ll) ? 0.15 : 1);
+        for (const sign of signs) {
+          if (new RegExp(`(^|[^a-z])${sign.replace(/[-+.]/g, (c) => `\\${c}`)}([^a-z]|$)`).test(ll)) hits.push(sign.length * weight);
+          else if (!sign.includes(' ') && sign.length >= 6 && lineWords.some((w) => !SCAN_COMMON.has(w) && nearWord(w, sign))) hits.push(sign.length * weight * 0.8);
+        }
+      });
+      if (!hits.length) continue;
+      const top = Math.max(...hits);
+      let score = top + 0.25 * (hits.reduce((a, b) => a + b, 0) - top);
       if (state.programs.some((p) => catalogFor(p) && catalogFor(p).id === id)) score += 0.5;
       if (score > best) { best = score; programId = id; }
     }
-    // Member number: digits after "Member", "#", "Account" (not the word "Member" itself).
+    // Member number: mostly digits after "Member", "#", "Account" — never "ending 1234" card digits.
     let member = null;
-    for (const m of text.matchAll(/(member|account|number|skymiles|mileageplus|aadvantage|rewards)[ \t]*(?:number|no\.?|num|#)?[ \t]*[:#]?[ \t]*#?[ \t]*([A-Z0-9][A-Z0-9 ]{5,18}[A-Z0-9])/gi)) {
+    // The number itself: one run of letters/digits, or digit groups split by single spaces ("1234 5678 90").
+    for (const m of text.matchAll(/(member(?:ship)?|account|number|skymiles|mileageplus|aadvantage|rewards|honors|bonvoy)[ \t]*(?:number|no\.?|num|id|#)?[ \t]*[:#]?[ \t]*#?[ \t]*(\d{3,4}(?: \d{3,4}){1,3}\b|[A-Z0-9]{6,16}\b)/gi)) {
       const id = m[2].replace(/\s+/g, '');
-      // Mostly digits (a few letters at most, as some programs use), never "ending 1234" card digits.
+      const before = lower.slice(Math.max(0, m.index - 12), m.index);
+      if (/ending|ends in|card/.test(before + m[0].toLowerCase())) continue;
       if (/\d{5,}/.test(id) && id.length <= 16 && (id.match(/[a-z]/gi) || []).length <= 3) { member = id; break; }
     }
-    // MQDs: a dollar amount next to "MQD".
-    const mqd = /\$\s?(\d[\d,]*)\s*(?:in\s+)?mqds?\b|\bmqds?\b[^\d$\n]{0,24}\$?\s?(\d[\d,]*)/i.exec(text);
-    // Balance: the number that reads most like "your points/miles", not a member number, year, MQD, or count.
+    // Counts for this year, in the program's units (and its second path), plus Delta MQDs.
+    const track = programId && TRACKS[programId];
+    const claimed = new Set(); // lines a count came from, so they aren't mistaken for the balance
+    const count = (label, dollars) => { const hit = label && labeledNumber(lines, label, dollars); if (hit) claimed.add(hit.line); return hit ? hit.value : null; };
+    const mqd = programId === 'delta' || /mqd/i.test(text) ? count(SCAN_LABELS.MQD, true) : null;
+    const progress = track ? count(SCAN_LABELS[track.unit], false) : null;
+    const altProgress = track && track.alt ? count(SCAN_LABELS[track.alt.unit], false) : null;
+    // Balance: the number that reads most like "your points/miles" — not a member number, year, count, or target.
     const candidates = [];
-    for (const m of text.matchAll(/(\$?)(\b\d{1,3}(?:,\d{3})+\b|\b\d{3,9}\b)/g)) {
-      const value = toNumber(m[2]);
-      const before = lower.slice(Math.max(0, m.index - 32), m.index);
-      const after = lower.slice(m.index + m[0].length, m.index + m[0].length + 22);
-      if (member && m[2].replace(/,/g, '') === member) continue;
-      if (/(member|account|number|no\.|#|ending|ends in)\s*[:#]?\s*$/.test(before) || (!m[2].includes(',') && m[2].length >= 8)) continue;
-      if (!m[2].includes(',') && value >= 1990 && value <= 2100) continue; // a year
-      let score = 1 + (m[2].includes(',') ? 2 : 0);
-      if (/(your|available|total|current|redeemable)?\s*(points|miles|avios|balance|skymiles)\s*[:\n ]*$/.test(before)) score += 5;
-      if (/^\s*(points|miles|avios|pts|award miles|skymiles)\b/.test(after)) score += 5;
-      if (m[1] || /mqd|\$\s*$/.test(before + after.slice(0, 6))) score -= 8;
-      if (/(night|stay|pqp|pqf|loyalty points|tier|status points|sqc|qualif|segment|flight)/.test(before.slice(-18) + after)) score -= 5;
-      if (/^\s*%/.test(after)) score -= 6;
-      candidates.push({ value, score });
-    }
+    lines.forEach((line, li) => {
+      const ll = line.toLowerCase();
+      if (/lifetime|member since|expir|transfer|earn up to|bonus/i.test(ll)) return;
+      for (const m of line.matchAll(/(\$?)\s?(\b\d{1,3}(?:,\d{3})+\b|\b\d{3,9}\b)(?:\.\d{1,2})?/g)) {
+        const value = toNumber(m[2]);
+        if ((member && m[2].replace(/,/g, '') === member) || (!m[2].includes(',') && m[2].length >= 8)) continue;
+        if (!m[2].includes(',') && value >= 1990 && value <= 2100) continue; // a year
+        const before = (lines[li - 1] ? `${lines[li - 1].toLowerCase()}\n` : '') + ll.slice(0, m.index);
+        const after = ll.slice(m.index + m[0].length) + (lines[li + 1] ? `\n${lines[li + 1].toLowerCase()}` : '');
+        // After "Member #" or "ending" it's an id — unless it has thousands commas, which ids never do.
+        if ((!m[2].includes(',') && /(member|account|number|no\.|#|ending|ends in)\s*[:#]?\s*$/.test(before)) || /(of|\/)\s*$/.test(before.slice(-6))) continue;
+        let score = 1 + (m[2].includes(',') ? 2 : 0);
+        if (/(points|miles|avios|balance|skymiles|rewards|available|redeemable)\b[^\n]{0,12}\s*[:\n]?\s*$/.test(before)) score += 5;
+        if (/^\s*(points|miles|avios|pts|award miles|skymiles|mi)\b/.test(after)) score += 5;
+        if (m[1] || claimed.has(li)) score -= 8;
+        if (/(night|stay|pqp|pqf|loyalty points|tier|status points|sqc|qualif|segment|flight|mqd)/.test(ll)) score -= 5;
+        if (/^\s*%/.test(after)) score -= 6;
+        candidates.push({ value, score });
+      }
+    });
     candidates.sort((a, b) => b.score - a.score);
     const balances = [...new Set(candidates.filter((c) => c.score > 0).map((c) => c.value))].slice(0, 4);
-    // Status: the first line naming exactly one level of that program (a ladder like "Silver Gold Platinum" is skipped).
-    const tiers = programId && BENEFITS[programId];
+    // Status: the best line naming exactly one level ("Platinum Elite Member"), skipping ladders ("Silver Gold
+    // Platinum") and targets ("8 nights to Platinum", "Next: Diamond").
+    const tiers = programId ? scanTiersFor(programId) : [];
     let tierIndex = -1;
-    if (tiers) {
-      for (const line of text.split(/\n+/)) {
-        const hay = ` ${normTier(line)} `;
-        const matched = tiers.map((t, i) => ({ i, alias: t.aliases.filter((a) => hay.includes(` ${a} `)).sort((x, y) => y.length - x.length)[0] }))
-          .filter((m) => m.alias);
-        // "Diamond Reserve" also contains "Diamond": a match inside a longer one doesn't count separately.
-        const distinct = matched.filter((m) => !matched.some((o) => o !== m && o.alias.length > m.alias.length && o.alias.includes(m.alias)));
-        if (distinct.length === 1) { tierIndex = distinct[0].i; break; }
-      }
+    let bestLine = -Infinity;
+    for (const line of lines) {
+      const hay = ` ${normTier(line)} `;
+      const matched = tiers.map((t, i) => ({ i, alias: t.aliases.filter((a) => hay.includes(` ${a} `)).sort((x, y) => y.length - x.length)[0] }))
+        .filter((m) => m.alias);
+      const distinct = matched.filter((m) => !matched.some((o) => o !== m && o.alias.length > m.alias.length && o.alias.includes(m.alias)));
+      if (distinct.length !== 1) continue;
+      const ll = line.toLowerCase();
+      if (/\b(to|next|reach|unlock|qualify for|away from|until|card)\b|benefits|perks|american express|visa|mastercard/.test(ll)) continue;
+      const score = (/(member|status|elite|tier|medallion|you('| a)re)/.test(ll) ? 3 : 0) + (line.split(/\s+/).length <= 4 ? 2 : 0) - lines.indexOf(line) * 0.01;
+      if (score > bestLine) { bestLine = score; tierIndex = distinct[0].i; }
     }
-    // Status end date: a date after "through", "thru", "valid until", "expires".
-    let exp = null;
-    const dm = /(?:through|thru|valid until|valid thru|expires(?: on)?|until)\s*:?\s*(?:([a-z]{3})[a-z]*\.?\s+(\d{1,2}),?\s+(\d{4})|(\d{1,2})\/(\d{1,2})\/(\d{2,4}))/i.exec(text);
-    if (dm) {
-      const [y, mo, d] = dm[1] ? [Number(dm[3]), SCAN_MONTHS.indexOf(dm[1].toLowerCase()) + 1, Number(dm[2])]
-        : [Number(dm[6].length === 2 ? `20${dm[6]}` : dm[6]), Number(dm[4]), Number(dm[5])];
-      const iso = `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-      if (mo > 0 && parseISODate(iso)) exp = iso;
-    }
-    // This year's count, in the unit the program tracks (and its second count, e.g. United flights).
-    const track = programId && TRACKS[programId];
-    const countOf = (re) => { const m = re && re.exec(text); return m ? toNumber(m[1] || m[2]) : null; };
-    const progress = track ? countOf(SCAN_UNITS[track.unit]) : null;
-    return { programId, member, balances, tierIndex, exp, progress, mqd: mqd ? toNumber(mqd[1] || mqd[2]) : null };
+    return { programId, member, balances, tierIndex, exp: scanDate(text, DAY_FIRST.has(programId)), progress, altProgress, mqd };
   }
 
   // Loads the open-source text reader (Tesseract) on first use; it runs entirely in this browser.
@@ -3530,9 +3715,11 @@
         corePath: `${OCR_BASE}tesseract.js-core@5.1.1`,
         langPath: `${OCR_BASE}@tesseract.js-data/eng@1.0.0/4.0.0_best_int`,
         logger: (m) => onProgress && onProgress(m),
+        errorHandler: (err) => reject(err),
       }));
       script.onerror = () => reject(new Error('could not load the text reader'));
       document.head.append(script);
+      setTimeout(() => reject(new Error('the text reader took too long to load')), 120000); // a stalled download
     }).catch((err) => { ocrWorker = null; throw err; });
     return ocrWorker;
   }
@@ -3540,12 +3727,14 @@
   // Screenshots read best large, gray, and dark-on-light: scale up small ones and flip dark-mode screens.
   async function prepareImage(file) {
     const bitmap = await createImageBitmap(file);
-    const scale = Math.min(3, Math.max(1, 1600 / bitmap.width));
+    // Small screenshots read better enlarged; huge ones (tall scrolling captures) shrink to stay under ~16 MP.
+    const scale = Math.min(3, Math.max(1, 1600 / bitmap.width), Math.sqrt(16e6 / (bitmap.width * bitmap.height)));
     const canvas = document.createElement('canvas');
     canvas.width = Math.round(bitmap.width * scale);
     canvas.height = Math.round(bitmap.height * scale);
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    if (bitmap.close) bitmap.close();
     const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const px = img.data;
     let sum = 0;
@@ -3562,9 +3751,10 @@
     h('input', { type: 'checkbox', id: `scan-use-${key}`, checked: checked ? '' : null, 'aria-label': `Update ${label}` }),
     h('label', { for: `scan-use-${key}` }, label),
     h('div', { class: 'scan-control' }, control, note ? h('small', null, note) : null));
-  const scanNumber = (key, value) => { const i = h('input', { id: `scan-${key}`, inputmode: 'numeric', autocomplete: 'off' }); i.value = value == null ? '' : fmt(value); return i; };
+  const scanNumber = (key, value, label) => { const i = h('input', { id: `scan-${key}`, inputmode: 'numeric', autocomplete: 'off', 'aria-label': label }); i.value = value == null ? '' : fmt(value); return i; };
 
   function openScan() {
+    scanRun++;
     scanned = null;
     $('#scan-start').hidden = false;
     $('#scan-result').hidden = true;
@@ -3575,7 +3765,9 @@
     scanSheet.showModal();
   }
 
+  let scanRun = 0; // bumps on every open, so a slow read from an earlier session is ignored
   async function readScreenshot(file) {
+    const run = scanRun;
     $('#scan-start').hidden = true;
     $('#scan-status').textContent = 'Getting the text reader ready…';
     try {
@@ -3585,8 +3777,10 @@
       });
       const canvas = await prepareImage(file);
       const { data } = await worker.recognize(canvas);
+      if (run !== scanRun || !scanSheet.open) return;
       showScanResult(data.text);
     } catch (err) {
+      if (run !== scanRun) return;
       $('#scan-start').hidden = false;
       $('#scan-status').textContent = navigator.onLine === false
         ? 'The text reader needs an internet connection the first time. Try again online, or paste the text instead.'
@@ -3618,6 +3812,7 @@
     $('#scan-apply').hidden = false;
     renderScanFields();
     programSelect.addEventListener('change', renderScanFields);
+    programSelect.focus();
   }
 
   // Fields depend on the chosen program (its units, levels, and whether it tracks progress or MQDs). Picking a
@@ -3635,25 +3830,34 @@
     const field = scanField;
     const numberInput = scanNumber;
     const out = [];
-    const unit = p && p.unit ? p.unit : 'points';
-    const balance = numberInput('balance', found.balances[0]);
-    const alts = found.balances.slice(1).map((v) => h('button', { type: 'button', class: 'scan-alt', 'data-scan-balance': String(v) }, fmt(v)));
-    out.push(field('balance', `Balance (${unit})`, [balance, ...alts], found.balances.length > 0,
-      p && state.balances[p.id] != null ? `Now ${fmt(state.balances[p.id])}` : null));
-    const tiers = cid && BENEFITS[cid];
-    if (tiers) {
+    if (!p || p.unit) { // car rental and lounge programs have no balance
+      const unit = p && p.unit ? p.unit : 'points';
+      const balance = numberInput('balance', found.balances[0], `Balance in ${unit}`);
+      const alts = found.balances.slice(1).map((v) => h('button', { type: 'button', class: 'scan-alt', 'data-scan-balance': String(v), 'aria-label': `Use ${fmt(v)} instead` }, fmt(v)));
+      out.push(field('balance', `Balance (${unit})`, [balance, ...alts], found.balances.length > 0,
+        p && state.balances[p.id] != null ? `Now ${fmt(state.balances[p.id])}` : null));
+    }
+    const tiers = cid && scanTiersFor(cid);
+    if (tiers && tiers.length) {
       const select = h('select', { id: 'scan-tier', 'aria-label': 'Status' }, h('option', { value: '-1' }, 'No change'), tiers.map((t, i) => h('option', { value: String(i) }, t.name)));
       select.value = String(found.tierIndex);
       const date = h('input', { type: 'date', id: 'scan-exp', 'aria-label': 'Status ends' });
       date.value = found.exp || '';
       out.push(field('tier', 'Status', [select, date], found.tierIndex >= 0, 'Add its end date if the screen shows one.'));
     }
-    if (cid === 'delta' || (p && p.medallion)) out.push(field('mqd', `${mqdYear()} MQDs`, numberInput('mqd', found.mqd), found.mqd != null, `Now ${fmt(state.mqd)}`));
+    if (cid === 'delta' || (p && p.medallion)) out.push(field('mqd', `${mqdYear()} MQDs`, numberInput('mqd', found.mqd, 'MQDs this year'), found.mqd != null, `Now ${fmt(state.mqd)}`));
     const track = cid && TRACKS[cid];
-    if (track) out.push(field('progress', `${qualLabel(track, qualYear(track))} ${track.unit}`, numberInput('progress', found.progress), found.progress != null,
-      p && state.progress[p.id] != null ? `Now ${fmt(state.progress[p.id])}` : null));
+    if (track) {
+      const year = qualLabel(track, qualYear(track));
+      out.push(field('progress', `${year} ${track.unit}`, numberInput('progress', found.progress, `${track.unit} this year`), found.progress != null,
+        p && state.progress[p.id] != null ? `Now ${fmt(state.progress[p.id])}` : null));
+      if (track.alt) {
+        out.push(field('alt', `${year} ${track.alt.unit}`, numberInput('alt', found.altProgress, `${track.alt.unit} this year`), found.altProgress != null,
+          p && state.progress[altKey(p.id)] != null ? `Now ${fmt(state.progress[altKey(p.id)])}` : null));
+      }
+    }
     if (found.member) {
-      const i = h('input', { id: 'scan-member', autocomplete: 'off' });
+      const i = h('input', { id: 'scan-member', autocomplete: 'off', 'aria-label': 'Member number' });
       i.value = found.member;
       out.push(field('member', 'Member number', i, !(p && state.members[p.id]), p && state.members[p.id] ? 'You already have one saved' : null));
     }
@@ -3670,23 +3874,32 @@
       state.programs.push(p);
     } else p = state.programs.find((x) => x.id === choice);
     const use = (key) => { const box = $(`#scan-use-${key}`); return box && box.checked; };
-    const num = (key) => { const v = parseEntry($(`#scan-${key}`).value); return v ? v.value : undefined; };
+    const num = (key) => { const v = parseEntry($(`#scan-${key}`).value); return v && v.value != null ? v.value : undefined; }; // blank = leave it
     const changes = [];
     if (use('balance') && num('balance') !== undefined && p.unit) { setField(`bal:${p.id}`, num('balance')); changes.push('balance'); }
     if (use('mqd') && num('mqd') !== undefined) { setField('mqd', num('mqd') ?? 0); changes.push('MQDs'); }
     if (use('progress') && num('progress') !== undefined) { setField(`prog:${p.id}`, num('progress')); changes.push('progress'); }
+    if (use('alt') && num('alt') !== undefined) { setField(`prog:${altKey(p.id)}`, num('alt')); changes.push(trackFor(p).alt.unit); }
     if (use('member') && $('#scan-member').value.trim()) { state.members[p.id] = str($('#scan-member').value, 40); changes.push('member number'); }
     const tierIndex = Number(($('#scan-tier') || {}).value ?? -1);
     if (use('tier') && tierIndex >= 0) {
-      const tiers = benefitsFor(p);
+      const cid = catalogFor(p) ? catalogFor(p).id : null;
+      const tiers = scanTiersFor(cid);
       const tier = tiers[tierIndex];
       const exp = parseISODate($('#scan-exp').value) ? $('#scan-exp').value : '';
       const current = p === medallionProgram() && medallionFor(state.mqd).current;
       const fromMqd = current && findTier(tiers, `${current.name} Medallion`) === tierIndex;
       const same = p.status.find((line) => !line.card && findTier(tiers, line.tier) === tierIndex);
-      if (same) { if (exp) same.exp = exp; same.via = 'from your account'; }
-      else if (!fromMqd && !coveredThrough(p, tierIndex, exp || '9999-12-31')) p.status.unshift(exp ? { tier: tier.name, via: 'from your account', exp } : { tier: tier.name, via: 'from your account' });
-      changes.push('status');
+      if (same) {
+        // The screen shows you hold it now, so a past end date no longer applies.
+        if (exp) same.exp = exp;
+        else if (same.exp && lineExpired(same)) delete same.exp;
+        if (!same.via) same.via = 'from your account';
+        changes.push('status');
+      } else if (!fromMqd && !(benefitsFor(p) && coveredThrough(p, tierIndex, exp || '9999-12-31'))) {
+        p.status.unshift(exp ? { tier: tier.name, via: 'from your account', exp } : { tier: tier.name, via: 'from your account' });
+        changes.push('status');
+      }
     }
     scanSheet.close();
     if (!changes.length) { state.programs = previous.programs; showToast('Nothing to update'); return; }
@@ -3697,6 +3910,7 @@
   const listOf = (items) => (items.length > 1 ? `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}` : items[0]);
 
   $('#scan-btn').addEventListener('click', openScan);
+  $('#scan-pick').addEventListener('click', () => $('#scan-file').click());
   $('#scan-cancel').addEventListener('click', () => scanSheet.close());
   $('#scan-again').addEventListener('click', openScan);
   $('#scan-apply').addEventListener('click', applyScan);

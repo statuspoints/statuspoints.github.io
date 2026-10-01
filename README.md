@@ -15,7 +15,7 @@ It launches full-screen from the home screen and works with no network. The app 
 
 ## Make it yours
 
-**Update from a screenshot:** tap **Screenshot** above the list and choose a screenshot of your account page from an airline, hotel, or card app or website. The app reads it on your device; the image is never uploaded. The first time, the open-source Tesseract text reader (about 6 MB) downloads from jsDelivr. It works out the program and reads the balance, status and its end date, this year's progress (MQDs, nights, PQP, and so on), and member number. You review it all, adjust anything misread, and tap **Update** (with Undo). You can also paste text copied from a screenshot (on iPhone, press and hold the text in Photos).
+**Update from a screenshot:** tap **Screenshot** above the list and choose a screenshot of your account page from an airline, hotel, or card app or website. The app reads it on your device; the image is never uploaded. The first time, the open-source Tesseract text reader (about 6 MB) downloads from jsDelivr. It works out the program and reads the balance, status and its end date, this year's progress (MQDs, nights, stays, PQP and flights, Loyalty Points, tier points, status points, SQC), and member number. It recognizes 50+ programs: every airline, hotel, and card program in the app, including Emirates, Singapore, Qatar, Turkish, Lufthansa, Cathay, Qantas, ANA, JAL, Avianca, Etihad, Iberia, Aer Lingus, Aeromexico, LATAM, Frontier, Best Western, Sonesta, I Prefer, Shangri-La, Wells Fargo, U.S. Bank, and Bank of America. It also handles values printed above or below their labels, "8 of 25" targets, lifetime totals, day-first dates on European sites, and common misreads. You review it all, adjust anything misread, and tap **Update** (with Undo). You can also paste text copied from a screenshot (on iPhone, press and hold the text in Photos).
 
 **Simple or Detailed:** above the list, **Simple** shows just each program, your highest status with its end date, and your balance. **Detailed** adds perks, progress, and the Medallion tracker. **Update balances** opens one screen with every balance (and Delta MQDs) to type in and save at once.
 
@@ -120,6 +120,7 @@ Use **Export as text** at the bottom to save an easy-to-read `.txt` summary of y
 | `manifest.json` | Install-to-home-screen metadata |
 | `sw.js` | Service worker that caches the app for offline use |
 | `icon.svg`, `icon-*.png`, `apple-touch-icon.png` | App icons |
+| `tests/` | Screenshot-reader test cases (`node tests/run-scan-tests.mjs`) |
 
 ## Updating
 
