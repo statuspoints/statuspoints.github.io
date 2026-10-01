@@ -4547,9 +4547,9 @@
         h('ul', { class: 'xfer' }, programs.map(([id, a, b, note]) => {
           const target = CATALOG_BY_ID[id];
           return row(target, a, b, note, balance, target.unit || 'points');
-        })),
-        bank.partners.some(([id]) => !CATALOG_BY_ID[id])
-          ? h('p', { class: 'fine' }, `Also: ${bank.partners.filter(([id]) => !CATALOG_BY_ID[id]).map(([name, a, b]) => `${name} ${ratioText(a, b)}`).join(' · ')}.`) : null);
+        })));
+      const others = bank.partners.filter(([id]) => !CATALOG_BY_ID[id]);
+      if (others.length) parts.push(h('p', { class: 'fine' }, `Also: ${others.map(([name, a, b]) => `${name} ${ratioText(a, b)}`).join(' · ')}.`));
       if (bank.note) parts.push(h('p', { class: 'fine' }, bank.note));
     } else if (c) {
       const sources = Object.entries(TRANSFERS).flatMap(([bankId, info]) => info.partners.filter(([id]) => id === c.id).map(([, a, b, note]) => [bankId, a, b, note]));
