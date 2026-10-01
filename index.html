@@ -575,6 +575,7 @@
   .credit-add input[name="name"] { flex: 1 1 160px; }
   .credit-add input[name="amount"] { flex: 0 1 90px; }
   .credits-fine { margin-top: 8px; }
+  .program-search { margin: 0 0 14px; }
   .cert-suggest { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px 0 4px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
   .cert-chip { min-height: 32px; padding: 0 12px; border: 1px dashed var(--field-line); border-radius: 999px; background: none; color: var(--accent); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
   .confetti { position: fixed; inset: 0; z-index: 30; width: 100%; height: 100%; pointer-events: none; }
@@ -1383,7 +1384,9 @@
     <div class="card setup-card">
       <h2 id="h-setup">Set up your tracker</h2>
       <p class="setup-sub">Pick the programs you have. You can add your status levels, rename, reorder, or add any other program later with Edit.</p>
+      <input class="card-search program-search" id="program-search" type="search" placeholder="Search programs (e.g. Emirates, Hyatt)" aria-label="Search programs" autocomplete="off">
       <div id="catalog"></div>
+      <p class="no-match" id="program-no-match" hidden>No program by that name — you can add any program later with Edit.</p>
       <div class="setup-cards">
         <h3>Your cards <span>(optional)</span></h3>
         <p class="setup-sub">Pick the cards you have and the statuses they come with are filled in for you.</p>
@@ -4545,7 +4548,8 @@
           const target = CATALOG_BY_ID[id];
           return row(target, a, b, note, balance, target.unit || 'points');
         })),
-        h('p', { class: 'fine' }, `Also: ${bank.partners.filter(([id]) => !CATALOG_BY_ID[id]).map(([name, a, b]) => `${name} ${ratioText(a, b)}`).join(' · ')}.`));
+        bank.partners.some(([id]) => !CATALOG_BY_ID[id])
+          ? h('p', { class: 'fine' }, `Also: ${bank.partners.filter(([id]) => !CATALOG_BY_ID[id]).map(([name, a, b]) => `${name} ${ratioText(a, b)}`).join(' · ')}.`) : null);
       if (bank.note) parts.push(h('p', { class: 'fine' }, bank.note));
     } else if (c) {
       const sources = Object.entries(TRANSFERS).flatMap(([bankId, info]) => info.partners.filter(([id]) => id === c.id).map(([, a, b, note]) => [bankId, a, b, note]));
@@ -5367,6 +5371,24 @@
     $('#setup-card-picker').replaceChildren(...cardPicker(pickedCards));
     syncStartButton();
   }
+
+  // Narrows the setup list as you type ("emir", "hyatt"); matches program names and their screenshot words.
+  $('#program-search').addEventListener('input', (e) => {
+    const words = e.target.value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    let any = false;
+    for (const group of document.querySelectorAll('#catalog .cat-group')) {
+      let shown = 0;
+      for (const chip of group.querySelectorAll('[data-pick]')) {
+        const id = chip.dataset.pick;
+        const hay = `${CATALOG_BY_ID[id].name} ${(SCAN_SIGNS[id] || []).join(' ')}`.toLowerCase();
+        chip.hidden = !words.every((w) => hay.includes(w));
+        if (!chip.hidden) shown++;
+      }
+      group.hidden = !shown;
+      if (shown) any = true;
+    }
+    $('#program-no-match').hidden = any;
+  });
 
   function syncStartButton() {
     const parts = [picked.size && plural(picked.size, 'program'), pickedCards.size && plural(pickedCards.size, 'card')].filter(Boolean);
