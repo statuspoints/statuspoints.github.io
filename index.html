@@ -1330,6 +1330,7 @@
     display: flex;
     align-items: center;
     gap: 14px;
+    width: max-content; /* centered with left: 50%, so it would otherwise wrap at half the screen */
     max-width: calc(100% - 32px);
     padding: 8px 8px 8px 16px;
     border-radius: 14px;
@@ -1426,7 +1427,7 @@
         <svg class="scan-cta-go" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5L10.5 8 6 12.5"/></svg>
       </button>
       <p class="setup-or">or pick your programs</p>
-      <p class="setup-sub">Pick the programs you have. You can add your status levels, rename, reorder, or add any other program later with Edit.</p>
+      <p class="setup-sub">You can add your status levels, rename, reorder, or add any other program later with Edit.</p>
       <input class="card-search program-search" id="program-search" type="search" placeholder="Search programs (e.g. Emirates, Hyatt)" aria-label="Search programs" autocomplete="off">
       <div id="catalog"></div>
       <p class="no-match" id="program-no-match" hidden>No program by that name — you can add any program later with Edit.</p>
@@ -1688,7 +1689,7 @@
     <div class="sheet-actions">
       <button class="btn-secondary" id="scan-cancel" type="button">Cancel</button>
       <span class="spacer"></span>
-      <button class="btn-secondary" id="scan-again" type="button" hidden>Another screenshot</button>
+      <button class="btn-secondary" id="scan-again" type="button" hidden>Try another</button>
       <button class="add" id="scan-apply" type="button" hidden>Update</button>
     </div>
   </div>
@@ -4059,7 +4060,7 @@
     scanImage(file);
   });
   $('#scan-cancel').addEventListener('click', () => scanSheet.close());
-  $('#scan-again').addEventListener('click', openScan);
+  $('#scan-again').addEventListener('click', () => { openScan(); $('#scan-file').click(); });
   $('#scan-apply').addEventListener('click', applyScan);
   $('#scan-file').addEventListener('change', (e) => { const file = e.target.files && e.target.files[0]; e.target.value = ''; if (file) readScreenshot(file); });
   $('#scan-read-text').addEventListener('click', () => { if ($('#scan-text').value.trim()) showScanResult($('#scan-text').value); });
