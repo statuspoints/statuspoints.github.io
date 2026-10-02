@@ -607,8 +607,42 @@
   .alt-head { margin-top: 10px; }
   .list-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 10px; }
   .list-tools-actions { display: inline-flex; flex-wrap: wrap; gap: 8px; }
-  #scan-btn svg { width: 14px; height: 14px; margin-right: 6px; vertical-align: -2px; }
-  .scan-pick { display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+  /* "Update from a screenshot": the main way to update, so it gets its own card above the list. */
+  .scan-cta { display: flex; align-items: center; gap: 12px; width: 100%; margin: 0 0 12px; padding: 12px; border: 1px solid var(--line); border-radius: 16px; background: var(--card); color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+  .scan-cta-icon { flex: none; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 12px; background: var(--accent); color: var(--on-accent); }
+  .scan-cta-icon svg { width: 22px; height: 22px; }
+  .scan-cta-text { flex: 1; min-width: 0; }
+  .scan-cta-text strong { display: block; font-size: 15px; line-height: 1.3; }
+  .scan-cta-sub { display: block; margin-top: 2px; font-size: 12.5px; line-height: 1.35; color: var(--muted); }
+  .scan-cta-go { flex: none; width: 16px; height: 16px; color: var(--faint); }
+  .scan-cta:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .setup-scan { margin: 6px 0 0; background: var(--callout); border-color: var(--accent-soft); }
+  .setup-or { display: flex; align-items: center; gap: 10px; margin: 16px 0 14px; font-size: 11.5px; font-weight: 650; letter-spacing: .06em; text-transform: uppercase; color: var(--faint); }
+  .setup-or::before, .setup-or::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+  .desk-only { display: none; }
+  @media (hover: hover) and (pointer: fine) {
+    .scan-cta:hover { border-color: var(--accent); }
+    .desk-only { display: inline; }
+    p.desk-only { display: block; }
+    .touch-only { display: none; }
+  }
+  .scan-steps { margin: 4px 0 16px; padding: 0; list-style: none; counter-reset: step; display: grid; gap: 10px; }
+  .scan-steps li { display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: start; font-size: 14px; line-height: 1.4; counter-increment: step; }
+  .scan-steps li::before { content: counter(step); display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font-size: 12.5px; font-weight: 700; }
+  .scan-pick { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; cursor: pointer; }
+  .scan-pick svg { width: 20px; height: 20px; }
+  .scan-drop-note { margin: 8px 0 0; font-size: 12.5px; color: var(--muted); text-align: center; }
+  .scan-works { margin: 14px 0 0; font-size: 13px; line-height: 1.45; color: var(--muted); }
+  .scan-works summary { cursor: pointer; list-style: none; }
+  .scan-works summary::-webkit-details-marker { display: none; }
+  .scan-works summary span { color: var(--accent); font-weight: 600; white-space: nowrap; }
+  .scan-works[open] summary span { display: none; }
+  .scan-works p { margin: 6px 0 0; font-size: 12.5px; }
+  .scan-preview { display: block; max-width: 100%; max-height: 150px; margin: 0 auto 12px; border: 1px solid var(--line); border-radius: 12px; cursor: zoom-in; }
+  .scan-preview.big { max-height: none; cursor: zoom-out; }
+  .drop-hint { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 24px; background: rgba(10, 18, 30, .55); pointer-events: none; }
+  .drop-hint > div { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 32px 40px; border: 2px dashed var(--accent); border-radius: 20px; background: var(--card); color: var(--text); font-size: 17px; font-weight: 650; text-align: center; }
+  .drop-hint svg { width: 36px; height: 36px; color: var(--accent); }
   .scan-paste { margin-top: 12px; font-size: 13.5px; }
   .scan-paste summary { cursor: pointer; color: var(--accent); font-weight: 600; }
   .scan-paste textarea { width: 100%; margin: 8px 0; padding: 10px 12px; border: 1px solid var(--field-line); border-radius: 12px; background: var(--field); color: var(--text); font: inherit; font-size: 16px; resize: vertical; }
@@ -1363,8 +1397,8 @@
     <div class="install-body">
       <strong>New in your tracker</strong>
       <ul class="news-list">
-        <li><b>Update from a screenshot</b>: tap Screenshot and choose your account page. It reads the balance, status, and progress for 50+ programs.</li>
-        <li><b>Simple view</b> and <b>Update balances</b>: just points and status, updated in one go.</li>
+        <li><b>Update from a screenshot</b>: tap the card above your list and choose a screenshot of your account page. It fills in points, status, and progress for 50+ programs. On a computer, drop or paste one on the page.</li>
+        <li><b>Simple view</b> and <b>Type balances</b>: just points and status, updated in one go.</li>
         <li><b>Card credits</b>, <b>free night certificates</b>, and <b>what your points are worth</b>.</li>
       </ul>
     </div>
@@ -1383,6 +1417,15 @@
   <section id="setup" aria-labelledby="h-setup" hidden>
     <div class="card setup-card">
       <h2 id="h-setup">Set up your tracker</h2>
+      <button class="scan-cta setup-scan" id="setup-scan" type="button">
+        <span class="scan-cta-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="M20.5 15.5l-4.8-4.6-8.7 8.6"/></svg></span>
+        <span class="scan-cta-text">
+          <strong>Start from a screenshot</strong>
+          <span class="scan-cta-sub">Choose a screenshot of any airline, hotel, or card account. The app adds the program with your points and status.</span>
+        </span>
+        <svg class="scan-cta-go" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5L10.5 8 6 12.5"/></svg>
+      </button>
+      <p class="setup-or">or pick your programs</p>
       <p class="setup-sub">Pick the programs you have. You can add your status levels, rename, reorder, or add any other program later with Edit.</p>
       <input class="card-search program-search" id="program-search" type="search" placeholder="Search programs (e.g. Emirates, Hyatt)" aria-label="Search programs" autocomplete="off">
       <div id="catalog"></div>
@@ -1418,6 +1461,14 @@
         <button class="pill-btn" id="edit-toggle" type="button">Edit</button>
       </div>
     </div>
+    <button class="scan-cta card" id="scan-btn" type="button">
+      <span class="scan-cta-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="M20.5 15.5l-4.8-4.6-8.7 8.6"/></svg></span>
+      <span class="scan-cta-text">
+        <strong>Update from a screenshot</strong>
+        <span class="scan-cta-sub"><span class="touch-only">Screenshot your airline, hotel, or card account. Points and status fill in for you.</span><span class="desk-only">Click to choose a screenshot of your airline, hotel, or card account, or drop or paste one anywhere on this page.</span></span>
+      </span>
+      <svg class="scan-cta-go" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5L10.5 8 6 12.5"/></svg>
+    </button>
     <div class="filters" id="filters" role="group" aria-label="Show programs" hidden></div>
     <div class="list-tools" id="list-tools">
       <div class="view-pick" id="view-pick" role="group" aria-label="List view">
@@ -1425,10 +1476,7 @@
         <button type="button" data-view="detailed" aria-pressed="true">Detailed</button>
       </div>
       <span class="list-tools-actions">
-        <button class="pill-btn" id="scan-btn" type="button">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.75 5.5V3.25c0-.83.67-1.5 1.5-1.5H5.5M10.5 1.75h2.25c.83 0 1.5.67 1.5 1.5V5.5M14.25 10.5v2.25c0 .83-.67 1.5-1.5 1.5H10.5M5.5 14.25H3.25c-.83 0-1.5-.67-1.5-1.5V10.5"/><path d="M4.75 6.5h6.5M4.75 9.5h4"/></svg>Screenshot
-        </button>
-        <button class="pill-btn" id="quick-btn" type="button">Update balances</button>
+        <button class="pill-btn" id="quick-btn" type="button">Type balances</button>
       </span>
     </div>
     <ul class="card programs" id="programs"></ul>
@@ -1609,14 +1657,24 @@
     </div>
   </div>
 </dialog>
+<div class="drop-hint" id="drop-hint" hidden aria-hidden="true"><div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="M20.5 15.5l-4.8-4.6-8.7 8.6"/></svg>Drop your screenshot to update</div></div>
 <dialog class="sheet" id="scan-sheet" aria-labelledby="scan-title">
   <div class="sheet-body">
     <div class="grab" aria-hidden="true"></div>
     <h2 id="scan-title" tabindex="-1">Update from a screenshot</h2>
     <div id="scan-start">
-      <p class="setup-sub">Take a screenshot of your account page in an airline, hotel, or card app or website, then choose it. The app reads the program, balance, status, and progress — you check everything before it changes.</p>
-      <button class="add scan-pick" id="scan-pick" type="button">Choose screenshot</button>
+      <ol class="scan-steps">
+        <li>Open your airline, hotel, or card app or website to the page that shows your points and status.</li>
+        <li>Take a screenshot.</li>
+        <li>Choose it here. Check what was read, then tap Update.</li>
+      </ol>
+      <button class="add scan-pick" id="scan-pick" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="M20.5 15.5l-4.8-4.6-8.7 8.6"/></svg>Choose screenshot</button>
+      <p class="scan-drop-note desk-only">Or drop or paste a screenshot anywhere on this page.</p>
       <input type="file" id="scan-file" accept="image/*" hidden>
+      <details class="scan-works">
+        <summary>Works with 50+ programs, including Delta, United, American, Marriott, Hilton, IHG, Hyatt, Amex, and Chase. <span>See all</span></summary>
+        <p id="scan-programs"></p>
+      </details>
       <details class="scan-paste">
         <summary>Or paste text instead</summary>
         <textarea id="scan-text" rows="4" placeholder="On iPhone: open the screenshot, press and hold the text, Select All, Copy, then paste here"></textarea>
@@ -1624,6 +1682,7 @@
       </details>
       <p class="fine">Your screenshot never leaves this device — it’s read right here in your browser. The first time, the text reader (about 6 MB) downloads from jsDelivr, so you’ll need a connection.</p>
     </div>
+    <img class="scan-preview" id="scan-preview" alt="Your screenshot (tap to enlarge)" hidden>
     <p class="cards-status" id="scan-status" role="status"></p>
     <div class="scan-result" id="scan-result" hidden></div>
     <div class="sheet-actions">
@@ -1638,7 +1697,7 @@
   <form id="quick-form" autocomplete="off">
     <div class="grab" aria-hidden="true"></div>
     <h2 id="quick-title" tabindex="-1">Update balances</h2>
-    <p class="setup-sub">Type today’s numbers from each app or statement, then Save once. A blank field clears that balance.</p>
+    <p class="setup-sub">Type today’s numbers from each app or statement, then Save once. A blank field clears that balance. <button class="link" id="quick-scan" type="button">Have a screenshot? Use it instead</button></p>
     <ul class="quick-list" id="quick-list"></ul>
     <div class="sheet-actions">
       <button class="btn-secondary" id="quick-cancel" type="button">Cancel</button>
@@ -3441,6 +3500,7 @@
 
   function renderListTools() {
     $('#list-tools').hidden = editMode || !state.programs || !state.programs.length;
+    $('#scan-btn').hidden = editMode || !state.programs;
     for (const btn of document.querySelectorAll('[data-view]')) btn.setAttribute('aria-pressed', String(btn.dataset.view === state.view));
     $('#quick-btn').hidden = !(state.programs || []).some((p) => p.unit) && !medallionProgram();
   }
@@ -3652,7 +3712,7 @@
       if (!hits.length) continue;
       const top = Math.max(...hits);
       let score = top + 0.25 * (hits.reduce((a, b) => a + b, 0) - top);
-      if (state.programs.some((p) => catalogFor(p) && catalogFor(p).id === id)) score += 0.5;
+      if ((state.programs || []).some((p) => catalogFor(p) && catalogFor(p).id === id)) score += 0.5;
       if (score > best) { best = score; programId = id; }
     }
     // Member number: mostly digits after "Member", "#", "Account" — never "ending 1234" card digits.
@@ -3772,18 +3832,35 @@
   function openScan() {
     scanRun++;
     scanned = null;
+    const preview = $('#scan-preview');
+    if (preview.src) URL.revokeObjectURL(preview.src);
+    preview.removeAttribute('src');
+    preview.hidden = true;
+    preview.classList.remove('big');
     $('#scan-start').hidden = false;
     $('#scan-result').hidden = true;
     $('#scan-apply').hidden = true;
     $('#scan-again').hidden = true;
     $('#scan-status').textContent = '';
     $('#scan-text').value = '';
-    scanSheet.showModal();
+    if (!scanSheet.open) scanSheet.showModal();
   }
+
+  // Opens the sheet and reads an image straight away (dropped or pasted onto the page).
+  function scanImage(file) {
+    openScan();
+    readScreenshot(file);
+  }
+  // Another sheet is open (maybe mid-edit), so a dropped or pasted image is left alone.
+  const otherSheetOpen = () => [...document.querySelectorAll('dialog[open]')].some((d) => d !== scanSheet);
 
   let scanRun = 0; // bumps on every open, so a slow read from an earlier session is ignored
   async function readScreenshot(file) {
     const run = scanRun;
+    const preview = $('#scan-preview');
+    if (preview.src) URL.revokeObjectURL(preview.src);
+    preview.src = URL.createObjectURL(file);
+    preview.hidden = false;
     $('#scan-start').hidden = true;
     $('#scan-status').textContent = 'Getting the text reader ready…';
     try {
@@ -3807,7 +3884,8 @@
   // The review form: everything found, each with a checkbox, editable before anything changes.
   function showScanResult(text) {
     const found = parseAccountText(text || '');
-    const own = (id) => state.programs.find((p) => catalogFor(p) && catalogFor(p).id === id);
+    const programs = state.programs || [];
+    const own = (id) => programs.find((p) => catalogFor(p) && catalogFor(p).id === id);
     const target = found.programId && own(found.programId);
     scanned = { text, found };
     $('#scan-start').hidden = true;
@@ -3817,9 +3895,15 @@
     } else {
       $('#scan-status').textContent = `Looks like ${(target || CATALOG_BY_ID[found.programId]).name}. Check what was read, then Update.`;
     }
-    const options = state.programs.map((p) => h('option', { value: p.id }, p.name));
-    if (found.programId && !target) options.unshift(h('option', { value: `add:${found.programId}` }, `Add ${CATALOG_BY_ID[found.programId].name}`));
-    if (!found.programId) options.unshift(h('option', { value: '' }, 'Choose a program'));
+    // Your programs, then every other program in the app, so a screen that wasn't recognized can still be used.
+    const options = [];
+    if (!found.programId) options.push(h('option', { value: '' }, 'Choose a program'));
+    if (found.programId && !target) options.push(h('option', { value: `add:${found.programId}` }, `Add ${CATALOG_BY_ID[found.programId].name}`));
+    if (programs.length) options.push(h('optgroup', { label: 'Your programs' }, programs.map((p) => h('option', { value: p.id }, p.name))));
+    for (const g of CATALOG) {
+      const more = g.items.filter((c) => c.id !== found.programId && !own(c.id));
+      if (more.length) options.push(h('optgroup', { label: `Add: ${g.group}` }, more.map((c) => h('option', { value: `add:${c.id}` }, c.name))));
+    }
     const programSelect = h('select', { id: 'scan-program', 'aria-label': 'Program' }, options);
     programSelect.value = target ? target.id : found.programId ? `add:${found.programId}` : '';
     $('#scan-result').replaceChildren(
@@ -3839,7 +3923,7 @@
   }
   function scanFields(detected) {
     const choice = $('#scan-program').value;
-    const mine = state.programs.find((x) => x.id === choice);
+    const mine = (state.programs || []).find((x) => x.id === choice);
     const cid = choice.startsWith('add:') ? choice.slice(4) : (mine && catalogFor(mine) ? catalogFor(mine).id : null);
     const p = mine || (cid ? programFromCatalog(CATALOG_BY_ID[cid]) : null);
     const found = cid === detected.programId ? detected : { ...detected, tierIndex: -1, exp: null, progress: null, altProgress: null, mqd: null };
@@ -3884,8 +3968,11 @@
     const choice = $('#scan-program').value;
     if (!choice) { $('#scan-program').focus(); return; }
     const previous = clone(state);
+    const firstRun = !state.programs; // started from a screenshot instead of picking programs
+    if (firstRun) state.programs = [];
+    const added = choice.startsWith('add:');
     let p;
-    if (choice.startsWith('add:')) {
+    if (added) {
       p = programFromCatalog(CATALOG_BY_ID[choice.slice(4)]);
       state.programs.push(p);
     } else p = state.programs.find((x) => x.id === choice);
@@ -3918,15 +4005,59 @@
       }
     }
     scanSheet.close();
-    if (!changes.length) { state.programs = previous.programs; showToast('Nothing to update'); return; }
+    if (!changes.length && !added) { showToast('Nothing to update'); return; }
     saveNow();
+    if (firstRun) { markNewsSeen(); intro = true; scrollTo(0, 0); }
     renderAll();
-    showToast(`Updated ${p.name}: ${listOf(changes)}`, () => { Object.assign(state, previous); saveNow(); renderAll(); });
+    const message = !added ? `Updated ${p.name}: ${listOf(changes)}`
+      : changes.length ? `Added ${p.name} with your ${listOf(changes)}` : `Added ${p.name}`;
+    showToast(message, () => {
+      Object.assign(state, previous);
+      if (state.programs) saveNow();
+      else try { localStorage.removeItem(storageKey()); } catch (e) { /* private mode */ }
+      renderAll();
+    });
   }
   const listOf = (items) => (items.length > 1 ? `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}` : items[0]);
 
-  $('#scan-btn').addEventListener('click', openScan);
+  // The card above the list and the setup card go straight to choosing a picture; the sheet explains the rest.
+  for (const id of ['#scan-btn', '#setup-scan']) $(id).addEventListener('click', () => { openScan(); $('#scan-file').click(); });
+  $('#quick-scan').addEventListener('click', () => { quickSheet.close(); openScan(); $('#scan-file').click(); });
   $('#scan-pick').addEventListener('click', () => $('#scan-file').click());
+  $('#scan-preview').addEventListener('click', (e) => e.currentTarget.classList.toggle('big'));
+  $('#scan-programs').textContent = CATALOG.map((g) => `${g.group}: ${g.items.filter((c) => SCAN_SIGNS[c.id]).map((c) => c.name).join(', ')}.`).join(' ');
+
+  // On a computer: drop a screenshot anywhere on the page, or paste one (⌘V / Ctrl+V).
+  const imageIn = (list) => [...(list || [])].find((f) => /^image\//.test(f.type));
+  const draggingFiles = (e) => e.dataTransfer && [...e.dataTransfer.types].includes('Files');
+  // The hint stays while drag events keep coming and goes shortly after they stop (leaving the window included).
+  let dropHintTimer = 0;
+  const hideDropHint = () => { clearTimeout(dropHintTimer); $('#drop-hint').hidden = true; };
+  addEventListener('dragover', (e) => {
+    if (!draggingFiles(e)) return;
+    e.preventDefault(); // otherwise the browser opens the image in place of the app
+    const ok = !otherSheetOpen();
+    e.dataTransfer.dropEffect = ok ? 'copy' : 'none';
+    $('#drop-hint').hidden = !ok || scanSheet.open;
+    clearTimeout(dropHintTimer);
+    dropHintTimer = setTimeout(hideDropHint, 500);
+  });
+  addEventListener('dragleave', (e) => { if (e.clientX <= 0 || e.clientY <= 0 || e.clientX >= innerWidth || e.clientY >= innerHeight) hideDropHint(); });
+  addEventListener('drop', (e) => {
+    if (!draggingFiles(e)) return;
+    e.preventDefault();
+    hideDropHint();
+    if (otherSheetOpen()) return;
+    const file = imageIn(e.dataTransfer.files);
+    if (file) scanImage(file);
+    else showToast('That isn’t a picture — drop a screenshot (PNG or JPG)');
+  });
+  addEventListener('paste', (e) => {
+    const file = e.clipboardData && imageIn(e.clipboardData.files);
+    if (!file || otherSheetOpen()) return;
+    e.preventDefault();
+    scanImage(file);
+  });
   $('#scan-cancel').addEventListener('click', () => scanSheet.close());
   $('#scan-again').addEventListener('click', openScan);
   $('#scan-apply').addEventListener('click', applyScan);
@@ -6337,7 +6468,7 @@
 
   // A one-time card listing new features for people who already use the app; new setups skip it.
   const NEWS_KEY = 'status-tracker-news';
-  const NEWS_ID = '2026-10d';
+  const NEWS_ID = '2026-10e';
   const newsSeen = () => { try { return localStorage.getItem(NEWS_KEY) === NEWS_ID; } catch (e) { return true; } };
   const markNewsSeen = () => { try { localStorage.setItem(NEWS_KEY, NEWS_ID); } catch (e) { /* private mode */ } };
   function renderNews() {
