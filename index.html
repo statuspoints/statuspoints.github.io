@@ -41,6 +41,8 @@
     --warn-soft: rgba(180, 83, 9, .1);
     --danger: #B42318;
     --danger-soft: rgba(180, 35, 24, .09);
+    --good: #15803D;
+    --good-soft: rgba(21, 128, 61, .12);
     --shadow: 0 1px 2px rgba(23, 32, 43, .04), 0 8px 24px -12px rgba(23, 32, 43, .12);
     --hero-a: #1B3A5C;
     --hero-b: #2C5A8A;
@@ -90,6 +92,8 @@
       --warn-soft: rgba(240, 162, 84, .14);
       --danger: #F28B7F;
       --danger-soft: rgba(242, 139, 127, .13);
+      --good: #4ADE80;
+      --good-soft: rgba(74, 222, 128, .14);
       --shadow: none;
       --hero-a: #19304D;
       --hero-b: #16273F;
@@ -137,6 +141,8 @@
     --warn-soft: rgba(240, 162, 84, .14);
     --danger: #F28B7F;
     --danger-soft: rgba(242, 139, 127, .13);
+    --good: #4ADE80;
+    --good-soft: rgba(74, 222, 128, .14);
     --shadow: none;
     --hero-a: #19304D;
     --hero-b: #16273F;
@@ -622,6 +628,8 @@
   .desk-only { display: none; }
   @media (hover: hover) and (pointer: fine) {
     .scan-cta:hover { border-color: var(--accent); }
+    .scan-hub:has(> .scan-cta:hover) { border-color: var(--accent); }
+    .game-chip:hover { background: var(--hover); }
     .desk-only { display: inline; }
     p.desk-only { display: block; }
     .touch-only { display: none; }
@@ -641,6 +649,112 @@
   .scan-works b { color: var(--text); font-weight: 650; }
   .scan-preview { display: block; max-width: 100%; max-height: 150px; margin: 0 auto 12px; border: 1px solid var(--line); border-radius: 12px; cursor: zoom-in; }
   .scan-preview.big { max-height: none; cursor: zoom-out; }
+  /* The game strip under the screenshot card: level, streak, and how many balances are up to date. */
+  .scan-hub { margin: 0 0 12px; }
+  .scan-hub .scan-cta { margin: 0; border: 0; border-radius: 0; background: none; }
+  .game-strip { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 12px 12px; }
+  .game-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 30px; padding: 0 11px 0 9px; border: 0; border-radius: 999px; background: var(--chip-bg); color: var(--text); font: inherit; font-size: 12.5px; font-weight: 650; cursor: pointer; }
+  .game-chip.lv { padding-left: 4px; }
+  .gi { width: 14px; height: 14px; flex: none; }
+  .gi-flame { color: #EA580C; }
+  .gi-check { color: var(--good); }
+  .lv-dot { display: grid; place-items: center; min-width: 22px; height: 22px; padding: 0 5px; border-radius: 999px; background: var(--accent); color: var(--on-accent); font-size: 11.5px; font-weight: 800; }
+  .xp-mini { width: 34px; height: 5px; border-radius: 3px; background: var(--track); overflow: hidden; }
+  .xp-mini span { display: block; height: 100%; border-radius: 3px; background: var(--accent); }
+
+  /* Scan & collect: the screenshot on a card with a scanning beam, boxes on what was found, then the loot. */
+  dialog.play { width: min(460px, calc(100% - 24px)); max-height: calc(100dvh - 24px); margin: auto; padding: 0; border: 0; border-radius: 24px; background: var(--card); color: var(--text); box-shadow: 0 30px 80px -20px rgba(0, 0, 0, .55); overflow: auto; }
+  dialog.play::backdrop { background: rgba(8, 14, 24, .62); }
+  .play-card { position: relative; padding: 16px 16px 14px; }
+  .play-close { position: absolute; top: 8px; right: 8px; }
+  .play-title { min-height: 22px; margin: 2px 40px 12px 2px; font-size: 16px; font-weight: 750; line-height: 1.35; }
+  .play-frame { display: flex; justify-content: center; }
+  .play-shot { position: relative; flex: none; border: 1px solid var(--line); border-radius: 14px; background: var(--inset); overflow: hidden; }
+  .play-shot img { display: block; width: 100%; height: 100%; object-fit: fill; transition: filter .4s; }
+  .play-shot.scanning img { filter: saturate(.5) brightness(.85); }
+  .play-beam { position: absolute; left: 0; right: 0; top: -20%; height: 20%; background: linear-gradient(to bottom, rgba(127, 166, 217, 0), rgba(127, 166, 217, .38)); border-bottom: 2px solid #9EC5FF; box-shadow: 0 8px 22px rgba(127, 166, 217, .85); pointer-events: none; animation: beam 1.5s ease-in-out infinite alternate; }
+  .play-shot:not(.scanning) .play-beam { display: none; }
+  @keyframes beam { from { top: -20%; } to { top: 100%; } }
+  .play-marks { position: absolute; inset: 0; pointer-events: none; }
+  .play-mark { position: absolute; border: 2px solid var(--mark); border-radius: 6px; background: rgba(255, 255, 255, .08); box-shadow: 0 0 0 3px rgba(0, 0, 0, .06), 0 0 14px var(--mark); animation: mark-pop .45s cubic-bezier(.2, 1.5, .4, 1) both; animation-delay: calc(var(--i) * 170ms + 100ms); }
+  .play-mark span { position: absolute; left: -2px; bottom: 100%; margin-bottom: 3px; padding: 1px 6px; border-radius: 6px; background: var(--mark); color: #fff; font-size: 10.5px; font-weight: 750; line-height: 1.5; white-space: nowrap; text-transform: capitalize; }
+  .play-mark.below span { top: 100%; bottom: auto; margin: 3px 0 0; }
+  @keyframes mark-pop { from { opacity: 0; transform: scale(1.5); } to { opacity: 1; transform: scale(1); } }
+  .play-loot { display: grid; gap: 8px; margin: 14px 0 0; padding: 0; list-style: none; }
+  .play-loot li { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 14px; background: var(--inset); animation: loot-in .45s cubic-bezier(.2, 1.4, .4, 1) both; animation-delay: calc(var(--i) * 140ms + 250ms); }
+  @keyframes loot-in { from { opacity: 0; transform: translateY(10px) scale(.95); } }
+  .play-loot .av { width: 32px; height: 32px; border-radius: 10px; font-size: 11px; }
+  .loot-ic { flex: none; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 10px; background: var(--ic); color: #fff; }
+  .loot-ic svg { width: 18px; height: 18px; }
+  .loot-main { flex: 1; min-width: 0; }
+  .loot-main b { display: block; font-size: 15px; font-weight: 750; }
+  .loot-main small { display: block; font-size: 12px; color: var(--muted); }
+  .loot-tag { flex: none; padding: 3px 9px; border-radius: 999px; background: var(--chip-bg); color: var(--muted); font-size: 12px; font-weight: 750; white-space: nowrap; }
+  .loot-tag.up { background: var(--good-soft); color: var(--good); }
+  .loot-tag.new { background: linear-gradient(135deg, #FCE7B2, #F2C466); color: #6B4400; }
+  .play-xp { display: flex; align-items: center; gap: 10px; margin: 12px 2px 0; font-size: 12.5px; font-weight: 650; color: var(--muted); animation: loot-in .45s both .6s; }
+  .xp-gain { color: var(--good); font-weight: 800; }
+  .xp-track { position: relative; flex: 1; height: 8px; border-radius: 4px; background: var(--track); overflow: hidden; }
+  .xp-fill, .xp-add { position: absolute; top: 0; bottom: 0; }
+  .xp-fill { left: 0; background: var(--accent); }
+  .xp-add { background: var(--good); animation: xp-pulse .9s ease-in-out infinite alternate; }
+  @keyframes xp-pulse { from { opacity: .4; } to { opacity: 1; } }
+  .xp-lv { white-space: nowrap; }
+  .play-actions { display: flex; gap: 10px; margin-top: 14px; }
+  .play-actions:empty { display: none; }
+  .play-actions button { flex: 1; }
+  .play-actions .add { position: relative; overflow: hidden; }
+  .play-actions .fill { position: absolute; inset: 0; background: rgba(255, 255, 255, .22); transform: scaleX(0); transform-origin: left; pointer-events: none; }
+  .play-actions .counting .fill { animation: collect-fill 4s linear forwards; }
+  @keyframes collect-fill { to { transform: scaleX(1); } }
+
+  /* Collecting: points fly into the row, the number counts up, a +/− tag floats off, the row glows. */
+  .coin { position: fixed; z-index: 60; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #FFF6D6, #F2C466 55%, #B7841F); box-shadow: 0 0 10px rgba(242, 196, 102, .85); pointer-events: none; }
+  .delta-float { position: fixed; z-index: 61; padding: 3px 10px; border-radius: 999px; background: #16A34A; color: #fff; font-size: 13.5px; font-weight: 800; white-space: nowrap; pointer-events: none; animation: float-up 1.7s ease-out forwards; }
+  .delta-float.down { background: var(--accent-2); }
+  @keyframes float-up {
+    0% { opacity: 0; transform: translate(-50%, 6px) scale(.7); }
+    15% { opacity: 1; transform: translate(-50%, -8px) scale(1.12); }
+    70% { opacity: 1; transform: translate(-50%, -26px) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -42px); }
+  }
+  .row.collected { animation: row-glow 1.8s ease-out; }
+  @keyframes row-glow { 0%, 35% { background-color: rgba(242, 196, 102, .16); box-shadow: inset 0 0 0 2px rgba(242, 196, 102, .9); } 100% { background-color: transparent; box-shadow: inset 0 0 0 2px transparent; } }
+  .row.collected .pill { animation: pill-pop .7s cubic-bezier(.2, 1.6, .4, 1) .3s both; }
+  @keyframes pill-pop { 40% { transform: scale(1.2); } }
+
+  /* "Badge unlocked" / "Level up" banner. */
+  .achieve { position: fixed; left: 50%; top: calc(14px + env(safe-area-inset-top)); z-index: 70; display: flex; align-items: center; gap: 12px; width: max-content; max-width: calc(100% - 32px); padding: 10px 20px 10px 10px; border-radius: 20px; background: var(--toast-bg); color: var(--toast-fg); box-shadow: 0 14px 40px rgba(0, 0, 0, .3); transform: translate(-50%, -160%); transition: transform .5s cubic-bezier(.2, 1.3, .4, 1); }
+  .achieve.show { transform: translate(-50%, 0); }
+  .achieve small { display: block; font-size: 11px; font-weight: 750; letter-spacing: .07em; text-transform: uppercase; opacity: .7; }
+  .achieve strong { display: block; font-size: 16px; }
+  .medal { flex: none; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--medal, #5B8DEF); color: #fff; box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .18), 0 6px 14px -6px var(--medal, #5B8DEF); }
+  .medal svg { width: 22px; height: 22px; }
+
+  /* Your progress sheet. */
+  .lv-card { display: flex; align-items: center; gap: 14px; margin-top: 4px; padding: 14px; border-radius: 16px; background: linear-gradient(135deg, var(--hero-a), var(--hero-b)); color: #fff; }
+  .lv-badge { flex: none; display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: rgba(255, 255, 255, .14); box-shadow: inset 0 0 0 3px rgba(242, 196, 102, .85); font-size: 22px; font-weight: 800; }
+  .lv-info { flex: 1; min-width: 0; }
+  .lv-info small { display: block; font-size: 11px; font-weight: 750; letter-spacing: .07em; text-transform: uppercase; opacity: .75; }
+  .lv-info strong { display: block; font-size: 19px; }
+  .lv-bar { height: 8px; margin: 8px 0 5px; border-radius: 4px; background: rgba(255, 255, 255, .2); overflow: hidden; }
+  .lv-bar span { display: block; height: 100%; border-radius: 4px; background: #F2C466; }
+  .lv-next { font-size: 12.5px; opacity: .88; }
+  .game-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 12px 0 6px; }
+  .game-stats div { padding: 10px 6px; border-radius: 12px; background: var(--inset); text-align: center; }
+  .game-stats b { display: block; font-size: 20px; }
+  .game-stats span { display: block; font-size: 11.5px; line-height: 1.3; color: var(--muted); }
+  .game-stale { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+  .game-stale li { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; }
+  .game-stale .av { width: 30px; height: 30px; border-radius: 9px; font-size: 10.5px; }
+  .game-stale small { margin-left: auto; font-size: 12.5px; font-weight: 500; color: var(--muted); white-space: nowrap; }
+  .badges { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
+  .badges li { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px 6px 10px; border-radius: 14px; background: var(--inset); text-align: center; }
+  .badges b { font-size: 13px; }
+  .badges small { font-size: 11.5px; line-height: 1.3; color: var(--muted); }
+  .badges .locked .medal { background: var(--track); color: var(--faint); box-shadow: none; }
+  .badges .locked b { color: var(--muted); }
+  .file-input { position: fixed; left: -100px; top: 0; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
   .drop-hint { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 24px; background: rgba(10, 18, 30, .55); pointer-events: none; }
   .drop-hint > div { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 32px 40px; border: 2px dashed var(--accent); border-radius: 20px; background: var(--card); color: var(--text); font-size: 17px; font-weight: 650; text-align: center; }
   .drop-hint svg { width: 36px; height: 36px; color: var(--accent); }
@@ -1399,7 +1513,7 @@
     <div class="install-body">
       <strong>New in your tracker</strong>
       <ul class="news-list">
-        <li><b>Update from a screenshot</b>: tap the card above your list and choose a screenshot of your account page. It fills in points, status, and progress for 50+ programs. On a computer, drop or paste one on the page.</li>
+        <li><b>Scan &amp; collect</b>: drop or choose a screenshot of any account page, watch it scan, and collect your points and status. Earn XP, keep a weekly streak, and unlock badges.</li>
         <li><b>Simple view</b> and <b>Type balances</b>: just points and status, updated in one go.</li>
         <li><b>Card credits</b>, <b>free night certificates</b>, and <b>what your points are worth</b>.</li>
       </ul>
@@ -1463,14 +1577,17 @@
         <button class="pill-btn" id="edit-toggle" type="button">Edit</button>
       </div>
     </div>
-    <button class="scan-cta card" id="scan-btn" type="button">
+    <div class="card scan-hub" id="scan-hub">
+    <button class="scan-cta" id="scan-btn" type="button">
       <span class="scan-cta-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="M20.5 15.5l-4.8-4.6-8.7 8.6"/></svg></span>
       <span class="scan-cta-text">
         <strong>Update from a screenshot</strong>
-        <span class="scan-cta-sub"><span class="touch-only">Screenshot your airline, hotel, or card account. Points and status fill in for you.</span><span class="desk-only">Click to choose a screenshot of your airline, hotel, or card account, or drop or paste one anywhere on this page.</span></span>
+        <span class="scan-cta-sub"><span class="touch-only">Screenshot your airline, hotel, or card account, then collect your points and status.</span><span class="desk-only">Drop or paste a screenshot of your airline, hotel, or card account anywhere on this page, or click to choose one.</span></span>
       </span>
       <svg class="scan-cta-go" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5L10.5 8 6 12.5"/></svg>
     </button>
+    <div class="game-strip" id="game-strip"></div>
+    </div>
     <div class="filters" id="filters" role="group" aria-label="Show programs" hidden></div>
     <div class="list-tools" id="list-tools">
       <div class="view-pick" id="view-pick" role="group" aria-label="List view">
@@ -1659,7 +1776,45 @@
     </div>
   </div>
 </dialog>
-<div class="drop-hint" id="drop-hint" hidden aria-hidden="true"><div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="M20.5 15.5l-4.8-4.6-8.7 8.6"/></svg>Drop your screenshot to update</div></div>
+<input type="file" id="scan-file" class="file-input" accept="image/*" tabindex="-1" aria-hidden="true">
+<dialog class="play" id="play" aria-labelledby="play-title">
+  <div class="play-card">
+    <button class="icon-btn play-close" id="play-close" type="button" aria-label="Close"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M2.5 2.5l9 9M11.5 2.5l-9 9"/></svg></button>
+    <p class="play-title" id="play-title" role="status"></p>
+    <div class="play-frame">
+      <div class="play-shot" id="play-shot">
+        <img id="play-img" alt="Your screenshot">
+        <div class="play-beam" aria-hidden="true"></div>
+        <div class="play-marks" id="play-marks" aria-hidden="true"></div>
+      </div>
+    </div>
+    <ul class="play-loot" id="play-loot"></ul>
+    <div class="play-xp" id="play-xp" hidden></div>
+    <div class="play-actions" id="play-actions"></div>
+  </div>
+</dialog>
+<div class="achieve" id="achieve" role="status" hidden><span class="medal" id="achieve-medal"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3.2l2.7 5.5 6 .9-4.35 4.25 1.03 6-5.38-2.83-5.38 2.83 1.03-6L3.3 9.6l6-.9z"/></svg></span><span><small id="achieve-kind"></small><strong id="achieve-name"></strong></span></div>
+<dialog class="sheet" id="game-sheet" aria-labelledby="game-title">
+  <div class="sheet-body">
+    <div class="grab" aria-hidden="true"></div>
+    <h2 id="game-title" tabindex="-1">Your progress</h2>
+    <div class="lv-card" id="game-level"></div>
+    <div class="game-stats" id="game-stats"></div>
+    <div id="game-stale-wrap">
+      <h3 class="d-label">Needs an update</h3>
+      <ul class="game-stale" id="game-stale"></ul>
+    </div>
+    <h3 class="d-label">Badges <span id="game-badge-count"></span></h3>
+    <ul class="badges" id="game-badges"></ul>
+    <p class="fine">Each screenshot you collect earns XP, and each badge 50 more. Up to date means updated in the last 30 days. It all stays on this device.</p>
+    <div class="sheet-actions">
+      <button class="btn-secondary" id="game-scan" type="button">Update from a screenshot</button>
+      <span class="spacer"></span>
+      <button class="add" id="game-done" type="button">Done</button>
+    </div>
+  </div>
+</dialog>
+<div class="drop-hint" id="drop-hint" hidden aria-hidden="true"><div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="M20.5 15.5l-4.8-4.6-8.7 8.6"/></svg>Drop it to scan &amp; collect</div></div>
 <dialog class="sheet" id="scan-sheet" aria-labelledby="scan-title">
   <div class="sheet-body">
     <div class="grab" aria-hidden="true"></div>
@@ -1668,11 +1823,10 @@
       <ol class="scan-steps">
         <li>Open your airline, hotel, or card app or website to the page that shows your points and status.</li>
         <li>Take a screenshot.</li>
-        <li>Choose it here. Check what was read, then tap Update.</li>
+        <li>Choose it here. Watch it scan, then collect your points and status.</li>
       </ol>
       <button class="add scan-pick" id="scan-pick" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="M20.5 15.5l-4.8-4.6-8.7 8.6"/></svg>Choose screenshot</button>
       <p class="scan-drop-note desk-only">Or drop or paste a screenshot anywhere on this page.</p>
-      <input type="file" id="scan-file" accept="image/*" hidden>
       <details class="scan-works">
         <summary>Works with 50+ programs, including Delta, United, American, Marriott, Hilton, IHG, Hyatt, Amex, and Chase. <span>See all</span></summary>
         <div id="scan-programs"></div>
@@ -2636,17 +2790,21 @@
   // Counts a number up from 0. Anything that later sets the element's text cancels it via `el._count = null`.
   function countUp(el, to, format = fmt) {
     if (reduceMotion.matches || document.hidden || !to) return; // hidden tabs pause animation frames
+    countBetween(el, 0, to, format);
+  }
+  function countBetween(el, from, to, format = fmt, ms = 800) {
+    if (reduceMotion.matches || document.hidden || from === to) { el._count = null; el.textContent = format(to); return; }
     const token = {};
     el._count = token;
     const start = performance.now();
     const step = (now) => {
       if (el._count !== token) return;
-      const t = Math.min((now - start) / 800, 1);
-      el.textContent = format(Math.round(to * (1 - Math.pow(1 - t, 3))));
+      const t = Math.min((now - start) / ms, 1);
+      el.textContent = format(Math.round(from + (to - from) * (1 - Math.pow(1 - t, 3))));
       if (t < 1) requestAnimationFrame(step);
       else el._count = null;
     };
-    el.textContent = format(0);
+    el.textContent = format(from);
     requestAnimationFrame(step);
   }
 
@@ -2860,7 +3018,7 @@
   function normalize(raw) {
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
     if (!['programs', 'balances', 'vouchers', 'mqd'].some((k) => k in raw)) return null;
-    const s = { programs: null, view: 'detailed', cards: [], renewals: {}, creditsUsed: {}, creditsSkipped: {}, customCredits: {}, notes: '', memos: {}, balances: {}, history: {}, cpp: {}, hideValues: false, activity: {}, mqd: 0, progress: {}, members: {}, updated: {}, backedUp: '', vouchers: [] };
+    const s = { programs: null, view: 'detailed', cards: [], renewals: {}, creditsUsed: {}, creditsSkipped: {}, customCredits: {}, notes: '', memos: {}, balances: {}, history: {}, cpp: {}, hideValues: false, activity: {}, mqd: 0, progress: {}, members: {}, updated: {}, backedUp: '', game: { xp: 0, scans: 0, best: 0, weeks: [], badges: {} }, vouchers: [] };
     if (raw.balances && typeof raw.balances === 'object') {
       for (const [id, v] of Object.entries(raw.balances)) if (isCount(v)) s.balances[id] = Math.floor(v);
     }
@@ -2904,6 +3062,16 @@
       for (const [id, v] of Object.entries(raw.activity)) if (parseISODate(v)) s.activity[id] = v;
     }
     if (parseISODate(raw.backedUp)) s.backedUp = raw.backedUp; // last JSON backup
+    if (raw.game && typeof raw.game === 'object') { // screenshot XP, scans, weeks with an update, badges earned
+      const g = raw.game;
+      if (isCount(g.xp)) s.game.xp = Math.floor(g.xp);
+      if (isCount(g.scans)) s.game.scans = Math.floor(g.scans);
+      if (isCount(g.best)) s.game.best = Math.floor(g.best);
+      if (Array.isArray(g.weeks)) s.game.weeks = g.weeks.filter((w) => Number.isInteger(w) && w > 0).slice(-104);
+      if (g.badges && typeof g.badges === 'object') {
+        for (const [id, d] of Object.entries(g.badges)) if (/^[a-z0-9]{1,20}$/.test(id) && parseISODate(d)) s.game.badges[id] = d;
+      }
+    }
     if (raw.updated && typeof raw.updated === 'object') { // when each balance was last changed (YYYY-MM-DD)
       for (const [id, v] of Object.entries(raw.updated)) if (parseISODate(v)) s.updated[id] = v;
     }
@@ -2981,7 +3149,7 @@
       const stash = `status-tracker-unreadable:${storageKey()}`; // not under KEY, so it's never mistaken for a person
       try { if (raw && !localStorage.getItem(stash)) localStorage.setItem(stash, raw); } catch (err) { /* storage unavailable */ }
     }
-    return { programs: null, view: 'detailed', cards: [], renewals: {}, creditsUsed: {}, creditsSkipped: {}, customCredits: {}, notes: '', memos: {}, balances: {}, history: {}, cpp: {}, hideValues: false, activity: {}, mqd: 0, progress: {}, members: {}, updated: {}, backedUp: '', vouchers: [] }; // null programs → first-run setup
+    return { programs: null, view: 'detailed', cards: [], renewals: {}, creditsUsed: {}, creditsSkipped: {}, customCredits: {}, notes: '', memos: {}, balances: {}, history: {}, cpp: {}, hideValues: false, activity: {}, mqd: 0, progress: {}, members: {}, updated: {}, backedUp: '', game: { xp: 0, scans: 0, best: 0, weeks: [], badges: {} }, vouchers: [] }; // null programs → first-run setup
   }
 
   const state = load();
@@ -3057,6 +3225,7 @@
       else store[id] = value;
       state.updated[kind === 'prog' ? field : id] = todayISO();
     }
+    markWeek();
     scheduleSave();
   }
 
@@ -3502,7 +3671,8 @@
 
   function renderListTools() {
     $('#list-tools').hidden = editMode || !state.programs || !state.programs.length;
-    $('#scan-btn').hidden = editMode || !state.programs;
+    $('#scan-hub').hidden = editMode || !state.programs;
+    if (state.programs) renderGame();
     for (const btn of document.querySelectorAll('[data-view]')) btn.setAttribute('aria-pressed', String(btn.dataset.view === state.view));
     $('#quick-btn').hidden = !(state.programs || []).some((p) => p.unit) && !medallionProgram();
   }
@@ -3783,7 +3953,8 @@
   // Loads the open-source text reader (Tesseract) on first use; it runs entirely in this browser.
   const OCR_BASE = 'https://cdn.jsdelivr.net/npm/';
   let ocrWorker = null;
-  function loadOCR(onProgress) {
+  let ocrProgress = () => {}; // set by the scan in progress
+  function loadOCR() {
     if (ocrWorker) return ocrWorker;
     ocrWorker = new Promise((resolve, reject) => {
       const script = document.createElement('script');
@@ -3792,7 +3963,7 @@
         workerPath: `${OCR_BASE}tesseract.js@5.1.1/dist/worker.min.js`,
         corePath: `${OCR_BASE}tesseract.js-core@5.1.1`,
         langPath: `${OCR_BASE}@tesseract.js-data/eng@1.0.0/4.0.0_best_int`,
-        logger: (m) => onProgress && onProgress(m),
+        logger: (m) => ocrProgress(m),
         errorHandler: (err) => reject(err),
       }));
       script.onerror = () => reject(new Error('could not load the text reader'));
@@ -3831,8 +4002,8 @@
     h('div', { class: 'scan-control' }, control, note ? h('small', null, note) : null));
   const scanNumber = (key, value, label) => { const i = h('input', { id: `scan-${key}`, inputmode: 'numeric', autocomplete: 'off', 'aria-label': label }); i.value = value == null ? '' : fmt(value); return i; };
 
+  // The review sheet: the how-to, pasting text, and checking or fixing what a screenshot showed.
   function openScan() {
-    scanRun++;
     scanned = null;
     const preview = $('#scan-preview');
     if (preview.src) URL.revokeObjectURL(preview.src);
@@ -3847,41 +4018,421 @@
     $('#scan-text').value = '';
     if (!scanSheet.open) scanSheet.showModal();
   }
+  const pickImage = () => $('#scan-file').click();
+  // The how-to the first time; after that, straight to choosing a picture.
+  const startScan = () => (game().scans ? pickImage() : openScan());
 
-  // Opens the sheet and reads an image straight away (dropped or pasted onto the page).
-  function scanImage(file) {
-    openScan();
-    readScreenshot(file);
+  // Reads a screenshot: its text, plus each line's words and where they sit (to box what was found).
+  async function ocrImage(file) {
+    const worker = await loadOCR();
+    const canvas = await prepareImage(file);
+    const { data } = await worker.recognize(canvas, {}, { text: true, blocks: true });
+    const lines = data.lines || (data.blocks || []).flatMap((b) => (b.paragraphs || []).flatMap((para) => para.lines || []));
+    return { text: data.text || '', lines, width: canvas.width, height: canvas.height };
   }
-  // Another sheet is open (maybe mid-edit), so a dropped or pasted image is left alone.
-  const otherSheetOpen = () => [...document.querySelectorAll('dialog[open]')].some((d) => d !== scanSheet);
 
-  let scanRun = 0; // bumps on every open, so a slow read from an earlier session is ignored
-  async function readScreenshot(file) {
-    const run = scanRun;
-    const preview = $('#scan-preview');
-    if (preview.src) URL.revokeObjectURL(preview.src);
-    preview.src = URL.createObjectURL(file);
-    preview.hidden = false;
-    $('#scan-start').hidden = true;
-    $('#scan-status').textContent = 'Getting the text reader ready…';
+  /* ---------- The game: XP and levels, a weekly streak, how many balances are up to date, badges ---------- */
+
+  const game = () => state.game || (state.game = { xp: 0, scans: 0, best: 0, weeks: [], badges: {} });
+  const LEVELS = [[0, 'Rookie'], [60, 'Explorer'], [150, 'Frequent Flyer'], [300, 'Road Warrior'], [500, 'Jet Setter'],
+    [800, 'Status Seeker'], [1200, 'Elite'], [1700, 'Points Pro'], [2400, 'Globetrotter'], [3200, 'Legend']];
+  function levelOf(xp) {
+    let i = 0;
+    while (i + 1 < LEVELS.length && xp >= LEVELS[i + 1][0]) i++;
+    const [min, name] = LEVELS[i];
+    const next = LEVELS[i + 1];
+    return { index: i, n: i + 1, name, min, next: next ? next[0] : null, nextName: next ? next[1] : null,
+      progress: next ? (xp - min) / (next[0] - min) : 1 };
+  }
+  // XP for collecting a screenshot: 10, plus 5 for each thing it updates, 25 for a new program, 40 for a new status.
+  const xpFor = (changes, added, statusNew) => 10 + 5 * changes + (added ? 25 : 0) + (statusNew ? 40 : 0);
+  const BADGE_XP = 50;
+
+  // Weeks start on Monday; any update (screenshot or typed) counts toward the streak.
+  function weekNo(d = new Date()) {
+    return Math.floor((Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 864e5 + 3) / 7);
+  }
+  function markWeek() {
+    const weeks = game().weeks;
+    const w = weekNo();
+    if (!weeks.includes(w)) weeks.push(w);
+    if (weeks.length > 104) weeks.splice(0, weeks.length - 104);
+  }
+  function streakWeeks() {
+    const weeks = new Set(game().weeks);
+    let w = weekNo();
+    if (!weeks.has(w)) w--; // this week isn't over: last week's update keeps the streak alive
+    let n = 0;
+    while (weeks.has(w)) { n++; w--; }
+    return n;
+  }
+
+  // Balances updated in the last 30 days, out of the programs that have one.
+  const FRESH_DAYS = 30;
+  function freshness() {
+    const list = (state.programs || []).filter((p) => p.unit);
+    const stale = list.filter((p) => { const d = parseISODate(state.updated[p.id]); return !d || -daysUntil(d) > FRESH_DAYS; });
+    return { total: list.length, fresh: list.length - stale.length, stale };
+  }
+  const totalPoints = () => (state.programs || []).reduce((sum, p) => sum + (p.unit && state.balances[p.id] || 0), 0);
+
+  // Checked after each screenshot you collect (`r` is what it changed).
+  const BADGES = [
+    { id: 'first', name: 'First scan', how: 'Collect a screenshot', color: '#5B8DEF', test: () => game().scans >= 1 },
+    { id: 'five', name: 'Scanner', how: 'Collect 5 screenshots', color: '#1FA89A', test: () => game().scans >= 5 },
+    { id: 'twenty', name: 'Scan master', how: 'Collect 20 screenshots', color: '#0E7490', test: () => game().scans >= 20 },
+    { id: 'status', name: 'Level up', how: 'Scan a screen with a new status', color: '#9B6BE0', test: (r) => !!(r && r.statusNew) },
+    { id: 'elite3', name: 'Elite trio', how: 'Elite status in 3 programs', color: '#7C3AED', test: () => (state.programs || []).filter(hasStatus).length >= 3 },
+    { id: 'six', name: 'Six figures', how: '100,000+ in one program', color: '#E0A82E', test: () => (state.programs || []).some((p) => p.unit && (state.balances[p.id] || 0) >= 100000) },
+    { id: 'million', name: 'Millionaire', how: '1,000,000 points & miles in all', color: '#C2410C', test: () => totalPoints() >= 1e6 },
+    { id: 'fresh', name: 'All caught up', how: 'Every balance updated this month (3+)', color: '#16A34A', test: () => { const f = freshness(); return f.total >= 3 && f.fresh === f.total; } },
+    { id: 'streak4', name: 'On a roll', how: 'Update 4 weeks in a row', color: '#DC2626', test: () => streakWeeks() >= 4 },
+    { id: 'collector', name: 'Collector', how: 'Track 10 programs', color: '#2563EB', test: () => (state.programs || []).length >= 10 },
+    { id: 'jetset', name: 'Jet set', how: 'Track 5 airlines', color: '#0891B2', test: () => (state.programs || []).filter((p) => categoryOf(p) === 'Airlines').length >= 5 },
+  ];
+
+  // Scores a collected screenshot: XP, the scan count, the streak, and any badges it unlocks.
+  function award(result) {
+    const g = game();
+    const before = levelOf(g.xp);
+    g.scans += 1;
+    markWeek();
+    let xp = xpFor(result.changes.length, result.added, result.statusNew);
+    const unlocked = BADGES.filter((b) => !g.badges[b.id] && b.test(result));
+    for (const b of unlocked) g.badges[b.id] = todayISO();
+    xp += unlocked.length * BADGE_XP;
+    g.xp += xp;
+    g.best = Math.max(g.best, streakWeeks());
+    const after = levelOf(g.xp);
+    return { xp, unlocked, levelUp: after.index > before.index ? after : null };
+  }
+
+  const GAME_ICONS = {
+    flame: '<path fill="currentColor" stroke="none" d="M12 21.5c-3.7 0-6.2-2.5-6.2-5.9 0-2.7 1.5-4.5 3-6.3.3 1.4 1 2.5 2.1 3.1.1-3.1 1.5-6 3.8-8 .3 2.7 1.5 4.5 2.7 6 1.1 1.4 1.8 3.1 1.8 5.1 0 3.5-2.5 6-7.2 6z"/>',
+    check: '<circle cx="12" cy="12" r="8.5"/><path d="M8.3 12.3l2.5 2.5 5-5.2"/>',
+    star: '<path fill="currentColor" stroke="none" d="M12 3.2l2.7 5.5 6 .9-4.35 4.25 1.03 6-5.38-2.83-5.38 2.83 1.03-6L3.3 9.6l6-.9z"/>',
+    lock: '<rect x="5.5" y="10.5" width="13" height="9" rx="2"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/>',
+    balance: '<ellipse cx="12" cy="7" rx="7" ry="3"/><path d="M5 7v5c0 1.7 3.1 3 7 3s7-1.3 7-3V7M5 12v5c0 1.7 3.1 3 7 3s7-1.3 7-3v-5"/>',
+    count: '<path d="M5.5 19v-7M12 19V5M18.5 19v-10"/>',
+    member: '<rect x="3.5" y="5.5" width="17" height="13" rx="2.5"/><circle cx="9" cy="11" r="2"/><path d="M6.5 15.5c.6-1.3 1.5-2 2.5-2s1.9.7 2.5 2M14 10h3.5M14 13.5h3.5"/>',
+  };
+  const gameIcon = (name) => svgIcon(`<svg class="gi gi-${name}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${GAME_ICONS[name]}</svg>`);
+
+  // Level, streak, and up-to-date count under the screenshot card; each opens Your progress.
+  function renderGame() {
+    const g = game();
+    const lv = levelOf(g.xp);
+    const streak = streakWeeks();
+    const fresh = freshness();
+    const chips = [
+      h('button', { type: 'button', class: 'game-chip lv', 'data-game': '',
+        'aria-label': `Level ${lv.n}, ${lv.name}, ${fmt(g.xp)} XP. See your progress` },
+      h('span', { class: 'lv-dot' }, String(lv.n)), lv.name,
+      h('span', { class: 'xp-mini', 'aria-hidden': 'true' }, h('span', { style: `width:${Math.round(lv.progress * 100)}%` }))),
+      h('button', { type: 'button', class: 'game-chip', 'data-game': '' }, gameIcon('flame'), streak ? `${streak}-week streak` : 'Start a streak'),
+    ];
+    if (fresh.total) chips.push(h('button', { type: 'button', class: 'game-chip', 'data-game': '' }, gameIcon('check'), `${fresh.fresh}/${fresh.total} up to date`));
+    $('#game-strip').replaceChildren(...chips);
+  }
+
+  const gameSheet = $('#game-sheet');
+  function openGame() {
+    const g = game();
+    const lv = levelOf(g.xp);
+    const streak = streakWeeks();
+    const fresh = freshness();
+    $('#game-level').replaceChildren(
+      h('span', { class: 'lv-badge' }, String(lv.n)),
+      h('div', { class: 'lv-info' }, h('small', null, `Level ${lv.n}`), h('strong', null, lv.name),
+        h('div', { class: 'lv-bar', 'aria-hidden': 'true' }, h('span', { style: `width:${Math.round(lv.progress * 100)}%` })),
+        h('span', { class: 'lv-next' }, lv.next ? `${fmt(g.xp)} XP · ${fmt(lv.next - g.xp)} more to ${lv.nextName}` : `${fmt(g.xp)} XP · the top level`)));
+    const stat = (n, label) => h('div', null, h('b', null, n), h('span', null, label));
+    $('#game-stats').replaceChildren(
+      stat(fmt(g.scans), g.scans === 1 ? 'screenshot collected' : 'screenshots collected'),
+      stat(String(streak), `week streak${g.best > streak ? ` (best ${g.best})` : ''}`),
+      stat(fresh.total ? `${fresh.fresh}/${fresh.total}` : '—', 'balances up to date'));
+    $('#game-stale-wrap').hidden = !fresh.stale.length;
+    $('#game-stale').replaceChildren(...fresh.stale.slice(0, 8).map((p) => h('li', null, avatar(p), h('span', null, p.name),
+      h('small', null, state.updated[p.id] ? `updated ${relativeDay(state.updated[p.id])}` : 'no balance yet'))));
+    $('#game-badge-count').textContent = `${BADGES.filter((b) => g.badges[b.id]).length} of ${BADGES.length}`;
+    $('#game-badges').replaceChildren(...BADGES.map((b) => {
+      const when = parseISODate(g.badges[b.id]);
+      return h('li', { class: when ? null : 'locked' },
+        h('span', { class: 'medal', style: `--medal:${b.color}`, 'aria-hidden': 'true' }, gameIcon(when ? 'star' : 'lock')),
+        h('b', null, b.name), h('small', null, when ? `Earned ${dateFmt.format(when)}` : b.how));
+    }));
+    gameSheet.showModal();
+  }
+
+  /* ---------- Scan & collect: the screenshot on a card, what it found, then its points fly into your list ---------- */
+
+  const play = $('#play');
+  let playRun = 0; // bumps on every scan and close, so a slow read from an earlier one is ignored
+  let playing = null; // { url, text, found, choice, vals } for the screenshot on the card
+  let collectTimer = 0;
+  const COLLECT_SECONDS = 4;
+  const MARK_COLORS = { program: '#5B8DEF', balance: '#E0A82E', status: '#9B6BE0', count: '#1FA89A', member: '#64748B' };
+  const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  // Another sheet is open (maybe mid-edit), so a dropped or pasted image is left alone.
+  const otherSheetOpen = () => [...document.querySelectorAll('dialog[open]')].some((d) => d !== scanSheet && d !== play);
+
+  async function playScan(file) {
+    const run = ++playRun;
+    if (scanSheet.open) scanSheet.close();
+    stopCountdown();
+    if (playing && playing.url) URL.revokeObjectURL(playing.url);
+    playing = { url: URL.createObjectURL(file) };
+    $('#play-title').textContent = 'Scanning your screenshot…';
+    $('#play-loot').replaceChildren();
+    $('#play-marks').replaceChildren();
+    $('#play-xp').hidden = true;
+    $('#play-actions').replaceChildren();
+    $('#play-shot').className = 'play-shot scanning';
+    const img = $('#play-img');
+    img.src = playing.url;
+    if (!play.open) play.showModal();
+    try { await img.decode(); } catch (e) { /* sized from whatever loaded */ }
+    if (run !== playRun) return;
+    sizeShot();
+    ocrProgress = (m) => {
+      if (run !== playRun) return;
+      if (m.status === 'recognizing text') $('#play-title').textContent = `Scanning… ${Math.round(m.progress * 100)}%`;
+      else if (/load/.test(m.status)) $('#play-title').textContent = `Warming up the scanner (first time only)… ${Math.round((m.progress || 0) * 100)}%`;
+    };
     try {
-      const worker = await loadOCR((m) => {
-        if (m.status === 'recognizing text') $('#scan-status').textContent = `Reading your screenshot… ${Math.round(m.progress * 100)}%`;
-        else if (/load/.test(m.status)) $('#scan-status').textContent = `Getting the text reader ready (first time only)… ${Math.round((m.progress || 0) * 100)}%`;
-      });
-      const canvas = await prepareImage(file);
-      const { data } = await worker.recognize(canvas);
-      if (run !== scanRun || !scanSheet.open) return;
-      showScanResult(data.text);
+      const read = await ocrImage(file);
+      if (run !== playRun || !play.open) return;
+      showLoot(read);
     } catch (err) {
-      if (run !== scanRun) return;
-      $('#scan-start').hidden = false;
-      $('#scan-status').textContent = navigator.onLine === false
-        ? 'The text reader needs an internet connection the first time. Try again online, or paste the text instead.'
-        : 'Couldn’t read that image. Try a sharper screenshot, or paste the text instead.';
+      if (run !== playRun) return;
+      $('#play-shot').className = 'play-shot';
+      $('#play-title').textContent = navigator.onLine === false
+        ? 'The scanner needs an internet connection the first time.'
+        : 'Couldn’t read that image. Try a sharper screenshot.';
+      setActions([['Paste text instead', false, () => { closePlay(); openScan(); $('.scan-paste').open = true; }], ['Try another', true, pickImage]]);
     }
   }
+
+  // The screenshot as large as fits; its box keeps the image's shape, so the marks (placed in percent) line up.
+  function sizeShot() {
+    const img = $('#play-img');
+    const w = img.naturalWidth || 1;
+    const ht = img.naturalHeight || 1;
+    const k = Math.min($('#play-shot').parentElement.clientWidth / w, Math.max(160, innerHeight * 0.42) / ht, 1.5);
+    $('#play-shot').style.width = `${Math.round(w * k)}px`;
+    $('#play-shot').style.height = `${Math.round(ht * k)}px`;
+  }
+
+  function setActions(list) {
+    $('#play-actions').replaceChildren(...list.map(([label, primary, onClick, id]) => {
+      const btn = h('button', { type: 'button', class: primary ? 'add' : 'btn-secondary', id: id || null }, label);
+      btn.addEventListener('click', onClick);
+      return btn;
+    }));
+    const last = $('#play-actions').lastElementChild;
+    if (last) last.focus();
+  }
+
+  // What a recognized screen updates, with the review form's defaults: undefined leaves a field alone, and a
+  // member number only fills an empty one.
+  function valsFrom(found, p) {
+    const cid = found.programId;
+    const track = TRACKS[cid];
+    const vals = {};
+    if (p.unit && found.balances.length) vals.balance = found.balances[0];
+    if (found.tierIndex >= 0) { vals.tierIndex = found.tierIndex; vals.exp = found.exp || ''; }
+    if (found.mqd != null && (cid === 'delta' || p.medallion)) vals.mqd = found.mqd;
+    if (track && found.progress != null) vals.progress = found.progress;
+    if (track && track.alt && found.altProgress != null) vals.alt = found.altProgress;
+    if (found.member && !state.members[p.id]) vals.member = found.member;
+    return vals;
+  }
+
+  // What a status read from a screen does: confirms a level you have, adds a new one, or nothing (your
+  // Medallion already shows it from MQDs, or a card already gives it).
+  function statusOutcome(p, tierIndex, exp, mqd = state.mqd) {
+    const tiers = scanTiersFor(catalogFor(p) ? catalogFor(p).id : null);
+    const same = p.status.find((line) => !line.card && findTier(tiers, line.tier) === tierIndex);
+    if (same) return { kind: 'same', line: same };
+    const current = state.programs && p === medallionProgram() && medallionFor(mqd).current;
+    const fromMqd = current && findTier(tiers, `${current.name} Medallion`) === tierIndex;
+    if (fromMqd || (benefitsFor(p) && coveredThrough(p, tierIndex, exp || '9999-12-31'))) return { kind: 'covered' };
+    return { kind: 'new', tier: tiers[tierIndex] };
+  }
+
+  const lootText = (title, sub) => h('div', { class: 'loot-main' }, h('b', null, title), sub ? h('small', null, sub) : null);
+  const lootTag = (text, kind) => h('span', { class: kind ? `loot-tag ${kind}` : 'loot-tag' }, text);
+  const lootIcon = (kind, color) => h('span', { class: 'loot-ic', style: `--ic:${color}`, 'aria-hidden': 'true' }, gameIcon(kind));
+  function deltaTag(before, after, prefix = '') {
+    if (before == null) return lootTag('New', 'new');
+    if (before === after) return lootTag('No change');
+    return lootTag(`${after > before ? '+' : '−'}${prefix}${fmt(Math.abs(after - before))}`, after > before ? 'up' : 'down');
+  }
+
+  // One row per thing found, each with what it changes: "+2,400", "New status!", "No change".
+  function lootRows(p, own, vals, outcome) {
+    const cid = catalogFor(p).id;
+    const track = TRACKS[cid];
+    const was = (store, key) => (own && store[key] != null ? store[key] : null);
+    const rows = [h('li', null, avatar(p), lootText(p.name, own ? 'On your list' : 'Adding it to your list'), lootTag(own ? 'Found' : 'New!', own ? '' : 'new'))];
+    if (vals.balance !== undefined) {
+      rows.push(h('li', { class: 'loot-bal' }, lootIcon('balance', MARK_COLORS.balance), lootText(`${fmt(vals.balance)} ${p.unit}`, 'Balance'),
+        deltaTag(was(state.balances, p.id), vals.balance)));
+    }
+    if (outcome) {
+      const name = scanTiersFor(cid)[vals.tierIndex].name;
+      const exp = parseISODate(vals.exp);
+      rows.push(h('li', null, lootIcon('star', MARK_COLORS.status), lootText(name, exp ? `Status through ${dateFmt.format(exp)}` : 'Status'),
+        outcome.kind === 'new' ? lootTag('New status!', 'new') : lootTag(outcome.kind === 'same' ? 'Confirmed' : 'Already counted')));
+    }
+    if (vals.mqd !== undefined) {
+      rows.push(h('li', null, lootIcon('count', MARK_COLORS.count), lootText(`$${fmt(vals.mqd)} MQDs`, `${mqdYear()} so far`), deltaTag(own ? state.mqd : null, vals.mqd, '$')));
+    }
+    if (vals.progress !== undefined) {
+      rows.push(h('li', null, lootIcon('count', MARK_COLORS.count), lootText(`${fmt(vals.progress)} ${track.unit}`, `${qualLabel(track, qualYear(track))} so far`),
+        deltaTag(was(state.progress, p.id), vals.progress)));
+    }
+    if (vals.alt !== undefined) {
+      rows.push(h('li', null, lootIcon('count', MARK_COLORS.count), lootText(`${fmt(vals.alt)} ${track.alt.unit}`, `${qualLabel(track, qualYear(track))} so far`),
+        deltaTag(was(state.progress, altKey(p.id)), vals.alt)));
+    }
+    if (vals.member) rows.push(h('li', null, lootIcon('member', MARK_COLORS.member), lootText('Member number', `•••• ${vals.member.slice(-4)}`), lootTag('Saved')));
+    return rows;
+  }
+
+  // Boxes on the screenshot around what was found: the program's name, the balance, the status, the counts.
+  function markFound(read, found, vals, p) {
+    const lines = (read.lines || []).filter((l) => l && Array.isArray(l.words) && typeof l.text === 'string');
+    const marks = [];
+    const add = (words, label, color) => {
+      const boxes = words.map((w) => w.bbox).filter(Boolean);
+      if (!boxes.length) return;
+      marks.push({ x0: Math.min(...boxes.map((b) => b.x0)), y0: Math.min(...boxes.map((b) => b.y0)),
+        x1: Math.max(...boxes.map((b) => b.x1)), y1: Math.max(...boxes.map((b) => b.y1)), label, color });
+    };
+    // A number's word, preferring one on a line with its label ("MQDs", "nights").
+    const numberAt = (value, label) => {
+      let first = null;
+      for (const line of lines) {
+        for (const w of line.words) {
+          if (cleanScanText(w.text).replace(/\D/g, '') !== String(value)) continue;
+          if (!label || label.test(line.text)) return [w];
+          first = first || [w];
+        }
+      }
+      return first || [];
+    };
+    const cid = found.programId;
+    const track = TRACKS[cid];
+    const sign = (SCAN_SIGNS[cid] || []).find((sg) => lines.some((l) => l.text.toLowerCase().includes(sg)));
+    if (sign) {
+      const line = lines.find((l) => l.text.toLowerCase().includes(sign));
+      const parts = sign.split(/\s+/);
+      add(line.words.filter((w) => parts.some((part) => w.text.toLowerCase().includes(part))), 'program', MARK_COLORS.program);
+    }
+    if (vals.balance !== undefined) add(numberAt(vals.balance), p.unit, MARK_COLORS.balance);
+    if (vals.mqd !== undefined) add(numberAt(vals.mqd, SCAN_LABELS.MQD), 'MQDs', MARK_COLORS.count);
+    if (vals.progress !== undefined) add(numberAt(vals.progress, SCAN_LABELS[track.unit]), track.unit, MARK_COLORS.count);
+    if (vals.alt !== undefined) add(numberAt(vals.alt, SCAN_LABELS[track.alt.unit]), track.alt.unit, MARK_COLORS.count);
+    if (vals.tierIndex >= 0) {
+      const tier = scanTiersFor(cid)[vals.tierIndex];
+      for (const line of lines) {
+        const hay = ` ${normTier(line.text)} `;
+        const alias = tier.aliases.find((a) => hay.includes(` ${a} `));
+        if (!alias) continue;
+        const parts = alias.split(' ');
+        add(line.words.filter((w) => parts.includes(normTier(w.text))), 'status', MARK_COLORS.status);
+        break;
+      }
+    }
+    const pad = 0.004;
+    $('#play-marks').replaceChildren(...marks.map((m, i) => {
+      const el = h('div', { class: m.y0 / read.height < 0.06 ? 'play-mark below' : 'play-mark' }, h('span', null, m.label));
+      el.style.cssText = `--i:${i};--mark:${m.color};left:${(m.x0 / read.width - pad) * 100}%;top:${(m.y0 / read.height - pad) * 100}%;`
+        + `width:${((m.x1 - m.x0) / read.width + 2 * pad) * 100}%;height:${((m.y1 - m.y0) / read.height + 2 * pad) * 100}%`;
+      return el;
+    }));
+  }
+
+  // The result: boxes on the screenshot, the loot, the XP it's worth, and Collect (automatic after a few seconds).
+  function showLoot(read) {
+    const found = parseAccountText(read.text);
+    const own = found.programId && (state.programs || []).find((p) => catalogFor(p) && catalogFor(p).id === found.programId);
+    Object.assign(playing, { text: read.text, found });
+    $('#play-shot').className = 'play-shot done';
+    if (!found.programId) {
+      $('#play-title').textContent = 'Couldn’t spot a program name. Which one is it?';
+      setActions([['Try another', false, pickImage], ['Pick the program', true, fixPlay]]);
+      return;
+    }
+    const p = own || programFromCatalog(CATALOG_BY_ID[found.programId]);
+    const vals = valsFrom(found, p);
+    Object.assign(playing, { choice: own ? own.id : `add:${p.id}`, vals });
+    let changes = ['balance', 'mqd', 'progress', 'alt', 'member'].filter((k) => vals[k] !== undefined).length;
+    const outcome = vals.tierIndex >= 0 ? statusOutcome(p, vals.tierIndex, vals.exp, vals.mqd ?? state.mqd) : null;
+    if (outcome && outcome.kind !== 'covered') changes++;
+    markFound(read, found, vals, p);
+    $('#play-loot').replaceChildren(...lootRows(p, own, vals, outcome).map((li, i) => { li.style.setProperty('--i', i); return li; }));
+    if (own && !changes) {
+      $('#play-title').textContent = `Found your ${p.name}, but no points or status to update`;
+      setActions([['Try another', false, pickImage], ['Check it', true, fixPlay]]);
+      return;
+    }
+    $('#play-title').textContent = own ? `Found your ${p.name}!` : `New program: ${p.name}!`;
+    const gain = xpFor(changes, !own, !!outcome && outcome.kind === 'new');
+    const lv = levelOf(game().xp);
+    const next = levelOf(game().xp + gain);
+    const from = Math.round(lv.progress * 100);
+    const to = next.index > lv.index ? 100 : Math.round(next.progress * 100);
+    $('#play-xp').replaceChildren(
+      h('span', { class: 'xp-gain' }, `+${gain} XP`),
+      h('span', { class: 'xp-track', 'aria-hidden': 'true' }, h('span', { class: 'xp-fill', style: `width:${from}%` }),
+        h('span', { class: 'xp-add', style: `left:${from}%;width:${Math.max(2, to - from)}%` })),
+      h('span', { class: 'xp-lv' }, next.index > lv.index ? `Level up: ${next.name}!` : `Lv ${lv.n} · ${lv.name}`));
+    $('#play-xp').hidden = false;
+    setActions([['Fix something', false, fixPlay],
+      [[h('span', { class: 'fill', 'aria-hidden': 'true' }), 'Collect', h('span', { class: 'cd' })], true, collectNow, 'play-collect']]);
+    startCountdown();
+  }
+
+  function startCountdown() {
+    const btn = $('#play-collect');
+    let left = COLLECT_SECONDS;
+    btn.classList.add('counting');
+    btn.querySelector('.cd').textContent = ` · ${left}`;
+    collectTimer = setInterval(() => {
+      left -= 1;
+      if (left > 0) btn.querySelector('.cd').textContent = ` · ${left}`;
+      else collectNow();
+    }, 1000);
+  }
+  // Any tap or key on the card (other than Collect) pauses the automatic collect, so you can look it over.
+  function stopCountdown() {
+    clearInterval(collectTimer);
+    collectTimer = 0;
+    const btn = $('#play-collect');
+    if (btn) { btn.classList.remove('counting'); btn.querySelector('.cd').textContent = ''; }
+  }
+
+  function collectNow() {
+    if (!playing || !playing.choice) return;
+    stopCountdown();
+    const from = ($('#play-loot .loot-bal') || $('#play-loot li') || $('#play-shot')).getBoundingClientRect();
+    const { choice, vals } = playing;
+    closePlay();
+    collect(choice, vals, from);
+  }
+  // "Fix something": the review form, with the screenshot above it.
+  function fixPlay() {
+    const { text, url } = playing;
+    playing.url = null; // the review sheet shows it now
+    closePlay();
+    openScan();
+    $('#scan-preview').src = url;
+    $('#scan-preview').hidden = false;
+    showScanResult(text);
+  }
+  function closePlay() { if (play.open) play.close(); }
 
   // The review form: everything found, each with a checkbox, editable before anything changes.
   function showScanResult(text) {
@@ -3966,69 +4517,188 @@
     return out;
   }
 
+  // The review form's choices, in the same shape a scan collects: undefined leaves a field alone.
+  function formVals() {
+    const use = (key) => { const box = $(`#scan-use-${key}`); return box && box.checked; };
+    const num = (key) => { const v = parseEntry($(`#scan-${key}`).value); return v && v.value != null ? v.value : undefined; }; // blank = leave it
+    const vals = {};
+    for (const key of ['balance', 'mqd', 'progress', 'alt']) if (use(key) && num(key) !== undefined) vals[key] = num(key);
+    if (use('member') && $('#scan-member').value.trim()) vals.member = str($('#scan-member').value, 40);
+    const tierIndex = Number(($('#scan-tier') || {}).value ?? -1);
+    if (use('tier') && tierIndex >= 0) vals.tierIndex = tierIndex;
+    if (vals.tierIndex >= 0) vals.exp = parseISODate($('#scan-exp').value) ? $('#scan-exp').value : '';
+    return vals;
+  }
+
   function applyScan() {
     const choice = $('#scan-program').value;
     if (!choice) { $('#scan-program').focus(); return; }
-    const previous = clone(state);
+    const vals = formVals();
+    const from = $('#scan-apply').getBoundingClientRect();
+    scanSheet.close();
+    collect(choice, vals, from);
+  }
+
+  // Puts what a screenshot showed into one program (adding it if it's new) and says what changed.
+  function applyRead(choice, vals) {
     const firstRun = !state.programs; // started from a screenshot instead of picking programs
     if (firstRun) state.programs = [];
     const added = choice.startsWith('add:');
-    let p;
-    if (added) {
-      p = programFromCatalog(CATALOG_BY_ID[choice.slice(4)]);
-      state.programs.push(p);
-    } else p = state.programs.find((x) => x.id === choice);
-    const use = (key) => { const box = $(`#scan-use-${key}`); return box && box.checked; };
-    const num = (key) => { const v = parseEntry($(`#scan-${key}`).value); return v && v.value != null ? v.value : undefined; }; // blank = leave it
+    const p = added ? programFromCatalog(CATALOG_BY_ID[choice.slice(4)]) : state.programs.find((x) => x.id === choice);
+    if (added) state.programs.push(p);
+    const before = { balance: state.balances[p.id] ?? null };
     const changes = [];
-    if (use('balance') && num('balance') !== undefined && p.unit) { setField(`bal:${p.id}`, num('balance')); changes.push('balance'); }
-    if (use('mqd') && num('mqd') !== undefined) { setField('mqd', num('mqd') ?? 0); changes.push('MQDs'); }
-    if (use('progress') && num('progress') !== undefined) { setField(`prog:${p.id}`, num('progress')); changes.push('progress'); }
-    if (use('alt') && num('alt') !== undefined) { setField(`prog:${altKey(p.id)}`, num('alt')); changes.push(trackFor(p).alt.unit); }
-    if (use('member') && $('#scan-member').value.trim()) { state.members[p.id] = str($('#scan-member').value, 40); changes.push('member number'); }
-    const tierIndex = Number(($('#scan-tier') || {}).value ?? -1);
-    if (use('tier') && tierIndex >= 0) {
-      const cid = catalogFor(p) ? catalogFor(p).id : null;
-      const tiers = scanTiersFor(cid);
-      const tier = tiers[tierIndex];
-      const exp = parseISODate($('#scan-exp').value) ? $('#scan-exp').value : '';
-      const current = p === medallionProgram() && medallionFor(state.mqd).current;
-      const fromMqd = current && findTier(tiers, `${current.name} Medallion`) === tierIndex;
-      const same = p.status.find((line) => !line.card && findTier(tiers, line.tier) === tierIndex);
-      if (same) {
+    let statusNew = false;
+    if (vals.balance !== undefined && p.unit) { setField(`bal:${p.id}`, vals.balance); changes.push('balance'); }
+    if (vals.mqd !== undefined) { setField('mqd', vals.mqd); changes.push('MQDs'); }
+    if (vals.progress !== undefined) { setField(`prog:${p.id}`, vals.progress); changes.push('progress'); }
+    const track = trackFor(p);
+    if (vals.alt !== undefined && track && track.alt) { setField(`prog:${altKey(p.id)}`, vals.alt); changes.push(track.alt.unit); }
+    if (vals.member) { state.members[p.id] = vals.member; changes.push('member number'); }
+    if (vals.tierIndex >= 0) {
+      const outcome = statusOutcome(p, vals.tierIndex, vals.exp);
+      if (outcome.kind === 'same') {
         // The screen shows you hold it now, so a past end date no longer applies.
-        if (exp) same.exp = exp;
-        else if (same.exp && lineExpired(same)) delete same.exp;
-        if (!same.via) same.via = 'from your account';
+        const line = outcome.line;
+        if (vals.exp) line.exp = vals.exp;
+        else if (line.exp && lineExpired(line)) delete line.exp;
+        if (!line.via) line.via = 'from your account';
         changes.push('status');
-      } else if (!fromMqd && !(benefitsFor(p) && coveredThrough(p, tierIndex, exp || '9999-12-31'))) {
-        p.status.unshift(exp ? { tier: tier.name, via: 'from your account', exp } : { tier: tier.name, via: 'from your account' });
+      } else if (outcome.kind === 'new') {
+        p.status.unshift(vals.exp ? { tier: outcome.tier.name, via: 'from your account', exp: vals.exp } : { tier: outcome.tier.name, via: 'from your account' });
         changes.push('status');
+        statusNew = true;
       }
     }
-    scanSheet.close();
-    if (!changes.length && !added) { showToast('Nothing to update'); return; }
+    return { p, added, firstRun, before, changes, statusNew };
+  }
+
+  // Applies a screenshot, then celebrates: points fly into the program's row, the number counts up, XP and badges.
+  function collect(choice, vals, from) {
+    const previous = clone(state);
+    const result = applyRead(choice, vals);
+    if (!result.changes.length && !result.added) { Object.assign(state, previous); showToast('Nothing new to update'); return; }
+    const reward = award(result);
     saveNow();
-    if (firstRun) { markNewsSeen(); intro = true; scrollTo(0, 0); }
+    if (result.firstRun) markNewsSeen();
+    if (!matchesFilter(result.p)) filter = 'all';
     renderAll();
-    const message = !added ? `Updated ${p.name}: ${listOf(changes)}`
-      : changes.length ? `Added ${p.name} with your ${listOf(changes)}` : `Added ${p.name}`;
-    showToast(message, () => {
+    celebrate(result, reward, from);
+    const { p, changes, added } = result;
+    const what = added ? (changes.length ? `Added ${p.name} with your ${listOf(changes)}` : `Added ${p.name}`) : `Updated ${p.name}: ${listOf(changes)}`;
+    showToast(`${what} · +${reward.xp} XP`, () => {
       Object.assign(state, previous);
       if (state.programs) saveNow();
       else try { localStorage.removeItem(storageKey()); } catch (e) { /* private mode */ }
       renderAll();
     });
   }
+
+  async function celebrate(result, reward, from) {
+    const { p, before } = result;
+    const opener = document.querySelector(`#programs [data-open="${CSS.escape(p.id)}"]`);
+    const li = opener && opener.closest('li');
+    if (li) {
+      li.scrollIntoView({ behavior: reduceMotion.matches ? 'auto' : 'smooth', block: 'center' });
+      const num = li.querySelector(`[data-field="bal:${CSS.escape(p.id)}"]`);
+      const now = state.balances[p.id];
+      const balChanged = result.changes.includes('balance') && now != null;
+      if (num && balChanged) { num._count = null; num.textContent = before.balance == null ? '—' : fmt(before.balance); } // until the points land
+      const target = num || opener;
+      if (!reduceMotion.matches) { await wait(450); await flyCoins(from, target); }
+      if (num && balChanged) countBetween(num, before.balance ?? 0, now, fmt, 900);
+      const delta = balChanged && before.balance != null ? now - before.balance : null;
+      floatTag(target, delta ? `${delta > 0 ? '+' : '−'}${fmt(Math.abs(delta))}` : result.added ? 'Added!' : balChanged ? `+${fmt(now)}` : 'Updated', delta < 0 ? 'down' : '');
+      li.classList.remove('collected');
+      void li.offsetWidth; // restart the glow
+      li.classList.add('collected');
+      if (result.added || result.statusNew || delta > 0 || (balChanged && before.balance == null)) confetti(target);
+    }
+    queueAchievements(reward);
+  }
+
+  // Gold points flying from the scan card to the balance; resolves as the first ones land.
+  function flyCoins(from, toEl) {
+    if (!from || !toEl) return Promise.resolve();
+    const to = toEl.getBoundingClientRect();
+    const fx = from.left + from.width / 2;
+    const fy = from.top + from.height / 2;
+    const dx = to.left + to.width / 2 - fx;
+    const dy = to.top + to.height / 2 - fy;
+    for (let i = 0; i < 12; i++) {
+      const coin = h('div', { class: 'coin', 'aria-hidden': 'true', style: `left:${fx}px;top:${fy}px` });
+      document.body.append(coin);
+      const bend = (Math.random() - 0.5) * 160;
+      const lift = -60 - Math.random() * 90;
+      coin.animate([
+        { transform: 'translate(0, 0) scale(.4)', opacity: 0 },
+        { transform: `translate(${dx * 0.3 + bend}px, ${dy * 0.3 + lift}px) scale(1.1)`, opacity: 1, offset: 0.3 },
+        { transform: `translate(${dx}px, ${dy}px) scale(.45)`, opacity: 0.85 },
+      ], { duration: 760, delay: i * 45, easing: 'cubic-bezier(.4, 0, .6, 1)', fill: 'both' }).finished.then(() => coin.remove(), () => coin.remove());
+    }
+    return wait(760);
+  }
+
+  // "+2,400" floating up off the balance.
+  function floatTag(el, text, kind) {
+    if (reduceMotion.matches || !el) return;
+    const r = el.getBoundingClientRect();
+    const tag = h('div', { class: kind ? `delta-float ${kind}` : 'delta-float', 'aria-hidden': 'true', style: `left:${r.left + r.width / 2}px;top:${r.top - 4}px` }, text);
+    document.body.append(tag);
+    setTimeout(() => tag.remove(), 1800);
+  }
+
+  // "Level up" and "Badge unlocked" banners, one after another, each with confetti.
+  const achievements = [];
+  let achieving = false;
+  function queueAchievements(reward) {
+    if (reward.levelUp) achievements.push(['Level up', `Lv ${reward.levelUp.n} · ${reward.levelUp.name}`, '#5B8DEF']);
+    for (const b of reward.unlocked) achievements.push(['Badge unlocked', b.name, b.color]);
+    if (!achieving) nextAchievement();
+  }
+  function nextAchievement() {
+    const next = achievements.shift();
+    const el = $('#achieve');
+    if (!next) { achieving = false; return; }
+    achieving = true;
+    $('#achieve-kind').textContent = next[0];
+    $('#achieve-name').textContent = next[1];
+    $('#achieve-medal').style.setProperty('--medal', next[2]);
+    el.hidden = false;
+    requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('show')));
+    setTimeout(() => confetti($('#achieve-medal')), 300);
+    setTimeout(() => {
+      el.classList.remove('show');
+      setTimeout(() => { el.hidden = true; nextAchievement(); }, reduceMotion.matches ? 0 : 500);
+    }, 2800);
+  }
   const listOf = (items) => (items.length > 1 ? `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}` : items[0]);
 
-  // The card above the list and the setup card go straight to choosing a picture; the sheet explains the rest.
-  for (const id of ['#scan-btn', '#setup-scan']) $(id).addEventListener('click', () => { openScan(); $('#scan-file').click(); });
-  $('#quick-scan').addEventListener('click', () => { quickSheet.close(); openScan(); $('#scan-file').click(); });
-  $('#scan-pick').addEventListener('click', () => $('#scan-file').click());
+  // The card above the list and the setup card: the how-to the first time, then straight to choosing a picture.
+  for (const id of ['#scan-btn', '#setup-scan']) $(id).addEventListener('click', startScan);
+  $('#quick-scan').addEventListener('click', () => { quickSheet.close(); pickImage(); });
+  $('#scan-pick').addEventListener('click', pickImage);
   $('#scan-preview').addEventListener('click', (e) => e.currentTarget.classList.toggle('big'));
   $('#scan-programs').replaceChildren(...CATALOG.map((g) => h('p', null, h('b', null, `${g.group}: `),
     `${g.items.filter((c) => SCAN_SIGNS[c.id]).map((c) => c.name).join(', ')}.`)));
+
+  play.addEventListener('close', () => {
+    stopCountdown();
+    playRun++;
+    if (playing && playing.url) URL.revokeObjectURL(playing.url);
+    playing = null;
+    $('#play-img').removeAttribute('src');
+  });
+  play.addEventListener('click', (e) => { if (e.target === play) closePlay(); }); // tap on the backdrop
+  play.addEventListener('pointerdown', (e) => { if (!e.target.closest('#play-collect')) stopCountdown(); });
+  play.addEventListener('keydown', (e) => { if (e.key !== 'Enter' && e.key !== ' ') stopCountdown(); });
+  $('#play-close').addEventListener('click', closePlay);
+  addEventListener('resize', () => { if (play.open) sizeShot(); });
+
+  $('#game-strip').addEventListener('click', (e) => { if (e.target.closest('[data-game]')) openGame(); });
+  $('#game-done').addEventListener('click', () => gameSheet.close());
+  $('#game-scan').addEventListener('click', () => { gameSheet.close(); pickImage(); });
+  gameSheet.addEventListener('click', (e) => { if (e.target === gameSheet) gameSheet.close(); });
 
   // On a computer: drop a screenshot anywhere on the page, or paste one (⌘V / Ctrl+V).
   const imageIn = (list) => [...(list || [])].find((f) => /^image\//.test(f.type));
@@ -4041,7 +4711,7 @@
     e.preventDefault(); // otherwise the browser opens the image in place of the app
     const ok = !otherSheetOpen();
     e.dataTransfer.dropEffect = ok ? 'copy' : 'none';
-    $('#drop-hint').hidden = !ok || scanSheet.open;
+    $('#drop-hint').hidden = !ok || scanSheet.open || play.open;
     clearTimeout(dropHintTimer);
     dropHintTimer = setTimeout(hideDropHint, 500);
   });
@@ -4052,19 +4722,19 @@
     hideDropHint();
     if (otherSheetOpen()) return;
     const file = imageIn(e.dataTransfer.files);
-    if (file) scanImage(file);
+    if (file) playScan(file);
     else showToast('That isn’t a picture — drop a screenshot (PNG or JPG)');
   });
   addEventListener('paste', (e) => {
     const file = e.clipboardData && imageIn(e.clipboardData.files);
     if (!file || otherSheetOpen()) return;
     e.preventDefault();
-    scanImage(file);
+    playScan(file);
   });
   $('#scan-cancel').addEventListener('click', () => scanSheet.close());
-  $('#scan-again').addEventListener('click', () => { openScan(); $('#scan-file').click(); });
+  $('#scan-again').addEventListener('click', pickImage);
   $('#scan-apply').addEventListener('click', applyScan);
-  $('#scan-file').addEventListener('change', (e) => { const file = e.target.files && e.target.files[0]; e.target.value = ''; if (file) readScreenshot(file); });
+  $('#scan-file').addEventListener('change', (e) => { const file = e.target.files && e.target.files[0]; e.target.value = ''; if (file) playScan(file); });
   $('#scan-read-text').addEventListener('click', () => { if ($('#scan-text').value.trim()) showScanResult($('#scan-text').value); });
   scanSheet.addEventListener('click', (e) => {
     if (e.target === scanSheet) { scanSheet.close(); return; }
@@ -6471,7 +7141,7 @@
 
   // A one-time card listing new features for people who already use the app; new setups skip it.
   const NEWS_KEY = 'status-tracker-news';
-  const NEWS_ID = '2026-10e';
+  const NEWS_ID = '2026-10f';
   const newsSeen = () => { try { return localStorage.getItem(NEWS_KEY) === NEWS_ID; } catch (e) { return true; } };
   const markNewsSeen = () => { try { localStorage.setItem(NEWS_KEY, NEWS_ID); } catch (e) { /* private mode */ } };
   function renderNews() {
