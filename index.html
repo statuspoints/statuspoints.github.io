@@ -679,6 +679,9 @@
   .play-mark { position: absolute; border: 2px solid var(--mark); border-radius: 6px; background: rgba(255, 255, 255, .08); box-shadow: 0 0 0 3px rgba(0, 0, 0, .06), 0 0 14px var(--mark); animation: mark-pop .45s cubic-bezier(.2, 1.5, .4, 1) both; animation-delay: calc(var(--i) * 170ms + 100ms); }
   .play-mark span { position: absolute; left: -2px; bottom: 100%; margin-bottom: 3px; padding: 1px 6px; border-radius: 6px; background: var(--mark); color: #fff; font-size: 10.5px; font-weight: 750; line-height: 1.5; white-space: nowrap; text-transform: capitalize; }
   .play-mark.below span { top: 100%; bottom: auto; margin: 3px 0 0; }
+  .play-mark.side-r span, .play-mark.side-l span { top: 50%; bottom: auto; margin: 0; transform: translateY(-50%); }
+  .play-mark.side-r span { left: calc(100% + 5px); }
+  .play-mark.side-l span { left: auto; right: calc(100% + 5px); }
   @keyframes mark-pop { from { opacity: 0; transform: scale(1.5); } to { opacity: 1; transform: scale(1); } }
   .play-loot { display: grid; gap: 8px; margin: 14px 0 0; padding: 0; list-style: none; }
   .play-loot li { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 14px; background: var(--inset); animation: loot-in .45s cubic-bezier(.2, 1.4, .4, 1) both; animation-delay: calc(var(--i) * 140ms + 250ms); }
@@ -4081,7 +4084,7 @@
     { id: 'first', name: 'First scan', how: 'Collect a screenshot', color: '#5B8DEF', test: () => game().scans >= 1 },
     { id: 'five', name: 'Scanner', how: 'Collect 5 screenshots', color: '#1FA89A', test: () => game().scans >= 5 },
     { id: 'twenty', name: 'Scan master', how: 'Collect 20 screenshots', color: '#0E7490', test: () => game().scans >= 20 },
-    { id: 'status', name: 'Level up', how: 'Scan a screen with a new status', color: '#9B6BE0', test: (r) => !!(r && r.statusNew) },
+    { id: 'status', name: 'Moving up', how: 'Scan a screen with a new status', color: '#9B6BE0', test: (r) => !!(r && r.statusNew) },
     { id: 'elite3', name: 'Elite trio', how: 'Elite status in 3 programs', color: '#7C3AED', test: () => (state.programs || []).filter(hasStatus).length >= 3 },
     { id: 'six', name: 'Six figures', how: '100,000+ in one program', color: '#E0A82E', test: () => (state.programs || []).some((p) => p.unit && (state.balances[p.id] || 0) >= 100000) },
     { id: 'million', name: 'Millionaire', how: '1,000,000 points & miles in all', color: '#C2410C', test: () => totalPoints() >= 1e6 },
@@ -4347,7 +4350,8 @@
     }
     const pad = 0.004;
     $('#play-marks').replaceChildren(...marks.map((m, i) => {
-      const el = h('div', { class: m.y0 / read.height < 0.06 ? 'play-mark below' : 'play-mark' }, h('span', null, m.label));
+      const side = m.x1 / read.width < 0.68 ? ' side-r' : m.x0 / read.width > 0.32 ? ' side-l' : m.y0 / read.height < 0.06 ? ' below' : '';
+      const el = h('div', { class: `play-mark${side}` }, h('span', null, m.label));
       el.style.cssText = `--i:${i};--mark:${m.color};left:${(m.x0 / read.width - pad) * 100}%;top:${(m.y0 / read.height - pad) * 100}%;`
         + `width:${((m.x1 - m.x0) / read.width + 2 * pad) * 100}%;height:${((m.y1 - m.y0) / read.height + 2 * pad) * 100}%`;
       return el;
@@ -4584,9 +4588,8 @@
     if (!matchesFilter(result.p)) filter = 'all';
     renderAll();
     celebrate(result, reward, from);
-    const { p, changes, added } = result;
-    const what = added ? (changes.length ? `Added ${p.name} with your ${listOf(changes)}` : `Added ${p.name}`) : `Updated ${p.name}: ${listOf(changes)}`;
-    showToast(`${what} · +${reward.xp} XP`, () => {
+    const { p, added } = result;
+    showToast(`${added ? 'Added' : 'Updated'} ${p.name} · +${reward.xp} XP`, () => {
       Object.assign(state, previous);
       if (state.programs) saveNow();
       else try { localStorage.removeItem(storageKey()); } catch (e) { /* private mode */ }
@@ -4672,7 +4675,6 @@
       setTimeout(() => { el.hidden = true; nextAchievement(); }, reduceMotion.matches ? 0 : 500);
     }, 2800);
   }
-  const listOf = (items) => (items.length > 1 ? `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}` : items[0]);
 
   // The card above the list and the setup card: the how-to the first time, then straight to choosing a picture.
   for (const id of ['#scan-btn', '#setup-scan']) $(id).addEventListener('click', startScan);
