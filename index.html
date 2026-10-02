@@ -637,7 +637,8 @@
   .scan-works summary::-webkit-details-marker { display: none; }
   .scan-works summary span { color: var(--accent); font-weight: 600; white-space: nowrap; }
   .scan-works[open] summary span { display: none; }
-  .scan-works p { margin: 6px 0 0; font-size: 12.5px; }
+  .scan-works p { margin: 8px 0 0; font-size: 12.5px; }
+  .scan-works b { color: var(--text); font-weight: 650; }
   .scan-preview { display: block; max-width: 100%; max-height: 150px; margin: 0 auto 12px; border: 1px solid var(--line); border-radius: 12px; cursor: zoom-in; }
   .scan-preview.big { max-height: none; cursor: zoom-out; }
   .drop-hint { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 24px; background: rgba(10, 18, 30, .55); pointer-events: none; }
@@ -1674,7 +1675,7 @@
       <input type="file" id="scan-file" accept="image/*" hidden>
       <details class="scan-works">
         <summary>Works with 50+ programs, including Delta, United, American, Marriott, Hilton, IHG, Hyatt, Amex, and Chase. <span>See all</span></summary>
-        <p id="scan-programs"></p>
+        <div id="scan-programs"></div>
       </details>
       <details class="scan-paste">
         <summary>Or paste text instead</summary>
@@ -4026,7 +4027,8 @@
   $('#quick-scan').addEventListener('click', () => { quickSheet.close(); openScan(); $('#scan-file').click(); });
   $('#scan-pick').addEventListener('click', () => $('#scan-file').click());
   $('#scan-preview').addEventListener('click', (e) => e.currentTarget.classList.toggle('big'));
-  $('#scan-programs').textContent = CATALOG.map((g) => `${g.group}: ${g.items.filter((c) => SCAN_SIGNS[c.id]).map((c) => c.name).join(', ')}.`).join(' ');
+  $('#scan-programs').replaceChildren(...CATALOG.map((g) => h('p', null, h('b', null, `${g.group}: `),
+    `${g.items.filter((c) => SCAN_SIGNS[c.id]).map((c) => c.name).join(', ')}.`)));
 
   // On a computer: drop a screenshot anywhere on the page, or paste one (⌘V / Ctrl+V).
   const imageIn = (list) => [...(list || [])].find((f) => /^image\//.test(f.type));
