@@ -667,6 +667,15 @@
   dialog.play::backdrop { background: rgba(8, 14, 24, .62); }
   .play-card { position: relative; padding: 16px 16px 14px; }
   .play-close { position: absolute; top: 8px; right: 8px; }
+  .play-top { display: flex; align-items: center; gap: 10px; margin: 0 40px 6px 2px; }
+  .play-top:has(> :not([hidden])) { min-height: 24px; }
+  .play-count { padding: 2px 9px; border-radius: 999px; background: var(--chip-bg); color: var(--muted); font-size: 11.5px; font-weight: 750; }
+  .play-pick { padding: 6px !important; }
+  .play-pick select { flex: 1; min-width: 0; height: 44px; padding: 0 10px; border: 1px solid var(--field-line); border-radius: 10px; background: var(--field); color: var(--text); font: inherit; font-size: 16px; }
+  .combo { padding: 2px 8px; border-radius: 999px; background: linear-gradient(135deg, #F97316, #DB2777); color: #fff; font-size: 11.5px; font-weight: 800; white-space: nowrap; animation: combo-pop .5s cubic-bezier(.2, 1.6, .4, 1) .7s both; }
+  @keyframes combo-pop { from { transform: scale(0) rotate(-14deg); } }
+  .game-chip.warn { background: var(--warn-soft); color: var(--warn); }
+  .game-sound { margin: 14px 0 0; }
   .play-title { min-height: 22px; margin: 2px 40px 12px 2px; font-size: 16px; font-weight: 750; line-height: 1.35; }
   .play-frame { display: flex; justify-content: center; }
   .play-shot { position: relative; flex: none; border: 1px solid var(--line); border-radius: 14px; background: var(--inset); overflow: hidden; }
@@ -695,9 +704,9 @@
   .loot-tag { flex: none; padding: 3px 9px; border-radius: 999px; background: var(--chip-bg); color: var(--muted); font-size: 12px; font-weight: 750; white-space: nowrap; }
   .loot-tag.up { background: var(--good-soft); color: var(--good); }
   .loot-tag.new { background: linear-gradient(135deg, #FCE7B2, #F2C466); color: #6B4400; }
-  .play-xp { display: flex; align-items: center; gap: 10px; margin: 12px 2px 0; font-size: 12.5px; font-weight: 650; color: var(--muted); animation: loot-in .45s both .6s; }
+  .play-xp { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin: 12px 2px 0; font-size: 12.5px; font-weight: 650; color: var(--muted); animation: loot-in .45s both .6s; }
   .xp-gain { color: var(--good); font-weight: 800; }
-  .xp-track { position: relative; flex: 1; height: 8px; border-radius: 4px; background: var(--track); overflow: hidden; }
+  .xp-track { position: relative; flex: 1; min-width: 60px; height: 8px; border-radius: 4px; background: var(--track); overflow: hidden; }
   .xp-fill, .xp-add { position: absolute; top: 0; bottom: 0; }
   .xp-fill { left: 0; background: var(--accent); }
   .xp-add { background: var(--good); animation: xp-pulse .9s ease-in-out infinite alternate; }
@@ -1516,7 +1525,7 @@
     <div class="install-body">
       <strong>New in your tracker</strong>
       <ul class="news-list">
-        <li><b>Scan &amp; collect</b>: drop or choose a screenshot of any account page, watch it scan, and collect your points and status. Earn XP, keep a weekly streak, and unlock badges.</li>
+        <li><b>Scan &amp; collect</b>: drop or choose screenshots of your account pages (several at once works), watch them scan, and collect your points and status. Earn XP, combos, a weekly streak, and badges.</li>
         <li><b>Simple view</b> and <b>Type balances</b>: just points and status, updated in one go.</li>
         <li><b>Card credits</b>, <b>free night certificates</b>, and <b>what your points are worth</b>.</li>
       </ul>
@@ -1779,10 +1788,11 @@
     </div>
   </div>
 </dialog>
-<input type="file" id="scan-file" class="file-input" accept="image/*" tabindex="-1" aria-hidden="true">
+<input type="file" id="scan-file" class="file-input" accept="image/*" multiple tabindex="-1" aria-hidden="true">
 <dialog class="play" id="play" aria-labelledby="play-title">
   <div class="play-card">
     <button class="icon-btn play-close" id="play-close" type="button" aria-label="Close"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M2.5 2.5l9 9M11.5 2.5l-9 9"/></svg></button>
+    <div class="play-top"><span class="play-count" id="play-count" hidden></span><button class="link" id="play-skip" type="button" hidden>Skip this one</button></div>
     <p class="play-title" id="play-title" role="status"></p>
     <div class="play-frame">
       <div class="play-shot" id="play-shot">
@@ -1809,7 +1819,8 @@
     </div>
     <h3 class="d-label">Badges <span id="game-badge-count"></span></h3>
     <ul class="badges" id="game-badges"></ul>
-    <p class="fine">Each screenshot you collect earns XP, and each badge 50 more. Up to date means updated in the last 30 days. It all stays on this device.</p>
+    <p class="game-sound"><button class="pill-btn sm" id="game-sound" type="button" aria-pressed="true">Sounds &amp; vibration: on</button></p>
+    <p class="fine">Each screenshot you collect earns XP, more for several in a row (a combo), and each badge 50 more. Up to date means updated in the last 30 days. It all stays on this device.</p>
     <div class="sheet-actions">
       <button class="btn-secondary" id="game-scan" type="button">Update from a screenshot</button>
       <span class="spacer"></span>
@@ -1825,8 +1836,8 @@
     <div id="scan-start">
       <ol class="scan-steps">
         <li>Open your airline, hotel, or card app or website to the page that shows your points and status.</li>
-        <li>Take a screenshot.</li>
-        <li>Choose it here. Watch it scan, then collect your points and status.</li>
+        <li>Take a screenshot. Got several accounts? Screenshot them all.</li>
+        <li>Choose them here (one or many). Watch each one scan, then collect your points and status.</li>
       </ol>
       <button class="add scan-pick" id="scan-pick" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="M20.5 15.5l-4.8-4.6-8.7 8.6"/></svg>Choose screenshot</button>
       <p class="scan-drop-note desk-only">Or drop or paste a screenshot anywhere on this page.</p>
@@ -3864,16 +3875,16 @@
 
   // Pulls program, balance, status, end date, this year's counts, MQDs, and member number out of an account
   // screen's text. Built to tolerate OCR: labels above or below values, stray marks, near-miss spellings.
-  function parseAccountText(rawText) {
+  function parseAccountText(rawText, forceId) { // forceId: read it as this program (or '' for none) instead of guessing
     const text = cleanScanText(rawText);
     const lower = text.toLowerCase();
     const lines = text.split(/\n/).map((l) => l.trim()).filter(Boolean);
     // Program: each sign is weighed by where it appears — the header (first lines) counts double and lines about
     // transferring or partners barely count, so a Chase page listing "IHG, Hyatt, United…" stays Chase. Near-miss
     // spellings count a little less; a program already on your list wins ties.
-    let programId = null;
+    let programId = forceId === undefined ? null : forceId || null;
     let best = 0;
-    for (const [id, signs] of Object.entries(SCAN_SIGNS)) {
+    for (const [id, signs] of forceId === undefined ? Object.entries(SCAN_SIGNS) : []) {
       const hits = [];
       lines.forEach((line, i) => {
         const ll = line.toLowerCase();
@@ -4021,7 +4032,7 @@
     $('#scan-text').value = '';
     if (!scanSheet.open) scanSheet.showModal();
   }
-  const pickImage = () => $('#scan-file').click();
+  const pickImage = () => { unlockSound(); $('#scan-file').click(); };
   // The how-to the first time; after that, straight to choosing a picture.
   const startScan = () => (game().scans ? pickImage() : openScan());
 
@@ -4050,6 +4061,12 @@
   // XP for collecting a screenshot: 10, plus 5 for each thing it updates, 25 for a new program, 40 for a new status.
   const xpFor = (changes, added, statusNew) => 10 + 5 * changes + (added ? 25 : 0) + (statusNew ? 40 : 0);
   const BADGE_XP = 50;
+  // Screenshots collected within 2 minutes of each other build a combo: +10 XP for the 2nd, +20 for the 3rd… up to +50.
+  let combo = 0;
+  let lastCollectAt = 0;
+  const COMBO_MS = 2 * 60 * 1000;
+  const comboNext = (now = Date.now()) => (now - lastCollectAt < COMBO_MS ? combo + 1 : 1);
+  const comboBonus = (n) => Math.min(50, 10 * (n - 1));
 
   // Weeks start on Monday; any update (screenshot or typed) counts toward the streak.
   function weekNo(d = new Date()) {
@@ -4090,6 +4107,7 @@
     { id: 'million', name: 'Millionaire', how: '1,000,000 points & miles in all', color: '#C2410C', test: () => totalPoints() >= 1e6 },
     { id: 'fresh', name: 'All caught up', how: 'Every balance updated this month (3+)', color: '#16A34A', test: () => { const f = freshness(); return f.total >= 3 && f.fresh === f.total; } },
     { id: 'streak4', name: 'On a roll', how: 'Update 4 weeks in a row', color: '#DC2626', test: () => streakWeeks() >= 4 },
+    { id: 'combo5', name: 'Combo ×5', how: 'Collect 5 screenshots in a row', color: '#DB2777', test: (r) => !!(r && r.combo >= 5) },
     { id: 'collector', name: 'Collector', how: 'Track 10 programs', color: '#2563EB', test: () => (state.programs || []).length >= 10 },
     { id: 'jetset', name: 'Jet set', how: 'Track 5 airlines', color: '#0891B2', test: () => (state.programs || []).filter((p) => categoryOf(p) === 'Airlines').length >= 5 },
   ];
@@ -4100,14 +4118,17 @@
     const before = levelOf(g.xp);
     g.scans += 1;
     markWeek();
-    let xp = xpFor(result.changes.length, result.added, result.statusNew);
+    combo = comboNext();
+    lastCollectAt = Date.now();
+    result.combo = combo;
+    let xp = xpFor(result.changes.length, result.added, result.statusNew) + comboBonus(combo);
     const unlocked = BADGES.filter((b) => !g.badges[b.id] && b.test(result));
     for (const b of unlocked) g.badges[b.id] = todayISO();
     xp += unlocked.length * BADGE_XP;
     g.xp += xp;
     g.best = Math.max(g.best, streakWeeks());
     const after = levelOf(g.xp);
-    return { xp, unlocked, levelUp: after.index > before.index ? after : null };
+    return { xp, unlocked, combo, levelUp: after.index > before.index ? after : null };
   }
 
   const GAME_ICONS = {
@@ -4127,12 +4148,15 @@
     const lv = levelOf(g.xp);
     const streak = streakWeeks();
     const fresh = freshness();
+    const atRisk = streak > 0 && !g.weeks.includes(weekNo());
     const chips = [
       h('button', { type: 'button', class: 'game-chip lv', 'data-game': '',
         'aria-label': `Level ${lv.n}, ${lv.name}, ${fmt(g.xp)} XP. See your progress` },
       h('span', { class: 'lv-dot' }, String(lv.n)), lv.name,
       h('span', { class: 'xp-mini', 'aria-hidden': 'true' }, h('span', { style: `width:${Math.round(lv.progress * 100)}%` }))),
-      h('button', { type: 'button', class: 'game-chip', 'data-game': '' }, gameIcon('flame'), streak ? `${streak}-week streak` : 'Start a streak'),
+      // A streak with no update yet this week ends Sunday night.
+      h('button', { type: 'button', class: atRisk ? 'game-chip warn' : 'game-chip', 'data-game': '' }, gameIcon('flame'),
+        streak ? `${streak}-week streak${atRisk ? ' · update by Sunday' : ''}` : 'Start a streak'),
     ];
     if (fresh.total) chips.push(h('button', { type: 'button', class: 'game-chip', 'data-game': '' }, gameIcon('check'), `${fresh.fresh}/${fresh.total} up to date`));
     $('#game-strip').replaceChildren(...chips);
@@ -4152,7 +4176,7 @@
     const stat = (n, label) => h('div', null, h('b', null, n), h('span', null, label));
     $('#game-stats').replaceChildren(
       stat(fmt(g.scans), g.scans === 1 ? 'screenshot collected' : 'screenshots collected'),
-      stat(String(streak), `week streak${g.best > streak ? ` (best ${g.best})` : ''}`),
+      stat(String(streak), `week streak${streak && !g.weeks.includes(weekNo()) ? ', update by Sunday' : g.best > streak ? ` (best ${g.best})` : ''}`),
       stat(fresh.total ? `${fresh.fresh}/${fresh.total}` : '—', 'balances up to date'));
     $('#game-stale-wrap').hidden = !fresh.stale.length;
     $('#game-stale').replaceChildren(...fresh.stale.slice(0, 8).map((p) => h('li', null, avatar(p), h('span', null, p.name),
@@ -4164,7 +4188,52 @@
         h('span', { class: 'medal', style: `--medal:${b.color}`, 'aria-hidden': 'true' }, gameIcon(when ? 'star' : 'lock')),
         h('b', null, b.name), h('small', null, when ? `Earned ${dateFmt.format(when)}` : b.how));
     }));
+    syncSoundButton();
     gameSheet.showModal();
+  }
+
+  // Little chimes for the loot, the coins landing, and level-ups and badges — made on the fly, no audio files —
+  // plus a buzz on phones that can. One switch in Your progress turns both off (remembered on this device).
+  const SOUND_KEY = 'status-tracker-sound';
+  let soundOff = (() => { try { return localStorage.getItem(SOUND_KEY) === 'off'; } catch (e) { return false; } })();
+  let audio = null;
+  // Browsers only let a page make sound after a tap or drop, so this runs in those handlers.
+  function unlockSound() {
+    if (soundOff) return null;
+    try {
+      audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+      if (audio.state === 'suspended') audio.resume();
+    } catch (e) { audio = null; }
+    return audio;
+  }
+  function tone(freq, at, dur, type, vol) {
+    const t = audio.currentTime + at;
+    const osc = audio.createOscillator();
+    const amp = audio.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, t);
+    amp.gain.setValueAtTime(0.0001, t);
+    amp.gain.exponentialRampToValueAtTime(vol, t + 0.012);
+    amp.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    osc.connect(amp).connect(audio.destination);
+    osc.start(t);
+    osc.stop(t + dur + 0.03);
+  }
+  const SOUNDS = {
+    loot: (n) => { for (let i = 0; i < n; i++) tone(620 + i * 110, 0.25 + i * 0.14, 0.09, 'triangle', 0.05); },
+    coin: () => { tone(988, 0, 0.1, 'triangle', 0.09); tone(1319, 0.08, 0.3, 'triangle', 0.09); },
+    fanfare: () => [523, 659, 784, 1047].forEach((f, i) => tone(f, i * 0.09, i === 3 ? 0.55 : 0.16, 'triangle', 0.08)),
+  };
+  const BUZZ = { coin: 25, fanfare: [30, 50, 30] };
+  function sound(name, ...args) {
+    if (soundOff) return;
+    if (BUZZ[name] && navigator.vibrate) navigator.vibrate(BUZZ[name]);
+    if (!audio || audio.state !== 'running') return;
+    try { SOUNDS[name](...args); } catch (e) { /* audio unavailable */ }
+  }
+  function syncSoundButton() {
+    $('#game-sound').setAttribute('aria-pressed', String(!soundOff));
+    $('#game-sound').textContent = `Sounds & vibration: ${soundOff ? 'off' : 'on'}`;
   }
 
   /* ---------- Scan & collect: the screenshot on a card, what it found, then its points fly into your list ---------- */
@@ -4181,7 +4250,7 @@
 
   async function playScan(file) {
     const run = ++playRun;
-    if (scanSheet.open) scanSheet.close();
+    if (scanSheet.open) { quietClose = true; scanSheet.close(); }
     stopCountdown();
     if (playing && playing.url) URL.revokeObjectURL(playing.url);
     playing = { url: URL.createObjectURL(file) };
@@ -4194,6 +4263,8 @@
     const img = $('#play-img');
     img.src = playing.url;
     if (!play.open) play.showModal();
+    renderPlayCount();
+    if (!$('#achieve').hidden) play.append($('#achieve')); // a banner still showing stays on top
     try { await img.decode(); } catch (e) { /* sized from whatever loaded */ }
     if (run !== playRun) return;
     sizeShot();
@@ -4274,8 +4345,8 @@
 
   // One row per thing found, each with what it changes: "+2,400", "New status!", "No change".
   function lootRows(p, own, vals, outcome) {
-    const cid = catalogFor(p).id;
-    const track = TRACKS[cid];
+    const cid = catalogFor(p) ? catalogFor(p).id : null;
+    const track = cid && TRACKS[cid];
     const was = (store, key) => (own && store[key] != null ? store[key] : null);
     const rows = [h('li', null, avatar(p), lootText(p.name, own ? 'On your list' : 'Adding it to your list'), lootTag(own ? 'Found' : 'New!', own ? '' : 'new'))];
     if (vals.balance !== undefined) {
@@ -4359,40 +4430,48 @@
   }
 
   // The result: boxes on the screenshot, the loot, the XP it's worth, and Collect (automatic after a few seconds).
-  function showLoot(read) {
-    const found = parseAccountText(read.text);
-    const own = found.programId && (state.programs || []).find((p) => catalogFor(p) && catalogFor(p).id === found.programId);
+  // `choice` (a program on your list, or "add:<id>") reads the screen as that program instead of guessing.
+  function showLoot(read, choice) {
+    const programs = state.programs || [];
+    let own = choice ? programs.find((x) => x.id === choice) || null : null;
+    let cid = choice ? (own ? (catalogFor(own) || {}).id || null : choice.slice(4)) : null;
+    const found = parseAccountText(read.text, choice ? cid || '' : undefined);
+    if (!choice) {
+      cid = found.programId;
+      own = cid ? programs.find((x) => catalogFor(x) && catalogFor(x).id === cid) || null : null;
+    }
     Object.assign(playing, { text: read.text, found });
     $('#play-shot').className = 'play-shot done';
-    if (!found.programId) {
-      $('#play-title').textContent = 'Couldn’t spot a program name. Which one is it?';
-      setActions([['Try another', false, pickImage], ['Pick the program', true, fixPlay]]);
-      return;
-    }
-    const p = own || programFromCatalog(CATALOG_BY_ID[found.programId]);
+    const later = batch ? ['Skip', false, skipPlay] : ['Try another', false, pickImage];
+    if (!own && !cid) { pickProgram(read, later); return; }
+    const p = own || programFromCatalog(CATALOG_BY_ID[cid]);
     const vals = valsFrom(found, p);
     Object.assign(playing, { choice: own ? own.id : `add:${p.id}`, vals });
     let changes = ['balance', 'mqd', 'progress', 'alt', 'member'].filter((k) => vals[k] !== undefined).length;
     const outcome = vals.tierIndex >= 0 ? statusOutcome(p, vals.tierIndex, vals.exp, vals.mqd ?? state.mqd) : null;
     if (outcome && outcome.kind !== 'covered') changes++;
     markFound(read, found, vals, p);
-    $('#play-loot').replaceChildren(...lootRows(p, own, vals, outcome).map((li, i) => { li.style.setProperty('--i', i); return li; }));
+    const rows = lootRows(p, own, vals, outcome);
+    $('#play-loot').replaceChildren(...rows.map((li, i) => { li.style.setProperty('--i', i); return li; }));
+    sound('loot', rows.length);
     if (own && !changes) {
       $('#play-title').textContent = `Found your ${p.name}, but no points or status to update`;
-      setActions([['Try another', false, pickImage], ['Check it', true, fixPlay]]);
+      setActions([later, ['Check it', true, fixPlay]]);
       return;
     }
     $('#play-title').textContent = own ? `Found your ${p.name}!` : `New program: ${p.name}!`;
-    const gain = xpFor(changes, !own, !!outcome && outcome.kind === 'new');
+    const streakOf = comboNext();
+    const gain = xpFor(changes, !own, !!outcome && outcome.kind === 'new') + comboBonus(streakOf);
     const lv = levelOf(game().xp);
     const next = levelOf(game().xp + gain);
     const from = Math.round(lv.progress * 100);
     const to = next.index > lv.index ? 100 : Math.round(next.progress * 100);
-    $('#play-xp').replaceChildren(
+    $('#play-xp').replaceChildren(...[
       h('span', { class: 'xp-gain' }, `+${gain} XP`),
+      streakOf > 1 ? h('span', { class: 'combo' }, `Combo ×${streakOf}`) : null,
       h('span', { class: 'xp-track', 'aria-hidden': 'true' }, h('span', { class: 'xp-fill', style: `width:${from}%` }),
         h('span', { class: 'xp-add', style: `left:${from}%;width:${Math.max(2, to - from)}%` })),
-      h('span', { class: 'xp-lv' }, next.index > lv.index ? `Level up: ${next.name}!` : `Lv ${lv.n} · ${lv.name}`));
+      h('span', { class: 'xp-lv' }, next.index > lv.index ? `Level up: ${next.name}!` : `Lv ${lv.n} · ${lv.name}`)].filter(Boolean));
     $('#play-xp').hidden = false;
     setActions([['Fix something', false, fixPlay],
       [[h('span', { class: 'fill', 'aria-hidden': 'true' }), 'Collect', h('span', { class: 'cd' })], true, collectNow, 'play-collect']]);
@@ -4438,6 +4517,93 @@
   }
   function closePlay() { if (play.open) play.close(); }
 
+  // A screen that doesn't name its program: pick it on the card, and it's read again as that program.
+  function pickProgram(read, later) {
+    $('#play-title').textContent = 'Which program is this?';
+    const select = h('select', { id: 'play-program', 'aria-label': 'Program' }, programOptions(null));
+    $('#play-loot').replaceChildren(h('li', { class: 'play-pick' }, select));
+    setActions([later, ['Read it', true, () => {
+      if (!select.value) { select.focus(); return; }
+      showLoot(read, select.value);
+    }]]);
+    select.focus();
+  }
+
+  // Several screenshots at once (dropped, pasted, or chosen): scanned one after another, with one Undo for all.
+  const scanQueue = [];
+  let batch = null; // { total, done, collected, xp, before } while a batch is going
+  function scanFiles(list) {
+    const images = [...(list || [])].filter((f) => /^image\//.test(f.type)).slice(0, 20);
+    if (!images.length) return false;
+    unlockSound();
+    if (play.open || batch) { // more while one is on the card: they wait their turn
+      if (!batch) batch = { total: 1, done: 0, collected: 0, xp: 0, before: clone(state) };
+      batch.total += images.length;
+      scanQueue.push(...images);
+      renderPlayCount();
+      if (play.open) showToast(`${plural(images.length, 'more screenshot')} in line`);
+      return true;
+    }
+    if (images.length > 1) batch = { total: images.length, done: 0, collected: 0, xp: 0, before: clone(state) };
+    scanQueue.push(...images.slice(1));
+    playScan(images[0]);
+    return true;
+  }
+  function renderPlayCount() {
+    const many = !!batch && batch.total > 1;
+    $('#play-count').hidden = !many;
+    $('#play-skip').hidden = !many;
+    if (many) $('#play-count').textContent = `Screenshot ${Math.min(batch.done + 1, batch.total)} of ${batch.total}`;
+  }
+  function finishOne(collected, xp = 0) {
+    if (!batch) return;
+    batch.done++;
+    if (collected) { batch.collected++; batch.xp += xp; }
+  }
+  function nextInQueue() {
+    if (play.open || scanSheet.open) return;
+    if (scanQueue.length) playScan(scanQueue.shift());
+    else endBatch();
+  }
+  function skipPlay() {
+    finishOne(false);
+    if (scanQueue.length) playScan(scanQueue.shift());
+    else { closePlay(); endBatch(); }
+  }
+  // Closing the card (×, Escape, or the backdrop) stops the batch; what was collected stays, with one Undo.
+  function cancelPlay() {
+    scanQueue.length = 0;
+    finishOne(false);
+    closePlay();
+    endBatch();
+  }
+  function endBatch() {
+    const b = batch;
+    batch = null;
+    if (b && b.collected) showToast(`Collected ${plural(b.collected, 'screenshot')} · +${b.xp} XP`, () => undoTo(b.before));
+  }
+  function undoTo(before) {
+    Object.assign(state, before);
+    if (state.programs) saveNow();
+    else try { localStorage.removeItem(storageKey()); } catch (e) { /* private mode */ }
+    renderAll();
+  }
+
+  // Your programs, then every other program in the app (by type), so any screen can be matched to a program.
+  function programOptions(detectedId) {
+    const programs = state.programs || [];
+    const own = (id) => programs.find((p) => catalogFor(p) && catalogFor(p).id === id);
+    const options = [];
+    if (!detectedId) options.push(h('option', { value: '' }, 'Choose a program'));
+    if (detectedId && !own(detectedId)) options.push(h('option', { value: `add:${detectedId}` }, `Add ${CATALOG_BY_ID[detectedId].name}`));
+    if (programs.length) options.push(h('optgroup', { label: 'Your programs' }, programs.map((p) => h('option', { value: p.id }, p.name))));
+    for (const g of CATALOG) {
+      const more = g.items.filter((c) => c.id !== detectedId && !own(c.id));
+      if (more.length) options.push(h('optgroup', { label: `Add: ${g.group}` }, more.map((c) => h('option', { value: `add:${c.id}` }, c.name))));
+    }
+    return options;
+  }
+
   // The review form: everything found, each with a checkbox, editable before anything changes.
   function showScanResult(text) {
     const found = parseAccountText(text || '');
@@ -4452,16 +4618,7 @@
     } else {
       $('#scan-status').textContent = `Looks like ${(target || CATALOG_BY_ID[found.programId]).name}. Check what was read, then Update.`;
     }
-    // Your programs, then every other program in the app, so a screen that wasn't recognized can still be used.
-    const options = [];
-    if (!found.programId) options.push(h('option', { value: '' }, 'Choose a program'));
-    if (found.programId && !target) options.push(h('option', { value: `add:${found.programId}` }, `Add ${CATALOG_BY_ID[found.programId].name}`));
-    if (programs.length) options.push(h('optgroup', { label: 'Your programs' }, programs.map((p) => h('option', { value: p.id }, p.name))));
-    for (const g of CATALOG) {
-      const more = g.items.filter((c) => c.id !== found.programId && !own(c.id));
-      if (more.length) options.push(h('optgroup', { label: `Add: ${g.group}` }, more.map((c) => h('option', { value: `add:${c.id}` }, c.name))));
-    }
-    const programSelect = h('select', { id: 'scan-program', 'aria-label': 'Program' }, options);
+    const programSelect = h('select', { id: 'scan-program', 'aria-label': 'Program' }, programOptions(found.programId));
     programSelect.value = target ? target.id : found.programId ? `add:${found.programId}` : '';
     $('#scan-result').replaceChildren(
       h('div', { class: 'scan-field' }, h('span'), h('label', { for: 'scan-program' }, 'Program'), h('div', { class: 'scan-control' }, programSelect)));
@@ -4539,6 +4696,7 @@
     if (!choice) { $('#scan-program').focus(); return; }
     const vals = formVals();
     const from = $('#scan-apply').getBoundingClientRect();
+    quietClose = true;
     scanSheet.close();
     collect(choice, vals, from);
   }
@@ -4589,12 +4747,8 @@
     renderAll();
     celebrate(result, reward, from);
     const { p, added } = result;
-    showToast(`${added ? 'Added' : 'Updated'} ${p.name} · +${reward.xp} XP`, () => {
-      Object.assign(state, previous);
-      if (state.programs) saveNow();
-      else try { localStorage.removeItem(storageKey()); } catch (e) { /* private mode */ }
-      renderAll();
-    });
+    if (batch) finishOne(true, reward.xp); // one toast, with one Undo, when the batch ends
+    else showToast(`${added ? 'Added' : 'Updated'} ${p.name} · +${reward.xp} XP${reward.combo > 1 ? ` · combo ×${reward.combo}` : ''}`, () => undoTo(previous));
   }
 
   async function celebrate(result, reward, from) {
@@ -4609,6 +4763,7 @@
       if (num && balChanged) { num._count = null; num.textContent = before.balance == null ? '—' : fmt(before.balance); } // until the points land
       const target = num || opener;
       if (!reduceMotion.matches) { await wait(450); await flyCoins(from, target); }
+      sound('coin');
       if (num && balChanged) countBetween(num, before.balance ?? 0, now, fmt, 900);
       const delta = balChanged && before.balance != null ? now - before.balance : null;
       floatTag(target, delta ? `${delta > 0 ? '+' : '−'}${fmt(Math.abs(delta))}` : result.added ? 'Added!' : balChanged ? `+${fmt(now)}` : 'Updated', delta < 0 ? 'down' : '');
@@ -4618,6 +4773,7 @@
       if (result.added || result.statusNew || delta > 0 || (balChanged && before.balance == null)) confetti(target);
     }
     queueAchievements(reward);
+    if (batch) setTimeout(nextInQueue, reduceMotion.matches ? 400 : 700);
   }
 
   // Gold points flying from the scan card to the balance; resolves as the first ones land.
@@ -4667,7 +4823,9 @@
     $('#achieve-kind').textContent = next[0];
     $('#achieve-name').textContent = next[1];
     $('#achieve-medal').style.setProperty('--medal', next[2]);
+    if (el.parentNode !== topLayer()) topLayer().append(el);
     el.hidden = false;
+    sound('fanfare');
     requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('show')));
     setTimeout(() => confetti($('#achieve-medal')), 300);
     setTimeout(() => {
@@ -4685,16 +4843,31 @@
     `${g.items.filter((c) => SCAN_SIGNS[c.id]).map((c) => c.name).join(', ')}.`)));
 
   play.addEventListener('close', () => {
+    if (play.open) return; // already showing the next screenshot
     stopCountdown();
     playRun++;
     if (playing && playing.url) URL.revokeObjectURL(playing.url);
     playing = null;
     $('#play-img').removeAttribute('src');
   });
-  play.addEventListener('click', (e) => { if (e.target === play) closePlay(); }); // tap on the backdrop
+  play.addEventListener('click', (e) => { if (e.target === play) cancelPlay(); }); // tap on the backdrop
+  play.addEventListener('cancel', (e) => { e.preventDefault(); cancelPlay(); }); // Escape
   play.addEventListener('pointerdown', (e) => { if (!e.target.closest('#play-collect')) stopCountdown(); });
   play.addEventListener('keydown', (e) => { if (e.key !== 'Enter' && e.key !== ' ') stopCountdown(); });
-  $('#play-close').addEventListener('click', closePlay);
+  $('#play-close').addEventListener('click', cancelPlay);
+  $('#play-skip').addEventListener('click', skipPlay);
+  // The review sheet closing without Update (opened from a batch with Fix something) moves on to the next one.
+  let quietClose = false; // closed to collect or to scan, not to skip
+  scanSheet.addEventListener('close', () => {
+    if (quietClose) { quietClose = false; return; }
+    if (batch) { finishOne(false); nextInQueue(); }
+  });
+  $('#game-sound').addEventListener('click', () => {
+    soundOff = !soundOff;
+    try { if (soundOff) localStorage.setItem(SOUND_KEY, 'off'); else localStorage.removeItem(SOUND_KEY); } catch (e) { /* private mode */ }
+    syncSoundButton();
+    if (!soundOff && unlockSound()) sound('coin');
+  });
   addEventListener('resize', () => { if (play.open) sizeShot(); });
 
   $('#game-strip').addEventListener('click', (e) => { if (e.target.closest('[data-game]')) openGame(); });
@@ -4723,20 +4896,18 @@
     e.preventDefault();
     hideDropHint();
     if (otherSheetOpen()) return;
-    const file = imageIn(e.dataTransfer.files);
-    if (file) playScan(file);
-    else showToast('That isn’t a picture — drop a screenshot (PNG or JPG)');
+    if (!scanFiles(e.dataTransfer.files)) showToast('That isn’t a picture — drop a screenshot (PNG or JPG)');
   });
   addEventListener('paste', (e) => {
-    const file = e.clipboardData && imageIn(e.clipboardData.files);
-    if (!file || otherSheetOpen()) return;
+    const files = e.clipboardData && e.clipboardData.files;
+    if (!imageIn(files) || otherSheetOpen()) return;
     e.preventDefault();
-    playScan(file);
+    scanFiles(files);
   });
   $('#scan-cancel').addEventListener('click', () => scanSheet.close());
   $('#scan-again').addEventListener('click', pickImage);
   $('#scan-apply').addEventListener('click', applyScan);
-  $('#scan-file').addEventListener('change', (e) => { const file = e.target.files && e.target.files[0]; e.target.value = ''; if (file) playScan(file); });
+  $('#scan-file').addEventListener('change', (e) => { const files = [...(e.target.files || [])]; e.target.value = ''; scanFiles(files); });
   $('#scan-read-text').addEventListener('click', () => { if ($('#scan-text').value.trim()) showScanResult($('#scan-text').value); });
   scanSheet.addEventListener('click', (e) => {
     if (e.target === scanSheet) { scanSheet.close(); return; }
@@ -7143,7 +7314,7 @@
 
   // A one-time card listing new features for people who already use the app; new setups skip it.
   const NEWS_KEY = 'status-tracker-news';
-  const NEWS_ID = '2026-10f';
+  const NEWS_ID = '2026-10g';
   const newsSeen = () => { try { return localStorage.getItem(NEWS_KEY) === NEWS_ID; } catch (e) { return true; } };
   const markNewsSeen = () => { try { localStorage.setItem(NEWS_KEY, NEWS_ID); } catch (e) { /* private mode */ } };
   function renderNews() {

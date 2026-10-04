@@ -19,6 +19,8 @@ It launches full-screen from the home screen and works with no network. The app 
 
 **Scan & collect (the game):** a screenshot opens on a card that scans it with a moving beam, boxes what it found on the image (program, balance, status, counts), and lists the loot with what changes ("+2,400", "New status!", "No change"). **Collect** happens by itself after 4 seconds (tap anywhere on the card to pause, or **Fix something** to review). The points then fly into the program's row, the balance counts up, and a status upgrade or a new program sets off confetti. Each collect earns XP (10, +5 per thing updated, +25 for a new program, +40 for a new status) toward 10 levels from Rookie to Legend. Any update counts toward a **weekly streak**, and **up to date** counts balances updated in the last 30 days. There are 11 **badges** (First scan, Six figures, All caught up, On a roll, and more), worth 50 XP each. Tap the level, streak, or up-to-date chip under the screenshot card to see **Your progress**: your level, which balances need an update, and every badge.
 
+**Several at once:** drop or choose several screenshots (multi-select works in the phone's photo picker) and they scan one after another ("Screenshot 2 of 5", **Skip this one**). Collects within 2 minutes of each other build a **combo** (+10 XP for the 2nd, +20 for the 3rd, up to +50), and the batch ends with one toast and one Undo for all of it. Closing the card stops the batch and keeps what you collected. If a screen doesn't name its program, pick it right on the card and it's read again as that program. A streak with no update yet this week turns orange ("update by Sunday"). Small chimes play for the loot, the coins, and level-ups, and phones that can will buzz. Turn both off in Your progress.
+
 **Simple or Detailed:** above the list, **Simple** shows just each program, your highest status with its end date, and your balance. **Detailed** adds perks, progress, and the Medallion tracker. **Type balances** opens one screen with every balance (and Delta MQDs) to type in and save at once.
 
 The first time you open it, pick the programs you have and, optionally, the credit cards you hold (or tap **Use the example setup**). Tap **Edit** on the program list anytime to add, rename, reorder, or delete programs, set your own status levels and where they come from, and write a note under the list. Tap any number to update a balance.
@@ -122,7 +124,7 @@ Use **Export as text** at the bottom to save an easy-to-read `.txt` summary of y
 | `manifest.json` | Install-to-home-screen metadata |
 | `sw.js` | Service worker that caches the app for offline use |
 | `icon.svg`, `icon-*.png`, `apple-touch-icon.png` | App icons |
-| `tests/` | Screenshot-reader test cases (`node tests/run-scan-tests.mjs`) |
+| `tests/` | Screenshot-reader cases (`node tests/run-scan-tests.mjs`) and the game's math (`node tests/run-game-tests.mjs`) |
 
 ## Updating
 
