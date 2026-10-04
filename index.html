@@ -4265,7 +4265,10 @@
     if (!play.open) play.showModal();
     renderPlayCount();
     if (!$('#achieve').hidden) play.append($('#achieve')); // a banner still showing stays on top
-    try { await img.decode(); } catch (e) { /* sized from whatever loaded */ }
+    // Its size is all that's needed (decode() can wait forever in a background tab).
+    if (!img.complete) {
+      await Promise.race([new Promise((resolve) => { img.addEventListener('load', resolve, { once: true }); img.addEventListener('error', resolve, { once: true }); }), wait(3000)]);
+    }
     if (run !== playRun) return;
     sizeShot();
     ocrProgress = (m) => {
