@@ -38,10 +38,11 @@
     --callout: rgba(27, 58, 92, .045);
     --on-accent: #FFFFFF;
     --warn: #B45309;
+    --warn-ink: #9A3412;
     --warn-soft: rgba(180, 83, 9, .1);
     --danger: #B42318;
     --danger-soft: rgba(180, 35, 24, .09);
-    --good: #15803D;
+    --good: #166534;
     --good-soft: rgba(21, 128, 61, .12);
     --shadow: 0 1px 2px rgba(23, 32, 43, .04), 0 8px 24px -12px rgba(23, 32, 43, .12);
     --hero-a: #1B3A5C;
@@ -89,6 +90,7 @@
       --callout: rgba(127, 166, 217, .07);
       --on-accent: #0E1420;
       --warn: #F0A254;
+      --warn-ink: #F0A254;
       --warn-soft: rgba(240, 162, 84, .14);
       --danger: #F28B7F;
       --danger-soft: rgba(242, 139, 127, .13);
@@ -138,6 +140,7 @@
     --callout: rgba(127, 166, 217, .07);
     --on-accent: #0E1420;
     --warn: #F0A254;
+    --warn-ink: #F0A254;
     --warn-soft: rgba(240, 162, 84, .14);
     --danger: #F28B7F;
     --danger-soft: rgba(242, 139, 127, .13);
@@ -672,9 +675,9 @@
   .play-count { padding: 2px 9px; border-radius: 999px; background: var(--chip-bg); color: var(--muted); font-size: 11.5px; font-weight: 750; }
   .play-pick { padding: 6px !important; }
   .play-pick select { flex: 1; min-width: 0; height: 44px; padding: 0 10px; border: 1px solid var(--field-line); border-radius: 10px; background: var(--field); color: var(--text); font: inherit; font-size: 16px; }
-  .combo { padding: 2px 8px; border-radius: 999px; background: linear-gradient(135deg, #F97316, #DB2777); color: #fff; font-size: 11.5px; font-weight: 800; white-space: nowrap; animation: combo-pop .5s cubic-bezier(.2, 1.6, .4, 1) .7s both; }
+  .combo { padding: 2px 8px; border-radius: 999px; background: linear-gradient(135deg, #C2410C, #BE185D); color: #fff; font-size: 11.5px; font-weight: 800; white-space: nowrap; animation: combo-pop .5s cubic-bezier(.2, 1.6, .4, 1) .7s both; }
   @keyframes combo-pop { from { transform: scale(0) rotate(-14deg); } }
-  .game-chip.warn { background: var(--warn-soft); color: var(--warn); }
+  .game-chip.warn { background: var(--warn-soft); color: var(--warn-ink); }
   .game-sound { margin: 14px 0 0; }
 
   .play-title { min-height: 22px; margin: 2px 40px 12px 2px; font-size: 16px; font-weight: 750; line-height: 1.35; }
@@ -687,7 +690,7 @@
   @keyframes beam { from { top: -20%; } to { top: 100%; } }
   .play-marks { position: absolute; inset: 0; pointer-events: none; }
   .play-mark { position: absolute; border: 2px solid var(--mark); border-radius: 6px; background: rgba(255, 255, 255, .08); box-shadow: 0 0 0 3px rgba(0, 0, 0, .06), 0 0 14px var(--mark); animation: mark-pop .45s cubic-bezier(.2, 1.5, .4, 1) both; animation-delay: calc(var(--i) * 170ms + 100ms); }
-  .play-mark span { position: absolute; left: -2px; bottom: 100%; margin-bottom: 3px; padding: 1px 6px; border-radius: 6px; background: var(--mark); color: #fff; font-size: 10.5px; font-weight: 750; line-height: 1.5; white-space: nowrap; text-transform: capitalize; }
+  .play-mark span { position: absolute; left: -2px; bottom: 100%; margin-bottom: 3px; padding: 1px 6px; border-radius: 6px; background: var(--mark); color: var(--mark-ink, #fff); font-size: 10.5px; font-weight: 750; line-height: 1.5; white-space: nowrap; text-transform: capitalize; }
   .play-mark.below span { top: 100%; bottom: auto; margin: 3px 0 0; }
   .play-mark.side-r span, .play-mark.side-l span { top: 50%; bottom: auto; margin: 0; transform: translateY(-50%); }
   .play-mark.side-r span { left: calc(100% + 5px); }
@@ -723,7 +726,7 @@
 
   /* Collecting: points fly into the row, the number counts up, a +/− tag floats off, the row glows. */
   .coin { position: fixed; z-index: 60; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #FFF6D6, #F2C466 55%, #B7841F); box-shadow: 0 0 10px rgba(242, 196, 102, .85); pointer-events: none; }
-  .delta-float { position: fixed; z-index: 61; padding: 3px 10px; border-radius: 999px; background: #16A34A; color: #fff; font-size: 13.5px; font-weight: 800; white-space: nowrap; pointer-events: none; animation: float-up 1.7s ease-out forwards; }
+  .delta-float { position: fixed; z-index: 61; padding: 3px 10px; border-radius: 999px; background: #15803D; color: #fff; font-size: 13.5px; font-weight: 800; white-space: nowrap; pointer-events: none; animation: float-up 1.7s ease-out forwards; }
   .delta-float.down { background: var(--accent-2); }
   @keyframes float-up {
     0% { opacity: 0; transform: translate(-50%, 6px) scale(.7); }
@@ -779,6 +782,8 @@
   .badges small { font-size: 11.5px; line-height: 1.3; color: var(--muted); }
   .badges .locked .medal { background: var(--track); color: var(--faint); box-shadow: none; }
   .badges .locked b { color: var(--muted); }
+  .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+  .scan-preview:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .file-input { position: fixed; left: -100px; top: 0; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
   .drop-hint { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 24px; background: rgba(10, 18, 30, .55); pointer-events: none; }
   .drop-hint > div { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 32px 40px; border: 2px dashed var(--accent); border-radius: 20px; background: var(--card); color: var(--text); font-size: 17px; font-weight: 650; text-align: center; }
@@ -1806,7 +1811,7 @@
   <div class="play-card">
     <button class="icon-btn play-close" id="play-close" type="button" aria-label="Close"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M2.5 2.5l9 9M11.5 2.5l-9 9"/></svg></button>
     <div class="play-top"><span class="play-count" id="play-count" hidden></span><button class="link" id="play-skip" type="button" hidden>Skip this one</button></div>
-    <p class="play-title" id="play-title" role="status"></p>
+    <p class="play-title" id="play-title"></p>
     <div class="play-frame">
       <div class="play-shot" id="play-shot">
         <img id="play-img" alt="Your screenshot">
@@ -1819,7 +1824,8 @@
     <div class="play-actions" id="play-actions"></div>
   </div>
 </dialog>
-<div class="achieve" id="achieve" role="status" hidden><span class="medal" id="achieve-medal"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3.2l2.7 5.5 6 .9-4.35 4.25 1.03 6-5.38-2.83-5.38 2.83 1.03-6L3.3 9.6l6-.9z"/></svg></span><span><small id="achieve-kind"></small><strong id="achieve-name"></strong></span></div>
+<div class="sr-only" id="say" role="status" aria-live="polite"></div>
+<div class="achieve" id="achieve" aria-hidden="true" hidden><span class="medal" id="achieve-medal"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3.2l2.7 5.5 6 .9-4.35 4.25 1.03 6-5.38-2.83-5.38 2.83 1.03-6L3.3 9.6l6-.9z"/></svg></span><span><small id="achieve-kind"></small><strong id="achieve-name"></strong></span></div>
 <dialog class="sheet" id="game-sheet" aria-labelledby="game-title">
   <div class="sheet-body">
     <div class="grab" aria-hidden="true"></div>
@@ -1838,6 +1844,7 @@
     <h3 class="d-label">Badges <span id="game-badge-count"></span></h3>
     <ul class="badges" id="game-badges"></ul>
     <p class="game-sound"><button class="pill-btn sm" id="game-sound" type="button" aria-pressed="true">Sounds &amp; vibration: on</button>
+      <button class="pill-btn sm" id="game-auto" type="button" aria-pressed="true">Auto-collect: on</button>
       <button class="pill-btn sm" id="game-remind" type="button">Remind me weekly</button></p>
     <p class="fine">Each screenshot you collect earns XP, more for several in a row (a combo), and each badge 50 more. Up to date means updated in the last 30 days. It all stays on this device.</p>
     <div class="sheet-actions">
@@ -1871,7 +1878,7 @@
       </details>
       <p class="fine">Your screenshot never leaves this device — it’s read right here in your browser. The first time, the text reader (about 6 MB) downloads from jsDelivr, so you’ll need a connection.</p>
     </div>
-    <img class="scan-preview" id="scan-preview" alt="Your screenshot (tap to enlarge)" hidden>
+    <img class="scan-preview" id="scan-preview" alt="Your screenshot" role="button" tabindex="0" aria-pressed="false" aria-label="Enlarge your screenshot" hidden>
     <p class="cards-status" id="scan-status" role="status"></p>
     <div class="scan-result" id="scan-result" hidden></div>
     <div class="sheet-actions">
@@ -2811,6 +2818,20 @@
     return el;
   }
 
+  // A tap on a sheet's backdrop closes it — only when the press also started there, so dragging a text selection
+  // out past the sheet's edge doesn't.
+  let pressedOn = null;
+  addEventListener('pointerdown', (e) => { pressedOn = e.target; }, true);
+  const backdropTap = (e, dialog) => e.target === dialog && pressedOn === dialog;
+
+  // Says something to screen readers, from inside whatever sheet is open (content behind a modal sheet is unheard).
+  function announce(text) {
+    const say = $('#say');
+    if (say.parentNode !== topLayer()) topLayer().append(say);
+    say.textContent = '';
+    requestAnimationFrame(() => { say.textContent = text; });
+  }
+
   function svgIcon(markup) {
     const t = document.createElement('template');
     t.innerHTML = markup;
@@ -3212,6 +3233,18 @@
     }
   }
 
+  // Another tab or window saved this tracker: take its copy, rather than overwrite it on this tab's next save.
+  addEventListener('storage', (e) => {
+    if (e.key !== storageKey() || e.newValue === JSON.stringify(state.programs ? state : null)) return;
+    clearTimeout(saveTimer);
+    saveTimer = 0;
+    const next = load();
+    for (const key of Object.keys(state)) delete state[key];
+    Object.assign(state, next);
+    editMode = false;
+    renderAll();
+  });
+
   // Flush a pending save if the app is backgrounded or closed inside the debounce window.
   addEventListener('pagehide', () => { if (saveTimer) saveNow(); });
   document.addEventListener('visibilitychange', () => {
@@ -3329,6 +3362,7 @@
       }
       paintNum(btn);
       input.replaceWith(btn);
+      if (commit && state.programs && !field.startsWith('prog:')) renderGame(); // streak, up to date, 30-day gain
       if (field.startsWith('bal:')) {
         renderUpcoming(); // a changed balance resets a points-expiry clock
         const program = state.programs.find((x) => x.id === field.slice(4));
@@ -3995,21 +4029,33 @@
   const OCR_BASE = 'https://cdn.jsdelivr.net/npm/';
   let ocrWorker = null;
   let ocrProgress = () => {}; // set by the scan in progress
+  // Gives up after 2 minutes (a stalled download) so the next scan can try again; a reader that finishes starting
+  // after that is shut down rather than left running beside the next one.
   function loadOCR() {
     if (ocrWorker) return ocrWorker;
     ocrWorker = new Promise((resolve, reject) => {
-      const script = document.createElement('script');
-      script.src = `${OCR_BASE}tesseract.js@5.1.1/dist/tesseract.min.js`;
-      script.onload = () => resolve(window.Tesseract.createWorker('eng', 1, {
+      let settled = false;
+      const fail = (err) => { if (settled) return; settled = true; clearTimeout(timer); reject(err); };
+      const timer = setTimeout(() => fail(new Error('the text reader took too long to load')), 120000);
+      const start = () => window.Tesseract.createWorker('eng', 1, {
         workerPath: `${OCR_BASE}tesseract.js@5.1.1/dist/worker.min.js`,
         corePath: `${OCR_BASE}tesseract.js-core@5.1.1`,
         langPath: `${OCR_BASE}@tesseract.js-data/eng@1.0.0/4.0.0_best_int`,
         logger: (m) => ocrProgress(m),
-        errorHandler: (err) => reject(err),
-      }));
-      script.onerror = () => reject(new Error('could not load the text reader'));
+        errorHandler: fail,
+      }).then((worker) => {
+        if (settled) { worker.terminate(); return; }
+        settled = true;
+        clearTimeout(timer);
+        resolve(worker);
+      }, fail);
+      if (window.Tesseract) { start(); return; } // the script loaded on an earlier try
+      const script = document.createElement('script');
+      script.src = `${OCR_BASE}tesseract.js@5.1.1/dist/tesseract.min.js`;
+      script.crossOrigin = 'anonymous'; // a readable response, so the service worker can keep it for offline use
+      script.onload = start;
+      script.onerror = () => { script.remove(); fail(new Error('could not load the text reader')); };
       document.head.append(script);
-      setTimeout(() => reject(new Error('the text reader took too long to load')), 120000); // a stalled download
     }).catch((err) => { ocrWorker = null; throw err; });
     return ocrWorker;
   }
@@ -4051,6 +4097,8 @@
     preview.removeAttribute('src');
     preview.hidden = true;
     preview.classList.remove('big');
+    preview.setAttribute('aria-pressed', 'false');
+    preview.setAttribute('aria-label', 'Enlarge your screenshot');
     $('#scan-start').hidden = false;
     $('#scan-result').hidden = true;
     $('#scan-apply').hidden = true;
@@ -4059,9 +4107,11 @@
     $('#scan-text').value = '';
     if (!scanSheet.open) scanSheet.showModal();
   }
-  const pickImage = () => { unlockSound(); $('#scan-file').click(); };
   let pickHint = null; // { id, at }: the program you tapped "update" for, if the screenshot doesn't say
-  const pickFor = (id) => { pickHint = { id, at: Date.now() }; pickImage(); };
+  let replacePick = false; // "Try another": the picture chosen takes the place of the one on the card
+  const pickImage = () => { pickHint = null; replacePick = false; unlockSound(); $('#scan-file').click(); };
+  const pickFor = (id) => { pickImage(); pickHint = { id, at: Date.now() }; };
+  const pickAnother = () => { pickImage(); replacePick = true; };
   // The how-to the first time; after that, straight to choosing a picture.
   const startScan = () => (game().scans ? pickImage() : openScan());
 
@@ -4113,6 +4163,7 @@
     const w = weekNo();
     if (!weeks.includes(w)) weeks.push(w);
     if (weeks.length > 104) weeks.splice(0, weeks.length - 104);
+    game().best = Math.max(game().best, streakWeeks()); // typed updates count toward your best streak too
   }
   function streakWeeks() {
     const weeks = new Set(game().weeks);
@@ -4235,7 +4286,10 @@
       chips.push(h('button', { type: 'button', class: gain.points > 0 ? 'game-chip gain' : 'game-chip', 'data-game': '' }, gameIcon('trend'),
         `${dollars ? signed(gain.dollars, money) : `${signed(gain.points)} pts`} in 30 days`));
     }
-    $('#game-strip').replaceChildren(...chips);
+    const strip = $('#game-strip');
+    const focused = strip.contains(document.activeElement) ? [...strip.children].indexOf(document.activeElement) : -1;
+    strip.replaceChildren(...chips);
+    if (focused >= 0) strip.children[Math.min(focused, strip.children.length - 1)].focus({ preventScroll: true });
   }
 
   const gameSheet = $('#game-sheet');
@@ -4265,7 +4319,7 @@
     $('#game-stale-all').textContent = fresh.stale.length > 1 ? `Screenshot all ${fresh.stale.length}` : 'Screenshot it';
     $('#game-stale').replaceChildren(...fresh.stale.slice(0, 10).map((p) => h('li', null,
       h('button', { type: 'button', class: 'stale-btn', 'data-stale': p.id, 'aria-label': `Update ${p.name} from a screenshot` }, avatar(p), h('span', null, p.name),
-        h('small', null, state.updated[p.id] ? `updated ${relativeDay(state.updated[p.id])}` : 'no balance yet')))));
+        h('small', null, state.updated[p.id] ? `updated ${relativeDay(state.updated[p.id])}` : state.balances[p.id] != null ? 'not updated lately' : 'no balance yet')))));
     $('#game-log-wrap').hidden = !g.log.length;
     $('#game-log').replaceChildren(...g.log.slice(0, 8).map((e) => h('li', null,
       h('span', { class: 'log-date' }, monthDayFmt.format(parseISODate(e.d))),
@@ -4284,6 +4338,9 @@
 
   // Little chimes for the loot, the coins landing, and level-ups and badges — made on the fly, no audio files —
   // plus a buzz on phones that can. One switch in Your progress turns both off (remembered on this device).
+  // Collect by itself after a few seconds, or wait for a tap (remembered on this device).
+  const AUTO_KEY = 'status-tracker-autocollect';
+  let autoCollect = (() => { try { return localStorage.getItem(AUTO_KEY) !== 'off'; } catch (e) { return true; } })();
   const SOUND_KEY = 'status-tracker-sound';
   let soundOff = (() => { try { return localStorage.getItem(SOUND_KEY) === 'off'; } catch (e) { return false; } })();
   let audio = null;
@@ -4324,6 +4381,8 @@
   function syncSoundButton() {
     $('#game-sound').setAttribute('aria-pressed', String(!soundOff));
     $('#game-sound').textContent = `Sounds & vibration: ${soundOff ? 'off' : 'on'}`;
+    $('#game-auto').setAttribute('aria-pressed', String(autoCollect));
+    $('#game-auto').textContent = `Auto-collect: ${autoCollect ? 'on' : 'off'}`;
   }
 
   /* ---------- Scan & collect: the screenshot on a card, what it found, then its points fly into your list ---------- */
@@ -4333,7 +4392,7 @@
   let playing = null; // { url, text, found, choice, vals } for the screenshot on the card
   let collectTimer = 0;
   const COLLECT_SECONDS = 4;
-  const MARK_COLORS = { program: '#5B8DEF', balance: '#E0A82E', status: '#9B6BE0', count: '#1FA89A', member: '#64748B' };
+  const MARK_COLORS = { program: '#2F5FC4', balance: '#E0A82E', status: '#7044C7', count: '#12776D', member: '#4B5563' };
   const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   // Another sheet is open (maybe mid-edit), so a dropped or pasted image is left alone.
   const otherSheetOpen = () => [...document.querySelectorAll('dialog[open]')].some((d) => d !== scanSheet && d !== play);
@@ -4361,10 +4420,13 @@
     }
     if (run !== playRun) return;
     sizeShot();
-    ocrProgress = (m) => {
+    let stage = '';
+    ocrProgress = (m) => { // the percentage is shown; only a change of stage is announced
       if (run !== playRun) return;
-      if (m.status === 'recognizing text') $('#play-title').textContent = `Scanning… ${Math.round(m.progress * 100)}%`;
-      else if (/load/.test(m.status)) $('#play-title').textContent = `Warming up the scanner (first time only)… ${Math.round((m.progress || 0) * 100)}%`;
+      const now = m.status === 'recognizing text' ? 'Scanning…' : /load/.test(m.status) ? 'Warming up the scanner (first time only)…' : null;
+      if (!now) return;
+      $('#play-title').textContent = `${now} ${Math.round((m.progress || 0) * 100)}%`;
+      if (now !== stage) { stage = now; announce(now); }
     };
     try {
       const read = await ocrImage(file);
@@ -4376,7 +4438,8 @@
       $('#play-title').textContent = navigator.onLine === false
         ? 'The scanner needs an internet connection the first time.'
         : 'Couldn’t read that image. Try a sharper screenshot.';
-      setActions([['Paste text instead', false, () => { closePlay(); openScan(); $('.scan-paste').open = true; }], ['Try another', true, pickImage]]);
+      announce($('#play-title').textContent);
+      setActions([['Paste text instead', false, () => { closePlay(); openScan(); $('.scan-paste').open = true; }], ['Try another', true, pickAnother]]);
     }
   }
 
@@ -4413,6 +4476,13 @@
     if (track && track.alt && found.altProgress != null) vals.alt = found.altProgress;
     if (found.member && !state.members[p.id]) vals.member = found.member;
     return vals;
+  }
+
+  function asListed(p, own, fn) {
+    if (own) return fn();
+    const had = state.programs;
+    state.programs = [...(had || []), p];
+    try { return fn(); } finally { state.programs = had; }
   }
 
   // How many things a screen actually changes — new or different numbers, a new status or end date, a member
@@ -4549,12 +4619,23 @@
     }
     const pad = 0.004;
     $('#play-marks').replaceChildren(...marks.map((m, i) => {
-      const side = m.x1 / read.width < 0.68 ? ' side-r' : m.x0 / read.width > 0.32 ? ' side-l' : m.y0 / read.height < 0.06 ? ' below' : '';
-      const el = h('div', { class: `play-mark${side}` }, h('span', null, m.label));
-      el.style.cssText = `--i:${i};--mark:${m.color};left:${(m.x0 / read.width - pad) * 100}%;top:${(m.y0 / read.height - pad) * 100}%;`
+      const el = h('div', { class: 'play-mark' }, h('span', null, m.label));
+      el.style.cssText = `--i:${i};--mark:${m.color};${m.color === MARK_COLORS.balance ? '--mark-ink:#3B2A00;' : ''}left:${(m.x0 / read.width - pad) * 100}%;top:${(m.y0 / read.height - pad) * 100}%;`
         + `width:${((m.x1 - m.x0) / read.width + 2 * pad) * 100}%;height:${((m.y1 - m.y0) / read.height + 2 * pad) * 100}%`;
       return el;
     }));
+    placeMarkLabels();
+  }
+  // Each label beside its box when there's room on the screenshot (right, then left), else above (or below at the top).
+  function placeMarkLabels() {
+    const width = $('#play-shot').clientWidth;
+    for (const el of $('#play-marks').children) {
+      el.classList.remove('side-r', 'side-l', 'below');
+      const need = el.firstElementChild.offsetWidth + 6;
+      if (width - (el.offsetLeft + el.offsetWidth) >= need) el.classList.add('side-r');
+      else if (el.offsetLeft >= need) el.classList.add('side-l');
+      else if (el.offsetTop < 20) el.classList.add('below');
+    }
   }
 
   // The result: boxes on the screenshot, the loot, the XP it's worth, and Collect (automatic after a few seconds).
@@ -4570,14 +4651,15 @@
     }
     Object.assign(playing, { text: read.text, found });
     $('#play-shot').className = 'play-shot done';
-    const later = batch ? ['Skip', false, skipPlay] : ['Try another', false, pickImage];
+    const later = batch ? ['Skip', false, skipPlay] : ['Try another', false, pickAnother];
     if (!own && !cid && playing.hint && (state.programs || []).some((x) => x.id === playing.hint)) { showLoot(read, playing.hint); return; }
     if (!own && !cid) { pickProgram(read, later); return; }
     const p = own || programFromCatalog(CATALOG_BY_ID[cid]);
     const vals = valsFrom(found, p);
     Object.assign(playing, { choice: own ? own.id : `add:${p.id}`, vals });
     let changes = ['balance', 'mqd', 'progress', 'alt', 'member'].filter((k) => vals[k] !== undefined).length;
-    const outcome = vals.tierIndex >= 0 ? statusOutcome(p, vals.tierIndex, vals.exp, vals.mqd ?? state.mqd) : null;
+    // Judged as Update will, with a new program already on your list (Delta's Medallion then counts from MQDs).
+    const outcome = vals.tierIndex >= 0 ? asListed(p, own, () => statusOutcome(p, vals.tierIndex, vals.exp, vals.mqd ?? state.mqd)) : null;
     if (outcome && outcome.kind !== 'covered') changes++;
     const real = realChanges(p, own, vals, outcome);
     const confirmOnly = !!own && !real;
@@ -4605,8 +4687,10 @@
       h('span', { class: 'xp-lv' }, next.index > lv.index ? `Level up: ${next.name}!` : `Lv ${lv.n} · ${lv.name}`)].filter(Boolean));
     $('#play-xp').hidden = false;
     setActions([['Fix something', false, fixPlay],
-      [[h('span', { class: 'fill', 'aria-hidden': 'true' }), confirmOnly ? 'Confirm' : 'Collect', h('span', { class: 'cd' })], true, collectNow, 'play-collect']]);
-    startCountdown();
+      [[h('span', { class: 'fill', 'aria-hidden': 'true' }), confirmOnly ? 'Confirm' : 'Collect', h('span', { class: 'cd', 'aria-hidden': 'true' })], true, collectNow, 'play-collect']]);
+    const said = [...$('#play-loot').children].slice(1).map((li) => li.innerText.replace(/\n+/g, ', ')).join('. ');
+    announce(`${$('#play-title').textContent} ${said}.${autoCollect ? ` ${confirmOnly ? 'Confirming' : 'Collecting'} in ${COLLECT_SECONDS} seconds; press Tab to look first.` : ''}`);
+    if (autoCollect) startCountdown();
   }
 
   function startCountdown() {
@@ -4638,13 +4722,13 @@
   }
   // "Fix something": the review form, with the screenshot above it.
   function fixPlay() {
-    const { text, url } = playing;
+    const { text, url, choice, found } = playing;
     playing.url = null; // the review sheet shows it now
     closePlay();
     openScan();
     $('#scan-preview').src = url;
     $('#scan-preview').hidden = false;
-    showScanResult(text);
+    showScanResult(text, choice, choice ? found : null);
   }
   function closePlay() { if (play.open) play.close(); }
 
@@ -4663,19 +4747,35 @@
   // Several screenshots at once (dropped, pasted, or chosen): scanned one after another, with one Undo for all.
   const scanQueue = [];
   let batch = null; // { total, done, collected, xp, before } while a batch is going
+  // A batch keeps the tracker as it was (one Undo for all) and whose it is; an earlier Undo toast goes away, since
+  // undoing it now would also undo batch items.
+  const newBatch = (total) => {
+    hideToast();
+    return { total, done: 0, collected: 0, xp: 0, before: clone(state), person: people.active };
+  };
   function scanFiles(list) {
     const images = [...(list || [])].filter((f) => /^image\//.test(f.type)).slice(0, 20);
     if (!images.length) return false;
     unlockSound();
+    if (replacePick && (play.open || scanSheet.open)) { // "Try another": this picture replaces the current one
+      replacePick = false;
+      pickHint = null;
+      if (batch) batch.total += images.length - 1;
+      else if (images.length > 1) batch = newBatch(images.length);
+      scanQueue.unshift(...images.slice(1));
+      playScan(images[0]);
+      return true;
+    }
+    replacePick = false;
     if (play.open || batch) { // more while one is on the card: they wait their turn
-      if (!batch) batch = { total: 1, done: 0, collected: 0, xp: 0, before: clone(state) };
+      if (!batch) batch = newBatch(1);
       batch.total += images.length;
       scanQueue.push(...images);
       renderPlayCount();
       if (play.open) showToast(`${plural(images.length, 'more screenshot')} in line`);
       return true;
     }
-    if (images.length > 1) batch = { total: images.length, done: 0, collected: 0, xp: 0, before: clone(state) };
+    if (images.length > 1) batch = newBatch(images.length);
     const hint = images.length === 1 && pickHint && Date.now() - pickHint.at < 5 * 60 * 1000 ? pickHint.id : null;
     pickHint = null;
     scanQueue.push(...images.slice(1));
@@ -4694,9 +4794,20 @@
     if (collected) { batch.collected++; batch.xp += xp; }
   }
   function nextInQueue() {
+    if (batch && batch.person !== people.active) { stopScanning(); return; } // switched person: not theirs
     if (play.open || scanSheet.open) return;
     if (scanQueue.length) playScan(scanQueue.shift());
     else endBatch();
+  }
+  // Drops anything in progress (switching person, restoring a backup): the queue, a batch, hints, the combo.
+  function stopScanning() {
+    scanQueue.length = 0;
+    batch = null;
+    pickHint = null;
+    replacePick = false;
+    combo = 0;
+    lastCollectAt = 0;
+    stopCountdown();
   }
   function skipPlay() {
     finishOne(false);
@@ -4713,9 +4824,13 @@
   function endBatch() {
     const b = batch;
     batch = null;
-    if (b && b.collected) showToast(`Collected ${plural(b.collected, 'screenshot')} · +${b.xp} XP`, () => undoTo(b.before));
+    if (b && b.collected && b.person === people.active) showToast(`Collected ${plural(b.collected, 'screenshot')} · +${b.xp} XP`, () => undoTo(b.before, b.person));
   }
-  function undoTo(before) {
+  // Undo of a collect or batch: only for the person it was made for, and it ends any combo (#8).
+  function undoTo(before, who = people.active) {
+    if (who !== people.active) return;
+    combo = 0;
+    lastCollectAt = 0;
     Object.assign(state, before);
     if (state.programs) saveNow();
     else try { localStorage.removeItem(storageKey()); } catch (e) { /* private mode */ }
@@ -4738,21 +4853,23 @@
   }
 
   // The review form: everything found, each with a checkbox, editable before anything changes.
-  function showScanResult(text) {
-    const found = parseAccountText(text || '');
+  // `choice` and `forced`: the program picked on the scan card and what was read as that program.
+  function showScanResult(text, choice = null, forced = null) {
     const programs = state.programs || [];
+    const mine = choice ? programs.find((p) => p.id === choice) : null;
+    const found = forced || parseAccountText(text || '');
     const own = (id) => programs.find((p) => catalogFor(p) && catalogFor(p).id === id);
-    const target = found.programId && own(found.programId);
+    const target = mine || (found.programId && own(found.programId));
     scanned = { text, found };
     $('#scan-start').hidden = true;
     $('#scan-again').hidden = false;
-    if (!found.programId) {
+    if (!found.programId && !mine) {
       $('#scan-status').textContent = 'Couldn’t tell which program this is. Pick it below, or try a screenshot that shows the program’s name.';
     } else {
       $('#scan-status').textContent = `Looks like ${(target || CATALOG_BY_ID[found.programId]).name}. Check what was read, then Update.`;
     }
     const programSelect = h('select', { id: 'scan-program', 'aria-label': 'Program' }, programOptions(found.programId));
-    programSelect.value = target ? target.id : found.programId ? `add:${found.programId}` : '';
+    programSelect.value = choice || (target ? target.id : found.programId ? `add:${found.programId}` : '');
     $('#scan-result').replaceChildren(
       h('div', { class: 'scan-field' }, h('span'), h('label', { for: 'scan-program' }, 'Program'), h('div', { class: 'scan-control' }, programSelect)));
     $('#scan-result').hidden = false;
@@ -4858,13 +4975,22 @@
       setField(`prog:${p.id}`, vals.progress);
       changes.push('progress');
     }
-    if (vals.alt !== undefined && track && track.alt) { setField(`prog:${altKey(p.id)}`, vals.alt); changes.push(track.alt.unit); }
-    if (vals.member) { state.members[p.id] = vals.member; changes.push('member number'); }
+    if (vals.alt !== undefined && track && track.alt) {
+      if (state.progress[altKey(p.id)] !== vals.alt) notes.push(`${fmt(vals.alt)} ${track.alt.unit}`);
+      setField(`prog:${altKey(p.id)}`, vals.alt);
+      changes.push(track.alt.unit);
+    }
+    if (vals.member) {
+      if (state.members[p.id] !== vals.member) notes.push('member number');
+      state.members[p.id] = vals.member;
+      changes.push('member number');
+    }
     if (vals.tierIndex >= 0) {
       const outcome = statusOutcome(p, vals.tierIndex, vals.exp);
       if (outcome.kind === 'same') {
         // The screen shows you hold it now, so a past end date no longer applies.
         const line = outcome.line;
+        if (vals.exp && line.exp !== vals.exp) notes.push(`${line.tier} through ${mdy(parseISODate(vals.exp))}`);
         if (vals.exp) line.exp = vals.exp;
         else if (line.exp && lineExpired(line)) delete line.exp;
         if (!line.via) line.via = 'from your account';
@@ -4882,13 +5008,21 @@
   // Applies a screenshot, then celebrates: points fly into the program's row, the number counts up, XP and badges.
   function collect(choice, vals, from) {
     const previous = clone(state);
+    const who = people.active;
     const result = applyRead(choice, vals);
-    if (!result.changes.length && !result.added) { Object.assign(state, previous); showToast('Nothing new to update'); return; }
+    if (!result.changes.length && !result.added) {
+      Object.assign(state, previous);
+      showToast('Nothing new to update');
+      if (batch) { finishOne(false); setTimeout(nextInQueue); }
+      return;
+    }
     const reward = award(result);
     const g = game();
-    g.log.unshift({ d: todayISO(), id: result.p.id, name: result.p.name, xp: reward.xp,
-      text: result.added ? ['added', ...result.notes].join(' · ') : result.notes.join(' · ') || 'confirmed, no change' });
-    g.log.length = Math.min(g.log.length, LOG_MAX);
+    if (result.real || result.added || reward.xp) { // a repeat check with nothing new isn't news
+      g.log.unshift({ d: todayISO(), id: result.p.id, name: result.p.name, xp: reward.xp,
+        text: result.added ? ['added', ...result.notes].join(' · ') : result.notes.join(' · ') || 'confirmed, no change' });
+      g.log.length = Math.min(g.log.length, LOG_MAX);
+    }
     saveNow();
     if (result.firstRun) markNewsSeen();
     if (!matchesFilter(result.p)) filter = 'all';
@@ -4896,8 +5030,8 @@
     celebrate(result, reward, from);
     const { p, added } = result;
     if (batch) finishOne(true, reward.xp); // one toast, with one Undo, when the batch ends
-    else if (!result.real && !added) showToast(`${p.name} is up to date${reward.xp ? ` · +${reward.xp} XP` : ''}`, () => undoTo(previous));
-    else showToast(`${added ? 'Added' : 'Updated'} ${p.name} · +${reward.xp} XP${reward.combo > 1 ? ` · combo ×${reward.combo}` : ''}`, () => undoTo(previous));
+    else if (!result.real && !added) showToast(`${p.name} is up to date${reward.xp ? ` · +${reward.xp} XP` : ''}`, () => undoTo(previous, who));
+    else showToast(`${added ? 'Added' : 'Updated'} ${p.name} · +${reward.xp} XP${reward.combo > 1 ? ` · combo ×${reward.combo}` : ''}`, () => undoTo(previous, who));
   }
 
   async function celebrate(result, reward, from) {
@@ -4974,6 +5108,7 @@
     $('#achieve-medal').style.setProperty('--medal', next[2]);
     if (el.parentNode !== topLayer()) topLayer().append(el);
     el.hidden = false;
+    announce(`${next[0]}: ${next[1]}`);
     sound('fanfare');
     requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('show')));
     setTimeout(() => confetti($('#achieve-medal')), 300);
@@ -4987,7 +5122,17 @@
   for (const id of ['#scan-btn', '#setup-scan']) $(id).addEventListener('click', startScan);
   $('#quick-scan').addEventListener('click', () => { quickSheet.close(); pickImage(); });
   $('#scan-pick').addEventListener('click', pickImage);
-  $('#scan-preview').addEventListener('click', (e) => e.currentTarget.classList.toggle('big'));
+  const togglePreview = (img) => {
+    const big = img.classList.toggle('big');
+    img.setAttribute('aria-pressed', String(big));
+    img.setAttribute('aria-label', big ? 'Shrink your screenshot' : 'Enlarge your screenshot');
+  };
+  $('#scan-preview').addEventListener('click', (e) => togglePreview(e.currentTarget));
+  $('#scan-preview').addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    e.preventDefault();
+    togglePreview(e.currentTarget);
+  });
   $('#scan-programs').replaceChildren(...CATALOG.map((g) => h('p', null, h('b', null, `${g.group}: `),
     `${g.items.filter((c) => SCAN_SIGNS[c.id]).map((c) => c.name).join(', ')}.`)));
 
@@ -4999,10 +5144,11 @@
     playing = null;
     $('#play-img').removeAttribute('src');
   });
-  play.addEventListener('click', (e) => { if (e.target === play) cancelPlay(); }); // tap on the backdrop
+  play.addEventListener('click', (e) => { if (backdropTap(e, play)) cancelPlay(); }); // tap on the backdrop
   play.addEventListener('cancel', (e) => { e.preventDefault(); cancelPlay(); }); // Escape
   play.addEventListener('pointerdown', (e) => { if (!e.target.closest('#play-collect')) stopCountdown(); });
   play.addEventListener('keydown', (e) => { if (e.key !== 'Enter' && e.key !== ' ') stopCountdown(); });
+  play.addEventListener('focusin', (e) => { if (collectTimer && !e.target.closest('#play-collect')) stopCountdown(); });
   $('#play-close').addEventListener('click', cancelPlay);
   $('#play-skip').addEventListener('click', skipPlay);
   // The review sheet closing without Update (opened from a batch with Fix something) moves on to the next one.
@@ -5011,13 +5157,18 @@
     if (quietClose) { quietClose = false; return; }
     if (batch) { finishOne(false); nextInQueue(); }
   });
+  $('#game-auto').addEventListener('click', () => {
+    autoCollect = !autoCollect;
+    try { if (autoCollect) localStorage.removeItem(AUTO_KEY); else localStorage.setItem(AUTO_KEY, 'off'); } catch (e) { /* private mode */ }
+    syncSoundButton();
+  });
   $('#game-sound').addEventListener('click', () => {
     soundOff = !soundOff;
     try { if (soundOff) localStorage.setItem(SOUND_KEY, 'off'); else localStorage.removeItem(SOUND_KEY); } catch (e) { /* private mode */ }
     syncSoundButton();
     if (!soundOff && unlockSound()) sound('coin');
   });
-  addEventListener('resize', () => { if (play.open) sizeShot(); });
+  addEventListener('resize', () => { if (play.open) { sizeShot(); placeMarkLabels(); } });
 
   $('#game-strip').addEventListener('click', (e) => { if (e.target.closest('[data-game]')) openGame(); });
   $('#game-done').addEventListener('click', () => gameSheet.close());
@@ -5044,7 +5195,7 @@
     gameSheet.close();
     pickFor(row.dataset.stale);
   });
-  gameSheet.addEventListener('click', (e) => { if (e.target === gameSheet) gameSheet.close(); });
+  gameSheet.addEventListener('click', (e) => { if (backdropTap(e, gameSheet)) gameSheet.close(); });
 
   // On a computer: drop a screenshot anywhere on the page, or paste one (⌘V / Ctrl+V).
   const imageIn = (list) => [...(list || [])].find((f) => /^image\//.test(f.type));
@@ -5067,21 +5218,26 @@
     e.preventDefault();
     hideDropHint();
     if (otherSheetOpen()) return;
+    pickHint = null;
+    replacePick = false;
     if (!scanFiles(e.dataTransfer.files)) showToast('That isn’t a picture — drop a screenshot (PNG or JPG)');
   });
   addEventListener('paste', (e) => {
     const files = e.clipboardData && e.clipboardData.files;
     if (!imageIn(files) || otherSheetOpen()) return;
     e.preventDefault();
+    pickHint = null;
+    replacePick = false;
     scanFiles(files);
   });
   $('#scan-cancel').addEventListener('click', () => scanSheet.close());
-  $('#scan-again').addEventListener('click', pickImage);
+  $('#scan-again').addEventListener('click', pickAnother);
   $('#scan-apply').addEventListener('click', applyScan);
   $('#scan-file').addEventListener('change', (e) => { const files = [...(e.target.files || [])]; e.target.value = ''; scanFiles(files); });
+  $('#scan-file').addEventListener('cancel', () => { pickHint = null; replacePick = false; }); // picker closed with nothing
   $('#scan-read-text').addEventListener('click', () => { if ($('#scan-text').value.trim()) showScanResult($('#scan-text').value); });
   scanSheet.addEventListener('click', (e) => {
-    if (e.target === scanSheet) { scanSheet.close(); return; }
+    if (backdropTap(e, scanSheet)) { scanSheet.close(); return; }
     const alt = e.target.closest('[data-scan-balance]');
     if (alt) { $('#scan-balance').value = fmt(Number(alt.dataset.scanBalance)); $('#scan-use-balance').checked = true; }
   });
@@ -5112,7 +5268,7 @@
   }
   $('#quick-btn').addEventListener('click', openQuick);
   $('#quick-cancel').addEventListener('click', () => quickSheet.close());
-  quickSheet.addEventListener('click', (e) => { if (e.target === quickSheet) quickSheet.close(); });
+  quickSheet.addEventListener('click', (e) => { if (backdropTap(e, quickSheet)) quickSheet.close(); });
   quickSheet.addEventListener('focusin', (e) => { if (e.target.matches('.quick-input')) e.target.select(); });
   quickSheet.addEventListener('keydown', (e) => { // Enter moves down the list; Save on the last one
     if (e.key !== 'Enter' || !e.target.matches('.quick-input')) return;
@@ -5170,7 +5326,7 @@
   $('#worth-btn').addEventListener('click', () => { $('#worth-sheet').showModal(); renderWorth(); });
   $('#worth-done').addEventListener('click', () => $('#worth-sheet').close());
   $('#worth-hide').addEventListener('click', () => { $('#worth-sheet').close(); setHideValues(true); showToast('Dollar values hidden — turn them back on at the bottom', () => setHideValues(false)); });
-  $('#worth-sheet').addEventListener('click', (e) => { if (e.target === $('#worth-sheet')) $('#worth-sheet').close(); });
+  $('#worth-sheet').addEventListener('click', (e) => { if (backdropTap(e, $('#worth-sheet'))) $('#worth-sheet').close(); });
   $('#values-pick').addEventListener('click', (e) => { const b = e.target.closest('[data-values]'); if (b) setHideValues(b.dataset.values === 'hide'); });
 
   // Delta grants a tier as soon as you qualify, for the rest of that Medallion year and all of the next: qualifying
@@ -5559,7 +5715,7 @@
   });
 
   $('#p-cancel').addEventListener('click', () => sheet.close());
-  sheet.addEventListener('click', (e) => { if (e.target === sheet) sheet.close(); }); // tap on the backdrop
+  sheet.addEventListener('click', (e) => { if (backdropTap(e, sheet)) sheet.close(); }); // tap on the backdrop
 
   /* ---------- Program detail sheet: perks, member number, every level ---------- */
 
@@ -5958,7 +6114,7 @@
   }
 
   detail.addEventListener('click', (e) => {
-    if (e.target === detail) { detail.close(); return; } // tap on the backdrop
+    if (backdropTap(e, detail)) { detail.close(); return; } // tap on the backdrop
     const btn = e.target.closest('button');
     if (!btn) return;
     const p = detailProgram();
@@ -6154,7 +6310,7 @@
   $('#perks-btn').addEventListener('click', openPerks);
   $('#perks-search').addEventListener('input', renderPerks);
   perksSheet.addEventListener('click', (e) => {
-    if (e.target === perksSheet || e.target.closest('#perks-done')) { perksSheet.close(); return; }
+    if (backdropTap(e, perksSheet) || e.target.closest('#perks-done')) { perksSheet.close(); return; }
     const chip = e.target.closest('[data-perk-filter]');
     if (chip) { perkFilter = chip.dataset.perkFilter; renderPerks(); return; }
     const src = e.target.closest('[data-open]');
@@ -6675,7 +6831,7 @@
   });
 
   $('#cards-done').addEventListener('click', () => cardsSheet.close());
-  cardsSheet.addEventListener('click', (e) => { if (e.target === cardsSheet) cardsSheet.close(); }); // tap on the backdrop
+  cardsSheet.addEventListener('click', (e) => { if (backdropTap(e, cardsSheet)) cardsSheet.close(); }); // tap on the backdrop
 
   /* ---------- Vouchers ---------- */
 
@@ -6804,9 +6960,9 @@
     if (matchMedia('(pointer: coarse)').matches && navigator.canShare && navigator.canShare({ files: [file] })) {
       try {
         await navigator.share({ files: [file] });
-        return;
+        return true;
       } catch (err) {
-        if (err.name === 'AbortError') return;
+        if (err.name === 'AbortError') return false;
       }
     }
     const url = URL.createObjectURL(file);
@@ -6816,6 +6972,7 @@
     a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 10000);
     showToast(`Saved ${name}`);
+    return true;
   }
 
   // A plain-text summary meant for reading (not for restoring — that's the JSON backup).
@@ -6918,10 +7075,12 @@
     saveFile(`points-status-${fileTag()}${todayISO()}.txt`, `﻿${summaryText()}`, 'text/plain;charset=utf-8');
   });
 
-  function backUp() {
-    state.backedUp = todayISO();
-    const json = JSON.stringify({ app: 'points-status-tracker', exportedAt: new Date().toISOString(), data: state }, null, 2);
-    saveFile(`points-status-backup-${fileTag()}${todayISO()}.json`, json, 'application/json');
+  async function backUp() {
+    const today = todayISO();
+    const json = JSON.stringify({ app: 'points-status-tracker', exportedAt: new Date().toISOString(), data: { ...state, backedUp: today } }, null, 2);
+    if (!(await saveFile(`points-status-backup-${fileTag()}${today}.json`, json, 'application/json'))) return; // share sheet dismissed
+    state.backedUp = today;
+    saveNow();
     renderStats(); // refreshes "Coming up" and the footer's last-backup line
   }
 
@@ -6965,6 +7124,7 @@
   // Swaps in another tracker for whoever is showing, with Undo.
   function replaceTracker(next, message) {
     const previous = clone(state);
+    stopScanning();
     Object.assign(state, next);
     editMode = false;
     rollOver();
@@ -7061,7 +7221,7 @@
     }
   });
   $('#send-cancel').addEventListener('click', () => sendSheet.close());
-  sendSheet.addEventListener('click', (e) => { if (e.target === sendSheet) sendSheet.close(); });
+  sendSheet.addEventListener('click', (e) => { if (backdropTap(e, sendSheet)) sendSheet.close(); });
 
   // Opening a link made above: ask before changing anything, unless this device has nothing set up yet.
   const receiveSheet = $('#receive-sheet');
@@ -7196,6 +7356,8 @@
   function switchPerson(id) {
     if (id === people.active) return;
     if (saveTimer) saveNow();
+    stopScanning();
+    hideToast(); // its Undo belongs to the person being left
     people.active = id;
     savePeople();
     const next = load();
@@ -7241,7 +7403,7 @@
   });
 
   peopleSheet.addEventListener('click', (e) => {
-    if (e.target === peopleSheet) { peopleSheet.close(); return; }
+    if (backdropTap(e, peopleSheet)) { peopleSheet.close(); return; }
     const pick = e.target.closest('[data-person]');
     if (pick) { switchPerson(pick.dataset.person); return; }
     const rename = e.target.closest('[data-rename]');

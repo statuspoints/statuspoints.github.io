@@ -2,8 +2,11 @@
 // Files are served cache-first and refreshed in the background (stale-while-revalidate),
 // so an edit reaches an installed copy on the launch after it's deployed.
 // Bump VERSION when the SHELL list changes so old caches get cleaned up.
-const VERSION = 'v5';
+const VERSION = 'v6';
 const CACHE = `status-tracker-shell-${VERSION}`;
+// The screenshot reader's files from jsDelivr (pinned versions, so they never change): kept across app updates so
+// scanning works offline after the first use, not only while the browser's HTTP cache happens to keep them.
+const OCR_CACHE = 'status-tracker-ocr-v1';
 const SHELL = [
   './',
   './index.html',
@@ -25,14 +28,27 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE && k !== OCR_CACHE).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
 
 self.addEventListener('fetch', (event) => {
   const { request } = event;
-  if (request.method !== 'GET' || new URL(request.url).origin !== self.location.origin) return;
+  if (request.method !== 'GET') return;
+  const url = new URL(request.url);
+  if (url.hostname === 'cdn.jsdelivr.net' && /@\d/.test(url.pathname)) { // a pinned file: cache-first, kept for good
+    event.respondWith((async () => {
+      const cache = await caches.open(OCR_CACHE);
+      const hit = await cache.match(request);
+      if (hit) return hit;
+      const response = await fetch(request);
+      if (response.ok || response.type === 'opaque') event.waitUntil(cache.put(request, response.clone()).catch(() => {}));
+      return response;
+    })());
+    return;
+  }
+  if (url.origin !== self.location.origin) return;
   const isNavigation = request.mode === 'navigate';
 
   // One cache entry per file: query strings (?utm=…, cache-busters) are dropped from the key, so an old entry
@@ -44,6 +60,7 @@ self.addEventListener('fetch', (event) => {
     const cache = await caches.open(CACHE);
     const cached = (await cache.match(key.href))
       || (isNavigation ? await cache.match('./index.html') : undefined);
+    const shown = isNavigation && cached ? cached.clone() : null; // to compare with what the server has now
 
     // Revalidate with the server (a cheap 304 when nothing changed) rather than trusting the browser's HTTP
     // cache, which GitHub Pages sets to 10 minutes and would otherwise delay updates.
@@ -55,11 +72,12 @@ self.addEventListener('fetch', (event) => {
         // Redirected responses can't be replayed for navigations, so don't cache them. The write is awaited so
         // the worker isn't stopped before it lands.
         if (response.ok && !response.redirected && response.type === 'basic') {
-          await cache.put(key.href, response.clone()).catch(() => {});
-          // The page on screen came from an older copy: tell open windows a new version is ready.
-          // ETag first: it tracks the content, while Last-Modified can change on a redeploy of identical files.
-          const tag = (r) => r.headers.get('etag') || r.headers.get('last-modified');
-          if (isNavigation && cached && tag(cached) && tag(response) && tag(cached) !== tag(response)) {
+          const latest = shown ? response.clone() : null;
+          const saved = await cache.put(key.href, response.clone()).then(() => true, () => false);
+          // The page on screen came from an older copy: tell open windows a new version is ready — only when its
+          // content really changed (every deploy changes headers like ETag) and the new copy was saved, so Reload
+          // actually shows it.
+          if (saved && shown && latest && (await shown.text()) !== (await latest.text())) {
             const windows = await self.clients.matchAll({ type: 'window' });
             for (const client of windows) client.postMessage({ type: 'updated' });
           }

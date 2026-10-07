@@ -64,6 +64,11 @@ api.setState(fresh());
 api.markWeek();
 api.markWeek();
 check('marking twice in a week counts once', api.getState().game.weeks.length, 1);
+const typed = fresh();
+typed.game.weeks = [w - 3, w - 2, w - 1];
+api.setState(typed);
+api.markWeek();
+check('a typed update this week makes a best streak of 4 (no screenshot needed)', api.getState().game.best, 4);
 
 // Up to date
 const s = fresh();
