@@ -677,6 +677,10 @@
   .play-loot .loot-warn { background: var(--warn-soft); }
   .loot-warn .loot-main small { color: var(--warn-ink); }
   .loot-alts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .trend-log { margin-top: 8px; font-size: 13.5px; }
+  .trend-log summary { cursor: pointer; color: var(--accent); font-weight: 600; }
+  .trend-log ul { margin-top: 8px; }
+  .trend-log li { align-items: center; }
   .goal-mini { display: flex; align-items: center; gap: 8px; margin-top: 6px; font-size: 12.5px; font-weight: 600; color: var(--good); }
   .goal-mini .mini-bar { flex: 1; max-width: 120px; }
   .goal-mini .mini-bar i { background: var(--good); }
@@ -3097,7 +3101,8 @@
       for (const [id, list] of Object.entries(raw.history)) {
         if (!Array.isArray(list)) continue;
         const clean = list.filter((e) => Array.isArray(e) && typeof e[0] === 'string' && parseISODate(e[0]) && isCount(e[1]))
-          .map(([d, v]) => [d, Math.floor(v)]).sort((a, b) => a[0].localeCompare(b[0])).slice(-HISTORY_MAX);
+          .map(([d, v, src]) => (src === 's' || src === 't' ? [d, Math.floor(v), src] : [d, Math.floor(v)]))
+          .sort((a, b) => a[0].localeCompare(b[0])).slice(-HISTORY_MAX);
         if (clean.length) s.history[id] = clean;
       }
     }
@@ -3291,17 +3296,17 @@
   }
 
   // Balance history for the trend in a program's details: one entry per day (the day's last value), capped.
-  function recordBalance(id, previous, value) {
+  function recordBalance(id, previous, value, source) {
     const list = state.history[id] || (state.history[id] = []);
     const today = todayISO();
     // The first change also keeps the balance it replaced, dated when it was entered.
     if (!list.length && previous != null && state.updated[id] && state.updated[id] < today) list.push([state.updated[id], previous]);
-    if (list.length && list[list.length - 1][0] === today) list[list.length - 1][1] = value;
-    else list.push([today, value]);
+    if (list.length && list[list.length - 1][0] === today) list[list.length - 1] = [today, value, source];
+    else list.push([today, value, source]);
     if (list.length > HISTORY_MAX) list.splice(0, list.length - HISTORY_MAX);
   }
 
-  function setField(field, value) {
+  function setField(field, value, source = 't') { // source: 's' read from a screenshot, 't' typed
     if (field === 'mqd') {
       state.mqd = value ?? 0;
       state.updated.mqd = todayISO();
@@ -3315,7 +3320,7 @@
         const rule = program && expiryFor(program);
         if (!(rule && rule.earnOnly && value < store[id])) state.activity[id] = todayISO();
       }
-      if (kind === 'bal' && value != null && value !== store[id]) recordBalance(id, store[id], value);
+      if (kind === 'bal' && value != null && value !== store[id]) recordBalance(id, store[id], value, source);
       if (value == null) delete store[id];
       else store[id] = value;
       state.updated[kind === 'prog' ? field : id] = todayISO();
@@ -5053,7 +5058,7 @@
     let statusNew = false;
     if (vals.balance !== undefined && p.unit) {
       if (before.balance !== vals.balance) notes.push(before.balance == null ? `${fmt(vals.balance)} ${p.unit}` : `${signed(vals.balance - before.balance)} ${p.unit}`);
-      setField(`bal:${p.id}`, vals.balance);
+      setField(`bal:${p.id}`, vals.balance, 's');
       changes.push('balance');
     }
     if (vals.mqd !== undefined) { if (state.mqd !== vals.mqd) notes.push(`$${fmt(vals.mqd)} MQDs`); setField('mqd', vals.mqd); changes.push('MQDs'); }
@@ -5916,9 +5921,25 @@
       + `<polyline points="${line}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`
       + `<circle cx="${lx.toFixed(1)}" cy="${ly.toFixed(1)}" r="3" fill="var(--accent)"/></svg>`);
     const since = dateFmt.format(parseISODate(list[0][0]));
+    const wasOpen = !!box.querySelector('details[open]');
     box.replaceChildren(svg, h('p', null,
       h('strong', { class: change >= 0 ? 'up' : 'down' }, `${change >= 0 ? '+' : '−'}${fmt(Math.abs(change))}`),
-      ` ${p.unit} since ${since} · ${plural(list.length, 'update')}`));
+      ` ${p.unit} since ${since} · ${plural(list.length, 'update')}`), updateLog(p, list, wasOpen));
+  }
+
+  // Every update, newest first: date, amount, change, where it came from, and Restore for an earlier amount —
+  // for a misread noticed after the Undo is gone.
+  function updateLog(p, list, open) {
+    const now = state.balances[p.id];
+    const rows = [...list].reverse().slice(0, 15).map(([d, v, src], i, newest) => {
+      const prev = newest[i + 1];
+      const from = src === 's' ? 'from a screenshot' : src === 't' ? 'typed' : '';
+      const restore = v !== now ? h('button', { type: 'button', class: 'link', 'data-restore': String(v), 'aria-label': `Restore ${fmt(v)} ${p.unit}` }, 'Restore') : null;
+      return h('li', null, h('span', { class: 'log-date' }, monthDayFmt.format(parseISODate(d))),
+        h('span', { class: 'log-main' }, h('b', null, fmt(v)), prev && prev[1] !== v ? ` ${signed(v - prev[1])}` : '', from ? h('small', null, from) : null),
+        restore);
+    });
+    return h('details', { class: 'trend-log', open: open ? '' : null }, h('summary', null, 'All updates'), h('ul', { class: 'game-log' }, rows));
   }
 
   // A savings goal ("ANA First to Tokyo: 110,000 miles"): how far along it is, and whether card points you could
@@ -6314,6 +6335,21 @@
 
   detail.addEventListener('click', (e) => {
     if (backdropTap(e, detail)) { detail.close(); return; } // tap on the backdrop
+    const restore = e.target.closest('[data-restore]');
+    if (restore) {
+      const p = detailProgram();
+      const was = state.balances[p.id];
+      const back = (value) => {
+        setField(`bal:${p.id}`, value);
+        saveNow();
+        if (detailProgram() === p) renderDetail();
+        renderPrograms();
+        renderWorth();
+      };
+      back(Number(restore.dataset.restore));
+      showToast(`${p.name} back to ${fmt(state.balances[p.id])} ${p.unit}`, () => back(was));
+      return;
+    }
     const btn = e.target.closest('button');
     if (!btn) return;
     const p = detailProgram();
