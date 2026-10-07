@@ -60,7 +60,7 @@ Open Amex Membership Rewards, Chase Ultimate Rewards, Citi ThankYou, Capital One
 
 ### Points that expire
 
-Each program's details say whether its points or miles expire (as of September 2026):
+Each program's details say whether its points or miles expire (checked October 2026):
 
 - **Never:** Delta, United, Southwest, Alaska Atmos, JetBlue, Virgin Atlantic; card points (Amex, Chase, Capital One, Citi) while the card account is open.
 - **After inactivity:** IHG and Accor 12 months; Aeroplan, Wyndham, Choice, and Bilt 18 months; American, Flying Blue, Hilton, Marriott, and Hyatt 24 months; British Airways 36 months. Add your last activity date to see "Safe until…". Changing a balance counts as activity automatically. When the date is within 90 days, it shows in **Coming up** and the calendar export.
@@ -83,7 +83,7 @@ Each program's details say whether its points or miles expire (as of September 2
   - **Your member number:** masked on screen, with Show and Copy for check-in or booking.
   - **Notes:** anything worth remembering for that program ("2 suite night awards left"), included in the text export.
   - When you last updated the balance, plus a link to the program's website. After a couple of updates, a small trend line shows the balance over time ("+12,000 points since Mar 2").
-  - Perks cover Delta, United, American, Southwest, Alaska Atmos, Aeroplan, Hilton, Marriott, IHG, Hyatt, Wyndham, Leading Hotels, Omni, Avis, Hertz, and National (as of September 2026).
+  - Perks cover Delta, United, American, Southwest, Alaska Atmos, Aeroplan, Hilton, Marriott, IHG, Hyatt, Wyndham, Leading Hotels, Omni, Avis, Hertz, and National. On Oct 7, 2026 every level, qualification rule, and perk was checked against each program's own pages (status pages, terms, newsrooms), and each program's levels link to its official page ("Checked against delta.com on Oct 7, 2026 ↗").
 - **Filter chips** above the list show All, Elite (programs where you hold status), Airlines, Hotels, Points, or Cars & lounges.
 - **Header tiles** are tappable: Elite statuses filters the list, Medallion jumps to your Delta progress, Vouchers jumps to your vouchers.
 - **Plan ahead** (under the Medallion bar): drag to add expected MQDs (and Delta card spend) and see which tier you'd reach or keep. It's a preview only and isn't saved.
@@ -93,13 +93,13 @@ Each program's details say whether its points or miles expire (as of September 2
 
 ### Card presets
 
-Pick your cards (setup screen, or **Edit → Choose cards**) and the complimentary statuses and lounge access they come with are filled in automatically, adding programs like Avis or National if needed. Tap a card again to take its statuses off; statuses you typed yourself are never touched. Presets cover 61 cards from Amex (including every Delta SkyMiles card), Chase, Capital One, Citi, Barclays, Bilt, Bank of America, and Wells Fargo — searchable in the picker — based on published benefits as of September 2026. Cards with no elite status (e.g. Sapphire Preferred, Venture) are included so everyone can find theirs (`CARDS` in `index.html`). Statuses you only unlock by spending are left out, and most card statuses need enrolling with the issuer.
+Pick your cards (setup screen, or **Edit → Choose cards**) and the complimentary statuses and lounge access they come with are filled in automatically, adding programs like Avis or National if needed. Tap a card again to take its statuses off; statuses you typed yourself are never touched. Presets cover 66 cards from Amex (including every Delta SkyMiles card), Chase, Capital One, Citi, Barclays, Bilt, Bank of America, and Wells Fargo — searchable in the picker — checked against the issuers' own benefit pages in October 2026. When a card's benefits change (like the IHG Premier card's move to Gold Elite on Oct 1, 2026), the statuses of cards you hold update on their own the next time the app opens; ones you typed yourself are never touched. Cards with no elite status (e.g. Sapphire Preferred, Venture) are included so everyone can find theirs (`CARDS` in `index.html`). Statuses you only unlock by spending are left out, and most card statuses need enrolling with the issuer.
 
 **Annual fee dates:** under the card picker, add the date each card's annual fee posts (it's on your statement). **Coming up** shows it 60 days ahead with what depends on the card ("6 statuses and lounge access depend on it"), and **Add to calendar** adds a yearly event with alerts 30 and 7 days before, so you can decide whether to keep the card before the fee hits.
 
 ## Card credits and certificates
 
-- **Card credits:** for each card you hold, a **Card credits** section lists its statement credits (verified September 2026), such as Amex Platinum's $100 quarterly Resy credit or the Sapphire Reserve's $300 travel credit. Tap **Mark used** once you've used one. It resets on its own when the period ends: month, quarter, half-year, calendar year, or card year (from your annual fee date). Unused quarterly, half-year, and yearly credits show in **Coming up** in their last three weeks. Hide credits you don't use, and **Add a credit** for any card the app doesn't list.
+- **Card credits:** for each card you hold, a **Card credits** section lists its statement credits (checked against issuers in October 2026), such as Amex Platinum's $100 quarterly Resy credit or the Sapphire Reserve's $300 travel credit. Tap **Mark used** once you've used one. It resets on its own when the period ends: month, quarter, half-year, calendar year, or card year (from your annual fee date). Unused quarterly, half-year, and yearly credits show in **Coming up** in their last three weeks. Hide credits you don't use, and **Add a credit** for any card the app doesn't list.
 - **Free nights and companion certificates:** under Vouchers, **From your cards** offers one-tap entries for the certificates your cards issue (Hilton, Marriott, IHG, and Hyatt free nights; Delta companion certificates; Atmos companion awards; United award discounts). It fills in what the certificate covers and a 12-month expiration to adjust, so it gets a reminder like any voucher.
 
 ## Sharing a device

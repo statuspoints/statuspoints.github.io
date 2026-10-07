@@ -2067,8 +2067,8 @@
       { id: 'hyatt', name: 'World of Hyatt', unit: 'points', mark: ['Hy', '#0B6A93'] },
       { id: 'wyndham', name: 'Wyndham Rewards', unit: 'points', mark: ['W', '#0C57A0'] },
       { id: 'choice', name: 'Choice Privileges', unit: 'points', mark: ['C', '#0B7468'] },
-      { id: 'accor', name: 'Accor ALL', unit: 'points', mark: ['A', '#23205A'] },
-      { id: 'lhw', name: 'Leading Hotels of the World', unit: '', mark: ['LHW', '#6B5638'] },
+      { id: 'accor', name: 'ALL Accor', unit: 'points', mark: ['A', '#23205A'] },
+      { id: 'lhw', name: 'Leading Hotels of the World', unit: 'points', mark: ['LHW', '#6B5638'] },
       { id: 'omni', name: 'Omni Select Guest', unit: '', mark: ['O', '#2E4A45'] },
       { id: 'bestwestern', name: 'Best Western Rewards', unit: 'points', mark: ['BW', '#003C7E'] },
       { id: 'sonesta', name: 'Sonesta Travel Pass', unit: 'points', mark: ['SO', '#6B2C3E'] },
@@ -2107,7 +2107,7 @@
   // Complimentary statuses each card comes with (enrollment may be required), per the issuers' published
   // benefits as of CARDS_AS_OF. Grants are [program id, tier, note]; tiers joined with " · " show as separate
   // pills. Statuses you only unlock by spending are deliberately left out. `tone` picks the tile colors.
-  const CARDS_AS_OF = 'September 2026';
+  const CARDS_AS_OF = 'October 2026';
   // `boost` on Delta cards: dollars of card spend per MQD earned (MQD Boost).
   const AMEX_PLATINUM = [
     ['hilton', 'Gold'],
@@ -2118,16 +2118,17 @@
     ['national', 'Emerald Club Executive'],
     ['lounges', 'Centurion · Sky Club (10 visits/yr) · Escape · Plaza Premium · Priority Pass'],
   ];
-  const DELTA_PLATINUM = [['delta', 'MQD Headstart $2,500 · MQD Boost $1 per $20']];
+  const DELTA_PLATINUM = [['delta', 'MQD Headstart $2,500 · MQD Boost $1 per $20'], ['hertz', 'Five Star']];
   const DELTA_RESERVE = [
     ['delta', 'MQD Headstart $2,500 · MQD Boost $1 per $10'],
-    ['lounges', 'Sky Club (15 visits/yr) · Centurion & Escape on Delta flights'],
+    ['hertz', "President's Circle"],
+    ['lounges', 'Sky Club (15 visits/yr) · Centurion & Escape on Delta flights booked with the card'],
   ];
   const SAPPHIRE_RESERVE = [
     ['ihg', 'Platinum Elite', 'thru 12/31/27', '2027-12-31'], // 4th item: expiration date
     ['avis', 'Preferred Plus'],
-    ['national', 'Emerald Club Executive'],
-    ['lounges', 'Sapphire Lounges · Priority Pass · Air Canada Maple Leaf'],
+    ['national', 'Emerald Club Executive', '1st year; renews with 12 rentals'],
+    ['lounges', 'Sapphire Lounges · Priority Pass · Air Canada Maple Leaf on Star Alliance flights'],
   ];
   const CARDS = [
     { issuer: 'American Express', id: 'amex-platinum', name: 'Amex Platinum', tone: 'platinum', grants: AMEX_PLATINUM },
@@ -2136,8 +2137,8 @@
     { issuer: 'American Express', id: 'morgan-stanley-platinum', name: 'Morgan Stanley Platinum', tone: 'platinum', grants: AMEX_PLATINUM },
     { issuer: 'American Express', id: 'amex-gold', name: 'Amex Gold', tone: 'gold', grants: [['hertz', 'Five Star']] },
     { issuer: 'American Express', id: 'hilton-aspire', name: 'Hilton Aspire', tone: 'black', grants: [['hilton', 'Diamond'], ['national', 'Emerald Club Executive']] },
-    { issuer: 'American Express', id: 'hilton-surpass', name: 'Hilton Surpass', tone: 'slate', grants: [['hilton', 'Gold']] },
-    { issuer: 'American Express', id: 'hilton-business', name: 'Hilton Business', tone: 'slate', grants: [['hilton', 'Gold']] },
+    { issuer: 'American Express', id: 'hilton-surpass', name: 'Hilton Surpass', tone: 'slate', grants: [['hilton', 'Gold'], ['national', 'Emerald Club Executive']] },
+    { issuer: 'American Express', id: 'hilton-business', name: 'Hilton Business', tone: 'slate', grants: [['hilton', 'Gold'], ['national', 'Emerald Club Executive']] },
     { issuer: 'American Express', id: 'hilton-amex', name: 'Hilton Honors Amex', label: 'Hilton Honors (no fee)', tone: 'blue', grants: [['hilton', 'Silver']] },
     { issuer: 'American Express', id: 'bonvoy-brilliant', name: 'Bonvoy Brilliant', tone: 'black', grants: [['marriott', 'Platinum Elite'], ['lounges', 'Priority Pass']] },
     { issuer: 'American Express', id: 'bonvoy-bevy', name: 'Bonvoy Bevy', tone: 'bronze', grants: [['marriott', 'Gold Elite']] },
@@ -2163,13 +2164,19 @@
     { issuer: 'Chase', id: 'united-quest', name: 'United Quest', tone: 'slate', grants: [] },
     { issuer: 'Chase', id: 'southwest-priority', name: 'Southwest Priority', tone: 'sapphire', grants: [] },
     { issuer: 'Chase', id: 'southwest-plus', name: 'Southwest Plus', tone: 'blue', grants: [] },
-    { issuer: 'Chase', id: 'ihg-premier', name: 'IHG Premier', tone: 'black', grants: [['ihg', 'Platinum Elite']] },
-    { issuer: 'Chase', id: 'ihg-premier-business', name: 'IHG Premier Business', tone: 'black', grants: [['ihg', 'Platinum Elite']] },
-    { issuer: 'Chase', id: 'ihg-traveler', name: 'IHG Traveler', tone: 'blue', grants: [['ihg', 'Silver Elite']] },
+    // Oct 1, 2026 refresh: Premier now comes with Gold (Platinum takes $15,000 of spend); Premier Select is new.
+    { issuer: 'Chase', id: 'ihg-premier-select', name: 'IHG Premier Select', tone: 'black', grants: [['ihg', 'Platinum Elite']] },
+    { issuer: 'Chase', id: 'ihg-premier', name: 'IHG Premier', tone: 'black', grants: [['ihg', 'Gold Elite', 'Platinum with $15,000 spend a year']] },
+    { issuer: 'Chase', id: 'ihg-premier-business', name: 'IHG One Rewards Business', label: 'IHG One Rewards Business (was Premier Business)', tone: 'black', grants: [['ihg', 'Platinum Elite']] },
+    { issuer: 'Chase', id: 'ihg-traveler', name: 'IHG One Rewards Card', label: 'IHG One Rewards Card (was Traveler)', tone: 'blue', grants: [['ihg', 'Silver Elite']] },
     { issuer: 'Chase', id: 'hyatt-card', name: 'World of Hyatt card', tone: 'sapphire', grants: [['hyatt', 'Discoverist']] },
     { issuer: 'Chase', id: 'hyatt-business', name: 'World of Hyatt Business', tone: 'sapphire', grants: [['hyatt', 'Discoverist']] },
     { issuer: 'Chase', id: 'bonvoy-boundless', name: 'Bonvoy Boundless', tone: 'slate', grants: [['marriott', 'Silver Elite']] },
     { issuer: 'Chase', id: 'bonvoy-bold', name: 'Bonvoy Bold', tone: 'blue', grants: [['marriott', 'Silver Elite']] },
+    { issuer: 'Chase', id: 'bonvoy-bountiful', name: 'Bonvoy Bountiful', tone: 'bronze', grants: [['marriott', 'Gold Elite']] },
+    { issuer: 'Chase', id: 'ritz-carlton', name: 'Ritz-Carlton card', tone: 'black', grants: [['marriott', 'Gold Elite'], ['national', 'Emerald Club Executive'], ['lounges', 'Sapphire Lounges · Priority Pass']] },
+    { issuer: 'Chase', id: 'united-business', name: 'United Business Card', tone: 'sapphire', grants: [['lounges', '2 United Club passes/yr']] },
+    { issuer: 'Chase', id: 'united-club-business', name: 'United Club Business Card', tone: 'sapphire', grants: [['ihg', 'Platinum Elite'], ['avis', "President's Club"], ['lounges', 'United Club membership']] },
     { issuer: 'Chase', id: 'united-club', name: 'United Club Card', tone: 'sapphire', grants: [
       ['ihg', 'Platinum Elite'],
       ['avis', "President's Club"],
@@ -2184,9 +2191,9 @@
       ['lounges', 'Capital One Lounges · Priority Pass'],
     ] },
     // Venture's complimentary lounge visits ended in 2025.
-    { issuer: 'Capital One', id: 'venture', name: 'Venture', tone: 'slate', grants: [] },
-    { issuer: 'Capital One', id: 'ventureone', name: 'VentureOne', tone: 'blue', grants: [] },
-    { issuer: 'Capital One', id: 'savor', name: 'Savor', tone: 'bronze', grants: [] },
+    { issuer: 'Capital One', id: 'venture', name: 'Venture', tone: 'slate', grants: [['hertz', 'Five Star']] },
+    { issuer: 'Capital One', id: 'ventureone', name: 'VentureOne', tone: 'blue', grants: [['hertz', 'Five Star']] },
+    { issuer: 'Capital One', id: 'savor', name: 'Savor', tone: 'bronze', grants: [['hertz', 'Five Star']] },
     { issuer: 'Citi', id: 'aadvantage-executive', name: 'AAdvantage Executive', label: 'AAdvantage Executive World Legend', tone: 'black', grants: [
       ['omni', 'Champion'],
       ['avis', "President's Club"],
@@ -2197,20 +2204,20 @@
     ] },
     { issuer: 'Citi', id: 'strata-premier', name: 'Citi Strata Premier', tone: 'sapphire', grants: [] },
     { issuer: 'Citi', id: 'double-cash', name: 'Citi Double Cash', tone: 'slate', grants: [] },
-    { issuer: 'Citi', id: 'custom-cash', name: 'Citi Custom Cash', tone: 'blue', grants: [] },
+    { issuer: 'Citi', id: 'custom-cash', name: 'Citi Custom Cash', label: 'Citi Custom Cash (closed to new applicants May 2026)', tone: 'blue', grants: [] },
     // Earner Plus: accounts opened since June 17, 2026 get Diamond for the first 12 months, then Platinum.
     { issuer: 'Barclays', id: 'wyndham-earner', name: 'Wyndham Earner', tone: 'blue', grants: [['wyndham', 'Gold']] },
-    { issuer: 'Barclays', id: 'wyndham-earner-plus', name: 'Wyndham Earner Plus', tone: 'sapphire', grants: [['wyndham', 'Platinum']] },
-    { issuer: 'Barclays', id: 'wyndham-earner-business', name: 'Wyndham Earner Business', tone: 'black', grants: [['wyndham', 'Diamond']] },
-    { issuer: 'Barclays', id: 'wyndham-earner-premier', name: 'Wyndham Earner Premier', tone: 'platinum', grants: [['wyndham', 'Diamond']] },
+    { issuer: 'Barclays', id: 'wyndham-earner-plus', name: 'Wyndham Earner Plus', tone: 'sapphire', grants: [['wyndham', 'Platinum', 'Diamond for the first 12 months if opened since 6/17/26'], ['national', 'Emerald Club Executive']] },
+    { issuer: 'Barclays', id: 'wyndham-earner-business', name: 'Wyndham Earner Business', tone: 'black', grants: [['wyndham', 'Diamond'], ['national', 'Emerald Club Executive']] },
+    { issuer: 'Barclays', id: 'wyndham-earner-premier', name: 'Wyndham Earner Premier', tone: 'platinum', grants: [['wyndham', 'Diamond'], ['national', 'Emerald Club Executive']] },
     // Palladium's Bilt Gold comes from meeting the welcome-offer spend, so it isn't auto-applied.
     { issuer: 'Bilt', id: 'bilt-blue', name: 'Bilt Blue', tone: 'blue', grants: [] },
     { issuer: 'Bilt', id: 'bilt-obsidian', name: 'Bilt Obsidian', tone: 'black', grants: [] },
     { issuer: 'Bilt', id: 'bilt-palladium', name: 'Bilt Palladium', tone: 'platinum', grants: [['lounges', 'Priority Pass']] },
-    { issuer: 'Bank of America', id: 'premium-rewards-elite', name: 'Premium Rewards Elite', tone: 'sapphire', grants: [['lounges', 'Priority Pass']] },
+    { issuer: 'Bank of America', id: 'premium-rewards-elite', name: 'Premium Rewards Elite', tone: 'sapphire', grants: [['avis', 'Preferred Plus'], ['hertz', 'Five Star'], ['national', 'Emerald Club Executive'], ['lounges', 'Priority Pass']] },
     { issuer: 'Bank of America', id: 'premium-rewards', name: 'Premium Rewards', tone: 'slate', grants: [] },
     // Summit's Atmos status comes from status points earned by spending, so only the lounge passes apply.
-    { issuer: 'Bank of America', id: 'atmos-summit', name: 'Atmos Summit', tone: 'black', grants: [['lounges', '8 Alaska Lounge passes/yr']] },
+    { issuer: 'Bank of America', id: 'atmos-summit', name: 'Atmos Summit', tone: 'black', grants: [['avis', 'Preferred Plus'], ['hertz', 'Five Star'], ['national', 'Emerald Club Executive'], ['lounges', '8 Alaska Lounge passes/yr (2 a quarter, use by quarter-end)']] },
     { issuer: 'Bank of America', id: 'atmos-ascent', name: 'Atmos Ascent', tone: 'blue', grants: [] },
     { issuer: 'Wells Fargo', id: 'autograph-journey', name: 'Autograph Journey', tone: 'black', grants: [] },
   ];
@@ -2230,39 +2237,60 @@
 
   // What each status level gets you: headline perks per tier (lowest → highest) and what it takes to earn it,
   // per the programs' published 2026 benefits. Entries are [tier name, how to earn, perks, extra name aliases].
-  const BENEFITS_AS_OF = 'September 2026';
+  const BENEFITS_AS_OF = 'October 2026';
+  // Each program's own status and benefits page: the levels and perks here were checked against these (and the
+  // programs' terms and newsrooms) on October 7, 2026.
+  const BENEFITS_CHECKED = 'Oct 7, 2026';
+  const OFFICIAL = {
+    delta: 'https://www.delta.com/us/en/skymiles/medallion-program/medallion-benefits',
+    united: 'https://www.united.com/en/us/fly/mileageplus/premier.html',
+    american: 'https://www.aa.com/web/i18n/aadvantage-program/discover/member-statuses.html',
+    southwest: 'https://www.southwest.com/rapid-rewards/tiers/',
+    alaska: 'https://www.alaskaair.com/atmosrewards/content/benefits',
+    aeroplan: 'https://www.aircanada.com/us/en/aco/home/aeroplan/status/tiers.html',
+    hilton: 'https://www.hilton.com/en/hilton-honors/member-benefits/',
+    marriott: 'https://www.marriott.com/loyalty/member-benefits.mi',
+    ihg: 'https://www.ihg.com/onerewards/content/us/en/tier-benefits',
+    hyatt: 'https://world.hyatt.com/content/gp/en/tiers-and-benefits.html',
+    wyndham: 'https://www.wyndhamhotels.com/wyndham-rewards/member-levels',
+    lhw: 'https://www.lhw.com/leaders-club',
+    omni: 'https://www.omnihotels.com/-/media/digex/loyalty/pdfs/sg-benefits-grid.pdf',
+    avis: 'https://www.avis.com/en/avis-preferred',
+    hertz: 'https://www.hertz.com/us/en/gold-plus-rewards/gpr-faq',
+    national: 'https://www.nationalcar.com/en/emerald-club/benefits.html',
+  };
   const BENEFITS = {
     delta: [
-      ['Silver Medallion', '$5,000 MQDs in a Medallion year', ["Free upgrades", "Free Preferred seats", "1 free bag"], ['7 miles per $1 spent (2 bonus)', 'Complimentary upgrades, clearing 1 day out', 'Free Preferred seats', 'First checked bag free', 'SkyTeam Elite']],
-      ['Gold Medallion', '$10,000 MQDs in a Medallion year', ["Sky Priority", "Partner lounges abroad", "2 free bags"], ['8 miles per $1 spent (3 bonus)', 'Upgrades clearing 3 days out', 'Sky Priority check-in, security, and boarding', '2 free checked bags', 'SkyTeam Elite Plus: partner lounges on international trips']],
-      ['Platinum Medallion', '$15,000 MQDs in a Medallion year', ["Upgrades 5 days out", "Choice Benefit", "3 free bags"], ['9 miles per $1 spent (4 bonus)', 'Upgrades clearing 5 days out', '1 Choice Benefit (like upgrade certificates or 35,000 miles)', 'Gift Silver Medallion to up to 4 people', '3 free checked bags']],
-      ['Diamond Medallion', '$28,000 MQDs in a Medallion year', ["Top upgrade priority", "3 Choice Benefits", "Sky Club option"], ['11 miles per $1 spent (6 bonus)', 'Top upgrade priority, clearing 5 days out', '3 Choice Benefits (options include a Sky Club membership)', 'Gift Gold Medallion to up to 4 people', 'Diamond service line']],
+      ['Silver Medallion', '$5,000 MQDs in a calendar year', ["Free upgrades", "Free Preferred seats", "1 free bag"], ['7 miles per $1 spent (2 bonus)', 'Complimentary upgrades, clearing 1 day out', 'Free Preferred seats', 'First checked bag free', 'SkyTeam Elite']],
+      ['Gold Medallion', '$10,000 MQDs in a calendar year', ["Sky Priority", "Partner lounges abroad", "2 free bags"], ['8 miles per $1 spent (3 bonus)', 'Upgrades clearing 3 days out', 'Sky Priority check-in, security, and boarding', '2 free checked bags', 'SkyTeam Elite Plus: partner lounges on international trips']],
+      ['Platinum Medallion', '$15,000 MQDs in a calendar year', ["Upgrades 5 days out", "Choice Benefit", "3 free bags"], ['9 miles per $1 spent (4 bonus)', 'Upgrades clearing 5 days out', '1 Choice Benefit (like upgrade certificates, 35,000 miles, or gifting Silver Medallion to 4 people)', '3 free checked bags', 'Sky Priority check-in, security, and boarding', 'SkyTeam Elite Plus: partner lounges on international trips']],
+      ['Diamond Medallion', '$28,000 MQDs in a calendar year', ["Top upgrade priority", "3 Choice Benefits", "Sky Club option"], ['11 miles per $1 spent (6 bonus)', 'Top upgrade priority, clearing 5 days out', '3 Choice Benefits (options include a Sky Club membership or gifting Gold Medallion to 4 people)', '3 free checked bags', 'Sky Priority and SkyTeam Elite Plus: partner lounges on international trips', 'Diamond service line']],
     ],
     united: [
-      ['Premier Silver', '6,000 PQP, or 5,000 PQP + 15 flights', ["Free upgrades", "Economy Plus at check-in", "1 free bag"], ['5 miles per $1 spent (8 with a United card)', 'Complimentary upgrades on eligible flights', 'Economy Plus seats at check-in', 'First checked bag free', 'Star Alliance Silver']],
-      ['Premier Gold', '12,000 PQP, or 10,000 PQP + 30 flights', ["Star Alliance lounges", "Economy Plus", "2 free bags"], ['6 miles per $1 spent (9 with a United card)', 'Star Alliance Gold: partner lounges on international trips', 'Economy Plus seats at booking', '2 free checked bags', 'Higher upgrade priority']],
-      ['Premier Platinum', '18,000 PQP, or 15,000 PQP + 45 flights', ["40 PlusPoints", "Upgrade priority", "3 free bags"], ['7 miles per $1 spent (10 with a United card)', '40 PlusPoints a year for upgrades', '3 free checked bags', 'Higher upgrade priority']],
-      ['Premier 1K', '28,000 PQP, or 22,000 PQP + 60 flights', ["280 PlusPoints", "Top upgrade priority", "1K service line"], ['9 miles per $1 spent (12 with a United card)', '280 PlusPoints a year for upgrades', 'Top upgrade priority', 'Dedicated 1K service line']],
+      ['Premier Silver', '6,000 PQP, or 5,000 PQP + 15 flights', ["Free upgrades", "Economy Plus at check-in", "1 free bag"], ['5 miles per $1 spent (8 as the primary United cardholder; Gateway card only after $10,000 spend in a year)', 'Complimentary upgrades on eligible flights', 'Economy Plus seats at check-in', 'First checked bag free', 'Star Alliance Silver']],
+      ['Premier Gold', '12,000 PQP, or 10,000 PQP + 30 flights', ["Star Alliance lounges", "Economy Plus", "2 free bags"], ['6 miles per $1 spent (9 as the primary United cardholder; Gateway card only after $10,000 spend in a year)', 'Star Alliance Gold: partner lounges on international trips', 'Economy Plus seats at booking', '2 free checked bags', 'Higher upgrade priority']],
+      ['Premier Platinum', '18,000 PQP, or 15,000 PQP + 45 flights', ["40 PlusPoints", "Upgrade priority", "3 free bags"], ['7 miles per $1 spent (10 as the primary United cardholder; Gateway card only after $10,000 spend in a year)', '40 PlusPoints a year for upgrades', '3 free checked bags', 'Higher upgrade priority']],
+      ['Premier 1K', '28,000 PQP, or 22,000 PQP + 60 flights', ["280 PlusPoints", "Top upgrade priority", "1K service line"], ['9 miles per $1 spent (12 as the primary United cardholder; Gateway card only after $10,000 spend in a year)', '280 PlusPoints a year for upgrades', 'Top upgrade priority', 'Dedicated 1K service line']],
     ],
     american: [
-      ['Gold', '40,000 Loyalty Points a year', ["Free upgrades", "Priority boarding", "1 free bag"], ['Complimentary upgrades, clearing 24 hours out (award tickets too)', 'Priority check-in and boarding', 'First checked bag free', 'oneworld Ruby']],
-      ['Platinum', '75,000 Loyalty Points a year', ["Main Cabin Extra", "oneworld lounges", "2 free bags"], ['Main Cabin Extra seats at booking', 'Upgrades clearing 48 hours out', '2 free checked bags', 'oneworld Sapphire: partner business lounges on international trips']],
-      ['Platinum Pro', '125,000 Loyalty Points a year', ["Upgrades 72 hrs out", "Free same-day changes", "First-class lounges"], ['Upgrades clearing 72 hours out', 'Free same-day flight changes', '3 free checked bags', 'oneworld Emerald: first-class lounges on international trips']],
-      ['Executive Platinum', '200,000 Loyalty Points a year', ["Upgrades 100 hrs out", "Top upgrade priority", "oneworld Emerald"], ['Upgrades clearing 100 hours out', 'Highest upgrade priority below ConciergeKey', 'oneworld Emerald', 'More Loyalty Point Rewards, like systemwide upgrades']],
+      ['Gold', '40,000 Loyalty Points a year', ["Free upgrades", "Priority boarding", "1 free bag"], ['Complimentary upgrades as early as 24 hours out, when seats are available (award tickets too; not Basic Economy bought May 18, 2026 or later)', '40% bonus miles and Loyalty Points on flights', 'Free Preferred seats at booking; Main Cabin Extra at check-in', 'Priority check-in, security, and boarding', 'First checked bag free', 'oneworld Ruby']],
+      ['Platinum', '75,000 Loyalty Points a year', ["Main Cabin Extra", "oneworld lounges", "2 free bags"], ['Complimentary upgrades as early as 48 hours out, when seats are available (not Basic Economy)', '60% bonus miles and Loyalty Points on flights', 'Free Preferred and Main Cabin Extra seats at booking', '2 free checked bags with priority handling', 'oneworld Sapphire: Admirals Club and oneworld business lounges on international trips']],
+      ['Platinum Pro', '125,000 Loyalty Points a year', ["Upgrades 72 hrs out", "Free same-day changes", "First-class lounges"], ['Complimentary upgrades as early as 72 hours out, when seats are available (not Basic Economy)', '80% bonus miles and Loyalty Points on flights', 'Free Preferred and Main Cabin Extra seats at booking', 'Free same-day flight changes', '3 free checked bags with priority handling', 'oneworld Emerald: first-class lounges on international trips']],
+      ['Executive Platinum', '200,000 Loyalty Points a year', ["Upgrades 100 hrs out", "Top upgrade priority", "oneworld Emerald"], ['Complimentary upgrades as early as 100 hours out, when seats are available (not Basic Economy)', '120% bonus miles and Loyalty Points on flights', 'Highest upgrade priority below ConciergeKey', 'Free Preferred and Main Cabin Extra seats at booking', '3 free checked bags with priority handling', 'oneworld Emerald', 'More Loyalty Point Rewards, like systemwide upgrades']],
     ],
     southwest: [
-      ['A-List', '20 flights or 35,000 tier points a year', ["1st checked bag free", "Seat pick at booking", "Priority lanes"], ['First checked bag free', 'Pick a Preferred or Standard seat at booking', 'Free Extra Legroom seat within 48 hours of departure (when available)', 'Priority check-in and security lanes', 'Free same-day standby']],
-      ['A-List Preferred', '40 flights or 70,000 tier points a year', ["2 free checked bags", "Any seat incl. Extra Legroom", "Board first"], ['2 free checked bags', 'Pick any seat, including Extra Legroom, at booking', 'Board before Group 1', 'Double points on flights', 'Free inflight Wi-Fi', 'Free same-day standby']],
+      ['A-List', '20 flights or 35,000 tier points a year', ["1st checked bag free", "Seat pick at booking", "Priority lanes"], ['First checked bag free', '25% bonus points on flights', 'Board in Group 1', 'Pick a Preferred or Standard seat at booking', 'Free Extra Legroom seat within 48 hours of departure (when available)', 'Priority check-in and security lanes', 'Free same-day standby']],
+      ['A-List Preferred', '40 flights or 70,000 tier points a year', ["2 free checked bags", "Any seat incl. Extra Legroom", "Board first"], ['2 free checked bags', 'Pick an Extra Legroom, Preferred, or Standard seat at booking (when available)', 'Board before Group 1', 'Double points on flights', 'Up to 2 free premium drinks (select flights over 250 miles)', 'Free same-day standby']],
     ],
     alaska: [
-      ['Silver', '20,000 status points a year', ["Free upgrades", "Preferred seats", "1 free bag"], ['1 free checked bag', 'Preferred seats', 'Complimentary upgrades on Alaska, Hawaiian, and eligible American flights', 'oneworld Ruby']],
-      ['Gold', '40,000 status points a year', ["oneworld lounges", "Same-day changes", "2 free bags"], ['2 free checked bags', 'Higher upgrade priority', 'Same-day flight changes', 'oneworld Sapphire: partner lounges on international trips']],
-      ['Platinum', '80,000 status points a year', ["100% bonus", "Upgrade priority", "3 free bags"], ['3 free checked bags', '100% bonus points on flights', 'Higher upgrade priority', 'oneworld Emerald']],
+      ['Silver', '20,000 status points a year', ["Upgrades when available", "Preferred seats", "1 free bag"], ['1 free checked bag', '25% bonus points on flights', 'Preferred seats', 'Complimentary upgrades on Alaska, Hawaiian, and eligible American flights within North America (when available)', 'oneworld Ruby']],
+      ['Gold', '40,000 status points a year', ["oneworld lounges", "Same-day changes", "2 free bags"], ['2 free checked bags', '50% bonus points on flights', 'Higher upgrade priority', 'Same-day flight changes', 'oneworld Sapphire: partner lounges on international trips']],
+      ['Platinum', '80,000 status points a year', ["100% bonus", "Upgrade priority", "3 free bags"], ['3 free checked bags', '100% bonus points on flights', 'Premium Class upgrades at booking (all fares except Saver)', 'Higher upgrade priority', 'oneworld Emerald']],
       ['Titanium', '135,000 status points a year', ["150% bonus", "Free economy meal", "Long-haul upgrades"], ['150% bonus points on flights', 'Free meal in economy', 'Upgrades on select long-haul routes', 'oneworld Emerald']],
     ],
     aeroplan: [
-      ['25K', '25,000 Status Qualifying Credits a year (automatic with the Chase Air Canada Aeroplan card)', ["Priority check-in", "Zone 2 boarding", "Free checked bag"], ['Priority check-in and Zone 2 boarding', 'Free checked bag on Air Canada', 'Star Alliance Silver', '5 eUpgrade credits a year']],
-      ['35K', '35,000 SQC a year', ["3 free bags", "10 eUpgrades", "Upgrade priority"], ['3 free checked bags on Air Canada', '10 eUpgrade credits a year', 'Higher priority for upgrades and standby', 'Star Alliance Silver']],
+      ['25K', '25,000 Status Qualifying Credits a year, or 100,000 everyday-partner points (EDQ) (automatic with the Chase Air Canada Aeroplan card)', ["Priority check-in", "Zone 2 boarding", "Free checked bag"], ['Priority check-in and Zone 2 boarding', 'Free checked bag on Air Canada', 'Star Alliance Silver', '5 eUpgrade credits a year']],
+      ['35K', '35,000 SQC a year (or $75,000 a year on the Chase Air Canada Aeroplan card)', ["3 free bags", "10 eUpgrades", "Upgrade priority"], ['3 free checked bags on Air Canada', '10 eUpgrade credits a year', 'Higher priority for upgrades and standby', 'Star Alliance Silver']],
       ['50K', '50,000 SQC a year', ["Maple Leaf Lounges", "Star Alliance Gold", "15 eUpgrades"], ['Maple Leaf Lounge and Air Canada Café access', '15 eUpgrade credits a year', 'Star Alliance Gold: partner lounges and priority', '3 free checked bags', 'Higher upgrade priority']],
       ['75K', '75,000 SQC a year', ["20 eUpgrades", "Free Preferred seats", "3 free bags"], ['20 eUpgrade credits a year', 'Free Preferred seats on all but Basic fares', '3 free checked bags', 'Maple Leaf Lounge access', 'Star Alliance Gold']],
       ['Super Elite', '125,000 SQC a year', ["30 eUpgrades", "Top priority", "2 Status Passes"], ['30 eUpgrade credits a year', 'Top priority for upgrades and service', '2 Status Passes to share your premium services', 'An eUpgrade nominee who can use your credits', 'Star Alliance Gold lounge access worldwide']],
@@ -2274,11 +2302,11 @@
       ['Diamond Reserve', '80 nights or 40 stays, plus $18,000 on stays a year', ["Confirmed upgrade", "4 p.m. checkout", "120% bonus"], ['A Confirmable Upgrade Reward to lock in a better room (up to a one-bedroom suite) when you book', 'Guaranteed 4 p.m. late checkout', '120% bonus points on stays', 'Premium Club and executive lounge access', 'Upgrades confirmed up to 3 days before arrival, ahead of Diamond', '24/7 dedicated service line', 'Everything in Diamond']],
     ],
     marriott: [
-      ['Silver Elite', '10 nights a year', ["10% bonus", "Priority late checkout"], ['10% bonus points', 'Priority late checkout', 'Dedicated elite reservation line']],
+      ['Silver Elite', '10 nights a year', ["10% bonus", "Priority late checkout"], ['10% bonus points', 'Priority late checkout', 'Ultimate Reservation Guarantee']],
       ['Gold Elite', '25 nights a year', ["2 p.m. checkout", "Room upgrade", "25% bonus"], ['25% bonus points', '2 p.m. late checkout (when available)', 'Enhanced room upgrade (not suites)', 'Welcome gift of bonus points', 'Enhanced in-room internet']],
-      ['Platinum Elite', '50 nights a year', ["Lounge access", "Breakfast option", "4 p.m. checkout"], ['50% bonus points', '4 p.m. late checkout', 'Lounge access', 'Welcome gift: breakfast, points, or an amenity (varies by brand)', 'Upgrades including select suites', '1 Annual Choice Benefit']],
-      ['Titanium Elite', '75 nights a year', ["48-hr guarantee", "2nd Choice Benefit", "75% bonus"], ['75% bonus points', 'Everything in Platinum', '48-hour room guarantee', 'A second Annual Choice Benefit']],
-      ['Ambassador Elite', '100 nights plus $23,000 on stays a year', ["Personal Ambassador", "Your24 check-in", "All Titanium perks"], ['75% bonus points', 'A personal Ambassador for your stays', 'Your24: pick your own 24-hour check-in window', 'Everything in Titanium']],
+      ['Platinum Elite', '50 nights a year', ["Lounge access", "Breakfast option", "4 p.m. checkout"], ['50% bonus points', '4 p.m. late checkout, guaranteed at most hotels (when available at resort and convention hotels)', 'Lounge access', 'Welcome gift: breakfast, points, or an amenity (varies by brand)', 'Upgrades including select suites', '1 Annual Choice Benefit once you earn 50 nights in a year']],
+      ['Titanium Elite', '75 nights a year', ["48-hr guarantee", "2nd Choice Benefit", "75% bonus"], ['75% bonus points', 'Everything in Platinum', '48-hour room guarantee', 'A second Annual Choice Benefit once you earn 75 nights in a year', 'United Premier Silver status (register)', 'Hertz Five Star status (register)']],
+      ['Ambassador Elite', '100 nights plus $23,000 on stays a year', ["Personal Ambassador", "Your24 check-in", "All Titanium perks"], ['75% bonus points', 'A personal Ambassador for your stays', 'Your24: request your own 24-hour check-in window (when available)', 'Hertz President’s Circle status (register)', 'Everything in Titanium']],
     ],
     ihg: [
       ['Silver Elite', '10 nights a year', ["20% bonus", "Milestone Rewards"], ['20% bonus points', 'Milestone Rewards once you pass 20 nights']],
@@ -2289,30 +2317,32 @@
     hyatt: [
       ['Discoverist', '10 nights or 25,000 base points a year', ["Preferred room", "2 p.m. checkout", "Premium Wi-Fi"], ['10% bonus points', 'Preferred room upgrade (when available)', '2 p.m. late checkout (when available)', 'Premium internet and daily bottled water']],
       ['Explorist', '30 nights or 50,000 base points a year', ["Best-room upgrade", "2 p.m. checkout", "20% bonus"], ['20% bonus points', 'Upgrade to the best available room, excluding suites', '2 p.m. late checkout (when available)', '72-hour room guarantee']],
-      ['Globalist', '60 nights or 100,000 base points a year', ["Free breakfast", "Suite upgrades", "Club lounge"], ['30% bonus points', 'Suite upgrades and club lounge access', 'Free daily breakfast', '4 p.m. late checkout, guaranteed at most hotels (when available at resorts and casino hotels)', 'No resort fees on any stay; free parking on award stays']],
+      ['Globalist', '60 nights or 100,000 base points a year', ["Free breakfast", "Suite upgrades", "Club lounge"], ['30% bonus points', 'Best available room at check-in, up to standard suites (when available)', 'Club lounge access, or free daily breakfast at hotels without a club (or when it’s closed)', '4 p.m. late checkout, guaranteed at most hotels (when available at resorts and casino hotels)', 'No resort fees on any stay; free parking on award stays']],
     ],
     wyndham: [
-      ['Gold', '5 qualified nights a year', ["Late checkout", "Preferred room", "10% bonus"], ['10% bonus points', 'Late checkout (when available)', 'Preferred room choice']],
-      ['Platinum', '15 qualified nights a year', ["Early check-in", "Late checkout", "15% bonus"], ['15% bonus points', 'Early check-in (when available)', 'Late checkout (when available)']],
-      ['Diamond', '40 qualified nights a year', ["Suite upgrades", "Welcome amenity", "20% bonus"], ['20% bonus points', 'Suite upgrades (when available)', 'Welcome amenity', 'Early check-in and late checkout']],
+      ['Gold', '5 qualifying nights (extra nights roll over)', ["Late checkout", "Preferred room", "10% bonus"], ['10% bonus points', 'Late checkout (when available)', 'Preferred room on request, same room type (when available)']],
+      ['Platinum', '15 qualifying nights (extra nights roll over)', ["Early check-in", "Late checkout", "15% bonus"], ['15% bonus points', 'Early check-in, up to 2 hours early (when available)', 'Late checkout (when available)', 'Free car class upgrade at Enterprise, Alamo, and National (US and Canada airports)', 'Caesars Rewards status match']],
+      ['Diamond', '40 qualifying nights (extra nights roll over)', ["Suite upgrades", "Welcome snack or drink", "20% bonus"], ['20% bonus points', 'Suite upgrades (when available)', 'Welcome snack or drink at check-in (select hotels)', 'Early check-in and late checkout (when available)', 'Gift Gold status to 1 person a year', 'Caesars Rewards status match', 'Car class upgrades at Enterprise, Alamo, and National (US and Canada)']],
     ],
     lhw: [
-      ['Leaders Club Sterling', '$5,000 on eligible stays a year', ["Breakfast for two", "5 confirmed upgrades", "Free Wi-Fi"], ['5 confirmed pre-arrival room upgrades a year (one category, not suites)', 'Daily continental breakfast for two', 'Early check-in and late checkout (when available)', 'Free Wi-Fi', '5% bonus on points'], ['sterling']],
+      ['Leaders Club Sterling', '$5,000 on eligible stays a year', ["Breakfast for two", "5 upgrade requests", "Free Wi-Fi"], ['5 pre-arrival upgrade requests a year (one category, not suites; one that can’t be confirmed is re-credited plus 500 points)', 'Daily continental breakfast for two', 'Early check-in and late checkout (when available)', 'Free Wi-Fi', '5% bonus on points'], ['sterling']],
     ],
     omni: [
-      ['Champion', '$4,000 spent at Omni a year', ["Room upgrade", "3 p.m. checkout", "Morning beverage"], ['One-room-type upgrade', 'Check in from 1 p.m., check out as late as 3 p.m.', 'Daily bottled water and a morning beverage delivery', 'Pressing or shoeshine for 4 items', 'Local amenity on arrival']],
+      ['Insider', '$1,000 spent at Omni a year', ["Daily drink", "2 items pressed", "Deluxe Wi-Fi"], ['A free drink each day', 'Pressing or shoeshine for 2 items', 'Deluxe Wi-Fi', 'Bottled water on arrival night']],
+      ['Champion', '$4,000 spent at Omni a year', ["Room upgrade", "3 p.m. checkout", "Morning beverage"], ['One-room-type upgrade (when available)', 'Check in from 1 p.m., check out as late as 3 p.m. (when available)', '10 Omni Credits a night instead of 5 (100 credits = a free night)', 'A guaranteed room if you call at least 24 hours before arrival', 'Daily bottled water and a morning beverage delivery', 'Pressing or shoeshine for 4 items', 'Local amenity on arrival']],
+      ['Icon', '$8,000 spent at Omni a year', ["2-level upgrade", "6 p.m. checkout", "Unlimited pressing"], ['Two-room-type upgrade (when available)', 'Check in from 9 a.m., check out as late as 6 p.m. (when available)', '10 Omni Credits a night plus 2 per $100 beyond your room', 'Premier Wi-Fi, daily bottled water and a morning beverage', 'Unlimited pressing and shoeshines', 'Chef-created amenity on arrival']],
     ],
     avis: [
-      ['Preferred Plus', '10 rentals or $4,000 a year', ["Skip the counter", "Upgrade when available"], ['Skip the counter', 'One-car-class upgrade (when available)', 'Bonus points on rentals']],
-      ["President's Club", '20 rentals or $6,000 a year', ["2-class upgrade", "Guaranteed car", "Skip the counter"], ['Two-car-class upgrade when you book midsize or above (when available)', 'A guaranteed car (up to full-size) when you book 24 hours ahead', 'Skip the counter', 'Bonus points on rentals']],
+      ['Preferred Plus', '10 rentals or $4,000 a year', ["Skip the counter", "Upgrade when available"], ['Skip the counter', 'One-car-class upgrade when you book midsize or above (when available)', '25% bonus points (1.25 points per $1)']],
+      ["President's Club", '20 rentals or $6,000 a year', ["2-class upgrade", "Guaranteed car", "Skip the counter"], ['Two-car-class upgrade when you book midsize or above (when available)', 'A guaranteed car (up to full-size) when you book 24 hours ahead', 'Skip the counter', '50% bonus points (1.5 points per $1)']],
     ],
     hertz: [
-      ['Five Star', '3 rentals or $1,000 a year', ["Wider car choice", "Skip the counter", "25% bonus"], ['Pick from a wider selection of cars', 'Occasional upgrades', '25% bonus points', 'Skip the counter']],
+      ['Five Star', '3 rentals or $1,000 a year', ["Wider car choice", "Skip the counter", "25% bonus"], ['Pick from a wider selection of cars', 'One-car-class upgrade, up to full-size (when available)', '25% bonus points', 'Skip the counter']],
       ["President's Circle", '15 rentals or $3,000 a year', ["Guaranteed upgrade", "Pick your car", "50% bonus"], ['Guaranteed one-class upgrade (up to full-size)', 'Pick from the President’s Circle area', '50% bonus points', 'Dedicated service line']],
     ],
     national: [
-      ['Executive', '12 paid rentals or 40 paid days a year', ["Pick any Executive car", "Midsize price", "Skip the counter"], ['Book midsize, pick any car in the Executive Area, and pay the midsize rate', 'Guaranteed one-class upgrade when you book full-size or above', 'Skip the counter'], ['exec']],
-      ['Executive Elite', '25 paid rentals or 85 paid days a year', ["Guaranteed car", "Free day every 5 rentals"], ['A guaranteed car (up to full-size) when you book 24 hours ahead', 'A free rental day for every 5 rentals, on any car class with no blackout dates', 'Everything in Executive'], ['exec elite']],
+      ['Executive', '12 paid rentals or 40 paid days a year', ["Pick any Executive car", "Midsize price", "Skip the counter"], ['Book midsize, pick any car in the Executive Area, and pay the midsize rate', 'Guaranteed one-class upgrade when you book full-size or above', 'A free rental day for every 6 rentals', 'Skip the counter'], ['exec']],
+      ['Executive Elite', '25 paid rentals or 85 paid days a year', ["Guaranteed car", "Free day every 5 rentals"], ['A guaranteed car (up to full-size) when you book 24 hours ahead', 'A free rental day for every 5 rentals, on any available car class (not trucks or exotics), no blackout dates', 'Everything in Executive'], ['exec elite']],
     ],
   };
 
@@ -2325,14 +2355,14 @@
   const TRACKS = {
     hilton: { unit: 'nights', steps: [10, 25, 50, 80], alt: { unit: 'stays', steps: [4, 15, 25, 40] }, also: { 3: '$18,000 on stays' }, thru: endOf(2, 3), note: 'Nights or stays count (so does spend, not tracked here). Diamond Reserve also needs $18,000 on stays.' },
     marriott: { unit: 'nights', steps: [10, 25, 50, 75, 100], also: { 4: '$23,000 on stays' }, thru: endOf(2, 2), note: 'Elite night credits, including credits from Marriott cards. Ambassador also needs $23,000 on stays.' },
-    ihg: { unit: 'nights', steps: [10, 20, 40, 70], alt: { unit: 'qualifying points', steps: [null, 40000, 60000, 120000] }, thru: endOf(1, 12), note: 'Qualifying nights, or qualifying points from Gold up.' },
+    ihg: { unit: 'nights', steps: [10, 20, 40, 70], alt: { unit: 'qualifying points', steps: [null, 40000, 60000, 120000] }, thru: endOf(1, 12), note: 'Qualifying nights (nights past the Gold, Platinum, or Diamond mark roll over to next year), or qualifying points from Gold up.' },
     hyatt: { unit: 'nights', steps: [10, 30, 60], alt: { unit: 'base points', steps: [25000, 50000, 100000] }, thru: endOf(2, 2), note: 'Qualifying nights, or base points.' },
-    wyndham: { unit: 'nights', steps: [5, 15, 40], thru: endOf(1, 12), note: 'Qualified nights.' },
+    wyndham: { unit: 'nights', steps: [5, 15, 40], thru: endOf(1, 12), note: 'Qualifying nights. Nights beyond your level roll over and don’t expire, so add any banked rollover nights to this year’s count.' },
     united: { unit: 'PQP', steps: [6000, 12000, 18000, 28000], alt: { unit: 'flights', steps: [15, 30, 45, 60], with: [5000, 10000, 15000, 22000] }, thru: endOf(2, 1), note: 'PQP alone, or fewer PQP plus Premier qualifying flights (15/30/45/60 flights with 5,000/10,000/15,000/22,000 PQP).' },
     american: { unit: 'Loyalty Points', steps: [40000, 75000, 125000, 200000], starts: 3, thru: endOf(2, 3), note: 'American’s qualifying year runs March 1 through the end of February.' },
     southwest: { unit: 'tier points', steps: [35000, 70000], alt: { unit: 'flights', steps: [20, 40] }, thru: endOf(1, 12), note: 'Tier qualifying points, or qualifying one-way flights.' },
-    alaska: { unit: 'status points', steps: [20000, 40000, 80000, 135000], thru: endOf(1, 12), note: 'Status points this calendar year.' },
-    aeroplan: { unit: 'SQC', steps: [25000, 35000, 50000, 75000, 125000], thru: endOf(1, 12), note: 'Status Qualifying Credits this calendar year.' },
+    alaska: { unit: 'status points', steps: [20000, 40000, 80000, 135000], thru: endOf(2, 1), note: 'Status points this calendar year.' },
+    aeroplan: { unit: 'SQC', steps: [25000, 35000, 50000, 75000, 125000], thru: endOf(2, 1), note: 'Status Qualifying Credits this calendar year.' },
   };
 
   // The qualifying year a date falls in, named by the year it starts; "2026", or "2026–27" for American.
@@ -2342,19 +2372,22 @@
   // How each program's points or miles expire, as of EXPIRY_AS_OF. `months`: that long with no earning or
   // redeeming and the balance is gone. `exemptIfElite`: any active status in the program stops the clock, as does
   // holding one of `cards`. `from`: a paused policy — nothing expires before that date.
-  const EXPIRY_AS_OF = 'September 2026';
+  const EXPIRY_AS_OF = 'October 2026';
   const EXPIRY = {
     delta: { never: true }, united: { never: true }, southwest: { never: true }, jetblue: { never: true }, virgin: { never: true },
     alaska: { never: true, note: 'An account with no activity for 24 months is locked until you call Alaska, but the points stay.' },
     american: { months: 24, cards: ['aadvantage-executive'], note: 'Members under 21 and primary AAdvantage credit cardholders are exempt.' },
-    aeroplan: { months: 18, from: '2026-11-30', exemptIfElite: true, cards: ['chase-aeroplan'], note: 'Elite members, primary Aeroplan cardholders, and members under 18 are exempt.' },
+    aeroplan: { months: 18, from: '2026-11-30', exemptIfElite: true, cards: ['chase-aeroplan'], note: 'Elite members and primary Aeroplan cardholders (Chase: while the card is open) are exempt.' },
     flyingblue: { months: 24, earnOnly: true, note: 'Earning miles resets the clock; redeeming doesn’t.' },
     ba: { months: 36 },
     koreanair: { note: 'SKYPASS miles expire 10 years after they’re earned (Dec 31 of the 10th year), and activity doesn’t extend them — check your account for the next batch due.' },
-    hilton: { months: 24 }, marriott: { months: 24 }, hyatt: { months: 24 },
+    hilton: { months: 24 }, hyatt: { months: 24 },
+    marriott: { months: 24, note: 'Lifetime Elite members are exempt. Earning, redeeming, or buying points (or converting to or from miles) resets the clock; gifting or receiving points doesn’t.' },
     ihg: { months: 12, exemptIfElite: true },
     wyndham: { months: 18, cards: ['wyndham-earner-premier'], note: 'Points also expire 4 years after they’re earned, whatever your activity. Earner Premier cardholders are exempt from both.' },
     choice: { months: 18, exemptIfElite: true },
+    lhw: { months: 24, note: 'Leaders Club points expire 24 months after you last earn or redeem.' },
+    hertz: { months: 12, note: 'Points also expire 5 years after they’re earned. Only a completed rental that earns or uses points counts as activity; booking with points or transferring them doesn’t.' },
     accor: { months: 12, earnOnly: true, note: 'Only earning counts as activity here — redeeming doesn’t reset the clock.' },
     amex: { bank: true }, chase: { bank: true }, capitalone: { bank: true },
     citi: { bank: true, note: 'Points tied to a card expire 60 days after that card closes or is converted — move or use them first.' },
@@ -2364,7 +2397,7 @@
   // Statement credits per card, as of CREDITS_AS_OF: [id, name, dollars per period, period, resets, note].
   // period: 'month' | 'quarter' | 'half' (Jan–Jun, Jul–Dec) | 'year'; resets: 'calendar' or 'card' (card-member year,
   // counted from your annual fee date when you've added it).
-  const CREDITS_AS_OF = 'September 2026';
+  const CREDITS_AS_OF = 'October 2026';
   const FHR = 'prepaid Fine Hotels + Resorts or The Hotel Collection via Amex Travel';
   const CREDITS = {
     'amex-platinum': [
@@ -2440,6 +2473,8 @@
     'sapphire-preferred': [['hotel', 'Chase Travel hotel credit', 100, 'year', 'card', 'a hotel booked through Chase Travel']],
     'united-club': [
       ['hotels', 'Renowned Hotels', 200, 'year', 'card', 'prepaid through United Hotels'],
+      ['jsx', 'JSX', 200, 'year', 'card', 'booked directly with JSX'],
+      ['avis', 'Avis / Budget', 100, 'year', 'card', 'two $50 credits via MileagePlus Travel'],
       ['rideshare', 'Rideshare', 12, 'month', 'calendar', '$18 in December; opt in each year'],
       ['instacart', 'Instacart', 20, 'month', 'calendar', 'with Instacart+'],
     ],
@@ -2459,7 +2494,7 @@
       ['instacart', 'Instacart', 10, 'month', 'calendar', 'with Instacart+'],
     ],
     'ihg-premier': [['united', 'United TravelBank credit', 50, 'year', 'calendar', 'link the card in MileagePlus']],
-    'chase-aeroplan': [['aircanada', 'Air Canada credit', 100, 'year', 'calendar', 'Air Canada purchases']],
+    'chase-aeroplan': [['aircanada', 'Air Canada credit', 50, 'half', 'calendar', 'Air Canada purchases']],
     'venture-x': [['travel', 'Capital One Travel credit', 300, 'year', 'card', 'bookings through Capital One Travel']],
     'venture-x-business': [['travel', 'Capital One Travel credit', 300, 'year', 'card', 'bookings through Capital One Travel']],
     'strata-elite': [
@@ -3063,6 +3098,21 @@
     return added;
   }
 
+  // Brings each card you hold in line with today's CARDS: statuses it no longer gives come off, new ones go on,
+  // and lines that still match (including any end date you added) stay as they are. Runs on every load.
+  function syncCards(s) {
+    for (const cardId of [...s.cards]) {
+      const card = CARD_BY_ID[cardId];
+      if (!card) continue;
+      const wanted = card.grants.map(([, tier, note]) => ({ tier, via: note ? `${card.name} · ${note}` : card.name }));
+      for (const p of s.programs) {
+        p.status = p.status.filter((line) => line.card !== cardId || wanted.some((w) => sameText(w.tier, line.tier) && sameText(w.via, line.via)));
+      }
+      s.cards = s.cards.filter((id) => id !== cardId);
+      applyCard(s, cardId); // back on the list, adding anything it's missing
+    }
+  }
+
   // Takes a card's statuses off, plus any program a removed card created that is now empty with no balance.
   function removeCard(s, cardId) {
     s.cards = s.cards.filter((id) => id !== cardId);
@@ -3182,6 +3232,7 @@
       }
       s.notes = str(raw.notes, 400);
       if (!('cards' in raw)) upgradeLegacyExample(s); // saved before card presets existed
+      else syncCards(s);
     } else {
       // Saved before the program list was editable: keep the list those users already had.
       Object.assign(s, exampleSetup());
@@ -3861,9 +3912,9 @@
     jal: ['JMB Crystal', 'JMB Sapphire', 'JGC Premier', 'JMB Diamond'],
     avianca: ['Red Plus', 'Silver', 'Gold', 'Diamond', 'Magno'],
     etihad: ['Bronze', 'Silver', 'Gold', 'Platinum'],
-    iberia: ['Clásica', 'Plata', 'Oro', 'Platino', 'Infinita', 'Infinita Prime'],
+    iberia: ['Clásica', 'Plata', 'Oro', 'Platino', 'Platino Prime', 'Infinita', 'Infinita Prime'],
     aerlingus: ['Green', 'Silver', 'Platinum', 'Concierge'],
-    aeromexico: ['Classic', 'Gold', 'Platinum', 'Titanium'],
+    aeromexico: ['Classic', 'Silver', 'Gold', 'Platinum', 'Titanium'],
     latam: ['Gold', 'Platinum', 'Black', 'Black Signature'],
     frontier: ['Elite Silver', 'Elite Gold', 'Elite Platinum', 'Elite Diamond'],
     choice: ['Gold', 'Platinum', 'Diamond', 'Titanium'],
@@ -6540,6 +6591,16 @@
   }
 
   // Every level in the program, with yours marked and the next one up opened.
+  // "Checked against delta.com on Oct 7, 2026 ↗": where these levels and perks come from, one tap away.
+  function officialLine(p) {
+    const c = catalogFor(p);
+    const url = c && OFFICIAL[c.id];
+    if (!url) return h('p', { class: 'fine' }, `Headline perks as of ${BENEFITS_AS_OF}. Programs change benefits often — check the program’s site for full terms.`);
+    return h('p', { class: 'fine' }, `Checked against the program’s official page on ${BENEFITS_CHECKED}: `,
+      h('a', { href: url, target: '_blank', rel: 'noopener noreferrer' }, `${new URL(url).hostname.replace(/^www\./, '')} ↗`),
+      '. Programs change benefits often, so that page has the last word.');
+  }
+
   function renderLevels(p) {
     const tiers = benefitsFor(p);
     $('#d-levels').hidden = !tiers;
@@ -6559,7 +6620,7 @@
     $('#d-levels').replaceChildren(
       h('h3', { class: 'd-label' }, 'All levels'),
       h('div', null, levels),
-      h('p', { class: 'fine' }, `Headline perks as of ${BENEFITS_AS_OF}. Programs change benefits often — check the program’s site for full terms.`));
+      officialLine(p));
   }
 
   detail.addEventListener('click', (e) => {
