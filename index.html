@@ -677,6 +677,17 @@
   .play-loot .loot-warn { background: var(--warn-soft); }
   .loot-warn .loot-main small { color: var(--warn-ink); }
   .loot-alts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .goal-mini { display: flex; align-items: center; gap: 8px; margin-top: 6px; font-size: 12.5px; font-weight: 600; color: var(--good); }
+  .goal-mini .mini-bar { flex: 1; max-width: 120px; }
+  .goal-mini .mini-bar i { background: var(--good); }
+  .goal-title { margin: 0 0 8px; font-size: 14.5px; }
+  .goal-bar { height: 10px; border-radius: 5px; background: var(--track); overflow: hidden; }
+  .goal-bar i { display: block; height: 100%; border-radius: 5px; background: var(--good); transition: width .5s; }
+  .goal-cover { margin: 8px 0 0; font-size: 13px; color: var(--muted); }
+  .goal-cover.ok { color: var(--good); font-weight: 600; }
+  .goal-form { display: grid; gap: 6px; }
+  .goal-form label { font-size: 13px; font-weight: 600; }
+  .goal-actions { display: flex; gap: 14px; justify-content: flex-end; margin: 8px 0 0; }
   .pace { margin-top: 4px; font-size: 12px; line-height: 1.35; color: var(--muted); }
   .play-pick select { flex: 1; min-width: 0; height: 44px; padding: 0 10px; border: 1px solid var(--field-line); border-radius: 10px; background: var(--field); color: var(--text); font: inherit; font-size: 16px; }
   .combo { padding: 2px 8px; border-radius: 999px; background: linear-gradient(135deg, #C2410C, #BE185D); color: #fff; font-size: 11.5px; font-weight: 800; white-space: nowrap; animation: combo-pop .5s cubic-bezier(.2, 1.6, .4, 1) .7s both; }
@@ -1774,6 +1785,7 @@
       </div>
     </div>
     <div class="d-trend" id="d-trend" hidden></div>
+    <section class="d-sec" id="d-goal" aria-label="Goal" hidden></section>
     <section class="d-sec" id="d-member" aria-label="Member number"></section>
     <section class="d-sec" id="d-memo">
       <label class="d-label" for="d-memo-input">Notes</label>
@@ -2833,7 +2845,7 @@
     const say = $('#say');
     if (say.parentNode !== topLayer()) topLayer().append(say);
     say.textContent = '';
-    requestAnimationFrame(() => { say.textContent = text; });
+    setTimeout(() => { say.textContent = text; }, 60); // a separate change, so it's read even if the text repeats
   }
 
   function svgIcon(markup) {
@@ -3077,7 +3089,7 @@
   function normalize(raw) {
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
     if (!['programs', 'balances', 'vouchers', 'mqd'].some((k) => k in raw)) return null;
-    const s = { programs: null, view: 'detailed', cards: [], renewals: {}, creditsUsed: {}, creditsSkipped: {}, customCredits: {}, notes: '', memos: {}, balances: {}, history: {}, cpp: {}, hideValues: false, activity: {}, mqd: 0, progress: {}, members: {}, updated: {}, backedUp: '', game: { xp: 0, scans: 0, best: 0, weeks: [], badges: {}, confirmed: {}, log: [] }, vouchers: [] };
+    const s = { programs: null, view: 'detailed', cards: [], renewals: {}, creditsUsed: {}, creditsSkipped: {}, customCredits: {}, notes: '', memos: {}, balances: {}, history: {}, cpp: {}, hideValues: false, activity: {}, mqd: 0, progress: {}, members: {}, updated: {}, backedUp: '', game: { xp: 0, scans: 0, best: 0, weeks: [], badges: {}, confirmed: {}, log: [] }, goals: {}, vouchers: [] };
     if (raw.balances && typeof raw.balances === 'object') {
       for (const [id, v] of Object.entries(raw.balances)) if (isCount(v)) s.balances[id] = Math.floor(v);
     }
@@ -3108,6 +3120,11 @@
     }
     if (raw.hideValues === true) s.hideValues = true;
     if (raw.view === 'simple') s.view = 'simple'; // program list: 'simple' (name, status, balance) or 'detailed'
+    if (raw.goals && typeof raw.goals === 'object') { // what you're saving each program's points for
+      for (const [id, g] of Object.entries(raw.goals)) {
+        if (g && isCount(g.target) && g.target > 0) s.goals[id] = { target: Math.min(Math.floor(g.target), MAX_VALUE), label: str(g.label, 60) };
+      }
+    }
     if (raw.memos && typeof raw.memos === 'object') { // a free-text note per program
       for (const [id, v] of Object.entries(raw.memos)) { const memo = str(v, 300); if (memo) s.memos[id] = memo; }
     }
@@ -3215,7 +3232,7 @@
       const stash = `status-tracker-unreadable:${storageKey()}`; // not under KEY, so it's never mistaken for a person
       try { if (raw && !localStorage.getItem(stash)) localStorage.setItem(stash, raw); } catch (err) { /* storage unavailable */ }
     }
-    return { programs: null, view: 'detailed', cards: [], renewals: {}, creditsUsed: {}, creditsSkipped: {}, customCredits: {}, notes: '', memos: {}, balances: {}, history: {}, cpp: {}, hideValues: false, activity: {}, mqd: 0, progress: {}, members: {}, updated: {}, backedUp: '', game: { xp: 0, scans: 0, best: 0, weeks: [], badges: {}, confirmed: {}, log: [] }, vouchers: [] }; // null programs → first-run setup
+    return { programs: null, view: 'detailed', cards: [], renewals: {}, creditsUsed: {}, creditsSkipped: {}, customCredits: {}, notes: '', memos: {}, balances: {}, history: {}, cpp: {}, hideValues: false, activity: {}, mqd: 0, progress: {}, members: {}, updated: {}, backedUp: '', game: { xp: 0, scans: 0, best: 0, weeks: [], badges: {}, confirmed: {}, log: [] }, goals: {}, vouchers: [] }; // null programs → first-run setup
   }
 
   const state = load();
@@ -3359,6 +3376,7 @@
       if (done) return;
       done = true;
       const counted = field.startsWith('prog:') ? state.programs.find((p) => p.id === field.slice(5).replace(/\+alt$/, '')) : null;
+      const balancesBefore = { ...state.balances };
       const earnedBefore = counted && earnedTier(counted);
       if (commit) {
         const parsed = parseEntry(input.value);
@@ -3367,6 +3385,13 @@
       paintNum(btn);
       input.replaceWith(btn);
       if (commit && state.programs && !field.startsWith('prog:')) renderGame(); // streak, up to date, 30-day gain
+      if (commit && field.startsWith('bal:')) {
+        const row = btn.closest('li');
+        const mini = row && row.querySelector('.goal-mini');
+        const program = state.programs.find((x) => x.id === field.slice(4));
+        if (mini && program) mini.replaceWith(goalMini(program) || '');
+        celebrateGoals(balancesBefore);
+      }
       if (field.startsWith('bal:')) {
         renderUpcoming(); // a changed balance resets a points-expiry clock
         const program = state.programs.find((x) => x.id === field.slice(4));
@@ -3646,7 +3671,7 @@
       const simple = simpleStatus(p);
       const main = h('div', { class: simple ? 'row-main' : 'row-main solo' },
         h('button', { type: 'button', class: 'who-open', 'data-open': p.id },
-          avatar(p), h('div', { class: 'who' }, h('div', { class: 'name' }, p.name), simple)));
+          avatar(p), h('div', { class: 'who' }, h('div', { class: 'name' }, p.name), simple, goalMini(p))));
       if (p.unit) main.append(h('div', { class: 'bal' }, numButton(`bal:${p.id}`, `${p.name} balance`), h('div', { class: 'unit' }, ...unitLine(p))));
       return h('li', { class: 'row' }, main);
     }
@@ -3654,7 +3679,7 @@
     const main = h('div', { class: status ? 'row-main' : 'row-main solo' },
       h('button', { type: 'button', class: 'who-open', 'data-open': p.id },
         avatar(p),
-        h('div', { class: 'who' }, h('div', { class: 'name' }, p.name), status, perkLine(p, withMedallion), progressMini(p))));
+        h('div', { class: 'who' }, h('div', { class: 'name' }, p.name), status, perkLine(p, withMedallion), progressMini(p), goalMini(p))));
     if (p.unit) {
       main.append(h('div', { class: 'bal' },
         numButton(`bal:${p.id}`, `${p.name} balance`),
@@ -4248,6 +4273,8 @@
     { id: 'fresh', name: 'All caught up', how: 'Every balance updated this month (3+)', color: '#16A34A', test: () => { const f = freshness(); return f.total >= 3 && f.fresh === f.total; } },
     { id: 'streak4', name: 'On a roll', how: 'Update 4 weeks in a row', color: '#DC2626', test: () => streakWeeks() >= 4 },
     { id: 'combo5', name: 'Combo ×5', how: 'Collect 5 screenshots in a row', color: '#DB2777', test: (r) => !!(r && r.combo >= 5) },
+    { id: 'goal', name: 'Goal getter', how: 'Reach a savings goal', color: '#15803D',
+      test: () => (state.programs || []).some((p) => state.goals && state.goals[p.id] && (state.balances[p.id] || 0) >= state.goals[p.id].target) },
     { id: 'collector', name: 'Collector', how: 'Track 10 programs', color: '#2563EB', test: () => (state.programs || []).length >= 10 },
     { id: 'jetset', name: 'Jet set', how: 'Track 5 airlines', color: '#0891B2', test: () => (state.programs || []).filter((p) => categoryOf(p) === 'Airlines').length >= 5 },
   ];
@@ -5088,6 +5115,7 @@
     if (!matchesFilter(result.p)) filter = 'all';
     renderAll();
     celebrate(result, reward, from);
+    celebrateGoals(previous.balances);
     const { p, added } = result;
     if (batch) finishOne(true, reward.xp); // one toast, with one Undo, when the batch ends
     else if (!result.real && !added) showToast(`${p.name} is up to date${reward.xp ? ` · +${reward.xp} XP` : ''}`, () => undoTo(previous, who));
@@ -5155,7 +5183,7 @@
   let achieving = false;
   function queueAchievements(reward) {
     if (reward.levelUp) achievements.push(['Level up', `Lv ${reward.levelUp.n} · ${reward.levelUp.name}`, '#5B8DEF']);
-    for (const b of reward.unlocked) achievements.push(['Badge unlocked', b.name, b.color]);
+    for (const b of reward.unlocked) achievements.push([b.kind || 'Badge unlocked', b.name, b.color]);
     if (!achieving) nextAchievement();
   }
   function nextAchievement() {
@@ -5345,6 +5373,7 @@
   $('#quick-form').addEventListener('submit', (e) => {
     e.preventDefault();
     let changed = 0;
+    const balancesBefore = { ...state.balances };
     for (const input of quickSheet.querySelectorAll('[data-quick]')) {
       const parsed = parseEntry(input.value);
       if (!parsed) continue; // no digits at all: leave it as it was
@@ -5361,6 +5390,7 @@
     renderPrograms();
     renderUpcoming();
     showToast(`Updated ${plural(changed, 'balance')}`);
+    celebrateGoals(balancesBefore);
   });
 
   // "≈ $4,820 in points & miles" under the Programs heading; opens the breakdown.
@@ -5749,12 +5779,13 @@
     // Everything stored under the program, so Undo can put it all back.
     const saved = {
       balance: state.balances[id], member: state.members[id], progress: state.progress[id],
-      updated: state.updated[id], progUpdated: state.updated[`prog:${id}`], activity: state.activity[id], memo: state.memos[id],
+      updated: state.updated[id], progUpdated: state.updated[`prog:${id}`], activity: state.activity[id], memo: state.memos[id], goal: state.goals[id],
       history: state.history[id],
     };
     delete state.activity[id];
     delete state.history[id];
     delete state.memos[id];
+    delete state.goals[id];
     delete state.balances[id];
     delete state.members[id];
     delete state.progress[id];
@@ -5777,6 +5808,7 @@
       if (altSaved.stamp) state.updated[`prog:${altKey(id)}`] = altSaved.stamp;
       if (saved.activity) state.activity[id] = saved.activity;
       if (saved.memo) state.memos[id] = saved.memo;
+      if (saved.goal) state.goals[id] = saved.goal;
       if (saved.history) state.history[id] = saved.history;
       scheduleSave();
       renderPrograms();
@@ -5839,6 +5871,7 @@
     }
     $('#d-sub').textContent = sub.join(' · ');
     renderTrend(p);
+    renderGoal(p);
     renderMember(p, false);
     $('#d-memo-input').value = state.memos[p.id] || '';
     renderDetailStatus(p);
@@ -5886,6 +5919,103 @@
     box.replaceChildren(svg, h('p', null,
       h('strong', { class: change >= 0 ? 'up' : 'down' }, `${change >= 0 ? '+' : '−'}${fmt(Math.abs(change))}`),
       ` ${p.unit} since ${since} · ${plural(list.length, 'update')}`));
+  }
+
+  // A savings goal ("ANA First to Tokyo: 110,000 miles"): how far along it is, and whether card points you could
+  // transfer would cover the rest.
+  function renderGoal(p, editing = false) {
+    const box = $('#d-goal');
+    box.hidden = !p.unit;
+    if (box.hidden) return;
+    const goal = state.goals[p.id];
+    const head = h('h3', { class: 'd-label' }, 'Goal');
+    if (!goal && !editing) {
+      const set = h('button', { type: 'button', class: 'ghost-btn' }, `Save these ${p.unit} for something`);
+      set.addEventListener('click', () => renderGoal(p, true));
+      box.replaceChildren(head, set);
+      return;
+    }
+    if (editing) {
+      const label = h('input', { type: 'text', class: 'exp-input', id: 'd-goal-label', maxlength: '60', autocomplete: 'off', placeholder: 'e.g. ANA First to Tokyo' });
+      const target = h('input', { type: 'text', class: 'exp-input', id: 'd-goal-target', inputmode: 'numeric', autocomplete: 'off', placeholder: 'e.g. 110,000' });
+      label.value = goal ? goal.label : '';
+      target.value = goal ? fmt(goal.target) : '';
+      const cancel = h('button', { type: 'button', class: 'btn-secondary sm' }, 'Cancel');
+      const form = h('form', { class: 'goal-form' },
+        h('label', { for: 'd-goal-label' }, 'Saving for'), label,
+        h('label', { for: 'd-goal-target' }, `${p.unit[0].toUpperCase()}${p.unit.slice(1)} it takes`), target,
+        h('div', { class: 'goal-actions' }, cancel, h('button', { type: 'submit', class: 'add sm' }, 'Save goal')));
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const t = parseEntry(target.value);
+        if (!t || !t.value) { target.focus(); return; }
+        state.goals[p.id] = { target: t.value, label: str(label.value, 60) };
+        scheduleSave();
+        renderGoal(p);
+        renderPrograms();
+      });
+      cancel.addEventListener('click', () => renderGoal(p));
+      box.replaceChildren(head, form);
+      label.focus();
+      return;
+    }
+    const balance = state.balances[p.id] || 0;
+    const left = Math.max(goal.target - balance, 0);
+    const pct = Math.min(100, Math.round((balance / goal.target) * 100));
+    const change = h('button', { type: 'button', class: 'link' }, 'Change');
+    const remove = h('button', { type: 'button', class: 'link' }, 'Remove');
+    change.addEventListener('click', () => renderGoal(p, true));
+    remove.addEventListener('click', () => {
+      const was = state.goals[p.id];
+      delete state.goals[p.id];
+      scheduleSave();
+      renderGoal(p);
+      renderPrograms();
+      showToast('Goal removed', () => { state.goals[p.id] = was; scheduleSave(); if (detailProgram() === p) renderGoal(p); renderPrograms(); });
+    });
+    box.replaceChildren(head,
+      h('p', { class: 'goal-title' }, h('b', null, goal.label || `${fmt(goal.target)} ${p.unit}`), left ? ` · ${fmt(left)} to go` : ' · reached!'),
+      h('div', { class: 'goal-bar', role: 'progressbar', 'aria-label': `${goal.label || 'Goal'}: ${pct}%`, 'aria-valuemin': '0', 'aria-valuemax': '100', 'aria-valuenow': String(pct) },
+        h('i', { style: `width:${pct}%` })),
+      h('p', { class: 'fine' }, `${fmt(balance)} of ${fmt(goal.target)} ${p.unit} (${pct}%)`),
+      left ? coverLine(p, left) : null,
+      h('p', { class: 'goal-actions' }, change, remove));
+  }
+
+  // Bank points on your list that transfer to this program: one that covers the rest, or what they add up to.
+  function coverLine(p, left) {
+    const c = catalogFor(p);
+    if (!c) return null;
+    const own = (id) => state.programs.find((x) => catalogFor(x) && catalogFor(x).id === id);
+    const sources = Object.entries(TRANSFERS).flatMap(([bankId, info]) => info.partners.filter(([id]) => id === c.id)
+      .map(([, a, b]) => ({ bank: own(bankId), a, b })))
+      .filter((x) => x.bank && state.balances[x.bank.id] > 0)
+      .map((x) => ({ ...x, adds: Math.floor((state.balances[x.bank.id] * x.b) / x.a), needs: Math.ceil((left * x.a) / x.b) }))
+      .sort((x, y) => y.adds - x.adds);
+    if (!sources.length) return null;
+    const one = sources.find((x) => x.adds >= left);
+    if (one) return h('p', { class: 'goal-cover ok' }, `Your ${one.bank.name} points cover it: transfer ${fmt(one.needs)} (${ratioText(one.a, one.b)}).`);
+    const total = sources.reduce((sum, x) => sum + x.adds, 0);
+    return h('p', { class: 'goal-cover' }, `Transferring all your ${sources.map((x) => x.bank.name).join(' and ')} points would add ${fmt(total)}`
+      + `${total >= left ? ', enough to get there.' : `, leaving ${fmt(left - total)} to earn.`}`);
+  }
+
+  // On a program's row: "ANA First: 75%" with a thin bar.
+  function goalMini(p) {
+    const goal = p.unit && state.goals[p.id];
+    if (!goal) return null;
+    const pct = Math.min(100, Math.round(((state.balances[p.id] || 0) / goal.target) * 100));
+    return h('div', { class: 'goal-mini' }, h('span', null, `${goal.label || 'Goal'}: ${pct >= 100 ? 'reached' : `${pct}%`}`),
+      h('div', { class: 'mini-bar', 'aria-hidden': 'true' }, h('i', { style: `width:${pct}%` })));
+  }
+
+  // A balance that just reached its goal: a "Goal reached" banner with confetti.
+  function celebrateGoals(before) {
+    const reached = (state.programs || []).filter((p) => {
+      const goal = p.unit && state.goals[p.id];
+      return goal && (before[p.id] || 0) < goal.target && (state.balances[p.id] || 0) >= goal.target;
+    });
+    if (reached.length) queueAchievements({ unlocked: reached.map((p) => ({ name: state.goals[p.id].label || `${p.name} goal`, color: '#15803D', kind: 'Goal reached' })) });
   }
 
   // "≈ $1,440 at 1.2¢ per mile", with a field for your own value.
