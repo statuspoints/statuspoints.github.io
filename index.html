@@ -674,6 +674,10 @@
   .play-top:has(> :not([hidden])) { min-height: 24px; }
   .play-count { padding: 2px 9px; border-radius: 999px; background: var(--chip-bg); color: var(--muted); font-size: 11.5px; font-weight: 750; }
   .play-pick { padding: 6px !important; }
+  .play-loot .loot-warn { background: var(--warn-soft); }
+  .loot-warn .loot-main small { color: var(--warn-ink); }
+  .loot-alts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .pace { margin-top: 4px; font-size: 12px; line-height: 1.35; color: var(--muted); }
   .play-pick select { flex: 1; min-width: 0; height: 44px; padding: 0 10px; border: 1px solid var(--field-line); border-radius: 10px; background: var(--field); color: var(--text); font: inherit; font-size: 16px; }
   .combo { padding: 2px 8px; border-radius: 999px; background: linear-gradient(135deg, #C2410C, #BE185D); color: #fff; font-size: 11.5px; font-weight: 800; white-space: nowrap; animation: combo-pop .5s cubic-bezier(.2, 1.6, .4, 1) .7s both; }
   @keyframes combo-pop { from { transform: scale(0) rotate(-14deg); } }
@@ -3507,6 +3511,7 @@
         h('div', { class: 'next', id: 'mqd-next' })),
       bar,
       ticks,
+      h('p', { class: 'pace', id: 'mqd-pace', hidden: '' }),
       h('button', { type: 'button', class: 'plan-toggle', id: 'plan-toggle', 'aria-expanded': String(planOpen), 'aria-controls': 'plan' },
         svgIcon(ICON.spark), 'Plan ahead'),
       h('div', { class: 'plan', id: 'plan', hidden: planOpen ? null : '' },
@@ -3578,10 +3583,34 @@
   function progressMini(p) {
     const info = progressInfo(p);
     if (!info || !info.entered) return null;
+    const start = new Date(qualYear(info.track), (info.track.starts || 1) - 1, 1);
+    const pace = info.value != null && paceText(info.n, progressStamp(p), start, info.next && info.next.at, info.next && info.next.name, info.track.unit);
     return h('div', { class: 'prog-mini' },
       h('div', null, h('strong', null, countsText(info)),
         info.next ? ` · ${nextText(info.next, info.track)}` : ' · top level reached'),
-      h('div', { class: 'mini-bar', 'aria-hidden': 'true' }, h('i', { style: `width:${Math.round(info.toNext * 100)}%` })));
+      h('div', { class: 'mini-bar', 'aria-hidden': 'true' }, h('i', { style: `width:${Math.round(info.toNext * 100)}%` })),
+      pace ? h('div', { class: 'pace' }, pace) : null);
+  }
+
+  // Where this year's count is headed: the count as of its last update, scaled to the whole qualifying year, and
+  // about what's needed each month for the next level. Nothing in the first month (too little to go on).
+  function paceText(count, asOf, start, goal, goalName, unit, money = false) {
+    if (!asOf || !count) return null;
+    const end = new Date(start.getFullYear() + 1, start.getMonth(), 1);
+    const elapsed = (asOf - start) / 864e5;
+    const total = (end - start) / 864e5;
+    if (elapsed < 30 || elapsed >= total) return null;
+    const amount = (n) => (money ? `$${fmt(n)}` : fmt(n));
+    const projected = Math.round((count * total) / elapsed);
+    const head = `On pace for ${amount(money ? Math.round(projected / 100) * 100 : projected)}${money ? '' : ` ${unit}`} this year`;
+    if (!goal || count >= goal) return head;
+    if (projected >= goal) return `${head}: enough for ${goalName}`;
+    const months = (end - new Date()) / (864e5 * 30.44);
+    if (months < 0.5) return head;
+    const perMonth = (goal - count) / months;
+    const rate = money ? `$${fmt(Math.ceil(perMonth / 50) * 50)} a month`
+      : perMonth >= 1 ? `${fmt(Math.ceil(perMonth))} a month` : `1 every ${Math.round(1 / perMonth)} months`;
+    return `${head} · ${goalName} needs about ${rate}`;
   }
 
   // Under a balance: "points · ≈ $480", plus its age when it's getting stale.
@@ -4259,6 +4288,7 @@
     trend: '<path d="M4 16.5l5-5 4 4 7-7"/><path d="M14.5 8.5H20V14"/>',
     balance: '<ellipse cx="12" cy="7" rx="7" ry="3"/><path d="M5 7v5c0 1.7 3.1 3 7 3s7-1.3 7-3V7M5 12v5c0 1.7 3.1 3 7 3s7-1.3 7-3v-5"/>',
     count: '<path d="M5.5 19v-7M12 19V5M18.5 19v-10"/>',
+    warn: '<path d="M12 4.5l8.5 15h-17z"/><path d="M12 10v4.2M12 16.9v.4"/>',
     member: '<rect x="3.5" y="5.5" width="17" height="13" rx="2.5"/><circle cx="9" cy="11" r="2"/><path d="M6.5 15.5c.6-1.3 1.5-2 2.5-2s1.9.7 2.5 2M14 10h3.5M14 13.5h3.5"/>',
   };
   const gameIcon = (name) => svgIcon(`<svg class="gi gi-${name}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${GAME_ICONS[name]}</svg>`);
@@ -4402,7 +4432,7 @@
     if (scanSheet.open) { quietClose = true; scanSheet.close(); }
     stopCountdown();
     if (playing && playing.url) URL.revokeObjectURL(playing.url);
-    playing = { url: URL.createObjectURL(file), hint };
+    playing = { url: URL.createObjectURL(file), hint, taken: file.lastModified ? isoOf(new Date(file.lastModified)) : null };
     $('#play-title').textContent = 'Scanning your screenshot…';
     $('#play-loot').replaceChildren();
     $('#play-marks').replaceChildren();
@@ -4522,6 +4552,32 @@
   }
 
   // One row per thing found, each with what it changes: "+2,400", "New status!", "No change".
+  // Reads that look wrong or out of date, said plainly: a balance cut by more than 40% or multiplied by 3+ (often a
+  // dropped or extra digit), this year's counts going down, or a screenshot older than the last update.
+  function doubtsAbout(p, vals) {
+    const out = [];
+    const bal = state.balances[p.id];
+    if (vals.balance !== undefined && bal && playing.balancePick == null && (vals.balance < bal * 0.6 || vals.balance > bal * 3)) {
+      out.push(`${p.unit} would go from ${fmt(bal)} to ${fmt(vals.balance)}`);
+    }
+    const track = trackFor(p);
+    const down = (v, was) => v !== undefined && was != null && v < was;
+    if (track && down(vals.progress, state.progress[p.id])) out.push(`${track.unit} this year would go down`);
+    if (track && track.alt && down(vals.alt, state.progress[altKey(p.id)])) out.push(`${track.alt.unit} this year would go down`);
+    if (down(vals.mqd, state.mqd) && p === medallionProgram()) out.push('MQDs would go down');
+    const last = state.updated[p.id];
+    if (playing.taken && last && playing.taken < last) out.push(`this screenshot looks older than your last update (${relativeDay(last)})`);
+    return out;
+  }
+  // The "check this first" row, with the screen's other numbers one tap away when the balance looks off.
+  function doubtRow(doubts, found, vals) {
+    const others = found.balances.filter((v) => v !== vals.balance).slice(0, 3);
+    return h('li', { class: 'loot-warn' }, lootIcon('warn', '#B45309'),
+      h('div', { class: 'loot-main' }, h('b', null, 'Check this first'), h('small', null, `${doubts.join('; ')}.`),
+        others.length && /would go from/.test(doubts[0]) ? h('div', { class: 'loot-alts' }, others.map((v) => h('button', {
+          type: 'button', class: 'scan-alt', 'data-pick-balance': String(v), 'aria-label': `Use ${fmt(v)} as the balance` }, `Use ${fmt(v)}`))) : null));
+  }
+
   // The next level with the counts a screen shows: "17 to Diamond", "$3,760 to Platinum".
   function goalWith(p, vals) {
     if (vals.mqd !== undefined && (p.medallion || (catalogFor(p) || {}).id === 'delta')) {
@@ -4649,14 +4705,16 @@
       cid = found.programId;
       own = cid ? programs.find((x) => catalogFor(x) && catalogFor(x).id === cid) || null : null;
     }
-    Object.assign(playing, { text: read.text, found });
+    Object.assign(playing, { read, pickArg: choice, text: read.text, found });
     $('#play-shot').className = 'play-shot done';
     const later = batch ? ['Skip', false, skipPlay] : ['Try another', false, pickAnother];
     if (!own && !cid && playing.hint && (state.programs || []).some((x) => x.id === playing.hint)) { showLoot(read, playing.hint); return; }
     if (!own && !cid) { pickProgram(read, later); return; }
     const p = own || programFromCatalog(CATALOG_BY_ID[cid]);
     const vals = valsFrom(found, p);
+    if (playing.balancePick != null && p.unit) vals.balance = playing.balancePick; // picked on the card
     Object.assign(playing, { choice: own ? own.id : `add:${p.id}`, vals });
+    const doubts = own ? doubtsAbout(p, vals) : [];
     let changes = ['balance', 'mqd', 'progress', 'alt', 'member'].filter((k) => vals[k] !== undefined).length;
     // Judged as Update will, with a new program already on your list (Delta's Medallion then counts from MQDs).
     const outcome = vals.tierIndex >= 0 ? asListed(p, own, () => statusOutcome(p, vals.tierIndex, vals.exp, vals.mqd ?? state.mqd)) : null;
@@ -4665,6 +4723,7 @@
     const confirmOnly = !!own && !real;
     markFound(read, found, vals, p);
     const rows = lootRows(p, own, vals, outcome);
+    if (doubts.length) rows.splice(1, 0, doubtRow(doubts, found, vals));
     $('#play-loot').replaceChildren(...rows.map((li, i) => { li.style.setProperty('--i', i); return li; }));
     sound('loot', rows.length);
     if (own && !changes) {
@@ -4689,8 +4748,9 @@
     setActions([['Fix something', false, fixPlay],
       [[h('span', { class: 'fill', 'aria-hidden': 'true' }), confirmOnly ? 'Confirm' : 'Collect', h('span', { class: 'cd', 'aria-hidden': 'true' })], true, collectNow, 'play-collect']]);
     const said = [...$('#play-loot').children].slice(1).map((li) => li.innerText.replace(/\n+/g, ', ')).join('. ');
-    announce(`${$('#play-title').textContent} ${said}.${autoCollect ? ` ${confirmOnly ? 'Confirming' : 'Collecting'} in ${COLLECT_SECONDS} seconds; press Tab to look first.` : ''}`);
-    if (autoCollect) startCountdown();
+    const auto = autoCollect && !doubts.length; // something looks off: wait for a tap
+    announce(`${$('#play-title').textContent} ${said}.${auto ? ` ${confirmOnly ? 'Confirming' : 'Collecting'} in ${COLLECT_SECONDS} seconds; press Tab to look first.` : ''}`);
+    if (auto) startCountdown();
   }
 
   function startCountdown() {
@@ -5148,6 +5208,12 @@
   play.addEventListener('cancel', (e) => { e.preventDefault(); cancelPlay(); }); // Escape
   play.addEventListener('pointerdown', (e) => { if (!e.target.closest('#play-collect')) stopCountdown(); });
   play.addEventListener('keydown', (e) => { if (e.key !== 'Enter' && e.key !== ' ') stopCountdown(); });
+  play.addEventListener('click', (e) => { // "Use 84,500": read the card again with that balance
+    const alt = e.target.closest('[data-pick-balance]');
+    if (!alt || !playing || !playing.read) return;
+    playing.balancePick = Number(alt.dataset.pickBalance);
+    showLoot(playing.read, playing.pickArg);
+  });
   play.addEventListener('focusin', (e) => { if (collectTimer && !e.target.closest('#play-collect')) stopCountdown(); });
   $('#play-close').addEventListener('click', cancelPlay);
   $('#play-skip').addEventListener('click', skipPlay);
@@ -5419,6 +5485,9 @@
     $('#medallion-perks').hidden = !top;
     if (top) $('#medallion-perks').replaceChildren(...perkLineContent(top));
     $('#mqd-next').textContent = mqdNextText(mqd);
+    const pace = paceText(mqd, parseISODate(state.updated.mqd), new Date(mqdYear(), 0, 1), next && next.min, next && `${next.name} Medallion`, 'MQDs', true);
+    $('#mqd-pace').hidden = !pace;
+    $('#mqd-pace').textContent = pace || '';
 
     const fill = $('#mqd-fill');
     void fill.offsetWidth; // a freshly built bar animates up from empty
