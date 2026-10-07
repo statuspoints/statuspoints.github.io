@@ -676,6 +676,7 @@
   @keyframes combo-pop { from { transform: scale(0) rotate(-14deg); } }
   .game-chip.warn { background: var(--warn-soft); color: var(--warn); }
   .game-sound { margin: 14px 0 0; }
+
   .play-title { min-height: 22px; margin: 2px 40px 12px 2px; font-size: 16px; font-weight: 750; line-height: 1.35; }
   .play-frame { display: flex; justify-content: center; }
   .play-shot { position: relative; flex: none; border: 1px solid var(--line); border-radius: 14px; background: var(--inset); overflow: hidden; }
@@ -760,6 +761,14 @@
   .stale-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
   .stale-btn { display: flex; align-items: center; gap: 10px; width: 100%; padding: 2px 0; border: 0; background: none; color: var(--text); font: inherit; font-size: 14px; font-weight: 600; text-align: left; cursor: pointer; }
   .stale-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 8px; }
+  .game-log { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+  .game-log li { display: flex; align-items: baseline; gap: 10px; font-size: 14px; }
+  .log-date { flex: none; width: 48px; font-size: 12.5px; color: var(--muted); }
+  .log-main { flex: 1; min-width: 0; }
+  .log-main b { font-weight: 650; }
+  .log-main small { display: block; font-size: 12.5px; color: var(--muted); }
+  .log-xp { flex: none; font-size: 12.5px; font-weight: 750; color: var(--good); }
+  .game-sound { display: flex; flex-wrap: wrap; gap: 8px; }
   .game-gain { margin: 10px 2px 0; font-size: 13.5px; font-weight: 650; color: var(--good); }
   .game-chip.gain { background: var(--good-soft); color: var(--good); }
   .game-stale .av { width: 30px; height: 30px; border-radius: 9px; font-size: 10.5px; }
@@ -1822,9 +1831,14 @@
       <div class="stale-head"><h3 class="d-label">Needs an update</h3><button class="link" id="game-stale-all" type="button">Screenshot them all</button></div>
       <ul class="game-stale" id="game-stale"></ul>
     </div>
+    <div id="game-log-wrap">
+      <h3 class="d-label">Recent</h3>
+      <ul class="game-log" id="game-log"></ul>
+    </div>
     <h3 class="d-label">Badges <span id="game-badge-count"></span></h3>
     <ul class="badges" id="game-badges"></ul>
-    <p class="game-sound"><button class="pill-btn sm" id="game-sound" type="button" aria-pressed="true">Sounds &amp; vibration: on</button></p>
+    <p class="game-sound"><button class="pill-btn sm" id="game-sound" type="button" aria-pressed="true">Sounds &amp; vibration: on</button>
+      <button class="pill-btn sm" id="game-remind" type="button">Remind me weekly</button></p>
     <p class="fine">Each screenshot you collect earns XP, more for several in a row (a combo), and each badge 50 more. Up to date means updated in the last 30 days. It all stays on this device.</p>
     <div class="sheet-actions">
       <button class="btn-secondary" id="game-scan" type="button">Update from a screenshot</button>
@@ -1974,7 +1988,8 @@
   const SOON_DAYS = 60; // vouchers: flag and remind this many days out
   const STATUS_SOON_DAYS = 90; // statuses: more lead time to requalify or use perks
   const KEEP_SOON_DAYS = 100; // year-end push: warn when a status you hold isn't re-earned yet
-  const HISTORY_MAX = 60; // balance-history entries kept per program (read while loading saved data)
+  const HISTORY_MAX = 60;
+  const LOG_MAX = 30; // recent screenshot collects kept for Your progress // balance-history entries kept per program (read while loading saved data)
   const CREDIT_PERIODS = { month: 'a month', quarter: 'a quarter', half: 'every 6 months', year: 'a year' }; // (read while loading)
   const MAX_VALUE = 999999999999;
   const MQD_GOAL = 28000;
@@ -3037,7 +3052,7 @@
   function normalize(raw) {
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
     if (!['programs', 'balances', 'vouchers', 'mqd'].some((k) => k in raw)) return null;
-    const s = { programs: null, view: 'detailed', cards: [], renewals: {}, creditsUsed: {}, creditsSkipped: {}, customCredits: {}, notes: '', memos: {}, balances: {}, history: {}, cpp: {}, hideValues: false, activity: {}, mqd: 0, progress: {}, members: {}, updated: {}, backedUp: '', game: { xp: 0, scans: 0, best: 0, weeks: [], badges: {} }, vouchers: [] };
+    const s = { programs: null, view: 'detailed', cards: [], renewals: {}, creditsUsed: {}, creditsSkipped: {}, customCredits: {}, notes: '', memos: {}, balances: {}, history: {}, cpp: {}, hideValues: false, activity: {}, mqd: 0, progress: {}, members: {}, updated: {}, backedUp: '', game: { xp: 0, scans: 0, best: 0, weeks: [], badges: {}, confirmed: {}, log: [] }, vouchers: [] };
     if (raw.balances && typeof raw.balances === 'object') {
       for (const [id, v] of Object.entries(raw.balances)) if (isCount(v)) s.balances[id] = Math.floor(v);
     }
@@ -3089,6 +3104,13 @@
       if (Array.isArray(g.weeks)) s.game.weeks = g.weeks.filter((w) => Number.isInteger(w) && w > 0).slice(-104);
       if (g.badges && typeof g.badges === 'object') {
         for (const [id, d] of Object.entries(g.badges)) if (/^[a-z0-9]{1,20}$/.test(id) && parseISODate(d)) s.game.badges[id] = d;
+      }
+      if (g.confirmed && typeof g.confirmed === 'object') { // programs re-checked with no change: XP once a day
+        for (const [id, d] of Object.entries(g.confirmed)) if (typeof id === 'string' && parseISODate(d)) s.game.confirmed[id] = d;
+      }
+      if (Array.isArray(g.log)) { // recent collects, newest first
+        s.game.log = g.log.filter((e) => e && parseISODate(e.d) && typeof e.name === 'string').slice(0, LOG_MAX)
+          .map((e) => ({ d: e.d, id: str(e.id, 80), name: str(e.name, 80), text: str(e.text, 120), xp: isCount(e.xp) ? Math.floor(e.xp) : 0 }));
       }
     }
     if (raw.updated && typeof raw.updated === 'object') { // when each balance was last changed (YYYY-MM-DD)
@@ -3168,7 +3190,7 @@
       const stash = `status-tracker-unreadable:${storageKey()}`; // not under KEY, so it's never mistaken for a person
       try { if (raw && !localStorage.getItem(stash)) localStorage.setItem(stash, raw); } catch (err) { /* storage unavailable */ }
     }
-    return { programs: null, view: 'detailed', cards: [], renewals: {}, creditsUsed: {}, creditsSkipped: {}, customCredits: {}, notes: '', memos: {}, balances: {}, history: {}, cpp: {}, hideValues: false, activity: {}, mqd: 0, progress: {}, members: {}, updated: {}, backedUp: '', game: { xp: 0, scans: 0, best: 0, weeks: [], badges: {} }, vouchers: [] }; // null programs → first-run setup
+    return { programs: null, view: 'detailed', cards: [], renewals: {}, creditsUsed: {}, creditsSkipped: {}, customCredits: {}, notes: '', memos: {}, balances: {}, history: {}, cpp: {}, hideValues: false, activity: {}, mqd: 0, progress: {}, members: {}, updated: {}, backedUp: '', game: { xp: 0, scans: 0, best: 0, weeks: [], badges: {}, confirmed: {}, log: [] }, vouchers: [] }; // null programs → first-run setup
   }
 
   const state = load();
@@ -4054,7 +4076,12 @@
 
   /* ---------- The game: XP and levels, a weekly streak, how many balances are up to date, badges ---------- */
 
-  const game = () => state.game || (state.game = { xp: 0, scans: 0, best: 0, weeks: [], badges: {} });
+  const game = () => {
+    const g = state.game || (state.game = { xp: 0, scans: 0, best: 0, weeks: [], badges: {}, confirmed: {}, log: [] });
+    if (!g.confirmed) g.confirmed = {};
+    if (!g.log) g.log = [];
+    return g;
+  };
   const LEVELS = [[0, 'Rookie'], [60, 'Explorer'], [150, 'Frequent Flyer'], [300, 'Road Warrior'], [500, 'Jet Setter'],
     [800, 'Status Seeker'], [1200, 'Elite'], [1700, 'Points Pro'], [2400, 'Globetrotter'], [3200, 'Legend']];
   function levelOf(xp) {
@@ -4067,7 +4094,9 @@
   }
   // XP for collecting a screenshot: 10, plus 5 for each thing it updates, 25 for a new program, 40 for a new status.
   const xpFor = (changes, added, statusNew) => 10 + 5 * changes + (added ? 25 : 0) + (statusNew ? 40 : 0);
+  const confirmXp = (id) => (game().confirmed[id] === todayISO() ? 0 : CONFIRM_XP);
   const BADGE_XP = 50;
+  const CONFIRM_XP = 5; // the same numbers again: still a check-in (up to date, streak), small XP once a day per program
   // Screenshots collected within 2 minutes of each other build a combo: +10 XP for the 2nd, +20 for the 3rd… up to +50.
   let combo = 0;
   let lastCollectAt = 0;
@@ -4147,19 +4176,28 @@
   function award(result) {
     const g = game();
     const before = levelOf(g.xp);
-    g.scans += 1;
     markWeek();
-    combo = comboNext();
-    lastCollectAt = Date.now();
-    result.combo = combo;
-    let xp = xpFor(result.changes.length, result.added, result.statusNew) + comboBonus(combo);
+    let xp;
+    if (result.real || result.added) {
+      g.scans += 1;
+      combo = comboNext();
+      lastCollectAt = Date.now();
+      result.combo = combo;
+      xp = xpFor(result.real, result.added, result.statusNew) + comboBonus(combo);
+    } else { // nothing new: no scan, no combo, so re-dropping one screenshot can't farm XP or badges
+      result.combo = 0;
+      xp = confirmXp(result.p.id);
+      const today = todayISO();
+      for (const id of Object.keys(g.confirmed)) if (g.confirmed[id] !== today) delete g.confirmed[id];
+      g.confirmed[result.p.id] = today;
+    }
     const unlocked = BADGES.filter((b) => !g.badges[b.id] && b.test(result));
     for (const b of unlocked) g.badges[b.id] = todayISO();
     xp += unlocked.length * BADGE_XP;
     g.xp += xp;
     g.best = Math.max(g.best, streakWeeks());
     const after = levelOf(g.xp);
-    return { xp, unlocked, combo, levelUp: after.index > before.index ? after : null };
+    return { xp, unlocked, combo: result.combo, levelUp: after.index > before.index ? after : null };
   }
 
   const GAME_ICONS = {
@@ -4228,6 +4266,11 @@
     $('#game-stale').replaceChildren(...fresh.stale.slice(0, 10).map((p) => h('li', null,
       h('button', { type: 'button', class: 'stale-btn', 'data-stale': p.id, 'aria-label': `Update ${p.name} from a screenshot` }, avatar(p), h('span', null, p.name),
         h('small', null, state.updated[p.id] ? `updated ${relativeDay(state.updated[p.id])}` : 'no balance yet')))));
+    $('#game-log-wrap').hidden = !g.log.length;
+    $('#game-log').replaceChildren(...g.log.slice(0, 8).map((e) => h('li', null,
+      h('span', { class: 'log-date' }, monthDayFmt.format(parseISODate(e.d))),
+      h('span', { class: 'log-main' }, h('b', null, e.name), e.text ? h('small', null, e.text) : null),
+      h('span', { class: 'log-xp' }, e.xp ? `+${e.xp} XP` : '—'))));
     $('#game-badge-count').textContent = `${BADGES.filter((b) => g.badges[b.id]).length} of ${BADGES.length}`;
     $('#game-badges').replaceChildren(...BADGES.map((b) => {
       const when = parseISODate(g.badges[b.id]);
@@ -4372,6 +4415,20 @@
     return vals;
   }
 
+  // How many things a screen actually changes — new or different numbers, a new status or end date, a member
+  // number — as opposed to confirming what you already have.
+  function realChanges(p, own, vals, outcome) {
+    const was = (store, key) => (own && store[key] != null ? store[key] : null);
+    let n = 0;
+    if (vals.balance !== undefined && p.unit && was(state.balances, p.id) !== vals.balance) n++;
+    if (vals.mqd !== undefined && (own ? state.mqd : null) !== vals.mqd) n++;
+    if (vals.progress !== undefined && was(state.progress, p.id) !== vals.progress) n++;
+    if (vals.alt !== undefined && was(state.progress, altKey(p.id)) !== vals.alt) n++;
+    if (vals.member && (!own || state.members[p.id] !== vals.member)) n++;
+    if (outcome && (outcome.kind === 'new' || (outcome.kind === 'same' && vals.exp && outcome.line.exp !== vals.exp))) n++;
+    return n;
+  }
+
   // What a status read from a screen does: confirms a level you have, adds a new one, or nothing (your
   // Medallion already shows it from MQDs, or a card already gives it).
   function statusOutcome(p, tierIndex, exp, mqd = state.mqd) {
@@ -4395,9 +4452,29 @@
   }
 
   // One row per thing found, each with what it changes: "+2,400", "New status!", "No change".
+  // The next level with the counts a screen shows: "17 to Diamond", "$3,760 to Platinum".
+  function goalWith(p, vals) {
+    if (vals.mqd !== undefined && (p.medallion || (catalogFor(p) || {}).id === 'delta')) {
+      const { next } = medallionFor(vals.mqd);
+      return next ? `${money(next.min - vals.mqd)} to ${next.name}` : 'top Medallion reached';
+    }
+    if (vals.progress === undefined && vals.alt === undefined) return null;
+    const keys = [p.id, altKey(p.id)];
+    const saved = keys.map((k) => [k, Object.prototype.hasOwnProperty.call(state.progress, k), state.progress[k]]);
+    try { // progressInfo reads state, so the screen's counts go in for a moment
+      if (vals.progress !== undefined) state.progress[p.id] = vals.progress;
+      if (vals.alt !== undefined) state.progress[altKey(p.id)] = vals.alt;
+      const info = progressInfo(p);
+      return info && info.entered ? (info.next ? nextText(info.next, info.track) : 'top level reached') : null;
+    } finally {
+      for (const [k, had, v] of saved) { if (had) state.progress[k] = v; else delete state.progress[k]; }
+    }
+  }
+
   function lootRows(p, own, vals, outcome) {
     const cid = catalogFor(p) ? catalogFor(p).id : null;
     const track = cid && TRACKS[cid];
+    const goal = goalWith(p, vals);
     const was = (store, key) => (own && store[key] != null ? store[key] : null);
     const rows = [h('li', null, avatar(p), lootText(p.name, own ? 'On your list' : 'Adding it to your list'), lootTag(own ? 'Found' : 'New!', own ? '' : 'new'))];
     if (vals.balance !== undefined) {
@@ -4411,14 +4488,14 @@
         outcome.kind === 'new' ? lootTag('New status!', 'new') : lootTag(outcome.kind === 'same' ? 'Confirmed' : outcome.why)));
     }
     if (vals.mqd !== undefined) {
-      rows.push(h('li', null, lootIcon('count', MARK_COLORS.count), lootText(`$${fmt(vals.mqd)} MQDs`, `${mqdYear()} so far`), deltaTag(own ? state.mqd : null, vals.mqd, '$')));
+      rows.push(h('li', null, lootIcon('count', MARK_COLORS.count), lootText(`$${fmt(vals.mqd)} MQDs`, goal || `${mqdYear()} so far`), deltaTag(own ? state.mqd : null, vals.mqd, '$')));
     }
     if (vals.progress !== undefined) {
-      rows.push(h('li', null, lootIcon('count', MARK_COLORS.count), lootText(`${fmt(vals.progress)} ${track.unit}`, `${qualLabel(track, qualYear(track))} so far`),
+      rows.push(h('li', null, lootIcon('count', MARK_COLORS.count), lootText(`${fmt(vals.progress)} ${track.unit}`, goal || `${qualLabel(track, qualYear(track))} so far`),
         deltaTag(was(state.progress, p.id), vals.progress)));
     }
     if (vals.alt !== undefined) {
-      rows.push(h('li', null, lootIcon('count', MARK_COLORS.count), lootText(`${fmt(vals.alt)} ${track.alt.unit}`, `${qualLabel(track, qualYear(track))} so far`),
+      rows.push(h('li', null, lootIcon('count', MARK_COLORS.count), lootText(`${fmt(vals.alt)} ${track.alt.unit}`, vals.progress === undefined && goal ? goal : `${qualLabel(track, qualYear(track))} so far`),
         deltaTag(was(state.progress, altKey(p.id)), vals.alt)));
     }
     if (vals.member) rows.push(h('li', null, lootIcon('member', MARK_COLORS.member), lootText('Member number', `•••• ${vals.member.slice(-4)}`), lootTag('Saved')));
@@ -4502,6 +4579,8 @@
     let changes = ['balance', 'mqd', 'progress', 'alt', 'member'].filter((k) => vals[k] !== undefined).length;
     const outcome = vals.tierIndex >= 0 ? statusOutcome(p, vals.tierIndex, vals.exp, vals.mqd ?? state.mqd) : null;
     if (outcome && outcome.kind !== 'covered') changes++;
+    const real = realChanges(p, own, vals, outcome);
+    const confirmOnly = !!own && !real;
     markFound(read, found, vals, p);
     const rows = lootRows(p, own, vals, outcome);
     $('#play-loot').replaceChildren(...rows.map((li, i) => { li.style.setProperty('--i', i); return li; }));
@@ -4511,22 +4590,22 @@
       setActions([later, ['Check it', true, fixPlay]]);
       return;
     }
-    $('#play-title').textContent = own ? `Found your ${p.name}!` : `New program: ${p.name}!`;
-    const streakOf = comboNext();
-    const gain = xpFor(changes, !own, !!outcome && outcome.kind === 'new') + comboBonus(streakOf);
+    $('#play-title').textContent = confirmOnly ? `Your ${p.name} is up to date` : own ? `Found your ${p.name}!` : `New program: ${p.name}!`;
+    const streakOf = confirmOnly ? 0 : comboNext();
+    const gain = confirmOnly ? confirmXp(p.id) : xpFor(real, !own, !!outcome && outcome.kind === 'new') + comboBonus(streakOf);
     const lv = levelOf(game().xp);
     const next = levelOf(game().xp + gain);
     const from = Math.round(lv.progress * 100);
     const to = next.index > lv.index ? 100 : Math.round(next.progress * 100);
     $('#play-xp').replaceChildren(...[
-      h('span', { class: 'xp-gain' }, `+${gain} XP`),
+      h('span', { class: 'xp-gain' }, confirmOnly && !gain ? 'Checked today' : `+${gain} XP`),
       streakOf > 1 ? h('span', { class: 'combo' }, `Combo ×${streakOf}`) : null,
       h('span', { class: 'xp-track', 'aria-hidden': 'true' }, h('span', { class: 'xp-fill', style: `width:${from}%` }),
         h('span', { class: 'xp-add', style: `left:${from}%;width:${Math.max(2, to - from)}%` })),
       h('span', { class: 'xp-lv' }, next.index > lv.index ? `Level up: ${next.name}!` : `Lv ${lv.n} · ${lv.name}`)].filter(Boolean));
     $('#play-xp').hidden = false;
     setActions([['Fix something', false, fixPlay],
-      [[h('span', { class: 'fill', 'aria-hidden': 'true' }), 'Collect', h('span', { class: 'cd' })], true, collectNow, 'play-collect']]);
+      [[h('span', { class: 'fill', 'aria-hidden': 'true' }), confirmOnly ? 'Confirm' : 'Collect', h('span', { class: 'cd' })], true, collectNow, 'play-collect']]);
     startCountdown();
   }
 
@@ -4763,12 +4842,22 @@
     const p = added ? programFromCatalog(CATALOG_BY_ID[choice.slice(4)]) : state.programs.find((x) => x.id === choice);
     if (added) state.programs.push(p);
     const before = { balance: state.balances[p.id] ?? null };
-    const changes = [];
-    let statusNew = false;
-    if (vals.balance !== undefined && p.unit) { setField(`bal:${p.id}`, vals.balance); changes.push('balance'); }
-    if (vals.mqd !== undefined) { setField('mqd', vals.mqd); changes.push('MQDs'); }
-    if (vals.progress !== undefined) { setField(`prog:${p.id}`, vals.progress); changes.push('progress'); }
     const track = trackFor(p);
+    const real = realChanges(p, added ? null : p, vals, vals.tierIndex >= 0 ? statusOutcome(p, vals.tierIndex, vals.exp, vals.mqd ?? state.mqd) : null);
+    const changes = [];
+    const notes = []; // for Recent in Your progress: "+2,400 miles · Platinum Elite"
+    let statusNew = false;
+    if (vals.balance !== undefined && p.unit) {
+      if (before.balance !== vals.balance) notes.push(before.balance == null ? `${fmt(vals.balance)} ${p.unit}` : `${signed(vals.balance - before.balance)} ${p.unit}`);
+      setField(`bal:${p.id}`, vals.balance);
+      changes.push('balance');
+    }
+    if (vals.mqd !== undefined) { if (state.mqd !== vals.mqd) notes.push(`$${fmt(vals.mqd)} MQDs`); setField('mqd', vals.mqd); changes.push('MQDs'); }
+    if (vals.progress !== undefined) {
+      if (state.progress[p.id] !== vals.progress) notes.push(`${fmt(vals.progress)} ${track ? track.unit : ''}`.trim());
+      setField(`prog:${p.id}`, vals.progress);
+      changes.push('progress');
+    }
     if (vals.alt !== undefined && track && track.alt) { setField(`prog:${altKey(p.id)}`, vals.alt); changes.push(track.alt.unit); }
     if (vals.member) { state.members[p.id] = vals.member; changes.push('member number'); }
     if (vals.tierIndex >= 0) {
@@ -4783,10 +4872,11 @@
       } else if (outcome.kind === 'new') {
         p.status.unshift(vals.exp ? { tier: outcome.tier.name, via: 'from your account', exp: vals.exp } : { tier: outcome.tier.name, via: 'from your account' });
         changes.push('status');
+        notes.push(outcome.tier.name);
         statusNew = true;
       }
     }
-    return { p, added, firstRun, before, changes, statusNew };
+    return { p, added, firstRun, before, changes, statusNew, real, notes };
   }
 
   // Applies a screenshot, then celebrates: points fly into the program's row, the number counts up, XP and badges.
@@ -4795,6 +4885,10 @@
     const result = applyRead(choice, vals);
     if (!result.changes.length && !result.added) { Object.assign(state, previous); showToast('Nothing new to update'); return; }
     const reward = award(result);
+    const g = game();
+    g.log.unshift({ d: todayISO(), id: result.p.id, name: result.p.name, xp: reward.xp,
+      text: result.added ? ['added', ...result.notes].join(' · ') : result.notes.join(' · ') || 'confirmed, no change' });
+    g.log.length = Math.min(g.log.length, LOG_MAX);
     saveNow();
     if (result.firstRun) markNewsSeen();
     if (!matchesFilter(result.p)) filter = 'all';
@@ -4802,6 +4896,7 @@
     celebrate(result, reward, from);
     const { p, added } = result;
     if (batch) finishOne(true, reward.xp); // one toast, with one Undo, when the batch ends
+    else if (!result.real && !added) showToast(`${p.name} is up to date${reward.xp ? ` · +${reward.xp} XP` : ''}`, () => undoTo(previous));
     else showToast(`${added ? 'Added' : 'Updated'} ${p.name} · +${reward.xp} XP${reward.combo > 1 ? ` · combo ×${reward.combo}` : ''}`, () => undoTo(previous));
   }
 
@@ -4926,6 +5021,21 @@
 
   $('#game-strip').addEventListener('click', (e) => { if (e.target.closest('[data-game]')) openGame(); });
   $('#game-done').addEventListener('click', () => gameSheet.close());
+  // A weekly calendar event (Sunday 10 a.m., the last day to keep a streak) that links back here.
+  $('#game-remind').addEventListener('click', (e) => {
+    const d = new Date();
+    d.setDate(d.getDate() + ((7 - d.getDay()) % 7)); // this Sunday
+    const day = icsDate(d);
+    const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+    const ics = `${['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Points & Status Tracker//EN', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
+      'BEGIN:VEVENT', 'UID:weekly-update@statuspoints.github.io', `DTSTAMP:${stamp}`, `DTSTART:${day}T100000`, `DTEND:${day}T101500`,
+      'RRULE:FREQ=WEEKLY;BYDAY=SU', `SUMMARY:${icsText('Update your points & status')}`,
+      `DESCRIPTION:${icsText('Screenshot your airline, hotel, and card accounts and collect them to keep your weekly streak.\nhttps://statuspoints.github.io')}`,
+      'URL:https://statuspoints.github.io', 'TRANSP:TRANSPARENT',
+      'BEGIN:VALARM', 'ACTION:DISPLAY', `DESCRIPTION:${icsText('Update your points & status')}`, 'TRIGGER:PT0M', 'END:VALARM',
+      'END:VEVENT', 'END:VCALENDAR'].map(icsFold).join('\r\n')}\r\n`;
+    saveCalendar(ics, 'weekly-points-update.ics', e.currentTarget);
+  });
   $('#game-scan').addEventListener('click', () => { gameSheet.close(); pickImage(); });
   $('#game-stale-all').addEventListener('click', () => { gameSheet.close(); pickImage(); });
   $('#game-stale').addEventListener('click', (e) => {

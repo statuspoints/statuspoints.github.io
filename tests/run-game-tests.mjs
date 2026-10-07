@@ -12,7 +12,7 @@ const gameCode = slice('  const game = () =>', '  const GAME_ICONS');
 const dates = slice('  function parseISODate', '  // Soonest expiration first');
 
 const context = vm.createContext({ Date, Math, Number, String, Object, Array, Set });
-vm.runInContext(`let state = { programs: [], balances: {}, updated: {}, history: {}, game: { xp: 0, scans: 0, best: 0, weeks: [], badges: {} } };
+vm.runInContext(`let state = { programs: [], balances: {}, updated: {}, history: {}, game: { xp: 0, scans: 0, best: 0, weeks: [], badges: {}, confirmed: {}, log: [] } };
   ${dates}
   const isoOf = (d) => \`\${d.getFullYear()}-\${String(d.getMonth() + 1).padStart(2, '0')}-\${String(d.getDate()).padStart(2, '0')}\`;
   const todayISO = () => isoOf(new Date());
@@ -32,7 +32,7 @@ const check = (name, got, want) => {
   if (!ok) failed++;
   console.log(`${ok ? '✓' : '✗'} ${name}${ok ? '' : `: expected ${JSON.stringify(want)}, got ${JSON.stringify(got)}`}`);
 };
-const fresh = () => ({ programs: [], balances: {}, updated: {}, history: {}, game: { xp: 0, scans: 0, best: 0, weeks: [], badges: {} } });
+const fresh = () => ({ programs: [], balances: {}, updated: {}, history: {}, game: { xp: 0, scans: 0, best: 0, weeks: [], badges: {}, confirmed: {}, log: [] } });
 
 // Levels
 check('0 XP is level 1, Rookie', [api.levelOf(0).n, api.levelOf(0).name], [1, 'Rookie']);
@@ -98,11 +98,18 @@ a.programs = [{ id: 'x', unit: 'points' }];
 a.balances = { x: 150000 };
 api.setState(a);
 api.setLastCollect(0, 0);
-const r = api.award({ changes: ['balance'], added: false, statusNew: false });
+const r = api.award({ p: { id: 'x' }, changes: ['balance'], real: 1, added: false, statusNew: false });
 check('first collect: 15 XP + First scan + Six figures badges', [r.xp, r.unlocked.map((b) => b.id).sort()], [115, ['first', 'six']]);
 check('saved: 1 scan, 115 XP, this week marked', [api.getState().game.scans, api.getState().game.xp, api.getState().game.weeks.includes(w)], [1, 115, true]);
-const r2 = api.award({ changes: ['balance'], added: false, statusNew: false });
+const r2 = api.award({ p: { id: 'x' }, changes: ['balance'], real: 1, added: false, statusNew: false });
 check('second collect right after: combo ×2, no repeat badges', [r2.combo, r2.xp, r2.unlocked.length], [2, 25, 0]);
+
+const r3 = api.award({ p: { id: 'x' }, changes: ['balance'], real: 0, added: false, statusNew: false });
+check('same numbers again: +5 XP for confirming, no scan, no combo', [r3.xp, r3.combo, api.getState().game.scans], [5, 0, 2]);
+const r4 = api.award({ p: { id: 'x' }, changes: ['balance'], real: 0, added: false, statusNew: false });
+check('…and nothing more for the same program that day', r4.xp, 0);
+const r5 = api.award({ p: { id: 'y' }, changes: ['balance'], real: 0, added: false, statusNew: false });
+check('another program confirmed the same day still gets its +5', r5.xp, 5);
 
 console.log(`\n${total - failed}/${total} passed`);
 process.exit(failed ? 1 : 0);
