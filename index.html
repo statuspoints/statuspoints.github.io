@@ -757,7 +757,11 @@
   .game-stats b { display: block; font-size: 20px; }
   .game-stats span { display: block; font-size: 11.5px; line-height: 1.3; color: var(--muted); }
   .game-stale { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
-  .game-stale li { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; }
+  .stale-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+  .stale-btn { display: flex; align-items: center; gap: 10px; width: 100%; padding: 2px 0; border: 0; background: none; color: var(--text); font: inherit; font-size: 14px; font-weight: 600; text-align: left; cursor: pointer; }
+  .stale-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 8px; }
+  .game-gain { margin: 10px 2px 0; font-size: 13.5px; font-weight: 650; color: var(--good); }
+  .game-chip.gain { background: var(--good-soft); color: var(--good); }
   .game-stale .av { width: 30px; height: 30px; border-radius: 9px; font-size: 10.5px; }
   .game-stale small { margin-left: auto; font-size: 12.5px; font-weight: 500; color: var(--muted); white-space: nowrap; }
   .badges { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
@@ -1812,9 +1816,10 @@
     <div class="grab" aria-hidden="true"></div>
     <h2 id="game-title" tabindex="-1">Your progress</h2>
     <div class="lv-card" id="game-level"></div>
+    <p class="game-gain" id="game-gain" hidden></p>
     <div class="game-stats" id="game-stats"></div>
     <div id="game-stale-wrap">
-      <h3 class="d-label">Needs an update</h3>
+      <div class="stale-head"><h3 class="d-label">Needs an update</h3><button class="link" id="game-stale-all" type="button">Screenshot them all</button></div>
       <ul class="game-stale" id="game-stale"></ul>
     </div>
     <h3 class="d-label">Badges <span id="game-badge-count"></span></h3>
@@ -4033,6 +4038,8 @@
     if (!scanSheet.open) scanSheet.showModal();
   }
   const pickImage = () => { unlockSound(); $('#scan-file').click(); };
+  let pickHint = null; // { id, at }: the program you tapped "update" for, if the screenshot doesn't say
+  const pickFor = (id) => { pickHint = { id, at: Date.now() }; pickImage(); };
   // The how-to the first time; after that, straight to choosing a picture.
   const startScan = () => (game().scans ? pickImage() : openScan());
 
@@ -4094,6 +4101,30 @@
     const stale = list.filter((p) => { const d = parseISODate(state.updated[p.id]); return !d || -daysUntil(d) > FRESH_DAYS; });
     return { total: list.length, fresh: list.length - stale.length, stale };
   }
+  // Net change in points & miles over the last 30 days, from each balance's history, and about what it's worth.
+  // A balance entered for the first time isn't a gain; one first entered this month counts from that first number.
+  function recentGain(days = 30) {
+    const d = new Date();
+    d.setDate(d.getDate() - days);
+    const cutoff = isoOf(d);
+    let points = 0;
+    let dollars = 0;
+    let any = false;
+    for (const p of state.programs || []) {
+      const now = state.balances[p.id];
+      const list = state.history[p.id] || [];
+      if (!p.unit || now == null || !list.length) continue;
+      const older = list.filter(([date]) => date <= cutoff).pop();
+      const base = older ? older[1] : list.length > 1 ? list[0][1] : null;
+      if (base == null || base === now) continue;
+      any = true;
+      points += now - base;
+      const cpp = cppFor(p);
+      if (cpp) dollars += ((now - base) * cpp) / 100;
+    }
+    return any ? { points, dollars } : null;
+  }
+  const signed = (n, format = fmt) => `${n < 0 ? '−' : '+'}${format(Math.abs(n))}`;
   const totalPoints = () => (state.programs || []).reduce((sum, p) => sum + (p.unit && state.balances[p.id] || 0), 0);
 
   // Checked after each screenshot you collect (`r` is what it changed).
@@ -4136,6 +4167,7 @@
     check: '<circle cx="12" cy="12" r="8.5"/><path d="M8.3 12.3l2.5 2.5 5-5.2"/>',
     star: '<path fill="currentColor" stroke="none" d="M12 3.2l2.7 5.5 6 .9-4.35 4.25 1.03 6-5.38-2.83-5.38 2.83 1.03-6L3.3 9.6l6-.9z"/>',
     lock: '<rect x="5.5" y="10.5" width="13" height="9" rx="2"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/>',
+    trend: '<path d="M4 16.5l5-5 4 4 7-7"/><path d="M14.5 8.5H20V14"/>',
     balance: '<ellipse cx="12" cy="7" rx="7" ry="3"/><path d="M5 7v5c0 1.7 3.1 3 7 3s7-1.3 7-3V7M5 12v5c0 1.7 3.1 3 7 3s7-1.3 7-3v-5"/>',
     count: '<path d="M5.5 19v-7M12 19V5M18.5 19v-10"/>',
     member: '<rect x="3.5" y="5.5" width="17" height="13" rx="2.5"/><circle cx="9" cy="11" r="2"/><path d="M6.5 15.5c.6-1.3 1.5-2 2.5-2s1.9.7 2.5 2M14 10h3.5M14 13.5h3.5"/>',
@@ -4159,6 +4191,12 @@
         streak ? `${streak}-week streak${atRisk ? ' · update by Sunday' : ''}` : 'Start a streak'),
     ];
     if (fresh.total) chips.push(h('button', { type: 'button', class: 'game-chip', 'data-game': '' }, gameIcon('check'), `${fresh.fresh}/${fresh.total} up to date`));
+    const gain = recentGain();
+    if (gain && gain.points) {
+      const dollars = !state.hideValues && Math.abs(gain.dollars) >= 1;
+      chips.push(h('button', { type: 'button', class: gain.points > 0 ? 'game-chip gain' : 'game-chip', 'data-game': '' }, gameIcon('trend'),
+        `${dollars ? signed(gain.dollars, money) : `${signed(gain.points)} pts`} in 30 days`));
+    }
     $('#game-strip').replaceChildren(...chips);
   }
 
@@ -4178,9 +4216,18 @@
       stat(fmt(g.scans), g.scans === 1 ? 'screenshot collected' : 'screenshots collected'),
       stat(String(streak), `week streak${streak && !g.weeks.includes(weekNo()) ? ', update by Sunday' : g.best > streak ? ` (best ${g.best})` : ''}`),
       stat(fresh.total ? `${fresh.fresh}/${fresh.total}` : '—', 'balances up to date'));
+    const gain = recentGain();
+    $('#game-gain').hidden = !gain || !gain.points;
+    if (gain && gain.points) {
+      $('#game-gain').textContent = `Last 30 days: ${signed(gain.points)} points & miles`
+        + `${!state.hideValues && Math.abs(gain.dollars) >= 1 ? ` (about ${signed(gain.dollars, money)})` : ''}`;
+    }
+    // Balances to refresh: each opens the photo picker, and a screenshot that doesn't name its program is read as that one.
     $('#game-stale-wrap').hidden = !fresh.stale.length;
-    $('#game-stale').replaceChildren(...fresh.stale.slice(0, 8).map((p) => h('li', null, avatar(p), h('span', null, p.name),
-      h('small', null, state.updated[p.id] ? `updated ${relativeDay(state.updated[p.id])}` : 'no balance yet'))));
+    $('#game-stale-all').textContent = fresh.stale.length > 1 ? `Screenshot all ${fresh.stale.length}` : 'Screenshot it';
+    $('#game-stale').replaceChildren(...fresh.stale.slice(0, 10).map((p) => h('li', null,
+      h('button', { type: 'button', class: 'stale-btn', 'data-stale': p.id, 'aria-label': `Update ${p.name} from a screenshot` }, avatar(p), h('span', null, p.name),
+        h('small', null, state.updated[p.id] ? `updated ${relativeDay(state.updated[p.id])}` : 'no balance yet')))));
     $('#game-badge-count').textContent = `${BADGES.filter((b) => g.badges[b.id]).length} of ${BADGES.length}`;
     $('#game-badges').replaceChildren(...BADGES.map((b) => {
       const when = parseISODate(g.badges[b.id]);
@@ -4248,12 +4295,12 @@
   // Another sheet is open (maybe mid-edit), so a dropped or pasted image is left alone.
   const otherSheetOpen = () => [...document.querySelectorAll('dialog[open]')].some((d) => d !== scanSheet && d !== play);
 
-  async function playScan(file) {
+  async function playScan(file, hint = null) {
     const run = ++playRun;
     if (scanSheet.open) { quietClose = true; scanSheet.close(); }
     stopCountdown();
     if (playing && playing.url) URL.revokeObjectURL(playing.url);
-    playing = { url: URL.createObjectURL(file) };
+    playing = { url: URL.createObjectURL(file), hint };
     $('#play-title').textContent = 'Scanning your screenshot…';
     $('#play-loot').replaceChildren();
     $('#play-marks').replaceChildren();
@@ -4333,7 +4380,8 @@
     if (same) return { kind: 'same', line: same };
     const current = state.programs && p === medallionProgram() && medallionFor(mqd).current;
     const fromMqd = current && findTier(tiers, `${current.name} Medallion`) === tierIndex;
-    if (fromMqd || (benefitsFor(p) && coveredThrough(p, tierIndex, exp || '9999-12-31'))) return { kind: 'covered' };
+    if (fromMqd) return { kind: 'covered', why: 'Matches your MQDs' };
+    if (benefitsFor(p) && coveredThrough(p, tierIndex, exp || '9999-12-31')) return { kind: 'covered', why: 'Your card gives this' };
     return { kind: 'new', tier: tiers[tierIndex] };
   }
 
@@ -4360,7 +4408,7 @@
       const name = scanTiersFor(cid)[vals.tierIndex].name;
       const exp = parseISODate(vals.exp);
       rows.push(h('li', null, lootIcon('star', MARK_COLORS.status), lootText(name, exp ? `Status through ${dateFmt.format(exp)}` : 'Status'),
-        outcome.kind === 'new' ? lootTag('New status!', 'new') : lootTag(outcome.kind === 'same' ? 'Confirmed' : 'Already counted')));
+        outcome.kind === 'new' ? lootTag('New status!', 'new') : lootTag(outcome.kind === 'same' ? 'Confirmed' : outcome.why)));
     }
     if (vals.mqd !== undefined) {
       rows.push(h('li', null, lootIcon('count', MARK_COLORS.count), lootText(`$${fmt(vals.mqd)} MQDs`, `${mqdYear()} so far`), deltaTag(own ? state.mqd : null, vals.mqd, '$')));
@@ -4446,6 +4494,7 @@
     Object.assign(playing, { text: read.text, found });
     $('#play-shot').className = 'play-shot done';
     const later = batch ? ['Skip', false, skipPlay] : ['Try another', false, pickImage];
+    if (!own && !cid && playing.hint && (state.programs || []).some((x) => x.id === playing.hint)) { showLoot(read, playing.hint); return; }
     if (!own && !cid) { pickProgram(read, later); return; }
     const p = own || programFromCatalog(CATALOG_BY_ID[cid]);
     const vals = valsFrom(found, p);
@@ -4548,8 +4597,10 @@
       return true;
     }
     if (images.length > 1) batch = { total: images.length, done: 0, collected: 0, xp: 0, before: clone(state) };
+    const hint = images.length === 1 && pickHint && Date.now() - pickHint.at < 5 * 60 * 1000 ? pickHint.id : null;
+    pickHint = null;
     scanQueue.push(...images.slice(1));
-    playScan(images[0]);
+    playScan(images[0], hint);
     return true;
   }
   function renderPlayCount() {
@@ -4876,6 +4927,13 @@
   $('#game-strip').addEventListener('click', (e) => { if (e.target.closest('[data-game]')) openGame(); });
   $('#game-done').addEventListener('click', () => gameSheet.close());
   $('#game-scan').addEventListener('click', () => { gameSheet.close(); pickImage(); });
+  $('#game-stale-all').addEventListener('click', () => { gameSheet.close(); pickImage(); });
+  $('#game-stale').addEventListener('click', (e) => {
+    const row = e.target.closest('[data-stale]');
+    if (!row) return;
+    gameSheet.close();
+    pickFor(row.dataset.stale);
+  });
   gameSheet.addEventListener('click', (e) => { if (e.target === gameSheet) gameSheet.close(); });
 
   // On a computer: drop a screenshot anywhere on the page, or paste one (⌘V / Ctrl+V).

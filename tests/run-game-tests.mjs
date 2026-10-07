@@ -12,14 +12,15 @@ const gameCode = slice('  const game = () =>', '  const GAME_ICONS');
 const dates = slice('  function parseISODate', '  // Soonest expiration first');
 
 const context = vm.createContext({ Date, Math, Number, String, Object, Array, Set });
-vm.runInContext(`let state = { programs: [], balances: {}, updated: {}, game: { xp: 0, scans: 0, best: 0, weeks: [], badges: {} } };
+vm.runInContext(`let state = { programs: [], balances: {}, updated: {}, history: {}, game: { xp: 0, scans: 0, best: 0, weeks: [], badges: {} } };
   ${dates}
   const isoOf = (d) => \`\${d.getFullYear()}-\${String(d.getMonth() + 1).padStart(2, '0')}-\${String(d.getDate()).padStart(2, '0')}\`;
   const todayISO = () => isoOf(new Date());
   const hasStatus = () => false;
   const categoryOf = () => 'Airlines';
+  const cppFor = (p) => p.cpp || null;
   ${gameCode}
-  globalThis.api = { levelOf, xpFor, comboBonus, weekNo, markWeek, streakWeeks, freshness, award, BADGES,
+  globalThis.api = { recentGain, levelOf, xpFor, comboBonus, weekNo, markWeek, streakWeeks, freshness, award, BADGES,
     setState: (s) => { state = s; }, getState: () => state, setLastCollect: (t, c) => { lastCollectAt = t; combo = c; }, comboNext };`, context);
 const { api } = context;
 
@@ -31,7 +32,7 @@ const check = (name, got, want) => {
   if (!ok) failed++;
   console.log(`${ok ? '✓' : '✗'} ${name}${ok ? '' : `: expected ${JSON.stringify(want)}, got ${JSON.stringify(got)}`}`);
 };
-const fresh = () => ({ programs: [], balances: {}, updated: {}, game: { xp: 0, scans: 0, best: 0, weeks: [], badges: {} } });
+const fresh = () => ({ programs: [], balances: {}, updated: {}, history: {}, game: { xp: 0, scans: 0, best: 0, weeks: [], badges: {} } });
 
 // Levels
 check('0 XP is level 1, Rookie', [api.levelOf(0).n, api.levelOf(0).name], [1, 'Rookie']);
@@ -73,6 +74,23 @@ s.updated = { a: daysAgo(3), b: daysAgo(45) };
 api.setState(s);
 const f = api.freshness();
 check('3 programs with balances, 1 updated this month', [f.fresh, f.total, f.stale.map((p) => p.id)], [1, 3, ['b', 'c']]);
+
+// Gains over 30 days
+const g = fresh();
+g.programs = [{ id: 'm', unit: 'miles', cpp: 1.2 }, { id: 'n', unit: 'points' }, { id: 'new', unit: 'points' }, { id: 'spent', unit: 'points', cpp: 0.5 }];
+g.balances = { m: 60000, n: 12000, new: 5000, spent: 10000 };
+g.history = {
+  m: [[daysAgo(90), 40000], [daysAgo(40), 50000], [daysAgo(5), 60000]], // +10,000 since 30 days ago
+  n: [[daysAgo(12), 10000], [daysAgo(2), 12000]], // first entered this month: +2,000 from its first number
+  new: [[daysAgo(1), 5000]], // entered for the first time: not a gain
+  spent: [[daysAgo(60), 30000], [daysAgo(3), 10000]], // redeemed 20,000
+};
+api.setState(g);
+const gain = api.recentGain();
+check('30-day gain: +10,000 +2,000 −20,000, new balances skipped', gain.points, -8000);
+check('…worth +$120 − $100 = +$20 where values are known', Math.round(gain.dollars), 20);
+api.setState(fresh());
+check('no history: no gain to show', api.recentGain(), null);
 
 // Award
 const a = fresh();
