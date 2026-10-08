@@ -852,6 +852,18 @@
   .worth-list .w-body small { font-size: 12.5px; color: var(--muted); }
   .worth-list .w-amt { font-weight: 700; font-variant-numeric: tabular-nums; }
   .worth-inline { color: var(--muted); }
+  /* Household total in the worth sheet, below this person's own list so it doesn't read as their breakdown */
+  .worth-household { display: grid; gap: 4px; }
+  .worth-household-total { margin: 0; font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  /* Household lists (a program's details and the worth sheet): one row per person */
+  .hh-list { display: grid; margin: 0; padding: 0; list-style: none; }
+  .hh-list li { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+  .hh-list .hh-total { border-bottom: 0; font-weight: 700; }
+  /* The name gives way first; the "Showing now" tag beside it stays whole */
+  .hh-who { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
+  .hh-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hh-tag { flex: none; font-size: 12px; font-weight: 400; color: var(--muted); }
+  .hh-amt { flex: none; font-variant-numeric: tabular-nums; }
   .cpp-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
   .cpp-row label { font-size: 14px; font-weight: 600; }
   .cpp-row input { max-width: 120px; }
@@ -1813,6 +1825,7 @@
     <section class="d-sec" id="d-progress" aria-label="This year's progress" hidden></section>
     <section class="d-sec" id="d-expiry" aria-label="Points expiration" hidden></section>
     <section class="d-sec" id="d-worth" aria-label="What it's worth" hidden></section>
+    <section class="d-sec" id="d-household" aria-label="Household" hidden></section>
     <section class="d-sec" id="d-transfers" aria-label="Transfer partners" hidden></section>
     <section class="d-sec" id="d-levels" aria-label="Status levels"></section>
     <div class="sheet-actions d-actions">
@@ -1942,6 +1955,7 @@
     <h2 id="worth-title" tabindex="-1" autofocus>What your points are worth</h2>
     <p class="worth-total" id="worth-total"></p>
     <ul class="worth-list" id="worth-list"></ul>
+    <div class="worth-household" id="worth-household" hidden></div>
     <p class="fine" id="worth-fine"></p>
     <div class="sheet-actions">
       <button class="btn-secondary" id="worth-hide" type="button">Hide dollar values</button>
@@ -2606,6 +2620,25 @@
   // "1:1", "5:4", "1:1.5" — bank points to partner points.
   const ratioText = (a, b) => `${a}:${b}`;
 
+  // Whether family can put points together, as of POOLING_AS_OF — each checked against the program's own terms or
+  // help pages on Oct 8, 2026 (two verifiers each). A program not listed shows no line rather than a guess; Wyndham
+  // is left out on purpose: its terms don't allow sharing points.
+  const POOLING_AS_OF = 'October 2026';
+  const POOLING = {
+    hilton: 'Hilton’s Points Pooling lets you combine points free with up to 10 other members',
+    marriott: 'Marriott lets you transfer points free to another member, within yearly limits',
+    jetblue: 'JetBlue’s Points Pooling lets up to 7 family members or friends share one pool of points free',
+    united: 'United’s Miles Pooling lets up to 5 MileagePlus members share miles free',
+    ba: 'A free British Airways Household Account lets up to 7 people pool their Avios (no shared address needed)',
+    flyingblue: 'Flying Blue Family lets a household pool its Miles',
+    hyatt: 'Hyatt lets you combine points free with one other member (by request, once every 30 days)',
+    chase: 'Chase lets you combine Ultimate Rewards points with one member of your household',
+    capitalone: 'Capital One lets you move miles to another eligible Capital One miles account, including another cardholder’s',
+    ihg: 'IHG lets you transfer points to another member for $5 per 1,000 points',
+    delta: 'Delta has no free pooling; sending miles to another member costs 1¢ a mile plus $30',
+    amex: 'Amex points can’t move to another person’s account, but can go to an additional cardholder’s airline or hotel account',
+  };
+
   // Where to check balances and manage each program.
   const SITES = {
     delta: 'www.delta.com', united: 'www.united.com', american: 'www.aa.com', southwest: 'www.southwest.com',
@@ -2641,8 +2674,11 @@
   const trackFor = (p) => { const c = catalogFor(p); return (c && TRACKS[c.id]) || null; };
   const expiryFor = (p) => { const c = catalogFor(p); return (p.unit && c && EXPIRY[c.id]) || null; };
   // Cents per point: yours if set, else the published typical value; null when neither exists.
-  const cppFor = (p) => { if (!p.unit) return null; if (state.cpp[p.id]) return state.cpp[p.id]; const c = catalogFor(p); return (c && VALUES[c.id]) || null; };
-  const valueOf = (p) => { const cpp = cppFor(p); const bal = state.balances[p.id]; return cpp && bal ? (bal * cpp) / 100 : null; };
+  // `In` versions read any tracker (s), for household totals; the plain ones read whoever's showing.
+  const cppIn = (s, p) => { if (!p.unit) return null; if (s.cpp[p.id]) return s.cpp[p.id]; const c = catalogFor(p); return (c && VALUES[c.id]) || null; };
+  const valueIn = (s, p) => { const cpp = cppIn(s, p); const bal = s.balances[p.id]; return cpp && bal ? (bal * cpp) / 100 : null; };
+  const cppFor = (p) => cppIn(state, p);
+  const valueOf = (p) => valueIn(state, p);
   const moneyFmt = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
   const money = (n) => moneyFmt.format(Math.round(n));
 
@@ -3320,9 +3356,49 @@
   const storageKey = (id = people.active) => (id === 'me' ? KEY : `${KEY}:${id}`);
   const activePerson = () => people.list.find((person) => person.id === people.active);
   const personName = (person) => person.name || (person.id === 'me' ? 'Me' : 'Unnamed');
+  // In household lists "Me" would be wrong while someone else is showing, and two "Unnamed" can't be told apart:
+  // someone never named reads by their place on the People list instead ("Person 2").
+  const householdName = (person, list = people.list) => person.name || `Person ${list.findIndex((x) => x.id === person.id) + 1}`;
   const whose = (person) => (person.name ? `${person.name}’s` : 'your'); // "Alex’s tracker" / "your tracker"
   function savePeople() {
     try { localStorage.setItem(PEOPLE_KEY, JSON.stringify(people)); } catch (e) { /* private mode: lasts this visit */ }
+  }
+
+  // Household totals: everyone's saved tracker on this device, read-only — nothing here writes to anyone's data.
+  // Whoever's showing comes from state (it may have unsaved edits). Someone not set up yet, or whose data can't
+  // be read, is left out rather than stopping the rest.
+  function householdTrackers(list = people.list, read = (id) => localStorage.getItem(storageKey(id))) {
+    const out = [];
+    for (const person of list) {
+      let s = null;
+      if (person.id === people.active) s = state;
+      else try { s = normalize(JSON.parse(read(person.id) || 'null')); } catch (e) { /* unreadable: skip them */ }
+      if (s && s.programs) out.push({ person, s });
+    }
+    return out;
+  }
+  // Who has program p and what each holds: [{ person, rows, balance }]. Matched by catalog id (a row added by hand
+  // under a catalog name counts too); a custom program the catalog doesn't know isn't matched across people.
+  // Someone tracking two accounts in one program (two "Hilton Honors" rows) has them added together, as the worth
+  // total does; balance is null only when none of their rows has one.
+  function householdHoldings(trackers, p) {
+    const c = catalogFor(p);
+    if (!c || !p.unit) return [];
+    return trackers.flatMap(({ person, s }) => {
+      const rows = s.programs.filter((x) => x.unit && catalogFor(x) && catalogFor(x).id === c.id);
+      const known = rows.map((x) => s.balances[x.id]).filter((b) => b != null);
+      return rows.length ? [{ person, rows, balance: known.length ? known.reduce((sum, b) => sum + b, 0) : null }] : [];
+    });
+  }
+  const householdTotal = (rows) => rows.reduce((sum, r) => sum + (r.balance || 0), 0);
+  // A tracker's points in dollars, at that person's own cents-per-point where they set one.
+  const trackerWorth = (s) => (s.programs || []).reduce((sum, p) => sum + (valueIn(s, p) || 0), 0);
+  // Each person's share of the household dollar total, [{ person, worth }], rounded per person so the parts shown
+  // add up to the total; plus who's left out because they chose to hide dollar values (named only, never an amount).
+  function householdWorth(trackers) {
+    const shown = trackers.filter((t) => !t.s.hideValues).map((t) => ({ person: t.person, worth: Math.round(trackerWorth(t.s)) })).filter((t) => t.worth > 0);
+    const hidden = trackers.filter((t) => t.s.hideValues && trackerWorth(t.s) > 0).map((t) => t.person);
+    return { shown, hidden };
   }
 
   function load() {
@@ -3364,6 +3440,12 @@
 
   // Another tab or window saved this tracker: take its copy, rather than overwrite it on this tab's next save.
   addEventListener('storage', (e) => {
+    // Someone else's tracker changed there: refresh the household figures if they're on screen.
+    if (e.key !== storageKey() && (e.key === KEY || (e.key || '').startsWith(`${KEY}:`))) {
+      if ($('#worth-sheet').open) renderWorth();
+      if (state.programs && detail.open && detailProgram()) renderHousehold(detailProgram());
+      return;
+    }
     if (e.key !== storageKey() || e.newValue === JSON.stringify(state.programs ? state : null)) return;
     clearTimeout(saveTimer);
     saveTimer = 0;
@@ -5755,13 +5837,27 @@
     $('#worth-btn').textContent = `≈ ${money(total)} in points & miles ›`;
     syncValuesPick();
     if (!$('#worth-sheet').open) return;
+    // With more than one person, say whose these are: the household total below is everyone's.
+    $('#worth-title').textContent = `What ${people.list.length > 1 ? whose(activePerson()) : 'your'} points are worth`;
     $('#worth-total').textContent = `≈ ${money(total)}`;
+    renderWorthHousehold();
     $('#worth-list').replaceChildren(...valued.sort((a, b) => valueOf(b) - valueOf(a)).map((p) => h('li', null, avatar(p),
       h('span', { class: 'w-body' }, h('span', null, p.name), h('small', null, `${fmt(state.balances[p.id])} ${p.unit} × ${cppFor(p)}¢${state.cpp[p.id] ? ' (yours)' : ''}`)),
       h('span', { class: 'w-amt' }, money(valueOf(p))))));
     const unvalued = (state.programs || []).filter((p) => p.unit && state.balances[p.id] && !cppFor(p)).map((p) => p.name);
     $('#worth-fine').textContent = `Estimates of what points are typically worth when redeemed well, from ${VALUES_SOURCE}; cash-back value is usually lower. Set your own value in a program’s details.`
       + (unvalued.length ? ` Not included (no value yet): ${unvalued.join(', ')}.` : '');
+  }
+  // "Household ≈ $9,300" and each person's share, when 2+ people on this device have valued points.
+  function renderWorthHousehold() {
+    const box = $('#worth-household');
+    const { shown, hidden } = householdWorth(people.list.length > 1 ? householdTrackers() : []);
+    box.hidden = shown.length < 2;
+    if (box.hidden) { box.replaceChildren(); return; }
+    box.replaceChildren(h('p', { class: 'worth-household-total' }, `Household ≈ ${money(shown.reduce((sum, t) => sum + t.worth, 0))}`),
+      h('ul', { class: 'hh-list' }, shown.sort((a, b) => b.worth - a.worth).map((t) =>
+        householdRow(t.person, money(t.worth), t.person.id === people.active ? 'Showing now' : null))),
+      hidden.length ? h('p', { class: 'fine' }, `Not counted: ${hidden.map((person) => householdName(person)).join(', ')} (dollar values hidden).`) : null);
   }
   function setHideValues(hide) {
     if (!state.programs) return;
@@ -6232,6 +6328,7 @@
     renderProgress(p);
     renderExpiry(p);
     renderDetailWorth(p);
+    renderHousehold(p);
     renderTransfers(p);
     renderLevels(p);
   }
@@ -6386,6 +6483,30 @@
       return goal && (before[p.id] || 0) < goal.target && (state.balances[p.id] || 0) >= goal.target;
     });
     if (reached.length) queueAchievements({ unlocked: reached.map((p) => ({ name: state.goals[p.id].label || `${p.name} goal`, color: '#15803D', kind: 'Goal reached' })) });
+  }
+
+  // One person's row in a household list: their name (cut short if it must be, full name on hover), a tag that
+  // always stays visible, and the amount.
+  function householdRow(person, amount, tag) {
+    const name = householdName(person);
+    return h('li', null, h('span', { class: 'hh-who' }, h('span', { class: 'hh-name', title: name }, name), tag ? h('small', { class: 'hh-tag' }, tag) : null),
+      h('span', { class: 'hh-amt' }, amount));
+  }
+
+  // "Household": each person's balance in this program and the total, when 2+ people on this device have a
+  // balance in it (one balance alone has nothing to add up).
+  function renderHousehold(p) {
+    const box = $('#d-household');
+    const rows = people.list.length > 1 ? householdHoldings(householdTrackers(), p) : [];
+    box.hidden = rows.filter((r) => r.balance != null).length < 2;
+    if (box.hidden) return;
+    const pool = POOLING[catalogFor(p).id];
+    box.replaceChildren(h('h3', { class: 'd-label' }, 'Household'),
+      h('ul', { class: 'hh-list' }, rows.map((r) => householdRow(r.person, r.balance == null ? 'no balance entered' : fmt(r.balance),
+        [r.person.id === people.active ? 'Showing now' : null, r.rows.length > 1 ? `${r.rows.length} accounts` : null].filter(Boolean).join(' · '))),
+      h('li', { class: 'hh-total' }, h('span', { class: 'hh-who' }, h('span', { class: 'hh-name' }, 'Together')), h('span', { class: 'hh-amt' }, `${fmt(householdTotal(rows))} ${p.unit}`))),
+      h('p', { class: 'fine' }, pool ? `${pool} (as of ${POOLING_AS_OF} — check the program before moving points).`
+        : 'Shown together for reference: each person’s points stay in their own account.'));
   }
 
   // "≈ $1,440 at 1.2¢ per mile", with a field for your own value.

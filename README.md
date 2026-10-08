@@ -106,6 +106,8 @@ Pick your cards (setup screen, or **Edit → Choose cards**) and the complimenta
 
 Everyone who opens the site on their own phone gets their own tracker automatically. To share one device (a family iPad, say), tap **Add a person** at the bottom. Each person gets a completely separate tracker: programs, statuses, balances, cards, and reminders. Their name appears at the top; tap it to switch people, rename someone, or remove them (with Undo). Backups and exports cover whoever is showing and include their name in the file name.
 
+**Household totals:** with more than one person on the device, a program's details show a **Household** section when two or more people have a balance in it: each person's balance (two accounts in the same program are added together) and the total together, plus whether the program lets family share points (Hilton, Marriott, JetBlue, United, British Airways, Flying Blue, Hyatt, Chase, Capital One, IHG, Delta, and Amex — each checked against the program's own terms on Oct 8, 2026; Wyndham's terms don't allow sharing). Programs are matched across people by the app's catalog, so custom programs aren't combined. **What your points are worth** adds a household total below the list ("Household ≈ $9,300", then each person's share) when two or more people have valued points, each at their own cents-per-point. Anyone who chose **Hide dollar values** is left out of it and named only, never their amount. Someone never given a name shows as "Person 2" (their place on the People list), and the person showing is marked **Showing now**. Changes made in another tab or window show up right away. It only reads the other trackers; nothing in anyone else's data changes.
+
 ## Moving to another device
 
 **Send to another device** (at the bottom) makes a link that carries your whole tracker. Share it to yourself (Messages, AirDrop, email), open it on the other device, and choose **Add as another person** or **Replace the tracker on this device**. A device with nothing set up yet takes it right away. Nothing is uploaded: the data rides in the part of the link after `#`, which browsers never send to a server. The link includes member numbers, so only send it to yourself or someone you trust.
@@ -126,7 +128,7 @@ Use **Export as text** at the bottom to save an easy-to-read `.txt` summary of y
 | `manifest.json` | Install-to-home-screen metadata |
 | `sw.js` | Service worker that caches the app for offline use |
 | `icon.svg`, `icon-*.png`, `apple-touch-icon.png` | App icons |
-| `tests/` | Screenshot-reader cases (`node tests/run-scan-tests.mjs`) and the game's math (`node tests/run-game-tests.mjs`) |
+| `tests/` | Screenshot-reader cases (`node tests/run-scan-tests.mjs`), the game's math (`node tests/run-game-tests.mjs`), and household totals (`node tests/run-household-tests.mjs`) |
 
 ## Updating
 
