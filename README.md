@@ -83,7 +83,7 @@ Each program's details say whether its points or miles expire (checked October 2
   - **Your member number:** masked on screen, with Show and Copy for check-in or booking.
   - **Notes:** anything worth remembering for that program ("2 suite night awards left"), included in the text export.
   - When you last updated the balance, plus a link to the program's website. After a couple of updates, a small trend line shows the balance over time ("+12,000 points since Mar 2").
-  - Perks cover Delta, United, American, Southwest, Alaska Atmos, Aeroplan, Hilton, Marriott, IHG, Hyatt, Wyndham, Leading Hotels, Omni, Avis, Hertz, and National. On Oct 7, 2026 every level, qualification rule, and perk was checked against each program's own pages (status pages, terms, newsrooms), and each program's levels link to its official page ("Checked against delta.com on Oct 7, 2026 ↗").
+  - Perks cover Delta, United, American, Southwest, Alaska Atmos, Aeroplan, JetBlue, Flying Blue, British Airways, Virgin Atlantic, Emirates, Singapore KrisFlyer / PPS Club, Qatar, Turkish, Hilton, Marriott, IHG, Hyatt, Wyndham, Choice, ALL Accor, Leading Hotels, Omni, Avis, Hertz, and National. Every level, qualification rule, and perk was checked against each program's own pages (status pages, terms, newsrooms) on Oct 7, 2026 (Oct 8 for the airlines and hotels added last), and each program's levels link to its official page ("Checked against delta.com on Oct 7, 2026 ↗"). Free entry levels like Flying Blue Explorer are listed but not counted as a level to earn.
 - **Filter chips** above the list show All, Elite (programs where you hold status), Airlines, Hotels, Points, or Cars & lounges.
 - **Header tiles** are tappable: Elite statuses filters the list, Medallion jumps to your Delta progress, Vouchers jumps to your vouchers.
 - **Plan ahead** (under the Medallion bar): drag to add expected MQDs (and Delta card spend) and see which tier you'd reach or keep. It's a preview only and isn't saved.
@@ -137,7 +137,7 @@ Use **Export as text** at the bottom to save an easy-to-read `.txt` summary of y
 | `manifest.json` | Install-to-home-screen metadata |
 | `sw.js` | Service worker that caches the app for offline use |
 | `icon.svg`, `icon-*.png`, `apple-touch-icon.png` | App icons |
-| `tests/` | Screenshot-reader cases (`node tests/run-scan-tests.mjs`), the game's math (`node tests/run-game-tests.mjs`), household totals (`node tests/run-household-tests.mjs`), and welcome-bonus math and saving (`node tests/run-bonus-tests.mjs`) |
+| `tests/` | Screenshot-reader cases (`node tests/run-scan-tests.mjs`), the game's math (`node tests/run-game-tests.mjs`), household totals (`node tests/run-household-tests.mjs`), welcome-bonus math and saving (`node tests/run-bonus-tests.mjs`), and the status levels table (`node tests/run-levels-tests.mjs`) |
 
 ## Updating
 
