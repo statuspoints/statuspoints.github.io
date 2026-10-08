@@ -25,12 +25,13 @@
     --accent: #1B3A5C;
     --accent-2: #3A6EA5;
     --muted: #5D6876;
-    --faint: #8A929D;
+    --faint: #646D79;
     --line: #ECEAE3;
     --inset: #F6F5F0;
     --track: #E4E2DA;
     --field: #FFFFFF;
     --field-line: #D8D5CC;
+    --field-border: #858C97; /* text-entry edges: 3:1 against the field and the card */
     --chip-bg: rgba(23, 32, 43, .06);
     --dots: rgba(27, 58, 92, .32);
     --hover: rgba(27, 58, 92, .05);
@@ -77,12 +78,13 @@
       --accent: #7FA6D9;
       --accent-2: #B3CCEE;
       --muted: #97A3B5;
-      --faint: #66748A;
+      --faint: #8392A8;
       --line: #223046;
       --inset: #111A28;
       --track: #26354D;
       --field: #111A28;
       --field-line: #2D3C54;
+      --field-border: #62738E;
       --chip-bg: rgba(232, 236, 244, .08);
       --dots: rgba(127, 166, 217, .4);
       --hover: rgba(127, 166, 217, .08);
@@ -127,12 +129,13 @@
     --accent: #7FA6D9;
     --accent-2: #B3CCEE;
     --muted: #97A3B5;
-    --faint: #66748A;
+    --faint: #8392A8;
     --line: #223046;
     --inset: #111A28;
     --track: #26354D;
     --field: #111A28;
     --field-line: #2D3C54;
+    --field-border: #62738E;
     --chip-bg: rgba(232, 236, 244, .08);
     --dots: rgba(127, 166, 217, .4);
     --hover: rgba(127, 166, 217, .08);
@@ -253,9 +256,12 @@
     .stat-v .ring { display: none; }
     .stat-l .ring { display: inline-block; }
   }
+  @media (max-width: 359px) { /* "Platinum" and "Diamond" fit the tile on the narrowest phones */
+    .stat-v.tier { font-size: 13px; letter-spacing: -0.03em; }
+  }
   .ring .prog { transition: stroke-dashoffset .8s cubic-bezier(.2, .7, .2, 1); }
-  .stat-l { display: block; margin-top: 3px; font-size: 11.5px; line-height: 1.25; color: rgba(244, 247, 251, .72); }
-  .stat-l.warn { color: #FFC98A; font-weight: 650; }
+  .stat-l { display: block; margin-top: 3px; font-size: 11.5px; line-height: 1.25; color: rgba(244, 247, 251, .9); }
+  .stat-l.warn { color: #FFD9A8; font-weight: 650; }
 
   /* Sections */
   .sec-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 28px 2px 10px; }
@@ -378,7 +384,7 @@
   .av.x3 { font-size: 11px; letter-spacing: -0.01em; }
   .av svg { width: 20px; height: 20px; }
   .who { flex: 1; min-width: 0; }
-  .name { font-size: 15.5px; font-weight: 650; line-height: 1.3; letter-spacing: -0.01em; }
+  .name { font-size: 15.5px; font-weight: 650; line-height: 1.3; letter-spacing: -0.01em; overflow-wrap: anywhere; }
   .slines { display: grid; gap: 6px; margin-top: 6px; }
   .sline { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; min-width: 0; }
   .pill {
@@ -401,10 +407,11 @@
   .pill.t-plat { background: var(--t-plat-bg); color: var(--t-plat-fg); }
   .pill.t-diam { background: var(--t-diam-bg); color: var(--t-diam-fg); }
   .via { font-size: 12.5px; line-height: 1.35; color: var(--muted); overflow-wrap: anywhere; }
-  .sline.expired .pill { opacity: .55; text-decoration: line-through; }
+  .sline.expired .pill { background: var(--chip-bg); color: var(--muted); text-decoration: line-through; }
   .via .nw { white-space: nowrap; } /* keep "Sapphire Reserve", "thru 12/31/27" whole; wrap between them */
   .no-status { margin-top: 3px; font-size: 13px; color: var(--muted); }
-  .bal { flex: none; text-align: right; }
+  .bal { flex: 0 1 auto; min-width: 0; max-width: 46%; text-align: right; }
+  .bal .unit { overflow-wrap: anywhere; }
   .unit { margin-top: 2px; font-size: 11.5px; color: var(--muted); }
   .empty-row { padding: 26px 16px; text-align: center; font-size: 14px; color: var(--muted); }
 
@@ -580,7 +587,7 @@
   .credit-skipped { margin: 4px 0 10px; font-size: 12.5px; color: var(--muted); }
   .credit-skipped button { padding: 0; border: 0; background: none; color: var(--accent); font: inherit; cursor: pointer; }
   .credit-add { display: flex; flex-wrap: wrap; gap: 8px; padding: 8px 0 12px; }
-  .credit-add input, .credit-add select { min-width: 0; height: 40px; padding: 0 10px; border: 1px solid var(--field-line); border-radius: 10px; background: var(--field); color: var(--text); font: inherit; font-size: 16px; }
+  .credit-add input, .credit-add select { min-width: 0; height: 40px; padding: 0 10px; border: 1px solid var(--field-border); border-radius: 10px; background: var(--field); color: var(--text); font: inherit; font-size: 16px; }
   .credit-add input[name="name"] { flex: 1 1 160px; }
   .credit-add input[name="amount"] { flex: 0 1 90px; }
   .credits-fine { margin-top: 8px; }
@@ -693,7 +700,7 @@
   .goal-form label { font-size: 13px; font-weight: 600; }
   .goal-actions { display: flex; gap: 14px; justify-content: flex-end; margin: 8px 0 0; }
   .pace { margin-top: 4px; font-size: 12px; line-height: 1.35; color: var(--muted); }
-  .play-pick select { flex: 1; min-width: 0; height: 44px; padding: 0 10px; border: 1px solid var(--field-line); border-radius: 10px; background: var(--field); color: var(--text); font: inherit; font-size: 16px; }
+  .play-pick select { flex: 1; min-width: 0; height: 44px; padding: 0 10px; border: 1px solid var(--field-border); border-radius: 10px; background: var(--field); color: var(--text); font: inherit; font-size: 16px; }
   .combo { padding: 2px 8px; border-radius: 999px; background: linear-gradient(135deg, #C2410C, #BE185D); color: #fff; font-size: 11.5px; font-weight: 800; white-space: nowrap; animation: combo-pop .5s cubic-bezier(.2, 1.6, .4, 1) .7s both; }
   @keyframes combo-pop { from { transform: scale(0) rotate(-14deg); } }
   .game-chip.warn { background: var(--warn-soft); color: var(--warn-ink); }
@@ -809,13 +816,13 @@
   .drop-hint svg { width: 36px; height: 36px; color: var(--accent); }
   .scan-paste { margin-top: 12px; font-size: 13.5px; }
   .scan-paste summary { cursor: pointer; color: var(--accent); font-weight: 600; }
-  .scan-paste textarea { width: 100%; margin: 8px 0; padding: 10px 12px; border: 1px solid var(--field-line); border-radius: 12px; background: var(--field); color: var(--text); font: inherit; font-size: 16px; resize: vertical; }
+  .scan-paste textarea { width: 100%; margin: 8px 0; padding: 10px 12px; border: 1px solid var(--field-border); border-radius: 12px; background: var(--field); color: var(--text); font: inherit; font-size: 16px; resize: vertical; }
   .scan-result { display: grid; gap: 12px; }
   .scan-field { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 6px 10px; }
   .scan-field input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); }
   .scan-field label { font-size: 14px; font-weight: 600; }
   .scan-field .scan-control { grid-column: 2; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-  .scan-control input, .scan-control select { min-width: 0; height: 40px; padding: 0 10px; border: 1px solid var(--field-line); border-radius: 10px; background: var(--field); color: var(--text); font: inherit; font-size: 16px; }
+  .scan-control input, .scan-control select { min-width: 0; height: 40px; padding: 0 10px; border: 1px solid var(--field-border); border-radius: 10px; background: var(--field); color: var(--text); font: inherit; font-size: 16px; }
   .scan-control input { flex: 1 1 140px; }
   .scan-control small { flex-basis: 100%; font-size: 12.5px; color: var(--muted); }
   .scan-alt { min-height: 28px; padding: 0 10px; border: 1px dashed var(--field-line); border-radius: 999px; background: none; color: var(--accent); font: inherit; font-size: 12.5px; cursor: pointer; }
@@ -829,9 +836,13 @@
   .quick-name { display: grid; flex: 1; min-width: 0; }
   .quick-name span { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .quick-name small { font-size: 12px; color: var(--muted); }
-  .quick-input { width: 120px; height: 40px; padding: 0 10px; border: 1px solid var(--field-line); border-radius: 10px; background: var(--field); color: var(--text); font: inherit; font-size: 16px; font-variant-numeric: tabular-nums; text-align: right; }
+  .quick-input { width: 120px; height: 40px; padding: 0 10px; border: 1px solid var(--field-border); border-radius: 10px; background: var(--field); color: var(--text); font: inherit; font-size: 16px; font-variant-numeric: tabular-nums; text-align: right; }
   .quick-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
   .quick-unit { width: 44px; font-size: 12px; color: var(--muted); }
+  @media (max-width: 379px) {
+    .quick-input { width: 96px; }
+    .quick-unit { width: auto; }
+  }
   .worth { display: block; margin: 2px 0 0; padding: 0; border: 0; background: none; color: var(--accent); font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; }
   .worth-total { margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.02em; }
   .worth-list { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
@@ -886,7 +897,7 @@
   }
   .range::-moz-range-track { height: 6px; border-radius: 999px; background: var(--track); }
   .range::-moz-range-thumb { width: 22px; height: 22px; border: 2.5px solid var(--accent); border-radius: 50%; background: var(--card); box-shadow: 0 2px 8px rgba(0, 0, 0, .22); }
-  .range:focus-visible { outline: none; }
+  .range:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 8px; }
   .range:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 5px var(--accent-soft); }
   .plan-result { margin: 0; font-size: 13px; color: var(--muted); }
   .plan-result strong { color: var(--text); font-weight: 700; }
@@ -960,28 +971,29 @@
   }
   .cc:active { transform: scale(.98); }
   .cc[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--card), 0 0 0 4.5px var(--accent), 0 6px 16px -8px rgba(0, 0, 0, .5); }
+  .cc:focus-visible { outline: 2px solid var(--text); outline-offset: 6px; } /* outside the selected ring, in another color */
   .cc-top { display: flex; align-items: center; justify-content: space-between; height: 20px; }
   .cc-emv { width: 22px; height: 16px; border-radius: 4px; background: linear-gradient(135deg, #F1DFA6, #B9974F); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .12); }
   .cc-check { display: none; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--card); color: var(--accent); box-shadow: 0 1px 3px rgba(0, 0, 0, .3); }
   .cc-check svg { width: 12px; height: 12px; }
   .cc[aria-pressed="true"] .cc-check { display: grid; }
   .cc-name { display: -webkit-box; overflow: hidden; font-size: 12.5px; font-weight: 700; line-height: 1.2; letter-spacing: -0.005em; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
-  .cc-perks { display: block; overflow: hidden; margin-top: 2px; font-size: 10.5px; line-height: 1.25; opacity: .8; white-space: nowrap; text-overflow: ellipsis; }
+  .cc-perks { display: block; overflow: hidden; margin-top: 2px; font-size: 11.5px; line-height: 1.25; white-space: nowrap; text-overflow: ellipsis; }
   .tone-platinum { --c1: #F1F2F4; --c2: #A9B0B9; color: #1C232C; }
   .tone-gold { --c1: #F3DA97; --c2: #BE9443; color: #372707; }
   .tone-black { --c1: #454A52; --c2: #121418; }
   .tone-sapphire { --c1: #2A4A7A; --c2: #0C1A33; }
-  .tone-blue { --c1: #4A88CC; --c2: #1D4F8A; }
-  .tone-slate { --c1: #7F8DA2; --c2: #465468; }
-  .tone-bronze { --c1: #D3B78F; --c2: #8C6D4B; color: #2B1E10; }
-  .tone-green { --c1: #74AC8E; --c2: #2E5E47; }
+  .tone-blue { --c1: #3A76B8; --c2: #1D4F8A; }
+  .tone-slate { --c1: #627189; --c2: #465468; }
+  .tone-bronze { --c1: #D3B78F; --c2: #A98864; color: #2B1E10; }
+  .tone-green { --c1: #4E8A6B; --c2: #2E5E47; }
   .card-search {
     display: block;
     width: 100%;
     height: 42px;
     margin: 0 0 16px;
     padding: 0 12px 0 38px;
-    border: 1px solid var(--field-line);
+    border: 1px solid var(--field-border);
     border-radius: 12px;
     background: var(--field) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%238A929D' stroke-width='1.7' stroke-linecap='round'%3E%3Ccircle cx='7' cy='7' r='4.5'/%3E%3Cpath d='M10.5 10.5L14 14'/%3E%3C/svg%3E") no-repeat 12px 50% / 16px 16px;
     color: var(--text);
@@ -1057,7 +1069,7 @@
     height: 44px;
     margin: 0;
     padding: 0 12px;
-    border: 1px solid var(--field-line);
+    border: 1px solid var(--field-border);
     border-radius: 12px;
     background: var(--field);
     color: var(--text);
@@ -1137,7 +1149,8 @@
   .sl-head { margin: 0 2px 4px; font-size: 11.5px; color: var(--muted); }
   .sl + .sl { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line); }
   .status-edit .add-line { display: inline-block; margin: 6px -4px -6px; }
-  .sheet-actions { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
+  .sheet-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; row-gap: 10px; margin-top: 4px; }
+  .sheet-actions .add, .sheet-actions .btn-secondary { height: auto; min-height: 44px; padding-block: 8px; line-height: 1.25; }
   .sheet-actions .spacer { flex: 1; }
   .fine { margin: 0; font-size: 12px; color: var(--muted); }
   .cards-status { min-height: 1.45em; margin: 0; font-size: 13.5px; font-weight: 600; color: var(--accent); }
@@ -1262,7 +1275,7 @@
     max-width: 200px;
     height: 40px;
     padding: 0 10px;
-    border: 1px solid var(--field-line);
+    border: 1px solid var(--field-border);
     border-radius: 10px;
     background: var(--field);
     color: var(--text);
@@ -1274,6 +1287,7 @@
 
   /* Tappable program (opens its detail sheet) */
   .who-open {
+    min-width: 0;
     display: flex;
     align-items: flex-start;
     gap: 12px;
@@ -1327,7 +1341,7 @@
     min-width: 0;
     height: 44px;
     padding: 0 12px;
-    border: 1px solid var(--field-line);
+    border: 1px solid var(--field-border);
     border-radius: 12px;
     background: var(--field);
     color: var(--text);
@@ -1343,7 +1357,7 @@
     width: 100%;
     min-height: 64px;
     padding: 10px 12px;
-    border: 1px solid var(--field-line);
+    border: 1px solid var(--field-border);
     border-radius: 12px;
     background: var(--field);
     color: var(--text);
@@ -1594,7 +1608,7 @@
       <p class="setup-sub">You can add your status levels, rename, reorder, or add any other program later with Edit.</p>
       <input class="card-search program-search" id="program-search" type="search" placeholder="Search programs (e.g. Emirates, Hyatt)" aria-label="Search programs" autocomplete="off">
       <div id="catalog"></div>
-      <p class="no-match" id="program-no-match" hidden>No program by that name — you can add any program later with Edit.</p>
+      <p class="no-match" id="program-no-match" role="status" hidden>No program by that name — you can add any program later with Edit.</p>
       <div class="setup-cards">
         <h3>Your cards <span>(optional)</span></h3>
         <p class="setup-sub">Pick the cards you have and the statuses they come with are filled in for you.</p>
@@ -2857,7 +2871,8 @@
   const timeFmt = new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit' });
   const monthDayFmt = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' });
   const clone = (v) => JSON.parse(JSON.stringify(v));
-  const str = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
+  const initial = (name) => (Array.from(name.trim())[0] || '?').toUpperCase(); // a whole emoji, not half of one
+  const str = (v, max) => (typeof v === 'string' ? Array.from(v.trim()).slice(0, max).join('') : ''); // by character, never halving an emoji
   const splitParts = (text) => text.split('·').map((part) => part.trim()).filter(Boolean);
   const sameText = (a, b) => splitParts(a).join('·').toLowerCase() === splitParts(b).join('·').toLowerCase();
   const plural = (n, word, many = `${word}s`) => `${n} ${n === 1 ? word : many}`;
@@ -2885,6 +2900,22 @@
     if (say.parentNode !== topLayer()) topLayer().append(say);
     say.textContent = '';
     setTimeout(() => { say.textContent = text; }, 60); // a separate change, so it's read even if the text repeats
+  }
+
+  // Re-rendering replaces the control you just used; this puts focus back on its replacement (same id or data-*
+  // attributes), so keyboard and screen-reader users stay where they were.
+  function keepFocus(render) {
+    const el = document.activeElement;
+    const key = el && el !== document.body ? focusKey(el) : null;
+    render();
+    if (!key || (document.activeElement && document.activeElement !== document.body && document.activeElement.isConnected)) return;
+    const next = document.querySelector(key);
+    if (next) next.focus({ preventScroll: true });
+  }
+  function focusKey(el) {
+    if (el.id) return `#${CSS.escape(el.id)}`;
+    const attrs = Object.keys(el.dataset).map((k) => `[data-${k.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)}="${CSS.escape(el.dataset[k])}"]`).join('');
+    return attrs ? `${el.tagName.toLowerCase()}${attrs}` : null;
   }
 
   function svgIcon(markup) {
@@ -3018,6 +3049,11 @@
   /* ---------- State & persistence ---------- */
 
   const isCount = (v) => typeof v === 'number' && Number.isFinite(v) && v >= 0;
+  // A backup or share link could carry keys like "__proto__" or a program id like "constructor", which on a plain map
+  // would reach Object.prototype and break the page. Such keys are skipped, and such ids aren't valid program ids.
+  const UNSAFE_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+  const ownEntries = (o) => Object.entries(o).filter(([k]) => !UNSAFE_KEYS.has(k));
+  const reservedId = (id) => id in Object.prototype || id in Array.prototype || id in Function.prototype;
 
   function cleanPrograms(list) {
     const seen = new Set();
@@ -3025,7 +3061,7 @@
     for (const p of list) {
       if (out.length >= 200) break; // no real tracker has more; keeps a hostile import from flooding the page
       const name = str(p && p.name, 60);
-      if (!name || typeof p.id !== 'string' || !/^[a-z0-9][a-z0-9-]{0,39}$/.test(p.id) || seen.has(p.id)) continue;
+      if (!name || typeof p.id !== 'string' || !/^[a-z0-9][a-z0-9-]{0,39}$/.test(p.id) || reservedId(p.id) || seen.has(p.id)) continue;
       seen.add(p.id);
       const program = {
         id: p.id,
@@ -3034,15 +3070,16 @@
         status: (Array.isArray(p.status) ? p.status : [])
           .map((line) => {
             const clean = { tier: str(line && line.tier, 80), via: str(line && line.via, 80) };
-            if (line && typeof line.card === 'string') clean.card = line.card; // added by a card preset
+            if (line && typeof line.card === 'string' && CARD_BY_ID[line.card]) clean.card = line.card; // added by a card preset
             const exp = line && typeof line.exp === 'string' && parseISODate(line.exp) ? line.exp : thruDate(clean.via);
             if (exp) clean.exp = exp; // status expiration (YYYY-MM-DD)
             return clean;
           })
-          .filter((line) => line.tier || line.via),
+          .filter((line) => line.tier || line.via)
+          .slice(0, 20), // more than any real program needs
       };
       if (p.medallion === true) program.medallion = true;
-      if (typeof p.addedBy === 'string') program.addedBy = p.addedBy; // created by a card preset
+      if (typeof p.addedBy === 'string' && CARD_BY_ID[p.addedBy]) program.addedBy = p.addedBy; // created by a card preset
       out.push(program);
     }
     return out;
@@ -3098,6 +3135,16 @@
     return added;
   }
 
+  // Data kept per program for programs that aren't on the list (left by a hostile or hand-edited file) is dropped,
+  // so it can't pile up in storage, backups, and share links. "mqd" and "prog:<id>" / "<id>+alt" keys belong to programs.
+  function pruneOrphans(s) {
+    const ids = new Set(s.programs.map((p) => p.id));
+    const owner = (key) => key.replace(/^prog:/, '').replace(/\+alt$/, '');
+    for (const map of [s.balances, s.history, s.memos, s.members, s.cpp, s.activity, s.goals, s.progress, s.updated, s.game.confirmed]) {
+      for (const key of Object.keys(map)) if (key !== 'mqd' && !ids.has(owner(key))) delete map[key];
+    }
+  }
+
   // Brings each card you hold in line with today's CARDS: statuses it no longer gives come off, new ones go on,
   // and lines that still match (including any end date you added) stay as they are. Runs on every load.
   function syncCards(s) {
@@ -3145,10 +3192,10 @@
     if (!['programs', 'balances', 'vouchers', 'mqd'].some((k) => k in raw)) return null;
     const s = { programs: null, view: 'detailed', cards: [], renewals: {}, creditsUsed: {}, creditsSkipped: {}, customCredits: {}, notes: '', memos: {}, balances: {}, history: {}, cpp: {}, hideValues: false, activity: {}, mqd: 0, progress: {}, members: {}, updated: {}, backedUp: '', game: { xp: 0, scans: 0, best: 0, weeks: [], badges: {}, confirmed: {}, log: [] }, goals: {}, vouchers: [] };
     if (raw.balances && typeof raw.balances === 'object') {
-      for (const [id, v] of Object.entries(raw.balances)) if (isCount(v)) s.balances[id] = Math.floor(v);
+      for (const [id, v] of ownEntries(raw.balances)) if (isCount(v)) s.balances[id] = Math.floor(v);
     }
     if (raw.history && typeof raw.history === 'object') { // [date, balance] pairs per program, oldest first
-      for (const [id, list] of Object.entries(raw.history)) {
+      for (const [id, list] of ownEntries(raw.history)) {
         if (!Array.isArray(list)) continue;
         const clean = list.filter((e) => Array.isArray(e) && typeof e[0] === 'string' && parseISODate(e[0]) && isCount(e[1]))
           .map(([d, v, src]) => (src === 's' || src === 't' ? [d, Math.floor(v), src] : [d, Math.floor(v)]))
@@ -3157,13 +3204,13 @@
       }
     }
     if (raw.creditsUsed && typeof raw.creditsUsed === 'object') { // "card:credit" → the period it was used in
-      for (const [k, v] of Object.entries(raw.creditsUsed)) if (typeof v === 'string' && v.length <= 20) s.creditsUsed[k] = v;
+      for (const [k, v] of ownEntries(raw.creditsUsed)) if (typeof v === 'string' && v.length <= 20) s.creditsUsed[k] = v;
     }
     if (raw.creditsSkipped && typeof raw.creditsSkipped === 'object') { // credits you've chosen not to track
-      for (const [k, v] of Object.entries(raw.creditsSkipped)) if (v === true) s.creditsSkipped[k] = true;
+      for (const [k, v] of ownEntries(raw.creditsSkipped)) if (v === true) s.creditsSkipped[k] = true;
     }
     if (raw.customCredits && typeof raw.customCredits === 'object') { // credits you added: card → [[id, name, $, period]]
-      for (const [cardId, list] of Object.entries(raw.customCredits)) {
+      for (const [cardId, list] of ownEntries(raw.customCredits)) {
         if (!CARD_BY_ID[cardId] || !Array.isArray(list)) continue;
         const clean = list.filter((c) => Array.isArray(c) && typeof c[0] === 'string' && str(c[1], 60) && isCount(c[2]) && Object.hasOwn(CREDIT_PERIODS, c[3]))
           .slice(0, 30).map(([id, name, amount, period]) => [id.slice(0, 20), str(name, 60), Math.round(amount * 100) / 100, period]);
@@ -3171,26 +3218,26 @@
       }
     }
     if (raw.cpp && typeof raw.cpp === 'object') { // your own cents-per-point value per program
-      for (const [id, v] of Object.entries(raw.cpp)) if (typeof v === 'number' && v > 0 && v <= 100) s.cpp[id] = v;
+      for (const [id, v] of ownEntries(raw.cpp)) if (typeof v === 'number' && v > 0 && v <= 100) s.cpp[id] = v;
     }
     if (raw.hideValues === true) s.hideValues = true;
     if (raw.view === 'simple') s.view = 'simple'; // program list: 'simple' (name, status, balance) or 'detailed'
     if (raw.goals && typeof raw.goals === 'object') { // what you're saving each program's points for
-      for (const [id, g] of Object.entries(raw.goals)) {
+      for (const [id, g] of ownEntries(raw.goals)) {
         if (g && isCount(g.target) && g.target > 0) s.goals[id] = { target: Math.min(Math.floor(g.target), MAX_VALUE), label: str(g.label, 60) };
       }
     }
     if (raw.memos && typeof raw.memos === 'object') { // a free-text note per program
-      for (const [id, v] of Object.entries(raw.memos)) { const memo = str(v, 300); if (memo) s.memos[id] = memo; }
+      for (const [id, v] of ownEntries(raw.memos)) { const memo = str(v, 300); if (memo) s.memos[id] = memo; }
     }
     if (raw.members && typeof raw.members === 'object') { // loyalty member / account numbers
-      for (const [id, v] of Object.entries(raw.members)) { const number = str(v, 40); if (number) s.members[id] = number; }
+      for (const [id, v] of ownEntries(raw.members)) { const number = str(v, 40); if (number) s.members[id] = number; }
     }
     if (raw.progress && typeof raw.progress === 'object') { // this year's nights / PQP / Loyalty Points toward status
-      for (const [id, v] of Object.entries(raw.progress)) if (isCount(v)) s.progress[id] = Math.floor(v);
+      for (const [id, v] of ownEntries(raw.progress)) if (isCount(v)) s.progress[id] = Math.floor(v);
     }
     if (raw.activity && typeof raw.activity === 'object') { // last earn/redeem per program, for points expiration
-      for (const [id, v] of Object.entries(raw.activity)) if (parseISODate(v)) s.activity[id] = v;
+      for (const [id, v] of ownEntries(raw.activity)) if (parseISODate(v)) s.activity[id] = v;
     }
     if (parseISODate(raw.backedUp)) s.backedUp = raw.backedUp; // last JSON backup
     if (raw.game && typeof raw.game === 'object') { // screenshot XP, scans, weeks with an update, badges earned
@@ -3200,10 +3247,10 @@
       if (isCount(g.best)) s.game.best = Math.floor(g.best);
       if (Array.isArray(g.weeks)) s.game.weeks = g.weeks.filter((w) => Number.isInteger(w) && w > 0).slice(-104);
       if (g.badges && typeof g.badges === 'object') {
-        for (const [id, d] of Object.entries(g.badges)) if (/^[a-z0-9]{1,20}$/.test(id) && parseISODate(d)) s.game.badges[id] = d;
+        for (const [id, d] of ownEntries(g.badges)) if (/^[a-z0-9]{1,20}$/.test(id) && parseISODate(d)) s.game.badges[id] = d;
       }
       if (g.confirmed && typeof g.confirmed === 'object') { // programs re-checked with no change: XP once a day
-        for (const [id, d] of Object.entries(g.confirmed)) if (typeof id === 'string' && parseISODate(d)) s.game.confirmed[id] = d;
+        for (const [id, d] of ownEntries(g.confirmed)) if (typeof id === 'string' && parseISODate(d)) s.game.confirmed[id] = d;
       }
       if (Array.isArray(g.log)) { // recent collects, newest first
         s.game.log = g.log.filter((e) => e && parseISODate(e.d) && typeof e.name === 'string').slice(0, LOG_MAX)
@@ -3211,16 +3258,17 @@
       }
     }
     if (raw.updated && typeof raw.updated === 'object') { // when each balance was last changed (YYYY-MM-DD)
-      for (const [id, v] of Object.entries(raw.updated)) if (parseISODate(v)) s.updated[id] = v;
+      for (const [id, v] of ownEntries(raw.updated)) if (parseISODate(v)) s.updated[id] = v;
     }
     if (isCount(raw.mqd)) s.mqd = Math.floor(raw.mqd);
     if (Array.isArray(raw.vouchers)) {
       s.vouchers = raw.vouchers
-        .filter((v) => v && typeof v.name === 'string')
+        .filter((v) => v && str(v.name, 80))
+        .slice(0, 200) // a hostile import can't flood the page
         .map((v) => ({
-          name: v.name,
-          note: typeof v.note === 'string' ? v.note : '',
-          exp: typeof v.exp === 'string' ? v.exp : '',
+          name: str(v.name, 80),
+          note: str(v.note, 120),
+          exp: typeof v.exp === 'string' && parseISODate(v.exp) ? v.exp : '',
         }));
       sortVouchers(s.vouchers);
     }
@@ -3228,11 +3276,12 @@
       s.programs = cleanPrograms(raw.programs);
       s.cards = Array.isArray(raw.cards) ? [...new Set(raw.cards.filter((id) => CARD_BY_ID[id]))] : [];
       if (raw.renewals && typeof raw.renewals === 'object') { // annual-fee date per card you hold (month and day repeat)
-        for (const [id, v] of Object.entries(raw.renewals)) if (s.cards.includes(id) && parseISODate(v)) s.renewals[id] = v;
+        for (const [id, v] of ownEntries(raw.renewals)) if (s.cards.includes(id) && parseISODate(v)) s.renewals[id] = v;
       }
       s.notes = str(raw.notes, 400);
       if (!('cards' in raw)) upgradeLegacyExample(s); // saved before card presets existed
       else syncCards(s);
+      pruneOrphans(s);
     } else {
       // Saved before the program list was editable: keep the list those users already had.
       Object.assign(s, exampleSetup());
@@ -3288,7 +3337,10 @@
       const stash = `status-tracker-unreadable:${storageKey()}`; // not under KEY, so it's never mistaken for a person
       try { if (raw && !localStorage.getItem(stash)) localStorage.setItem(stash, raw); } catch (err) { /* storage unavailable */ }
     }
-    return { programs: null, view: 'detailed', cards: [], renewals: {}, creditsUsed: {}, creditsSkipped: {}, customCredits: {}, notes: '', memos: {}, balances: {}, history: {}, cpp: {}, hideValues: false, activity: {}, mqd: 0, progress: {}, members: {}, updated: {}, backedUp: '', game: { xp: 0, scans: 0, best: 0, weeks: [], badges: {}, confirmed: {}, log: [] }, goals: {}, vouchers: [] }; // null programs → first-run setup
+    return blankState(); // null programs → first-run setup
+  }
+  function blankState() {
+    return { programs: null, view: 'detailed', cards: [], renewals: {}, creditsUsed: {}, creditsSkipped: {}, customCredits: {}, notes: '', memos: {}, balances: {}, history: {}, cpp: {}, hideValues: false, activity: {}, mqd: 0, progress: {}, members: {}, updated: {}, backedUp: '', game: { xp: 0, scans: 0, best: 0, weeks: [], badges: {}, confirmed: {}, log: [] }, goals: {}, vouchers: [] };
   }
 
   const state = load();
@@ -3380,12 +3432,16 @@
     scheduleSave();
   }
 
-  // Empty input clears the value; input with no digits at all (e.g. "abc") is ignored.
+  // Empty input clears the value. Otherwise one number: "84,500", "84 500", "84.500", "$1,234", "1.5k", "2M",
+  // "84,500 miles". Anything else (a date, a minus sign, two numbers, "abc") returns null and changes nothing.
   function parseEntry(raw) {
-    if (raw.trim() === '') return { value: null };
-    const digits = raw.replace(/\D/g, '');
-    if (!digits) return null;
-    return { value: Math.min(Number(digits), MAX_VALUE) };
+    const text = String(raw).normalize('NFKC').trim();
+    if (text === '') return { value: null };
+    const m = /^\$?\s*(\d{1,3}(?:[,. \u00a0\u202f]\d{3})+|\d+)(?:[.,](\d{1,2}))?\s*([km])?\s*(?:miles?|points?|pts|avios|mi|mqds?)?\.?$/i.exec(text);
+    if (!m) return null;
+    let value = Number(m[1].replace(/\D/g, '')) + (m[2] ? Number(`0.${m[2]}`) : 0);
+    if (m[3]) value *= /k/i.test(m[3]) ? 1e3 : 1e6;
+    return { value: Math.min(Math.round(value), MAX_VALUE) };
   }
 
   function paintNum(btn) {
@@ -3437,6 +3493,7 @@
       if (commit) {
         const parsed = parseEntry(input.value);
         if (parsed && parsed.value !== before) setField(field, parsed.value);
+        else if (!parsed) showToast('Couldn’t read that number, so nothing changed');
       }
       paintNum(btn);
       input.replaceWith(btn);
@@ -3824,7 +3881,8 @@
     enter($('#programs'));
   });
 
-  function renderPrograms() {
+  function renderPrograms(...args) { keepFocus(() => renderProgramsNow(...args)); }
+  function renderProgramsNow() {
     const list = state.programs;
     const medallionId = (medallionProgram() || {}).id;
     renderFilters();
@@ -4368,13 +4426,20 @@
   const OCR_BASE = 'https://cdn.jsdelivr.net/npm/';
   let ocrWorker = null;
   let ocrProgress = () => {}; // set by the scan in progress
+  const OCR_CACHE = 'status-tracker-ocr-v2'; // same name as in sw.js
   // Gives up after 2 minutes (a stalled download) so the next scan can try again; a reader that finishes starting
   // after that is shut down rather than left running beside the next one.
   function loadOCR() {
     if (ocrWorker) return ocrWorker;
     ocrWorker = new Promise((resolve, reject) => {
       let settled = false;
-      const fail = (err) => { if (settled) return; settled = true; clearTimeout(timer); reject(err); };
+      const fail = (err) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        if (window.caches) caches.delete(OCR_CACHE).catch(() => {}); // a bad cached copy mustn't stick
+        reject(err);
+      };
       const timer = setTimeout(() => fail(new Error('the text reader took too long to load')), 120000);
       const start = () => window.Tesseract.createWorker('eng', 1, {
         workerPath: `${OCR_BASE}tesseract.js@5.1.1/dist/worker.min.js`,
@@ -4392,6 +4457,8 @@
       const script = document.createElement('script');
       script.src = `${OCR_BASE}tesseract.js@5.1.1/dist/tesseract.min.js`;
       script.crossOrigin = 'anonymous'; // a readable response, so the service worker can keep it for offline use
+      // The exact published file (checked against the npm package): a changed copy from the CDN won't run.
+      script.integrity = 'sha384-GJqSu7vueQ9qN0E9yLPb3Wtpd7OrgK8KmYzC8T1IysG1bcvxvIO4qtYR/D3A991F';
       script.onload = start;
       script.onerror = () => { script.remove(); fail(new Error('could not load the text reader')); };
       document.head.append(script);
@@ -5630,9 +5697,9 @@
       if (!p.unit) continue;
       const value = state.balances[p.id];
       rows.push(quickRow(p, `bal:${p.id}`, p.name, p.unit, value, state.updated[p.id]));
-      if (p === medallion) rows.push(quickRow(p, 'mqd', `${p.name} MQDs (${mqdYear()})`, 'MQDs', state.mqd, state.updated.mqd));
+      if (p === medallion) rows.push(quickRow(p, 'mqd', `MQDs ${mqdYear()}`, 'MQDs', state.mqd, state.updated.mqd));
     }
-    if (medallion && !medallion.unit) rows.push(quickRow(medallion, 'mqd', `${medallion.name} MQDs (${mqdYear()})`, 'MQDs', state.mqd, state.updated.mqd));
+    if (medallion && !medallion.unit) rows.push(quickRow(medallion, 'mqd', `MQDs ${mqdYear()}`, 'MQDs', state.mqd, state.updated.mqd));
     $('#quick-list').replaceChildren(...rows);
     quickSheet.showModal();
     const first = $('#quick-list input');
@@ -5658,10 +5725,11 @@
   $('#quick-form').addEventListener('submit', (e) => {
     e.preventDefault();
     let changed = 0;
+    let unreadable = 0;
     const balancesBefore = { ...state.balances };
     for (const input of quickSheet.querySelectorAll('[data-quick]')) {
       const parsed = parseEntry(input.value);
-      if (!parsed) continue; // no digits at all: leave it as it was
+      if (!parsed) { unreadable++; continue; } // not a number: leave it as it was, and say so
       const field = input.dataset.quick;
       const before = field === 'mqd' ? state.mqd : (state.balances[field.slice(4)] ?? null);
       const after = field === 'mqd' ? (parsed.value ?? 0) : parsed.value;
@@ -5670,7 +5738,8 @@
       changed++;
     }
     quickSheet.close();
-    if (!changed) { showToast('No changes'); return; }
+    if (unreadable) showToast(`Couldn’t read ${plural(unreadable, 'number')}, so ${unreadable === 1 ? 'it was' : 'they were'} left as before`);
+    if (!changed) { if (!unreadable) showToast('No changes'); return; }
     saveNow();
     renderPrograms();
     renderUpcoming();
@@ -6443,7 +6512,8 @@
         h('p', { class: 'fine' }, `${track.note} Counts start over each qualifying year; anything you earned is kept as a status with its end date.`)));
   }
 
-  function renderMember(p, editing) {
+  function renderMember(...args) { keepFocus(() => renderMemberNow(...args)); }
+  function renderMemberNow(p, editing) {
     const number = state.members[p.id] || '';
     const label = h('h3', { class: 'd-label' }, 'Member number');
     if (editing || !number) {
@@ -6567,7 +6637,8 @@
     return block;
   }
 
-  function renderDetailStatus(p) {
+  function renderDetailStatus(...args) { keepFocus(() => renderDetailStatusNow(...args)); }
+  function renderDetailStatusNow(p) {
     const blocks = [];
     if (p === medallionProgram()) {
       const { current } = medallionFor(state.mqd);
@@ -6996,7 +7067,8 @@
 
   // Calendar file (.ics) with an all-day event on each expiration date and alerts at 9 a.m. 30 days before,
   // 7 days before, and on the day — reminders that work even when the app is closed.
-  const icsText = (text) => text.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
+  const icsText = (text) => text.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,')
+    .replace(/\r\n|[\r\n\v\f\x1c-\x1e\x85\u2028\u2029]/g, '\\n').replace(/[\x00-\x08\x0e-\x1f\x7f]/g, '');
   // Lines longer than 75 bytes continue on the next line after a space (RFC 5545), never mid-character.
   const utf8Size = (ch) => { const c = ch.codePointAt(0); return c < 0x80 ? 1 : c < 0x800 ? 2 : c < 0x10000 ? 3 : 4; };
   const icsFold = (line) => {
@@ -7169,7 +7241,7 @@
       h('span', null,
         h('span', { class: 'cc-name' }, c.label || c.name),
         h('span', { class: 'cc-perks' }, perksLine(c)))))))).concat(
-      h('p', { class: 'no-match', hidden: '' }, 'No cards match. You can still add any status by hand with Edit.'));
+      h('p', { class: 'no-match', role: 'status', hidden: '' }, 'No cards match. You can still add any status by hand with Edit.'));
   }
 
   // Matches every word typed against the card's name and issuer ("chase pref", "amex plat").
@@ -7653,9 +7725,19 @@
     Object.assign(state, next);
     editMode = false;
     rollOver();
-    saveNow();
     intro = true;
-    renderAll();
+    try {
+      renderAll();
+    } catch (err) { // data this version can't show: put everything back as it was, unsaved
+      console.error('Points & Status Tracker: could not show that data', err);
+      for (const key of Object.keys(state)) delete state[key];
+      Object.assign(state, previous);
+      intro = false;
+      renderAll();
+      showToast('Couldn’t open that data — your tracker is unchanged');
+      return;
+    }
+    saveNow();
     showToast(message, () => {
       Object.assign(state, previous);
       saveNow();
@@ -7807,8 +7889,21 @@
     $('#toast-undo').hidden = !onUndo;
     $('#toast-undo').textContent = actionLabel;
     $('#toast').classList.add('show');
+    toastMs = onUndo ? Math.max(ms, 10000) : ms;
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(hideToast, ms);
+    toastTimer = setTimeout(hideToast, toastMs);
+    // The control you used went away (a deleted row, a closed sheet): Undo takes focus so a keyboard can reach it.
+    if (onUndo && (!document.activeElement || document.activeElement === document.body)) $('#toast-undo').focus({ preventScroll: true });
+  }
+  let toastMs = 5000;
+  // While you point at or focus the toast it stays; it goes a few seconds after you leave.
+  for (const type of ['mouseenter', 'focusin']) $('#toast').addEventListener(type, () => clearTimeout(toastTimer));
+  for (const type of ['mouseleave', 'focusout']) {
+    $('#toast').addEventListener(type, () => {
+      if (!$('#toast').classList.contains('show')) return;
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(hideToast, Math.min(toastMs, 4000));
+    });
   }
 
   function hideToast() {
@@ -7843,7 +7938,7 @@
     const me = activePerson();
     $('#person-chip').hidden = !many;
     if (many) {
-      $('#person-chip').replaceChildren(h('span', { class: 'person-dot', 'aria-hidden': 'true' }, personName(me).charAt(0).toUpperCase()),
+      $('#person-chip').replaceChildren(h('span', { class: 'person-dot', 'aria-hidden': 'true' }, initial(personName(me))),
         h('span', { class: 'person-chip-name' }, personName(me)), svgIcon(ICON.chevron));
       $('#person-chip').setAttribute('aria-label', `Showing ${whose(me)} tracker. Switch person`);
     }
@@ -7861,7 +7956,7 @@
       }
       return h('li', { class: 'person' },
         h('button', { type: 'button', class: 'person-pick', 'data-person': person.id, 'aria-pressed': String(active) },
-          h('span', { class: 'person-dot', 'aria-hidden': 'true' }, personName(person).charAt(0).toUpperCase()),
+          h('span', { class: 'person-dot', 'aria-hidden': 'true' }, initial(personName(person))),
           h('span', { class: 'person-body' }, h('span', { class: 'person-name' }, personName(person)), h('small', null, summary))),
         h('button', { type: 'button', class: 'icon-btn', 'data-rename': person.id, 'aria-label': `Rename ${personName(person)}` }, svgIcon(ICON.pencil)),
         active ? h('span', { class: 'icon-spacer', 'aria-hidden': 'true' }) : h('button', { type: 'button', class: 'icon-btn', 'data-remove': person.id, 'aria-label': `Remove ${personName(person)} and their tracker` }, svgIcon(ICON.x)));
@@ -8039,7 +8134,8 @@
   let addingCreditFor = null; // card id whose "add a credit" form is open
   const creditOpen = new Map(); // card id → open/closed once you've tapped it (otherwise: open if something resets soon)
 
-  function renderCredits() {
+  function renderCredits(...args) { keepFocus(() => renderCreditsNow(...args)); }
+  function renderCreditsNow() {
     const section = $('#credits-section');
     section.hidden = !state.programs || !state.cards.length;
     if (section.hidden) return;
@@ -8065,7 +8161,7 @@
               h('small', null, `${creditMoney(x.credit.amount)} ${CREDIT_PERIODS[x.credit.period]} · ${x.period.label}${x.credit.note ? ` · ${x.credit.note}` : ''}`),
               soon ? h('small', { class: 'warn' }, x.days === 0 ? 'Last day to use it is today' : `Use by ${dateFmt.format(x.period.end)} · ${plural(x.days, 'day')} left`) : null),
             h('button', { type: 'button', class: 'credit-use', 'data-credit-use': x.key, 'aria-pressed': String(x.used),
-              'aria-label': `${x.credit.name}: ${x.used ? 'used' : 'not used yet'} this period` }, x.used ? '✓ Used' : 'Mark used'),
+              'aria-label': `${x.used ? 'Used' : 'Mark used'}: ${x.credit.name}` }, x.used ? '✓ Used' : 'Mark used'),
             h('button', { type: 'button', class: 'icon-btn', 'data-credit-skip': x.key, 'aria-label': `${x.credit.custom ? 'Remove' : 'Stop tracking'} ${x.credit.name}`, title: x.credit.custom ? 'Remove' : 'Don’t track this one' }, svgIcon(ICON.x)));
         })) : h('p', { class: 'credit-skipped' }, CREDITS[card.id] ? 'Every credit here is hidden.' : 'No statement credits listed for this card — add any you get.'),
         skipped.length ? h('p', { class: 'credit-skipped' }, 'Not tracking: ', skipped.flatMap((x, i) => [i ? ', ' : null,
@@ -8128,7 +8224,9 @@
     if (!form) return;
     const cardId = form.dataset.creditForm;
     const name = str(form.elements.name.value, 60);
-    const amount = Math.round(Number(form.elements.amount.value.replace(',', '.').replace(/[^\d.]/g, '')) * 100) / 100;
+    let raw = form.elements.amount.value.trim().replace(/[$\s]/g, '');
+    raw = /,\d{1,2}$/.test(raw) && !raw.includes('.') ? raw.replace(',', '.') : raw.replace(/,/g, ''); // "12,50" vs "1,200"
+    const amount = /^\d+(\.\d{1,2})?$/.test(raw) ? Math.round(Number(raw) * 100) / 100 : 0;
     if (!name || !(amount > 0)) { form.elements[name ? 'amount' : 'name'].focus(); return; }
     const list = state.customCredits[cardId] || (state.customCredits[cardId] = []);
     list.push([`c${Math.random().toString(36).slice(2, 8)}`, name, Math.min(amount, 100000), form.elements.period.value]);
@@ -8264,7 +8362,21 @@
   $('#catalog-names').replaceChildren(...CATALOG_ITEMS.map((c) => h('option', { value: c.name })));
   renderToday();
   rollOver();
-  renderAll();
+  try {
+    renderAll();
+  } catch (err) {
+    // Saved data that breaks the page: set it aside (like unreadable data in load()) and open fresh, so the app,
+    // share links, and updates keep working.
+    console.error('Points & Status Tracker: could not show saved data', err);
+    try {
+      const raw = localStorage.getItem(storageKey());
+      const stash = `status-tracker-unreadable:${storageKey()}`;
+      if (raw && !localStorage.getItem(stash)) localStorage.setItem(stash, raw);
+    } catch (e) { /* storage unavailable */ }
+    for (const key of Object.keys(state)) delete state[key];
+    Object.assign(state, blankState());
+    renderAll();
+  }
   receiveFromLink();
 
   if (IS_STANDALONE && navigator.storage && navigator.storage.persist) {

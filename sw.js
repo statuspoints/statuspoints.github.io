@@ -6,7 +6,7 @@ const VERSION = 'v6';
 const CACHE = `status-tracker-shell-${VERSION}`;
 // The screenshot reader's files from jsDelivr (pinned versions, so they never change): kept across app updates so
 // scanning works offline after the first use, not only while the browser's HTTP cache happens to keep them.
-const OCR_CACHE = 'status-tracker-ocr-v1';
+const OCR_CACHE = 'status-tracker-ocr-v2'; // same name in index.html, which clears it if the scanner fails to load
 const SHELL = [
   './',
   './index.html',
@@ -37,7 +37,8 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   if (request.method !== 'GET') return;
   const url = new URL(request.url);
-  if (url.hostname === 'cdn.jsdelivr.net' && /@\d/.test(url.pathname)) { // a pinned file: cache-first, kept for good
+  // The scanner's pinned files only (exact versions, so they never change): cache-first, kept across updates.
+  if (url.hostname === 'cdn.jsdelivr.net' && /^\/npm\/(tesseract\.js@5\.1\.1|tesseract\.js-core@5\.1\.1|@tesseract\.js-data\/eng@1\.0\.0)\//.test(url.pathname)) {
     event.respondWith((async () => {
       const cache = await caches.open(OCR_CACHE);
       const hit = await cache.match(request);
