@@ -5854,10 +5854,11 @@
     const { shown, hidden } = householdWorth(people.list.length > 1 ? householdTrackers() : []);
     box.hidden = shown.length < 2;
     if (box.hidden) { box.replaceChildren(); return; }
-    box.replaceChildren(h('p', { class: 'worth-household-total' }, `Household ≈ ${money(shown.reduce((sum, t) => sum + t.worth, 0))}`),
+    box.replaceChildren(...[h('p', { class: 'worth-household-total' }, `Household ≈ ${money(shown.reduce((sum, t) => sum + t.worth, 0))}`),
       h('ul', { class: 'hh-list' }, shown.sort((a, b) => b.worth - a.worth).map((t) =>
         householdRow(t.person, money(t.worth), t.person.id === people.active ? 'Showing now' : null))),
-      hidden.length ? h('p', { class: 'fine' }, `Not counted: ${hidden.map((person) => householdName(person)).join(', ')} (dollar values hidden).`) : null);
+      hidden.length ? h('p', { class: 'fine' }, `Not counted: ${hidden.map((person) => householdName(person)).join(', ')} (dollar values hidden).`) : null]
+      .filter(Boolean)); // replaceChildren would print a null as "null"
   }
   function setHideValues(hide) {
     if (!state.programs) return;
@@ -6440,13 +6441,13 @@
       renderPrograms();
       showToast('Goal removed', () => { state.goals[p.id] = was; scheduleSave(); if (detailProgram() === p) renderGoal(p); renderPrograms(); });
     });
-    box.replaceChildren(head,
+    box.replaceChildren(...[head,
       h('p', { class: 'goal-title' }, h('b', null, goal.label || `${fmt(goal.target)} ${p.unit}`), left ? ` · ${fmt(left)} to go` : ' · reached!'),
       h('div', { class: 'goal-bar', role: 'progressbar', 'aria-label': `${goal.label || 'Goal'}: ${pct}%`, 'aria-valuemin': '0', 'aria-valuemax': '100', 'aria-valuenow': String(pct) },
         h('i', { style: `width:${pct}%` })),
       h('p', { class: 'fine' }, `${fmt(balance)} of ${fmt(goal.target)} ${p.unit} (${pct}%)`),
-      left ? coverLine(p, left) : null,
-      h('p', { class: 'goal-actions' }, change, remove));
+      left ? coverLine(p, left) : null, // null when reached, or no card points transfer here
+      h('p', { class: 'goal-actions' }, change, remove)].filter(Boolean));
   }
 
   // Bank points on your list that transfer to this program: one that covers the rest, or what they add up to.
