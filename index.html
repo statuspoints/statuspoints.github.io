@@ -591,6 +591,20 @@
   .credit-add input[name="name"] { flex: 1 1 160px; }
   .credit-add input[name="amount"] { flex: 0 1 90px; }
   .credits-fine { margin-top: 8px; }
+  /* A card's welcome bonus at the top of its credits */
+  .bonus-progress { display: grid; gap: 5px; margin: 0 0 10px; padding: 10px 12px; border-radius: 12px; background: var(--callout); }
+  .bonus-progress-name { font-size: 14px; font-weight: 650; }
+  .bonus-progress small { font-size: 12.5px; color: var(--muted); }
+  .bonus-progress.bonus-due-soon small { color: var(--warn); font-weight: 600; }
+  .bonus-progress.bonus-overdue small { color: var(--danger); font-weight: 600; }
+  .bonus-progress.bonus-met small, .bonus-progress.bonus-earned .bonus-progress-name { color: var(--good); }
+  .bonus-bar { height: 6px; border-radius: 999px; background: var(--track); overflow: hidden; }
+  .bonus-bar i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
+  .bonus-due-soon .bonus-bar i { background: var(--warn); }
+  .bonus-overdue .bonus-bar i { background: var(--danger); }
+  .bonus-met .bonus-bar i { background: var(--good); }
+  .bonus-progress-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; margin-top: 2px; }
+  .bonus-progress-actions .link { font-size: 13.5px; }
   .program-search { margin: 0 0 14px; }
   .cert-suggest { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px 0 4px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
   .cert-chip { min-height: 32px; padding: 0 12px; border: 1px dashed var(--field-line); border-radius: 999px; background: none; color: var(--accent); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
@@ -1169,10 +1183,32 @@
   .cards-renewals { display: grid; gap: 6px; padding-top: 14px; border-top: 1px solid var(--line); }
   .cards-renewals .cat-title { margin: 0; }
   .renewals { display: grid; gap: 10px; margin: 6px 0 0; padding: 0; list-style: none; }
-  .renewals li { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .renewals li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; }
   .renewal-name { display: grid; min-width: 0; font-size: 14.5px; font-weight: 600; }
   .renewal-name small { font-size: 12.5px; font-weight: 400; color: var(--muted); }
   .renewals .exp-input { flex: none; width: auto; max-width: 52%; }
+  /* Welcome bonus under each card in Your cards: a link, a one-line summary, or the fields */
+  .bonus-add { flex: 1 1 100%; margin: -4px -4px 0; font-size: 13.5px; text-align: left; }
+  .bonus-sum { display: flex; flex: 1 1 100%; flex-wrap: wrap; align-items: center; gap: 2px 8px; min-width: 0; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--inset); color: var(--text); font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
+  .bonus-sum b { font-weight: 650; }
+  .bonus-sum span { flex: 1 1 auto; min-width: 0; color: var(--muted); }
+  .bonus-sum svg { flex: none; width: 14px; height: 14px; margin-left: auto; color: var(--accent); }
+  .bonus-sum.bonus-due-soon span { color: var(--warn); font-weight: 600; }
+  .bonus-sum.bonus-overdue span { color: var(--danger); font-weight: 600; }
+  .bonus-sum.bonus-met span, .bonus-sum.bonus-earned span { color: var(--good); font-weight: 600; }
+  .bonus-sum:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .bonus-form { display: grid; flex: 1 1 100%; gap: 8px; min-width: 0; padding: 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--inset); }
+  .bonus-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .bonus-field { display: grid; gap: 3px; min-width: 0; font-size: 12px; font-weight: 600; color: var(--muted); }
+  .bonus-input { width: 100%; min-width: 0; height: 40px; padding: 0 10px; border: 1px solid var(--field-line); border-radius: 10px; background: var(--field); color: var(--text); font: inherit; font-size: 16px; }
+  .bonus-input::-webkit-date-and-time-value { text-align: left; }
+  .bonus-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .bonus-hint { margin: 0; font-size: 12.5px; color: var(--muted); }
+  .bonus-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+  .bonus-actions .bonus-done { margin-left: auto; } /* stays on the right, even on its own line on a narrow phone */
+  .bonus-actions .link { font-size: 14px; }
+  .bonus-earn { flex: none; min-height: 34px; padding: 0 12px; border: 0; border-radius: 999px; background: var(--good-soft); color: var(--good); font: inherit; font-size: 13.5px; font-weight: 650; cursor: pointer; }
+  .bonus-earn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
   /* Glanceable perks under each program's status */
   .perk-line { display: flex; align-items: flex-start; gap: 6px; margin-top: 7px; font-size: 12.5px; line-height: 1.4; color: var(--text); }
@@ -1273,6 +1309,9 @@
   .up-name { font-size: 14.5px; font-weight: 650; line-height: 1.3; }
   .up-sub { font-size: 12.5px; color: var(--muted); }
   .up-item .tag { flex: none; }
+  .up-item .bonus-ico.soon { background: var(--warn-soft); color: var(--warn); }
+  .up-item .bonus-ico.late { background: var(--danger-soft); color: var(--danger); }
+  .tag.bonus-later { background: var(--chip-bg); color: var(--muted); }
 
   /* Status expiration in the detail sheet */
   .exp-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); font-size: 13px; }
@@ -1588,6 +1627,7 @@
     <div class="install-body">
       <strong>New in your tracker</strong>
       <ul class="news-list">
+        <li><b>Welcome bonuses</b>: add a new card’s bonus under <b>Your cards</b> and see how much is left to spend, with reminders before the deadline.</li>
         <li><b>Scan &amp; collect</b>: drop or choose screenshots of your account pages (several at once works), watch them scan, and collect your points and status. Earn XP, combos, a weekly streak, and badges.</li>
         <li><b>Simple view</b> and <b>Type balances</b>: just points and status, updated in one go.</li>
         <li><b>Card credits</b>, <b>free night certificates</b>, and <b>what your points are worth</b>.</li>
@@ -3196,12 +3236,33 @@
     }
   }
 
-  // Takes a card's statuses off, plus any program a removed card created that is now empty with no balance.
+  // Takes a card's statuses (and its welcome bonus) off, plus any program a removed card created that is now empty
+  // with no balance.
   function removeCard(s, cardId) {
     s.cards = s.cards.filter((id) => id !== cardId);
+    if (s.bonuses) delete s.bonuses[cardId];
     for (const p of s.programs) p.status = p.status.filter((line) => line.card !== cardId);
     s.programs = s.programs.filter((p) => !(p.addedBy && !s.cards.includes(p.addedBy)
       && !p.status.length && s.balances[p.id] == null && !(s.members || {})[p.id] && (s.progress || {})[p.id] == null));
+  }
+
+  // Undo for removeCard: puts back just what it took (from `prev`, a copy from before), so anything changed since,
+  // like another card added, stays. The card returns to its place, its statuses to theirs, and its welcome bonus
+  // (even if you'd picked the card again in the meantime).
+  function restoreCard(s, prev, cardId) {
+    if (!prev.cards.includes(cardId)) return;
+    if (prev.bonuses && prev.bonuses[cardId] && !(s.bonuses && s.bonuses[cardId])) (s.bonuses || (s.bonuses = {}))[cardId] = clone(prev.bonuses[cardId]);
+    if (s.cards.includes(cardId)) return; // picked again since: its statuses are already back
+    s.cards.splice(Math.min(prev.cards.indexOf(cardId), s.cards.length), 0, cardId);
+    prev.programs.forEach((old, i) => {
+      if (!old.status.some((line) => line.card === cardId)) return;
+      const p = s.programs.find((x) => x.id === old.id);
+      if (!p) { // removeCard dropped it
+        s.programs.splice(Math.min(i, s.programs.length), 0, { ...clone(old), status: clone(old.status.filter((line) => line.card === cardId)) });
+        return;
+      }
+      old.status.forEach((line, k) => { if (line.card === cardId) p.status.splice(Math.min(k, p.status.length), 0, clone(line)); });
+    });
   }
 
   // The previous version's example list had one hand-typed "Avis / Hertz / National" row. If it's still exactly
@@ -3222,11 +3283,122 @@
     return s;
   }
 
+  /* ---------- Welcome bonuses: the math (read while loading saved data, so it lives above load()) ---------- */
+
+  // bonuses[cardId] = { points, program (catalog id it posts to), spend ($ required), spent ($ so far),
+  // by (YYYY-MM-DD spend deadline), landed (YYYY-MM-DD it posted, or '') }.
+  const BONUS_SOON_DAYS = 30; // the last month before the deadline gets the warning color
+  const BONUS_LAND_DAYS = 120; // bonuses often post weeks after the deadline, so a jump this late still counts
+  // Where a card's bonus usually posts: co-brand cards by their id, then the issuer's own points.
+  const BONUS_PROGRAM_BY_PREFIX = [['delta-', 'delta'], ['hilton-', 'hilton'], ['bonvoy-', 'marriott'], ['ritz-', 'marriott'],
+    ['ihg-', 'ihg'], ['hyatt-', 'hyatt'], ['united-', 'united'], ['southwest-', 'southwest'], ['chase-aeroplan', 'aeroplan'],
+    ['aadvantage-', 'american'], ['wyndham-', 'wyndham'], ['atmos-', 'alaska'], ['bilt-', 'bilt']];
+  const BONUS_PROGRAM_BY_ISSUER = { 'American Express': 'amex', Chase: 'chase', 'Capital One': 'capitalone', Citi: 'citi',
+    'Bank of America': 'bofa', 'Wells Fargo': 'wellsfargo' };
+
+  function bonusProgramFor(cardId) {
+    const card = CARD_BY_ID[cardId];
+    if (!card) return '';
+    const hit = BONUS_PROGRAM_BY_PREFIX.find(([prefix]) => cardId.startsWith(prefix));
+    return hit ? hit[1] : BONUS_PROGRAM_BY_ISSUER[card.issuer] || '';
+  }
+  const newBonus = (cardId) => ({ points: 0, program: bonusProgramFor(cardId), spend: 0, spent: 0, by: '', landed: '' });
+  const bonusUnit = (b) => (CATALOG_BY_ID[b.program] && CATALOG_BY_ID[b.program].unit) || 'points';
+  // "80,000-point bonus", "60,000-mile bonus", "50,000-Avios bonus"; just "welcome bonus" until its size is in.
+  const bonusName = (b) => (b.points ? `${fmt(b.points)}-${bonusUnit(b) === 'Avios' ? 'Avios' : bonusUnit(b).replace(/s$/, '')} bonus` : 'welcome bonus');
+
+  // A saved bonus, cleaned (whole points and dollars); null if there's nothing in it.
+  function cleanBonus(cardId, b) {
+    if (!b || typeof b !== 'object' || Array.isArray(b)) return null;
+    const whole = (v) => (isCount(v) ? Math.min(Math.round(v), MAX_VALUE) : 0);
+    const posts = typeof b.program === 'string' && CATALOG_BY_ID[b.program];
+    const clean = {
+      points: whole(b.points),
+      program: posts && posts.unit ? b.program : bonusProgramFor(cardId), // only programs with a balance
+      spend: whole(b.spend),
+      spent: whole(b.spent),
+      by: parseISODate(b.by) ? b.by : '',
+      landed: parseISODate(b.landed) ? b.landed : '',
+    };
+    return clean.points || clean.spend || clean.spent || clean.by || clean.landed ? clean : null;
+  }
+
+  // Days from `today` to the deadline: 0 on the day, negative after it, null with no deadline.
+  function bonusDaysLeft(b, today = new Date()) {
+    const by = parseISODate(b.by);
+    if (!by) return null;
+    return Math.round((by - new Date(today.getFullYear(), today.getMonth(), today.getDate())) / 864e5); // round absorbs DST
+  }
+
+  // Dollars still to spend; null when the spend required isn't entered.
+  const bonusLeft = (b) => (b.spend > 0 ? Math.max(0, b.spend - b.spent) : null);
+
+  // 'earned' (marked posted), 'met' (spend done, waiting to post), 'overdue', 'due-soon' (last 30 days), or 'on-track'.
+  function bonusStatus(b, today = new Date()) {
+    if (b.landed) return 'earned';
+    if (bonusLeft(b) === 0) return 'met';
+    const days = bonusDaysLeft(b, today);
+    if (days == null) return 'on-track';
+    if (days < 0) return 'overdue';
+    return days <= BONUS_SOON_DAYS ? 'due-soon' : 'on-track';
+  }
+
+  // About how much a week finishes the spend on time (all of it in the last week); null when there's no pace to keep.
+  function bonusPerWeek(b, today = new Date()) {
+    const left = bonusLeft(b);
+    const days = bonusDaysLeft(b, today);
+    if (!left || days == null || days < 0 || b.landed) return null;
+    return days < 7 ? left : Math.ceil(left / (days / 7));
+  }
+
+  // A balance in the bonus's program that jumped by 90%+ of the bonus (it often posts a little short, or mixed with
+  // the spend's own points) while it's open, up to 120 days past the deadline, is probably the bonus posting.
+  // Not when under half the spend is in before the deadline (it can't have posted yet), or when the jump is over
+  // 1.5× the bonus: both look more like a points transfer.
+  function bonusLanded(b, before, after, today = new Date()) {
+    if (!b || b.landed || !(b.points > 0) || before == null || after == null) return false;
+    const days = bonusDaysLeft(b, today);
+    if (days != null && days < -BONUS_LAND_DAYS) return false;
+    if (b.spend > 0 && b.spent * 2 < b.spend && !(days != null && days < 0)) return false;
+    const jump = after - before;
+    return jump * 10 >= b.points * 9 && jump * 2 <= b.points * 3; // whole numbers: no floating-point edge at 90%
+  }
+
+  // Which bonus a jump is ({ id, b, before, after } per bonus, cards in order): one whose size the jump matches
+  // (100–110% of it) first, then one with its spend done, then the nearest in size. Two equally likely: none, so a
+  // tap never marks the wrong card's bonus earned.
+  function pickLandedBonus(candidates, today = new Date()) {
+    const rank = (c) => {
+      const jump = c.after - c.before;
+      return [c.b.points <= jump && jump * 10 <= c.b.points * 11 ? 0 : 1, bonusLeft(c.b) === 0 ? 0 : 1, Math.abs(jump - c.b.points)];
+    };
+    const fits = candidates.filter((c) => bonusLanded(c.b, c.before, c.after, today))
+      .map((c) => ({ id: c.id, rank: rank(c) }))
+      .sort((x, y) => x.rank[0] - y.rank[0] || x.rank[1] - y.rank[1] || x.rank[2] - y.rank[2]);
+    if (!fits.length) return null;
+    if (fits.length > 1 && fits[1].rank.join() === fits[0].rank.join()) return null;
+    return fits[0].id;
+  }
+
+  // Whether a bonus belongs in Coming up `days` from its deadline: open ones only, from the day they're added, and
+  // until 120 days past a missed deadline (it can still post); the calendar export takes the ones still ahead.
+  function bonusComingUp(b, days, future = false, today = new Date()) {
+    if (!b || days == null || ['earned', 'met'].includes(bonusStatus(b, today))) return false;
+    return future ? days >= 0 : days >= -BONUS_LAND_DAYS;
+  }
+
+  // "$1,800 left to spend", "$1,000 short", or what's missing, for Coming up and the text summary.
+  function bonusDueText(b, days) {
+    const left = bonusLeft(b);
+    if (left == null) return days < 0 ? 'spend deadline passed' : 'add the spend required';
+    return days < 0 ? `${money(left)} short` : `${money(left)} left to spend`;
+  }
+
   // Clean state from stored or imported JSON, or null if it isn't tracker data.
   function normalize(raw) {
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
     if (!['programs', 'balances', 'vouchers', 'mqd'].some((k) => k in raw)) return null;
-    const s = { programs: null, view: 'detailed', cards: [], renewals: {}, creditsUsed: {}, creditsSkipped: {}, customCredits: {}, notes: '', memos: {}, balances: {}, history: {}, cpp: {}, hideValues: false, activity: {}, mqd: 0, progress: {}, members: {}, updated: {}, backedUp: '', game: { xp: 0, scans: 0, best: 0, weeks: [], badges: {}, confirmed: {}, log: [] }, goals: {}, vouchers: [] };
+    const s = { programs: null, view: 'detailed', cards: [], renewals: {}, creditsUsed: {}, creditsSkipped: {}, customCredits: {}, bonuses: {}, notes: '', memos: {}, balances: {}, history: {}, cpp: {}, hideValues: false, activity: {}, mqd: 0, progress: {}, members: {}, updated: {}, backedUp: '', game: { xp: 0, scans: 0, best: 0, weeks: [], badges: {}, confirmed: {}, log: [] }, goals: {}, vouchers: [] };
     if (raw.balances && typeof raw.balances === 'object') {
       for (const [id, v] of ownEntries(raw.balances)) if (isCount(v)) s.balances[id] = Math.floor(v);
     }
@@ -3313,6 +3485,12 @@
       s.cards = Array.isArray(raw.cards) ? [...new Set(raw.cards.filter((id) => CARD_BY_ID[id]))] : [];
       if (raw.renewals && typeof raw.renewals === 'object') { // annual-fee date per card you hold (month and day repeat)
         for (const [id, v] of ownEntries(raw.renewals)) if (s.cards.includes(id) && parseISODate(v)) s.renewals[id] = v;
+      }
+      if (raw.bonuses && typeof raw.bonuses === 'object') { // welcome bonus per card you hold: points, spend, deadline
+        for (const [id, b] of ownEntries(raw.bonuses)) {
+          const clean = s.cards.includes(id) && cleanBonus(id, b);
+          if (clean) s.bonuses[id] = clean;
+        }
       }
       s.notes = str(raw.notes, 400);
       if (!('cards' in raw)) upgradeLegacyExample(s); // saved before card presets existed
@@ -3416,7 +3594,7 @@
     return blankState(); // null programs → first-run setup
   }
   function blankState() {
-    return { programs: null, view: 'detailed', cards: [], renewals: {}, creditsUsed: {}, creditsSkipped: {}, customCredits: {}, notes: '', memos: {}, balances: {}, history: {}, cpp: {}, hideValues: false, activity: {}, mqd: 0, progress: {}, members: {}, updated: {}, backedUp: '', game: { xp: 0, scans: 0, best: 0, weeks: [], badges: {}, confirmed: {}, log: [] }, goals: {}, vouchers: [] };
+    return { programs: null, view: 'detailed', cards: [], renewals: {}, creditsUsed: {}, creditsSkipped: {}, customCredits: {}, bonuses: {}, notes: '', memos: {}, balances: {}, history: {}, cpp: {}, hideValues: false, activity: {}, mqd: 0, progress: {}, members: {}, updated: {}, backedUp: '', game: { xp: 0, scans: 0, best: 0, weeks: [], badges: {}, confirmed: {}, log: [] }, goals: {}, vouchers: [] };
   }
 
   const state = load();
@@ -3586,6 +3764,7 @@
         const program = state.programs.find((x) => x.id === field.slice(4));
         if (mini && program) mini.replaceWith(goalMini(program) || '');
         celebrateGoals(balancesBefore);
+        offerBonusLanding(balancesBefore);
       }
       if (field.startsWith('bal:')) {
         renderUpcoming(); // a changed balance resets a points-expiry clock
@@ -4709,6 +4888,8 @@
     { id: 'combo5', name: 'Combo ×5', how: 'Collect 5 screenshots in a row', color: '#DB2777', test: (r) => !!(r && r.combo >= 5) },
     { id: 'goal', name: 'Goal getter', how: 'Reach a savings goal', color: '#15803D',
       test: () => (state.programs || []).some((p) => state.goals && state.goals[p.id] && (state.balances[p.id] || 0) >= state.goals[p.id].target) },
+    { id: 'bonus', name: 'Bonus banked', how: 'Mark a card’s welcome bonus earned', color: '#A16207',
+      test: () => Object.values(state.bonuses || {}).some((b) => b && b.landed) },
     { id: 'collector', name: 'Collector', how: 'Track 10 programs', color: '#2563EB', test: () => (state.programs || []).length >= 10 },
     { id: 'jetset', name: 'Jet set', how: 'Track 5 airlines', color: '#0891B2', test: () => (state.programs || []).filter((p) => categoryOf(p) === 'Airlines').length >= 5 },
   ];
@@ -5345,7 +5526,10 @@
   function endBatch() {
     const b = batch;
     batch = null;
-    if (b && b.collected && b.person === people.active) showToast(`Collected ${plural(b.collected, 'screenshot')} · +${b.xp} XP`, () => undoTo(b.before, b.person));
+    if (b && b.collected && b.person === people.active) {
+      showToast(`Collected ${plural(b.collected, 'screenshot')} · +${b.xp} XP`, () => undoTo(b.before, b.person));
+      offerBonusLanding(b.before.balances);
+    }
   }
   // Undo of a collect or batch: only for the person it was made for, and it ends any combo (#8).
   function undoTo(before, who = people.active) {
@@ -5554,6 +5738,7 @@
     if (batch) finishOne(true, reward.xp); // one toast, with one Undo, when the batch ends
     else if (!result.real && !added) showToast(`${p.name} is up to date${reward.xp ? ` · +${reward.xp} XP` : ''}`, () => undoTo(previous, who));
     else showToast(`${added ? 'Added' : 'Updated'} ${p.name} · +${reward.xp} XP${reward.combo > 1 ? ` · combo ×${reward.combo}` : ''}`, () => undoTo(previous, who));
+    offerBonusLanding(previous.balances);
   }
 
   async function celebrate(result, reward, from) {
@@ -5827,6 +6012,7 @@
     renderUpcoming();
     showToast(`Updated ${plural(changed, 'balance')}`);
     celebrateGoals(balancesBefore);
+    offerBonusLanding(balancesBefore);
   });
 
   // "≈ $4,820 in points & miles" under the Programs heading; opens the breakdown.
@@ -7108,6 +7294,15 @@
       const days = daysUntil(date);
       if (inWindow(days, SOON_DAYS)) items.push({ kind: 'card', card: CARD_BY_ID[id], date, days });
     }
+    // Welcome-bonus spend deadlines: listed from the day you add one (missing it is the costliest mistake there is)
+    // until it's met, or while a missed one can still post.
+    for (const id of state.cards) {
+      const b = bonuses()[id];
+      const date = b && parseISODate(b.by);
+      if (!date) continue;
+      const days = daysUntil(date);
+      if (bonusComingUp(b, days, future)) items.push({ kind: 'bonus', card: CARD_BY_ID[id], b, date, days });
+    }
     return items.sort((a, b) => a.date - b.date);
   }
 
@@ -7163,6 +7358,17 @@
             h('div', { class: 'up-name' }, `${item.card.name} annual fee`),
             h('div', { class: 'up-sub' }, `Renews ${dateFmt.format(item.date)} · ${dependsOn(item.card)}`)),
           h('span', { class: 'tag warn' }, item.days === 0 ? 'Today' : plural(item.days, 'day'))));
+      }
+      if (item.kind === 'bonus') { // one tap opens its "spent so far" field
+        const late = item.days < 0;
+        return h('li', null, h('button', { type: 'button', class: 'up-item', 'data-bonus-spent': item.card.id },
+          h('span', { class: late ? 'v-ico bonus-ico late' : item.days <= BONUS_SOON_DAYS ? 'v-ico bonus-ico soon' : 'v-ico bonus-ico', 'aria-hidden': 'true' }, svgIcon(ICON.card)),
+          h('div', { class: 'up-body' },
+            h('div', { class: 'up-name' }, `${item.card.name} bonus: ${bonusDueText(item.b, item.days)}`),
+            h('div', { class: 'up-sub' }, late ? `Deadline was ${dateFmt.format(item.date)} · tap to update or mark it earned`
+              : `${bonusName(item.b).replace(/^./, (c) => c.toUpperCase())} · spend by ${dateFmt.format(item.date)} · tap to update`)),
+          late ? h('span', { class: 'tag danger' }, 'Overdue')
+            : h('span', { class: item.days <= BONUS_SOON_DAYS ? 'tag warn' : 'tag bonus-later' }, item.days === 0 ? 'Today' : plural(item.days, 'day'))));
       }
       if (item.kind === 'status') {
         return h('li', null, h('button', { type: 'button', class: 'up-item', 'data-open': item.p.id },
@@ -7244,6 +7450,15 @@
           item.card.grants.length && `It comes with: ${cardGrantsText(item.card)}.`,
           'Reminder from Points & Status Tracker.',
         ].filter(Boolean).join('\n');
+      } else if (item.kind === 'bonus') {
+        const left = bonusLeft(item.b);
+        uid = `bonus-${item.card.id}`; // stable, so a changed deadline replaces the event instead of adding one
+        subject = `${item.card.name} bonus spend`;
+        description = [
+          `Last day to finish the minimum spend${item.b.spend ? ` (${money(item.b.spend)})` : ''} for your ${bonusName(item.b)}.`,
+          left ? `${money(left)} was left to spend on ${dateFmt.format(new Date())}. Update it in the tracker as you go.` : null,
+          'Reminder from Points & Status Tracker.',
+        ].filter(Boolean).join('\n');
       } else {
         uid = `voucher-${uidPart(item.v.name)}-${item.v.exp}`;
         subject = `Voucher: ${item.v.name}`;
@@ -7254,7 +7469,7 @@
       used.add(uid);
       const end = new Date(item.date);
       end.setDate(end.getDate() + 1);
-      const verb = item.kind === 'card' ? 'renews' : item.kind === 'points' ? 'expire' : 'expires';
+      const verb = item.kind === 'card' ? 'renews' : item.kind === 'points' ? 'expire' : item.kind === 'bonus' ? 'due' : 'expires';
       lines.push('BEGIN:VEVENT', `UID:${uid}@statuspoints.github.io`, `DTSTAMP:${stamp}`,
         `DTSTART;VALUE=DATE:${icsDate(item.date)}`, `DTEND;VALUE=DATE:${icsDate(end)}`,
         ...(item.kind === 'card' ? ['RRULE:FREQ=YEARLY'] : []), // the fee comes back every year
@@ -7305,6 +7520,13 @@
     if (e.target.closest('[data-credits]')) { jumpTo($('#credits-section')); return; }
     const renewal = e.target.closest('[data-card-renewal]');
     if (renewal) { openCards(renewal.dataset.cardRenewal); return; }
+    const bonus = e.target.closest('[data-bonus-spent]');
+    if (bonus) {
+      const id = CSS.escape(bonus.dataset.bonusSpent);
+      openCards(bonus.dataset.bonusSpent, 'spent');
+      bonusReturn = [`#up-list [data-bonus-spent="${id}"]`, '#up-list .up-item']; // the same item, or the list's first if it's done
+      return;
+    }
     if (e.target.closest('[data-backup]')) backUp();
   });
   $('#cal-btn').addEventListener('click', (e) => addAllToCalendar(e.currentTarget));
@@ -7477,16 +7699,25 @@
 
   const cardsSheet = $('#cards-sheet');
 
-  // Opens the card picker; with a card id, jumps to that card's annual-fee date.
-  function openCards(focusId) {
+  // Opens the card picker; with a card id, jumps to that card's annual-fee date, or with `bonusField` too, opens its
+  // welcome bonus on that field (e.g. 'spent', from Coming up).
+  function openCards(focusId, bonusField) {
     $('#cards-picker').replaceChildren(...cardPicker(new Set(state.cards)));
     $('#cards-sheet .card-search').value = '';
     $('#cards-status').textContent = '';
     $('#cards-fine').textContent = `Based on each card’s published benefits as of ${CARDS_AS_OF}. Most need enrolling with the card issuer, and benefits change — check your card’s benefits page.`;
+    bonusEditing = bonusField && state.cards.includes(focusId) ? focusId : null;
+    if (bonusEditing && !bonuses()[focusId]) bonuses()[focusId] = newBonus(focusId);
     renderRenewals();
     cardsSheet.showModal();
-    const input = focusId && $(`#cards-renewals [data-renewal="${CSS.escape(focusId)}"]`);
-    if (input) { input.scrollIntoView({ block: 'center' }); input.focus(); }
+    const input = focusId && (bonusEditing
+      ? $(`#cards-renewals [data-bonus-field="${CSS.escape(bonusField)}"][data-bonus-card="${CSS.escape(focusId)}"]`)
+      : $(`#cards-renewals [data-renewal="${CSS.escape(focusId)}"]`));
+    if (input) {
+      input.scrollIntoView({ block: 'center' });
+      input.focus();
+      if (input.select) input.select(); // typing replaces the old amount
+    }
   }
 
   $('#cards-change').addEventListener('click', () => openCards());
@@ -7502,14 +7733,15 @@
     $('#cards-renewals').hidden = !held.length;
     if (!held.length) return;
     $('#cards-renewals').replaceChildren(
-      h('h3', { class: 'cat-title' }, 'Annual fee dates'),
-      h('p', { class: 'fine' }, 'Optional. Add the date each annual fee posts (it’s on your statement) to get a reminder 30 and 7 days ahead — time to decide whether the card and its statuses are worth another year.'),
+      h('h3', { class: 'cat-title' }, 'Annual fees & welcome bonuses'),
+      h('p', { class: 'fine' }, 'Optional. Add the date each annual fee posts (it’s on your statement) to get a reminder 30 and 7 days ahead — time to decide whether the card and its statuses are worth another year. For a new card, add its welcome bonus so you don’t miss the minimum spend.'),
       h('ul', { class: 'renewals' }, held.map((card) => {
         const input = h('input', { type: 'date', class: 'exp-input', 'data-renewal': card.id, 'aria-label': `${card.name} annual fee date` });
         input.value = state.renewals[card.id] || '';
         return h('li', null,
           h('span', { class: 'renewal-name' }, card.label || card.name, h('small', { 'data-next': card.id }, renewalText(card.id))),
-          input);
+          input,
+          bonusBox(card));
       })));
   }
 
@@ -7525,14 +7757,288 @@
     renderCredits(); // card-year credits follow the fee date
   });
 
+  /* ---------- Welcome bonuses: editing, Card credits, marking earned, and "did it post?" ---------- */
+
+  const bonuses = () => state.bonuses || (state.bonuses = {});
+  let bonusEditing = null; // card id whose welcome-bonus fields are open in Your cards
+
+  // Where a bonus stands in a few words: "$1,800 left to spend · 23 days left".
+  function bonusText(b) {
+    const status = bonusStatus(b);
+    if (status === 'earned') return `Earned ${dateFmt.format(parseISODate(b.landed))}`;
+    if (status === 'met') return 'Spend done · waiting for it to post';
+    const left = bonusLeft(b);
+    const days = bonusDaysLeft(b);
+    return [left == null ? 'Add the spend required' : `${money(left)} left to spend`,
+      days == null ? 'add the deadline' : days < 0 ? `deadline was ${dateFmt.format(parseISODate(b.by))}`
+        : days === 0 ? 'last day today' : `${plural(days, 'day')} left`].join(' · ');
+  }
+
+  // Under each card in Your cards: "+ Add welcome bonus", a one-line summary to tap, or the fields while open.
+  function bonusBox(card) {
+    const id = card.id;
+    const b = bonuses()[id];
+    if (bonusEditing !== id || !b) {
+      if (!b) return h('button', { type: 'button', class: 'link bonus-add', 'data-bonus-open': id, 'aria-label': `Add welcome bonus for ${card.name}` }, '+ Add welcome bonus');
+      return h('button', { type: 'button', class: `bonus-sum bonus-${bonusStatus(b)}`, 'data-bonus-open': id, 'aria-label': `${card.name} ${bonusName(b)}: ${bonusText(b)}. Edit` },
+        h('b', null, bonusName(b).replace(/^./, (c) => c.toUpperCase())), h('span', null, bonusText(b)), svgIcon(ICON.pencil));
+    }
+    const field = (label, input, unitLabel) => h('label', { class: 'bonus-field' }, h('span', unitLabel ? { 'data-bonus-unit': id } : null, label), input);
+    const amount = (key, label, dollars) => {
+      const input = h('input', { type: 'text', class: 'bonus-input', inputmode: dollars ? 'decimal' : 'numeric', autocomplete: 'off', enterkeyhint: 'done',
+        maxlength: '15', placeholder: dollars ? '$' : '', 'data-bonus-field': key, 'data-bonus-card': id });
+      input.value = b[key] ? fmt(b[key]) : '';
+      return field(label, input, key === 'points');
+    };
+    const program = h('select', { class: 'bonus-input', 'data-bonus-field': 'program', 'data-bonus-card': id },
+      b.program ? null : h('option', { value: '' }, 'Choose'),
+      CATALOG.map((g) => {
+        const items = g.items.filter((c) => c.unit); // only programs with a balance for the points to land in
+        return items.length ? h('optgroup', { label: g.group }, items.map((c) => h('option', { value: c.id, selected: c.id === b.program ? '' : null }, c.name))) : null;
+      }));
+    const by = h('input', { type: 'date', class: 'bonus-input', 'data-bonus-field': 'by', 'data-bonus-card': id });
+    by.value = b.by;
+    return h('div', { class: 'bonus-form', role: 'group', 'aria-label': `${card.name} welcome bonus` },
+      h('div', { class: 'bonus-grid' },
+        amount('points', `Bonus ${bonusUnit(b)}`),
+        field('Posts to', program),
+        amount('spend', 'Spend required ($)', true),
+        amount('spent', 'Spent so far ($)', true),
+        field('Spend by', by)),
+      h('p', { class: 'bonus-hint', 'data-bonus-hint': id, role: 'status' }, bonusText(b)), // read out as you type
+      h('div', { class: 'bonus-actions' },
+        b.landed ? h('button', { type: 'button', class: 'link', 'data-bonus-unearn': id }, 'Not earned yet')
+          : h('button', { type: 'button', class: 'bonus-earn', 'data-bonus-earned': id, hidden: bonusFilled(b) ? null : '' }, 'Mark bonus earned'),
+        h('button', { type: 'button', class: 'link danger-link', 'data-bonus-remove': id }, 'Remove'),
+        h('button', { type: 'button', class: 'link bonus-done', 'data-bonus-done': id }, 'Done')));
+  }
+
+  // Only a bonus with its size or spend in can be marked earned (an empty one would earn a badge for nothing).
+  const bonusFilled = (b) => b.points > 0 || b.spend > 0;
+
+  // After a re-render took away the button you pressed: focus that card's bonus in Your cards, or its Card credits
+  // heading, so keyboard and screen-reader users keep their place. Left alone if focus is somewhere real (like the
+  // toast's button, so marking a bonus earned from "posted?" doesn't scroll the page away).
+  function focusBonus(cardId) {
+    const now = document.activeElement;
+    if (now && now !== document.body && now.isConnected) return;
+    const target = cardsSheet.open ? $(`#cards-renewals [data-bonus-open="${CSS.escape(cardId)}"]`)
+      : $(`#credits-list [data-credit-group="${CSS.escape(cardId)}"] summary`);
+    if (target) target.focus();
+  }
+
+  // Closing the fields drops a bonus nothing was typed into, so "+ Add welcome bonus" comes back.
+  function closeBonusEditor() {
+    if (bonusEditing && bonuses()[bonusEditing] && !cleanBonus(bonusEditing, bonuses()[bonusEditing])) delete bonuses()[bonusEditing];
+    bonusEditing = null;
+  }
+
+  const renderBonusViews = () => { renderUpcoming(); renderCredits(); };
+
+  // Fields save as you type; the line under them follows along (the fields themselves aren't redrawn mid-typing).
+  function onBonusInput(e) {
+    const input = e.target.closest('[data-bonus-field]');
+    const b = input && bonuses()[input.dataset.bonusCard];
+    if (!b) return;
+    const id = input.dataset.bonusCard;
+    const key = input.dataset.bonusField;
+    if (key === 'program') {
+      if (!CATALOG_BY_ID[input.value]) return;
+      b.program = input.value;
+      const label = $(`#cards-renewals [data-bonus-unit="${CSS.escape(id)}"]`);
+      if (label) label.textContent = `Bonus ${bonusUnit(b)}`;
+    } else if (key === 'by') {
+      b.by = parseISODate(input.value) ? input.value : '';
+    } else {
+      const parsed = parseEntry(key === 'points' ? input.value : input.value.replace(/\.\d*$/, '')); // whole dollars
+      if (!parsed) return; // no digits: leave it as it was
+      b[key] = parsed.value ?? 0;
+    }
+    scheduleSave();
+    const hint = $(`#cards-renewals [data-bonus-hint="${CSS.escape(id)}"]`);
+    if (hint) hint.textContent = bonusText(b);
+    const earn = $(`#cards-renewals [data-bonus-earned="${CSS.escape(id)}"]`);
+    if (earn) earn.hidden = !bonusFilled(b);
+    renderBonusViews();
+  }
+  $('#cards-renewals').addEventListener('input', onBonusInput);
+  $('#cards-renewals').addEventListener('change', onBonusInput); // some date pickers only send "change"
+
+  $('#cards-renewals').addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    const d = btn.dataset;
+    if (d.bonusOpen) {
+      closeBonusEditor();
+      if (!bonuses()[d.bonusOpen]) bonuses()[d.bonusOpen] = newBonus(d.bonusOpen);
+      bonusEditing = d.bonusOpen;
+      renderRenewals();
+      const first = $(`#cards-renewals [data-bonus-card="${CSS.escape(d.bonusOpen)}"]`);
+      if (first) { first.focus(); first.select(); }
+    } else if (d.bonusDone) {
+      closeBonusEditor();
+      renderRenewals();
+      const sum = $(`#cards-renewals [data-bonus-open="${CSS.escape(d.bonusDone)}"]`);
+      if (sum) sum.focus();
+      renderBonusViews();
+    } else if (d.bonusEarned) {
+      markBonusEarned(d.bonusEarned);
+    } else if (d.bonusUnearn) {
+      bonuses()[d.bonusUnearn].landed = ''; // spent so far was never touched, so its reminders come back as they were
+      scheduleSave();
+      renderRenewals();
+      renderBonusViews();
+      const earn = $(`#cards-renewals [data-bonus-earned="${CSS.escape(d.bonusUnearn)}"]`);
+      if (earn && !earn.hidden) earn.focus();
+      else focusBonus(d.bonusUnearn);
+    } else if (d.bonusRemove) {
+      const id = d.bonusRemove;
+      const removed = bonuses()[id];
+      const who = people.active;
+      delete bonuses()[id];
+      bonusEditing = null;
+      scheduleSave();
+      renderRenewals();
+      renderBonusViews();
+      focusBonus(id);
+      showToast(`Removed the ${CARD_BY_ID[id].name} welcome bonus`, () => {
+        if (who !== people.active || !state.cards.includes(id)) return;
+        bonuses()[id] = removed;
+        scheduleSave();
+        if (cardsSheet.open) renderRenewals();
+        renderBonusViews();
+        focusBonus(id);
+      });
+    }
+  });
+
+  // Where focus goes back to when Your cards closes after a bonus was opened from Coming up or Card credits: those
+  // lists are redrawn while you type, so the sheet's own return target is gone by then.
+  let bonusReturn = null;
+  cardsSheet.addEventListener('close', () => {
+    if (bonusEditing) { closeBonusEditor(); renderBonusViews(); }
+    const back = bonusReturn;
+    bonusReturn = null;
+    const now = document.activeElement;
+    if (!back || (now && now !== document.body && now.isConnected)) return;
+    const target = back.map((sel) => $(sel)).find(Boolean);
+    if (target) target.focus();
+  });
+
+  // In Card credits: the bonus's spend so far as a bar, with quick ways to update it or mark it earned.
+  function bonusProgress(card) {
+    const b = bonuses()[card.id];
+    if (!b || !cleanBonus(card.id, b)) return null;
+    const status = bonusStatus(b);
+    if (status === 'earned') {
+      if (daysUntil(parseISODate(b.landed)) < -60) return null; // old news after a couple of months
+      return h('div', { class: 'bonus-progress bonus-earned' }, h('span', { class: 'bonus-progress-name' }, `✓ ${bonusName(b)} earned`), h('small', null, bonusText(b)));
+    }
+    const pct = b.spend ? Math.min(100, Math.round((b.spent / b.spend) * 100)) : 0;
+    const pace = bonusPerWeek(b);
+    return h('div', { class: `bonus-progress bonus-${status}` },
+      h('span', { class: 'bonus-progress-name' }, b.points ? `Welcome bonus: ${fmt(b.points)} ${bonusUnit(b)}` : 'Welcome bonus'),
+      b.spend ? h('div', { class: 'bonus-bar', role: 'progressbar', 'aria-label': `${card.name} bonus spend`, 'aria-valuemin': '0',
+        'aria-valuemax': String(b.spend), 'aria-valuenow': String(Math.min(b.spent, b.spend)) }, h('i', { style: `width:${pct}%` })) : null,
+      h('small', null, [b.spend ? `${money(b.spent)} of ${money(b.spend)}` : null, bonusText(b),
+        pace && pace < bonusLeft(b) ? `about ${money(pace)} a week` : null].filter(Boolean).join(' · ')),
+      h('div', { class: 'bonus-progress-actions' },
+        h('button', { type: 'button', class: 'link', 'data-bonus-update': card.id, 'aria-label': `Update ${card.name} bonus spend` }, 'Update spend'),
+        bonusFilled(b) ? h('button', { type: 'button', class: status === 'met' || status === 'overdue' ? 'bonus-earn' : 'link', 'data-bonus-earned': card.id,
+          'aria-label': `Mark ${card.name} bonus earned` }, 'Mark earned') : null));
+  }
+
+  // "$1,800 left for bonus" on a card's Card credits heading while its bonus is open.
+  function bonusShort(cardId) {
+    const b = bonuses()[cardId];
+    const status = b && cleanBonus(cardId, b) ? bonusStatus(b) : null;
+    if (!status || status === 'earned') return null;
+    if (status === 'met') return 'bonus spend done';
+    if (status === 'overdue') return 'bonus overdue';
+    return bonusLeft(b) ? `${money(bonusLeft(b))} left for bonus` : 'bonus open';
+  }
+
+  // The bonus posted: a "Bonus earned" banner with confetti, the "Bonus banked" badge the first time, and Undo.
+  function markBonusEarned(cardId) {
+    const b = bonuses()[cardId];
+    const card = CARD_BY_ID[cardId];
+    if (!b || !card || b.landed || !bonusFilled(b) || !state.cards.includes(cardId)) return;
+    const previous = clone(state);
+    const who = people.active;
+    b.landed = todayISO(); // spent so far stays as typed, so "Not earned yet" brings back the real amount left
+    const g = game();
+    const before = levelOf(g.xp);
+    const unlocked = BADGES.filter((x) => x.id === 'bonus' && !g.badges[x.id] && x.test());
+    for (const x of unlocked) g.badges[x.id] = todayISO();
+    g.xp += unlocked.length * BADGE_XP;
+    const after = levelOf(g.xp);
+    if (bonusEditing === cardId) bonusEditing = null;
+    saveNow();
+    renderAll();
+    if (cardsSheet.open) renderRenewals();
+    focusBonus(cardId);
+    queueAchievements({ levelUp: after.index > before.index ? after : null,
+      unlocked: [{ kind: 'Bonus earned', name: b.points ? `${card.name} · ${fmt(b.points)} ${bonusUnit(b)}` : card.name, color: '#15803D' }, ...unlocked] });
+    showToast(`${card.name} bonus marked earned${unlocked.length ? ` · +${BADGE_XP} XP` : ''}`, () => {
+      if (who !== people.active) return;
+      Object.assign(state, previous);
+      saveNow();
+      renderAll();
+      if (cardsSheet.open) renderRenewals();
+      focusBonus(cardId);
+    });
+  }
+
+  // A balance that just jumped by about an open bonus's size: offer to mark it earned. It waits out any toast already
+  // up (like the Undo for the update itself), then checks again, so an Undo in the meantime cancels the offer.
+  function offerBonusLanding(before) {
+    if (batch || !state.programs) return; // a batch checks everything it collected once it ends
+    const who = people.active;
+    // Every open bonus against its program's jump; pickLandedBonus works out which one (if any) it is.
+    const find = () => pickLandedBonus(state.cards.flatMap((id) => {
+      const b = bonuses()[id];
+      const p = b && state.programs.find((x) => catalogFor(x) && catalogFor(x).id === b.program);
+      return p ? [{ id, b, before: before[p.id], after: state.balances[p.id] }] : [];
+    }));
+    if (!find()) return;
+    const offer = () => {
+      const id = who === people.active && find();
+      // Kept short ("80,000-point bonus posted?"): the toast has two lines beside its button on a 320px phone, and
+      // card names run to 30 letters. The size tells your bonuses apart; a tie offers nothing (pickLandedBonus).
+      if (id) showToast(`${bonusName(bonuses()[id])} posted?`, () => markBonusEarned(id), 'Mark earned', 10000);
+    };
+    if ($('#toast').classList.contains('show')) setTimeout(offer, 5200);
+    else offer();
+  }
+
   $('#cards-picker').addEventListener('click', (e) => {
     const tile = e.target.closest('[data-card]');
     if (!tile) return;
     const card = CARD_BY_ID[tile.dataset.card];
     let message;
     if (state.cards.includes(card.id)) {
+      const previous = clone(state);
+      const who = people.active;
+      const hadBonus = !!bonuses()[card.id] && !!cleanBonus(card.id, bonuses()[card.id]);
+      if (bonusEditing === card.id) bonusEditing = null;
       removeCard(state, card.id);
       message = card.grants.length ? `Took off ${card.name}’s statuses` : `Removed ${card.name}`;
+      // Its welcome bonus goes too — a lot to lose to a stray tap, so this one gets Undo. The toast says it all, so
+      // the status line stays quiet (one announcement per tap).
+      if (hadBonus) {
+        message = '';
+        showToast(`Removed ${card.name} and its welcome bonus`, () => {
+          if (who !== people.active) return;
+          restoreCard(state, previous, card.id); // just this card: other cards picked since stay as they are
+          saveNow();
+          renderAll();
+          renderCertSuggest();
+          if (!cardsSheet.open) return;
+          for (const t of document.querySelectorAll('#cards-picker [data-card]')) t.setAttribute('aria-pressed', String(state.cards.includes(t.dataset.card)));
+          $('#cards-status').textContent = `Put back ${card.name}`;
+          renderRenewals();
+        });
+      }
     } else {
       const added = applyCard(state, card.id);
       if (!card.grants.length) message = `Added ${card.name} — it doesn’t come with elite status`;
@@ -7694,6 +8200,24 @@
     return true;
   }
 
+  // One "Coming up" item as a line of the text summary. Each kind is checked by name, so a new kind that isn't
+  // handled here gets a plain line instead of breaking the export.
+  function comingUpLine(item) {
+    const date = dateFmt.format(item.date);
+    const when = item.days < 0 ? `${plural(-item.days, 'day')} ago` : item.days === 0 ? 'today' : `in ${plural(item.days, 'day')}`;
+    if (item.kind === 'status') return `- ${splitParts(item.group.tier).join(' · ')} (${item.p.name}) ${item.days < 0 ? 'expired' : 'expires'} ${date}, ${when}`;
+    if (item.kind === 'voucher') return `- Voucher: ${item.v.name} ${item.days < 0 ? 'expired' : 'expires'} ${date}, ${when}`;
+    if (item.kind === 'card') return `- ${item.card.name} annual fee renews ${date}, ${when}`;
+    if (item.kind === 'credit') return `- Use your ${creditMoney(item.x.credit.amount)} ${item.x.credit.name} (${item.x.card.name}) by ${date}`;
+    if (item.kind === 'points') return `- ${item.p.name} ${item.p.unit} ${item.days < 0 ? 'expired' : 'expire'} ${date} without activity, ${when}`;
+    if (item.kind === 'bonus') {
+      if (item.days >= 0) return `- ${item.card.name} bonus: ${bonusDueText(item.b, item.days)} by ${date}, ${when}`;
+      return `- ${item.card.name} bonus: ${bonusLeft(item.b) == null ? '' : `${bonusDueText(item.b, item.days)}, `}spend deadline was ${date}, ${when}`;
+    }
+    if (item.kind === 'keep') return `- Keep ${item.name} (${item.p.name}): ${item.text} by ${date}`;
+    return `- Due ${date}, ${when}`;
+  }
+
   // A plain-text summary meant for reading (not for restoring — that's the JSON backup).
   function summaryText() {
     const now = new Date();
@@ -7703,16 +8227,7 @@
     // The same items as "Coming up", so the most time-sensitive things lead the file.
     const soon = upcomingItems();
     if (soon.length) {
-      const when = (item) => (item.days < 0 ? `${plural(-item.days, 'day')} ago` : item.days === 0 ? 'today' : `in ${plural(item.days, 'day')}`);
-      out.push('', 'COMING UP', '', ...soon.map((item) => {
-        const date = dateFmt.format(item.date);
-        if (item.kind === 'status') return `- ${splitParts(item.group.tier).join(' · ')} (${item.p.name}) ${item.days < 0 ? 'expired' : 'expires'} ${date}, ${when(item)}`;
-        if (item.kind === 'voucher') return `- Voucher: ${item.v.name} ${item.days < 0 ? 'expired' : 'expires'} ${date}, ${when(item)}`;
-        if (item.kind === 'card') return `- ${item.card.name} annual fee renews ${date}, ${when(item)}`;
-        if (item.kind === 'credit') return `- Use your ${creditMoney(item.x.credit.amount)} ${item.x.credit.name} (${item.x.card.name}) by ${date}`;
-        if (item.kind === 'points') return `- ${item.p.name} ${item.p.unit} ${item.days < 0 ? 'expired' : 'expire'} ${date} without activity, ${when(item)}`;
-        return `- Keep ${item.name} (${item.p.name}): ${item.text} by ${date}`;
-      }));
+      out.push('', 'COMING UP', '', ...soon.map(comingUpLine));
     }
     out.push('', '', 'PROGRAMS', '');
     const valued = state.hideValues ? [] : state.programs.filter((p) => valueOf(p));
@@ -7777,7 +8292,9 @@
       const credits = heldCredits().filter((x) => !x.skipped);
       out.push('', 'CARDS', '', ...state.cards.flatMap((id) => {
         const iso = state.renewals[id];
+        const b = bonuses()[id] && cleanBonus(id, bonuses()[id]);
         return [`${CARD_BY_ID[id].name}${iso ? ` — annual fee around ${dateFmt.format(nextRenewal(iso))}` : ''}`,
+          ...(b ? [`  - Welcome bonus: ${b.points ? `${fmt(b.points)} ${bonusUnit(b)}` : 'size not entered'}${b.spend ? ` for ${money(b.spend)} spend` : ''}${b.by ? ` by ${dateFmt.format(parseISODate(b.by))}` : ''} — ${bonusText(b)}`] : []),
           ...credits.filter((x) => x.card.id === id).map((x) => `  - ${x.credit.name}: ${creditMoney(x.credit.amount)} ${CREDIT_PERIODS[x.credit.period]} — ${x.used ? 'used' : 'not used yet'} (${x.period.label})`)];
       }), '');
     }
@@ -8270,11 +8787,14 @@
       const skipped = list.filter((x) => x.skipped);
       const unused = shown.filter((x) => !x.used).reduce((sum, x) => sum + x.credit.amount, 0);
       const soon = shown.filter((x) => !x.used && x.dated && x.credit.period !== 'month' && x.days <= 21).length;
-      const open = addingCreditFor === card.id || (creditOpen.has(card.id) ? creditOpen.get(card.id) : soon > 0);
+      const bonus = bonusShort(card.id);
+      const bonusDue = bonus && ['due-soon', 'overdue', 'met'].includes(bonusStatus(bonuses()[card.id]));
+      const open = addingCreditFor === card.id || (creditOpen.has(card.id) ? creditOpen.get(card.id) : soon > 0 || bonusDue);
       return h('details', { class: 'credit-group', 'data-credit-group': card.id, open: open ? '' : null },
         h('summary', { class: 'credit-head' }, h('span', { class: 'credit-title' }, h('h3', null, card.label || card.name),
-          h('span', { class: soon ? 'credit-sum warn' : 'credit-sum' }, shown.length
-            ? `${money(unused)} unused${soon ? ` · ${soon} resetting soon` : ''}` : 'No credits listed'))),
+          h('span', { class: soon || bonusDue ? 'credit-sum warn' : 'credit-sum' }, [shown.length
+            ? `${money(unused)} unused${soon ? ` · ${soon} resetting soon` : ''}` : 'No credits listed', bonus].filter(Boolean).join(' · ')))),
+        bonusProgress(card),
         shown.length ? h('ul', { class: 'credit-list' }, shown.map((x) => {
           const soon = !x.used && x.dated && x.credit.period !== 'month' && x.days <= 21;
           return h('li', { class: x.used ? 'credit used' : 'credit' },
@@ -8310,6 +8830,13 @@
     const d = b.dataset;
     const group = b.closest('[data-credit-group]');
     if (group) creditOpen.set(group.dataset.creditGroup, true); // stay open under your finger after the re-render
+    if (d.bonusUpdate) {
+      const id = CSS.escape(d.bonusUpdate);
+      openCards(d.bonusUpdate, 'spent');
+      bonusReturn = [`#credits-list [data-bonus-update="${id}"]`, `#credits-list [data-credit-group="${id}"] summary`];
+      return;
+    }
+    if (d.bonusEarned) { markBonusEarned(d.bonusEarned); return; }
     if (d.creditUse) {
       const x = heldCredits().find((c) => c.key === d.creditUse);
       if (!x) return;
@@ -8392,7 +8919,7 @@
 
   // A one-time card listing new features for people who already use the app; new setups skip it.
   const NEWS_KEY = 'status-tracker-news';
-  const NEWS_ID = '2026-10g';
+  const NEWS_ID = '2026-10h';
   const newsSeen = () => { try { return localStorage.getItem(NEWS_KEY) === NEWS_ID; } catch (e) { return true; } };
   const markNewsSeen = () => { try { localStorage.setItem(NEWS_KEY, NEWS_ID); } catch (e) { /* private mode */ } };
   function renderNews() {
