@@ -4364,7 +4364,8 @@
       .replace(/\b(\d{1,3})((?:[ \u00a0\u202f]\d{3})+)(?=[ \t]*(?:(?!of\b|to\b)[a-z]+[ \t]+){0,2}(?:miles|points|avios|pts|mi)\b)/gi, (all, a, b) => `${a}${b.replace(/\D/g, ',')}`)
       .replace(/(\b(?:miles|points|avios|pts|balance)[ \t]*:?[ \t]*)(\d{1,3}(?:[ \u00a0\u202f]\d{3})+)(?![\d,.])/gi, (all, pre, n) => `${pre}${n.replace(/\D/g, ',')}`)
       .replace(/(^|\n)(\d{1,3}(?:[ \u00a0\u202f]\d{3})+)[ \t]*(?=\n[ \t]*(?:[a-z]+[ \t]+){0,2}(?:miles|points|avios|pts)\b)/gi, (all, pre, n) => `${pre}${n.replace(/\D+/g, ',')}`)
-      .replace(/((?:^|\n)[^\n\d]*\b(?:miles|points|avios|pts)\b[^\n\d]*\n[ \t]*)(\d{1,3}(?:[ \u00a0\u202f]\d{3})+)[ \t]*(?=\n|$)/gi, (all, pre, n) => `${pre}${n.replace(/\D+/g, ',')}`)
+      // Also when the reader ran the line into the column beside it ("YOUR POINTS" over "Hello Alex, 26 948").
+      .replace(/((?:^|\n)[^\n\d]*\b(?:miles|points|avios|pts)\b[^\n\d]*\n[^\n\d]*?)(\d{1,3}(?:[ \u00a0\u202f]\d{3})+)[ \t]*(?=\n|$)/gi, (all, pre, n) => `${pre}${n.replace(/\D+/g, ',')}`)
       .replace(/\b[\dOolI]{1,3}(?:[,.][\dOolI]{3})+\b/g, (n) => (/\d/.test(n) ? n.replace(/[Oo]/g, '0').replace(/[lI]/g, '1') : n))
       .replace(/(^|[^$\d.,])(\d{1,3}(?:\.\d{3})+)(?![\d.,])/g, (all, pre, n) => `${pre}${n.replace(/\./g, ',')}`)
       .replace(/[ \t]+/g, ' ');
@@ -4686,6 +4687,7 @@
       for (const m of line.matchAll(/(\$?)\s?(\b\d{1,3}(?:,\d{3})+\b|\b\d{3,9}\b)(?:\.\d{1,2})?/g)) {
         const value = toNumber(m[2]);
         if ((member && m[2].replace(/,/g, '') === member) || (!m[2].includes(',') && m[2].length >= 8)) continue;
+        if (/^0\d/.test(m[2])) continue; // "048": the end of a number split by a space, or an id — never a balance
         if (!m[2].includes(',') && value >= 1990 && value <= 2100) continue; // a year
         const end = m.index + m[0].length;
         const before = ll.slice(0, m.index);
@@ -4759,13 +4761,38 @@
       const score = (/(member|status|elite|tier|medallion|you('| a)re)/.test(ll) ? 3 : 0) + (line.split(/\s+/).length <= 4 ? 2 : 0) - lines.indexOf(line) * 0.01;
       if (score > bestLine) { bestLine = score; tierIndex = distinct[0].i; }
     }
-    return { programId, member, balances, tierIndex, exp: scanDate(text, DAY_FIRST.has(programId), levels, nameSigns), progress, altProgress, mqd };
+    // `score`: how surely the balance reads (a unit caption and thousands commas count most), for picking a reading.
+    return { programId, member, balances, score: candidates.length ? candidates[0].score : 0, tierIndex,
+      exp: scanDate(text, DAY_FIRST.has(programId), levels, nameSigns), progress, altProgress, mqd };
+  }
+
+  // The better of a screenshot's readings (see ocrImage): the one whose balance reads most surely, plus what else it
+  // found (the program, a status, a member number, counts); the first reading wins a tie. What it missed comes from
+  // another reading of the same program, and that reading's balances are offered as alternatives.
+  function readingOf(read, forceId) {
+    const tried = (read.passes || [read]).map((pass) => {
+      const found = parseAccountText(pass.text, forceId);
+      const worth = Math.max(0, found.score) + (found.programId ? 4 : 0) + (found.tierIndex >= 0 ? 2 : 0) + (found.member ? 1 : 0)
+        + [found.progress, found.altProgress, found.mqd].filter((v) => v != null).length;
+      return { pass, found, worth };
+    });
+    const best = tried.reduce((a, b) => (b.worth > a.worth ? b : a));
+    const f = best.found;
+    for (const { found: o } of tried) {
+      if (o === f || o.programId !== f.programId) continue;
+      f.balances = [...new Set([...f.balances, ...o.balances])].slice(0, 4);
+      if (f.tierIndex < 0 && o.tierIndex >= 0) [f.tierIndex, f.exp] = [o.tierIndex, o.exp];
+      else if (!f.exp && o.exp && o.tierIndex === f.tierIndex) f.exp = o.exp;
+      for (const k of ['member', 'progress', 'altProgress', 'mqd']) if (f[k] == null) f[k] = o[k];
+    }
+    return { ...read, text: best.pass.text, lines: best.pass.lines, found: f };
   }
 
   // Loads the open-source text reader (Tesseract) on first use; it runs entirely in this browser.
   const OCR_BASE = 'https://cdn.jsdelivr.net/npm/';
   let ocrWorker = null;
   let ocrProgress = () => {}; // set by the scan in progress
+  let ocrPass = { at: 0, of: 1 }; // which reading of the screenshot is running, so progress goes once from 0 to 100%
   const OCR_CACHE = 'status-tracker-ocr-v2'; // same name as in sw.js
   // Gives up after 2 minutes (a stalled download) so the next scan can try again; a reader that finishes starting
   // after that is shut down rather than left running beside the next one.
@@ -4785,7 +4812,7 @@
         workerPath: `${OCR_BASE}tesseract.js@5.1.1/dist/worker.min.js`,
         corePath: `${OCR_BASE}tesseract.js-core@5.1.1`,
         langPath: `${OCR_BASE}@tesseract.js-data/eng@1.0.0/4.0.0_best_int`,
-        logger: (m) => ocrProgress(m),
+        logger: (m) => ocrProgress(m.status === 'recognizing text' ? { ...m, progress: (ocrPass.at + (m.progress || 0)) / ocrPass.of } : m),
         errorHandler: fail,
       }).then((worker) => {
         if (settled) { worker.terminate(); return; }
@@ -4861,13 +4888,23 @@
   // The how-to the first time; after that, straight to choosing a picture.
   const startScan = () => (game().scans ? pickImage() : openScan());
 
-  // Reads a screenshot: its text, plus each line's words and where they sit (to box what was found).
+  // Reads a screenshot: its text, plus each line's words and where they sit (to box what was found). It's read two
+  // ways: by the page's own blocks, which keeps columns apart (run into the greeting beside it, a big balance's
+  // digits come out wrong: "Hello Alex, 26 048" for 26,948), and as one block of lines, the reader's usual way.
+  // readingOf() keeps the better one.
+  const OCR_LAYOUTS = ['3', '6']; // Tesseract page layouts: automatic, then a single block
   async function ocrImage(file) {
     const worker = await loadOCR();
     const canvas = await prepareImage(file);
-    const { data } = await worker.recognize(canvas, {}, { text: true, blocks: true });
-    const lines = data.lines || (data.blocks || []).flatMap((b) => (b.paragraphs || []).flatMap((para) => para.lines || []));
-    return { text: data.text || '', lines, width: canvas.width, height: canvas.height };
+    const passes = [];
+    for (const [at, layout] of OCR_LAYOUTS.entries()) {
+      ocrPass = { at, of: OCR_LAYOUTS.length };
+      await worker.setParameters({ tessedit_pageseg_mode: layout });
+      const { data } = await worker.recognize(canvas, {}, { text: true, blocks: true });
+      const lines = data.lines || (data.blocks || []).flatMap((b) => (b.paragraphs || []).flatMap((para) => para.lines || []));
+      passes.push({ text: data.text || '', lines });
+    }
+    return { ...passes[0], passes, width: canvas.width, height: canvas.height };
   }
 
   /* ---------- The game: XP and levels, a weekly streak, how many balances are up to date, badges ---------- */
@@ -5421,12 +5458,13 @@
     const programs = state.programs || [];
     let own = choice ? programs.find((x) => x.id === choice) || null : null;
     let cid = choice ? (own ? (catalogFor(own) || {}).id || null : choice.slice(4)) : null;
-    const found = parseAccountText(read.text, choice ? cid || '' : undefined);
+    const reading = readingOf(read, choice ? cid || '' : undefined);
+    const { found } = reading;
     if (!choice) {
       cid = found.programId;
       own = cid ? programs.find((x) => catalogFor(x) && catalogFor(x).id === cid) || null : null;
     }
-    Object.assign(playing, { read, pickArg: choice, text: read.text, found });
+    Object.assign(playing, { read, pickArg: choice, text: reading.text, found });
     $('#play-shot').className = 'play-shot done';
     const later = batch ? ['Skip', false, skipPlay] : ['Try another', false, pickAnother];
     if (!own && !cid && playing.hint && (state.programs || []).some((x) => x.id === playing.hint)) { showLoot(read, playing.hint); return; }
@@ -5442,7 +5480,7 @@
     if (outcome && outcome.kind !== 'covered') changes++;
     const real = realChanges(p, own, vals, outcome);
     const confirmOnly = !!own && !real;
-    markFound(read, found, vals, p);
+    markFound(reading, found, vals, p);
     const rows = lootRows(p, own, vals, outcome);
     if (doubts.length) rows.splice(1, 0, doubtRow(doubts, found, vals));
     $('#play-loot').replaceChildren(...rows.map((li, i) => { li.style.setProperty('--i', i); return li; }));

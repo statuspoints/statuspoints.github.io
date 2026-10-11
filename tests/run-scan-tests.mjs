@@ -25,8 +25,9 @@ const stubs = `
 `;
 const context = vm.createContext({ console, Intl, Math, Date, Number, String, Object, Array, Set, Map, RegExp, JSON });
 vm.runInContext(`${stubs}\n${head}\n${dates}\nconst state = { programs: [], balances: {}, progress: {}, updated: {} };\n${parser}\n
-  globalThis.read = (text) => {
-    const r = parseAccountText(text);
+  // A case's text, or each of its readings (passes) with the better one kept, as the app does with a screenshot.
+  globalThis.read = (c) => {
+    const r = c.passes ? readingOf({ passes: c.passes.map((text) => ({ text, lines: [] })) }).found : parseAccountText(c.text);
     const tiers = r.programId ? scanTiersFor(r.programId) : [];
     return { program: r.programId, balance: r.balances[0] ?? null, tier: r.tierIndex >= 0 ? tiers[r.tierIndex].name : null,
       exp: r.exp, progress: r.progress, alt: r.altProgress, mqd: r.mqd, member: r.member };
@@ -34,7 +35,7 @@ vm.runInContext(`${stubs}\n${head}\n${dates}\nconst state = { programs: [], bala
 
 let failed = 0;
 for (const c of cases) {
-  const got = context.read(c.text);
+  const got = context.read(c);
   const wrong = Object.entries(c.expect).filter(([k, v]) => (got[k] ?? null) !== v);
   if (wrong.length) {
     failed++;

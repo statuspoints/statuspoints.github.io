@@ -523,4 +523,30 @@ export default [
     expect: { program: 'american', balance: 45210, tier: 'Platinum', progress: 12000 } },
   { name: 'R4 United Lifetime Premier Gold heading', text: `MileagePlus\nLifetime Premier Gold\n88,000 miles\nPQP 3,200`,
     expect: { program: 'united', balance: 88000, tier: 'Premier Gold', progress: 3200 } },
+
+  // ---------- The text reader's real output for one IHG web page (name and member number changed) ----------
+  // Read by the page's own blocks (layout 3), the big balance keeps its own line under its caption.
+  { name: 'IHG web, read by blocks', text: `IHG 4 SEaros\nHello Alex,\nPlatinum Elite Member\nMember #123456789\nOverview Rewards Wallet Account Activity Settings\nMy Account Stays and Events Points Offers\nYOUR POINTS\n26,948\nPurchase points\nMember Benefits`,
+    expect: { program: 'ihg', balance: 26948, tier: 'Platinum Elite', member: '123456789' } },
+  // Read as one block (layout 6), the balance runs into the greeting beside it and loses its comma.
+  { name: 'IHG web, one block: balance run into the greeting', text: `IHG 4 WARDS My Account Stays and Events Points Offers\n"\nYOUR POINTS\nHello Alex, 26 948\n. [J] ’\nPlatinum Elite Member\nRedeem Points\nMember #123456789\nPurchase points\nOverview Rewards Wallet Account Activity Settings Member Benefits`,
+    expect: { program: 'ihg', balance: 26948, tier: 'Platinum Elite', member: '123456789' } },
+  // …and with a digit misread there ("26 048"), never the "048" alone.
+  { name: 'IHG web, one block, misread digit: not "48"', text: `YOUR POINTS\nHello Alex, 26 048\nIHG One Rewards`,
+    expect: { program: 'ihg', balance: 26048 } },
+  { name: 'A lone "048" is never a balance', text: `IHG One Rewards\nHello Alex, 048 points`,
+    expect: { program: 'ihg', balance: null } },
+  // Both readings of the screenshot: the one by blocks reads the balance surely, so it wins over the misread one.
+  { name: 'Two readings: the sure one wins', passes: [`IHG 4 SEaros\nHello Alex,\nPlatinum Elite Member\nMember #123456789\nMy Account Stays and Events Points Offers\nYOUR POINTS\n26,948\nPurchase points`,
+    `IHG 4 WARDS My Account Stays and Events Points Offers\nYOUR POINTS\nHello Alex, 26 048 Redeem\nPlatinum Elite Member\nMember #123456789`],
+    expect: { program: 'ihg', balance: 26948, tier: 'Platinum Elite', member: '123456789' } },
+  { name: 'Two readings, the sure one second', passes: [`IHG 4 WARDS My Account Stays and Events Points Offers\nYOUR POINTS\nHello Alex, 26 048 Redeem\nPlatinum Elite Member`,
+    `IHG 4 SEaros\nHello Alex,\nPlatinum Elite Member\nMember #123456789\nYOUR POINTS\n26,948\nPurchase points`],
+    expect: { program: 'ihg', balance: 26948, tier: 'Platinum Elite', member: '123456789' } },
+  // What one reading missed (the status, the member number) comes from the other reading of the same program.
+  { name: 'Two readings: missing status and member number filled in', passes: [`IHG One Rewards\nYOUR POINTS\n26,948`, `IHG One Rewards\nPlatinum Elite Member\nMember #123456789\nPoints 26,948`],
+    expect: { program: 'ihg', balance: 26948, tier: 'Platinum Elite', member: '123456789' } },
+  // …but not from a reading that found another program.
+  { name: 'Two readings: nothing borrowed across programs', passes: [`IHG One Rewards\nYOUR POINTS\n26,948`, `Hilton Honors\nDiamond\nMember #987654321`],
+    expect: { program: 'ihg', balance: 26948, tier: null, member: null } },
 ];
