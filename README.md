@@ -137,7 +137,7 @@ Use **Export as text** at the bottom to save an easy-to-read `.txt` summary of y
 | `manifest.json` | Install-to-home-screen metadata |
 | `sw.js` | Service worker that caches the app for offline use |
 | `icon.svg`, `icon-*.png`, `apple-touch-icon.png` | App icons |
-| `tests/` | Screenshot-reader cases (`node tests/run-scan-tests.mjs`), the game's math (`node tests/run-game-tests.mjs`), household totals (`node tests/run-household-tests.mjs`), welcome-bonus math and saving (`node tests/run-bonus-tests.mjs`), and the status levels table (`node tests/run-levels-tests.mjs`) |
+| `tests/` | Screenshot-reader cases (`node tests/run-scan-tests.mjs`), the game's math (`node tests/run-game-tests.mjs`), household totals (`node tests/run-household-tests.mjs`), welcome-bonus math and saving (`node tests/run-bonus-tests.mjs`), the status levels table (`node tests/run-levels-tests.mjs`), and every bug-fix check — cards, Delta Medallions, qualifying progress, people, Undo, money and the calendar (`node tests/run-regression-tests.mjs`, which runs each `tests/run-fixes-*-tests.mjs`) |
 
 ## Updating
 

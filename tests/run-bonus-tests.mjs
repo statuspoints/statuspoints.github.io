@@ -46,7 +46,7 @@ vm.runInContext(`${stubs}\n${head}\n${dates}
   let bonusEditing = null;
   const cardsSheet = { open: false };
   const shown = { toasts: [], achievements: [] };
-  const saveNow = () => {}; const renderAll = () => {}; const renderRenewals = () => {}; const focusBonus = () => {};
+  const saveNow = () => {}; const markChanged = () => {}; const renderAll = () => {}; const renderRenewals = () => {}; const focusBonus = () => {};
   const queueAchievements = (r) => shown.achievements.push(r);
   const showToast = (message, action) => shown.toasts.push({ message, action });
   ${piece('  const bonusFilled', '\n')}

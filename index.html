@@ -2290,6 +2290,10 @@
     { issuer: 'Wells Fargo', id: 'autograph-journey', name: 'Autograph Journey', tone: 'black', grants: [] },
   ];
   const CARD_BY_ID = byId(CARDS);
+  // The most status lines cards can give one program (lounge access today, which many cards give), so a saved tracker
+  // holding every card keeps them all on top of the lines you typed.
+  const CARD_LINES_MAX = Math.max(...Object.values(CARDS.flatMap((c) => c.grants.map(([id]) => id))
+    .reduce((count, id) => ({ ...count, [id]: (count[id] || 0) + 1 }), {})));
   const PERK_SHORT = {
     delta: 'MQD Headstart', aeroplan: 'Aeroplan', hyatt: 'Hyatt', lhw: 'LHW', omni: 'Omni',
     hertz: 'Hertz', avis: 'Avis', national: 'National', lounges: 'Lounges',
@@ -2537,7 +2541,8 @@
     bilt: { months: 18, note: 'Paying rent through Bilt or using a Bilt card counts as activity.' },
   };
 
-  // Statement credits per card, as of CREDITS_AS_OF: [id, name, dollars per period, period, resets, note].
+  // Statement credits per card, as of CREDITS_AS_OF: [id, name, dollars per period, period, resets, note, December
+  // dollars (a monthly credit that's bigger in December)].
   // period: 'month' | 'quarter' | 'half' (Jan–Jun, Jul–Dec) | 'year'; resets: 'calendar' or 'card' (card-member year,
   // counted from your annual fee date when you've added it).
   const CREDITS_AS_OF = 'October 2026';
@@ -2548,7 +2553,7 @@
       ['airline', 'Airline fee credit', 200, 'year', 'calendar', 'incidental fees on the airline you pick'],
       ['resy', 'Resy dining', 100, 'quarter', 'calendar', 'U.S. Resy restaurants; enroll'],
       ['lululemon', 'lululemon', 75, 'quarter', 'calendar', 'U.S. stores and online; enroll'],
-      ['uber', 'Uber Cash', 15, 'month', 'calendar', '$35 in December'],
+      ['uber', 'Uber Cash', 15, 'month', 'calendar', '$35 in December', 35],
       ['entertainment', 'Digital entertainment', 25, 'month', 'calendar', 'streaming and news subscriptions; enroll'],
       ['walmart', 'Walmart+', 12.95, 'month', 'calendar', 'monthly membership, plus tax'],
       ['uber-one', 'Uber One', 120, 'year', 'calendar', 'membership billed to the card'],
@@ -2618,7 +2623,7 @@
       ['hotels', 'Renowned Hotels', 200, 'year', 'card', 'prepaid through United Hotels'],
       ['jsx', 'JSX', 200, 'year', 'card', 'booked directly with JSX'],
       ['avis', 'Avis / Budget', 100, 'year', 'card', 'two $50 credits via MileagePlus Travel'],
-      ['rideshare', 'Rideshare', 12, 'month', 'calendar', '$18 in December; opt in each year'],
+      ['rideshare', 'Rideshare', 12, 'month', 'calendar', '$18 in December; opt in each year', 18],
       ['instacart', 'Instacart', 20, 'month', 'calendar', 'with Instacart+'],
     ],
     'united-quest': [
@@ -2626,7 +2631,7 @@
       ['hotels', 'Renowned Hotels', 150, 'year', 'card', 'prepaid through United Hotels'],
       ['jsx', 'JSX', 150, 'year', 'card', 'booked directly with JSX'],
       ['avis', 'Avis / Budget', 80, 'year', 'card', 'TravelBank cash via cars.united.com'],
-      ['rideshare', 'Rideshare', 8, 'month', 'calendar', '$12 in December; opt in each year'],
+      ['rideshare', 'Rideshare', 8, 'month', 'calendar', '$12 in December; opt in each year', 12],
       ['instacart', 'Instacart', 15, 'month', 'calendar', '$10 + $5 with Instacart+'],
     ],
     'united-explorer': [
@@ -2717,7 +2722,7 @@
       partners: [['american', 1, 1], ['jetblue', 1, 1], ['flyingblue', 1, 1], ['virgin', 1, 1], ['choice', 1, 1.5], ['wyndham', 1, 1],
         ['accor', 2, 1], ['avianca', 1, 1], ['cathay', 1, 1], ['etihad', 1, 1], ['EVA', 1, 1], ['jal', 1, 1], ['qantas', 1, 1],
         ['qatar', 1, 1], ['singapore', 1, 1], ['Thai', 1, 1], ['turkish', 1, 1], ['emirates', 5, 4], ['iprefer', 1, 2]],
-      note: 'Ratios with Strata Premier or Strata Elite. No-fee Citi cards transfer at 10:7 and can’t move points to American.',
+      note: 'Ratios with Strata Premier or Strata Elite. No-fee Citi cards (Strata, Double Cash, Custom Cash) transfer at 10:7, American included.',
     },
     capitalone: {
       partners: [['aeroplan', 1, 1], ['flyingblue', 1, 1], ['ba', 1, 1], ['virgin', 1, 1], ['jetblue', 5, 3], ['choice', 1, 1],
@@ -2802,13 +2807,14 @@
   const money = (n) => moneyFmt.format(Math.round(n));
 
   // When a balance runs out if nothing happens: null if it can't (never expires, or you're exempt) or no last
-  // activity date is known. `exempt` names what protects it.
+  // activity date is known. `exempt` names what protects it; `empty` means a zero balance, so nothing to lose.
   function pointsExpiry(p) {
     const rule = expiryFor(p);
     if (!rule || !rule.months) return null;
     const card = (rule.cards || []).map((id) => CARD_BY_ID[id]).find((c) => state.cards.includes(c.id));
     if (card) return { rule, exempt: `your ${card.name} card` };
     if (rule.exemptIfElite && hasStatus(p)) return { rule, exempt: 'your elite status' };
+    if (state.balances[p.id] === 0) return { rule, empty: true }; // no date: no reminder, calendar event or summary line
     const last = parseISODate(state.activity[p.id]);
     if (!last) return { rule, date: null };
     const date = new Date(last.getFullYear(), last.getMonth() + rule.months, last.getDate());
@@ -2907,6 +2913,11 @@
     const alt = track.alt;
     const altAt = alt && a != null ? alt.steps[nextIndex] : null;
     const altLeft = altAt != null && (!alt.with || n >= alt.with[nextIndex]) ? Math.max(altAt - a, 0) : null;
+    // A second path that also needs some of the main count (United: flights plus PQP) is only as far along as
+    // the less finished of the two, and once its flights are in, only its smaller PQP figure is left.
+    const withAt = altAt != null && alt.with ? alt.with[nextIndex] : null;
+    const left = withAt != null && a >= altAt ? Math.max(Math.min(at, withAt) - n, 0) : Math.max(at - n, 0);
+    const altRatio = altAt ? Math.min(a / altAt, withAt ? n / withAt : 1) : 0;
     return {
       track,
       tiers,
@@ -2914,33 +2925,35 @@
       n,
       a,
       entered,
-      next: { name: tierLabel(tiers[nextIndex].name), at, left: Math.max(at - n, 0), also: also[nextIndex], keep: keeping, altLeft },
-      toNext: Math.max(0, Math.min(Math.max((n - prev) / (at - prev), altAt ? a / altAt : 0), 1)),
+      next: { name: tierLabel(tiers[nextIndex].name), at, left, also: also[nextIndex], keep: keeping, altLeft },
+      toNext: Math.max(0, Math.min(Math.max((n - prev) / (at - prev), altRatio), 1)),
     };
   }
 
-  // The highest level you hold at least as long as one earned this year would last (card statuses count).
+  // The highest level you hold at least as long as one earned this year would last (card statuses count, unless
+  // they have an end date that comes sooner).
   function heldThroughIndex(p, track) {
     const tiers = benefitsFor(p);
     if (!tiers) return -1;
     const earnedThru = isoOf(track.thru(qualYear(track)));
     let best = -1;
     for (const line of p.status) {
-      if (!line.tier || lineExpired(line) || (line.exp && !line.card && line.exp < earnedThru)) continue;
+      if (!line.tier || lineExpired(line) || (line.exp && line.exp < earnedThru)) continue;
       for (const part of splitParts(line.tier)) best = Math.max(best, findTier(tiers, part));
     }
     return best;
   }
 
-  // The highest level you hold that runs out before a level earned this year would: dated statuses you typed
-  // or kept from last year (card statuses renew with the card). -1 if none needs earning again.
+  // The highest level you hold that runs out before a level earned this year would: dated statuses you typed,
+  // kept from last year, or from a card with an end date (like Sapphire Reserve's IHG Platinum thru 12/31/27; card
+  // statuses without one renew with the card). -1 if none needs earning again.
   function keepIndex(p, track) {
     const tiers = benefitsFor(p);
     if (!tiers) return -1;
     const earnedThru = isoOf(track.thru(qualYear(track)));
     let best = -1;
     for (const line of p.status) {
-      if (!line.tier || !line.exp || line.card || lineExpired(line) || line.exp >= earnedThru) continue;
+      if (!line.tier || !line.exp || lineExpired(line) || line.exp >= earnedThru) continue;
       for (const part of splitParts(line.tier)) best = Math.max(best, findTier(tiers, part));
     }
     return best;
@@ -3218,20 +3231,24 @@
       const name = str(p && p.name, 60);
       if (!name || typeof p.id !== 'string' || !/^[a-z0-9][a-z0-9-]{0,39}$/.test(p.id) || reservedId(p.id) || seen.has(p.id)) continue;
       seen.add(p.id);
+      let typedKept = 0;
+      let cardKept = 0;
       const program = {
         id: p.id,
         name,
         unit: UNITS.includes(p.unit) ? p.unit : '',
         status: (Array.isArray(p.status) ? p.status : [])
           .map((line) => {
-            const clean = { tier: str(line && line.tier, 80), via: str(line && line.via, 80) };
+            const clean = { tier: str(line && line.tier, 120), via: str(line && line.via, 120) }; // room for the longest card status
             if (line && typeof line.card === 'string' && CARD_BY_ID[line.card]) clean.card = line.card; // added by a card preset
             const exp = line && typeof line.exp === 'string' && parseISODate(line.exp) ? line.exp : thruDate(clean.via);
-            if (exp) clean.exp = exp; // status expiration (YYYY-MM-DD)
+            if (exp) clean.exp = line.exp === '' ? '' : exp; // status expiration (YYYY-MM-DD); '' = you cleared the "thru" date
             return clean;
           })
           .filter((line) => line.tier || line.via)
-          .slice(0, 20), // more than any real program needs
+          // More than any real program needs: 20 typed lines, plus every line cards can give it. A card line cut
+          // here wouldn't come back (cards only re-add lines they haven't given before).
+          .filter((line) => (line.card ? cardKept++ < CARD_LINES_MAX : typedKept++ < 20)),
       };
       if (p.medallion === true) program.medallion = true;
       if (typeof p.addedBy === 'string' && CARD_BY_ID[p.addedBy]) program.addedBy = p.addedBy; // created by a card preset
@@ -3262,13 +3279,30 @@
     return s.programs.find((p) => p.id === programId) || s.programs.find((p) => p.name.toLowerCase() === catalogName);
   }
 
-  // Adds a card's statuses to `s`, creating programs as needed. Returns how many status lines it added.
-  function applyCard(s, cardId) {
+  // The status lines a card gives, each with a key so the tracker can remember which ones it has put on your list.
+  function cardLines(card) {
+    return card.grants.map(([programId, tier, note, exp]) => {
+      const via = note ? `${card.name} · ${note}` : card.name;
+      return { programId, tier, via, exp, key: `${programId}|${tier}|${via}` };
+    });
+  }
+
+  // Whether `line` is one the card gives (the same words, give or take spacing and case).
+  const cardGives = (cardId, line) => !!CARD_BY_ID[cardId]
+    && cardLines(CARD_BY_ID[cardId]).some((w) => sameText(w.tier, line.tier) && sameText(w.via, line.via));
+
+  // Adds a card's statuses to `s`, creating programs as needed. Returns how many status lines it added. With
+  // `onlyNew`, it skips statuses it has put on before (you removed or changed them since), so only ones the card
+  // has started giving go on.
+  function applyCard(s, cardId, onlyNew = false) {
     const card = CARD_BY_ID[cardId];
     if (!card || s.cards.includes(cardId)) return 0;
     s.cards.push(cardId);
+    const seen = (s.cardSeen || (s.cardSeen = {}))[cardId] || (s.cardSeen[cardId] = []);
     let added = 0;
-    for (const [programId, tier, note, exp] of card.grants) {
+    for (const { programId, tier, via, exp, key } of cardLines(card)) {
+      if (onlyNew && seen.includes(key)) continue;
+      if (!seen.includes(key)) seen.push(key);
       let program = findProgram(s, programId);
       if (!program) {
         program = { ...programFromCatalog(CATALOG_BY_ID[programId]), addedBy: cardId };
@@ -3277,7 +3311,6 @@
         if (at < 0) s.programs.push(program);
         else s.programs.splice(at, 0, program);
       }
-      const via = note ? `${card.name} · ${note}` : card.name;
       const existing = program.status.find((line) => sameText(line.tier, tier) && sameText(line.via, via));
       if (existing) {
         existing.card = cardId; // the person already typed this one; link it to the card
@@ -3301,28 +3334,27 @@
   }
 
   // Brings each card you hold in line with today's CARDS: statuses it no longer gives come off, new ones go on,
-  // and lines that still match (including any end date you added) stay as they are. Runs on every load.
+  // and lines that still match (including any end date you added) stay as they are. Statuses you deleted (or
+  // whose program you deleted) stay off. Runs on every load.
   function syncCards(s) {
     for (const cardId of [...s.cards]) {
-      const card = CARD_BY_ID[cardId];
-      if (!card) continue;
-      const wanted = card.grants.map(([, tier, note]) => ({ tier, via: note ? `${card.name} · ${note}` : card.name }));
-      for (const p of s.programs) {
-        p.status = p.status.filter((line) => line.card !== cardId || wanted.some((w) => sameText(w.tier, line.tier) && sameText(w.via, line.via)));
-      }
+      if (!CARD_BY_ID[cardId]) continue;
+      for (const p of s.programs) p.status = p.status.filter((line) => line.card !== cardId || cardGives(cardId, line));
       s.cards = s.cards.filter((id) => id !== cardId);
-      applyCard(s, cardId); // back on the list, adding anything it's missing
+      applyCard(s, cardId, true); // back on the list, adding only what the card has started giving since
     }
   }
 
   // Takes a card's statuses (and its welcome bonus) off, plus any program a removed card created that is now empty
-  // with no balance.
+  // and holds nothing of yours: no balance, member number, counts, note, goal, ¢/pt value, or history.
   function removeCard(s, cardId) {
     s.cards = s.cards.filter((id) => id !== cardId);
     if (s.bonuses) delete s.bonuses[cardId];
+    if (s.cardSeen) delete s.cardSeen[cardId]; // picked again later, it puts everything back
     for (const p of s.programs) p.status = p.status.filter((line) => line.card !== cardId);
-    s.programs = s.programs.filter((p) => !(p.addedBy && !s.cards.includes(p.addedBy)
-      && !p.status.length && s.balances[p.id] == null && !(s.members || {})[p.id] && (s.progress || {})[p.id] == null));
+    const yours = (id) => [s.balances, s.members, s.memos, s.goals, s.cpp].some((map) => (map || {})[id] != null)
+      || [id, altKey(id)].some((key) => (s.progress || {})[key] != null) || ((s.history || {})[id] || []).length > 0;
+    s.programs = s.programs.filter((p) => !(p.addedBy && !s.cards.includes(p.addedBy) && !p.status.length && !yours(p.id)));
   }
 
   // Undo for removeCard: puts back just what it took (from `prev`, a copy from before), so anything changed since,
@@ -3333,6 +3365,7 @@
     if (prev.bonuses && prev.bonuses[cardId] && !(s.bonuses && s.bonuses[cardId])) (s.bonuses || (s.bonuses = {}))[cardId] = clone(prev.bonuses[cardId]);
     if (s.cards.includes(cardId)) return; // picked again since: its statuses are already back
     s.cards.splice(Math.min(prev.cards.indexOf(cardId), s.cards.length), 0, cardId);
+    if (prev.cardSeen && prev.cardSeen[cardId]) (s.cardSeen || (s.cardSeen = {}))[cardId] = [...prev.cardSeen[cardId]];
     prev.programs.forEach((old, i) => {
       if (!old.status.some((line) => line.card === cardId)) return;
       const p = s.programs.find((x) => x.id === old.id);
@@ -3477,21 +3510,28 @@
   function normalize(raw) {
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
     if (!['programs', 'balances', 'vouchers', 'mqd'].some((k) => k in raw)) return null;
-    const s = { programs: null, view: 'detailed', cards: [], renewals: {}, creditsUsed: {}, creditsSkipped: {}, customCredits: {}, bonuses: {}, notes: '', memos: {}, balances: {}, history: {}, cpp: {}, hideValues: false, activity: {}, mqd: 0, progress: {}, members: {}, updated: {}, backedUp: '', game: { xp: 0, scans: 0, best: 0, weeks: [], badges: {}, confirmed: {}, log: [] }, goals: {}, vouchers: [] };
+    const s = { programs: null, view: 'detailed', cards: [], cardSeen: {}, renewals: {}, creditsUsed: {}, creditsUsedOn: {}, creditsSkipped: {}, customCredits: {}, bonuses: {}, notes: '', memos: {}, balances: {}, history: {}, cpp: {}, hideValues: false, activity: {}, mqd: 0, progress: {}, members: {}, updated: {}, backedUp: '', since: '', changed: '', game: { xp: 0, scans: 0, best: 0, weeks: [], badges: {}, confirmed: {}, log: [] }, goals: {}, vouchers: [] };
     if (raw.balances && typeof raw.balances === 'object') {
-      for (const [id, v] of ownEntries(raw.balances)) if (isCount(v)) s.balances[id] = Math.floor(v);
+      for (const [id, v] of ownEntries(raw.balances)) if (isCount(v)) s.balances[id] = Math.min(Math.floor(v), MAX_VALUE); // no more than you can type
     }
-    if (raw.history && typeof raw.history === 'object') { // [date, balance] pairs per program, oldest first
+    if (raw.history && typeof raw.history === 'object') { // [date, balance, source, activity before] per program, oldest first
       for (const [id, list] of ownEntries(raw.history)) {
         if (!Array.isArray(list)) continue;
         const clean = list.filter((e) => Array.isArray(e) && typeof e[0] === 'string' && parseISODate(e[0]) && isCount(e[1]))
-          .map(([d, v, src]) => (src === 's' || src === 't' ? [d, Math.floor(v), src] : [d, Math.floor(v)]))
+          .map(([d, v, src, before]) => {
+            const n = Math.min(Math.floor(v), MAX_VALUE);
+            if (src !== 's' && src !== 't') return [d, n];
+            return before === '' || (typeof before === 'string' && parseISODate(before)) ? [d, n, src, before] : [d, n, src];
+          })
           .sort((a, b) => a[0].localeCompare(b[0])).slice(-HISTORY_MAX);
         if (clean.length) s.history[id] = clean;
       }
     }
     if (raw.creditsUsed && typeof raw.creditsUsed === 'object') { // "card:credit" → the period it was used in
       for (const [k, v] of ownEntries(raw.creditsUsed)) if (typeof v === 'string' && v.length <= 20) s.creditsUsed[k] = v;
+    }
+    if (raw.creditsUsedOn && typeof raw.creditsUsedOn === 'object') { // "card:credit" → the day it was marked used
+      for (const [k, v] of ownEntries(raw.creditsUsedOn)) if (typeof v === 'string' && parseISODate(v)) s.creditsUsedOn[k] = v;
     }
     if (raw.creditsSkipped && typeof raw.creditsSkipped === 'object') { // credits you've chosen not to track
       for (const [k, v] of ownEntries(raw.creditsSkipped)) if (v === true) s.creditsSkipped[k] = true;
@@ -3521,7 +3561,7 @@
       for (const [id, v] of ownEntries(raw.members)) { const number = str(v, 40); if (number) s.members[id] = number; }
     }
     if (raw.progress && typeof raw.progress === 'object') { // this year's nights / PQP / Loyalty Points toward status
-      for (const [id, v] of ownEntries(raw.progress)) if (isCount(v)) s.progress[id] = Math.floor(v);
+      for (const [id, v] of ownEntries(raw.progress)) if (isCount(v)) s.progress[id] = Math.min(Math.floor(v), MAX_VALUE);
     }
     if (raw.activity && typeof raw.activity === 'object') { // last earn/redeem per program, for points expiration
       for (const [id, v] of ownEntries(raw.activity)) if (parseISODate(v)) s.activity[id] = v;
@@ -3547,7 +3587,15 @@
     if (raw.updated && typeof raw.updated === 'object') { // when each balance was last changed (YYYY-MM-DD)
       for (const [id, v] of ownEntries(raw.updated)) if (parseISODate(v)) s.updated[id] = v;
     }
-    if (isCount(raw.mqd)) s.mqd = Math.floor(raw.mqd);
+    // For the backup nudge: the first day anything was entered, and the last day something changed since the last
+    // backup ('' when nothing has). Saves from before these were kept go by the update and balance-history dates;
+    // a change on the day of the backup may have come after it, so it counts.
+    const entered = [...Object.values(s.updated), ...Object.values(s.history).map((list) => list[0][0])].sort();
+    if (parseISODate(raw.since)) s.since = raw.since;
+    else if (entered.length) s.since = entered[0];
+    if (typeof raw.changed === 'string') s.changed = parseISODate(raw.changed) ? raw.changed : '';
+    else if (entered.length && entered[entered.length - 1] >= s.backedUp) s.changed = entered[entered.length - 1];
+    if (isCount(raw.mqd)) s.mqd = Math.min(Math.floor(raw.mqd), MAX_VALUE);
     if (Array.isArray(raw.vouchers)) {
       s.vouchers = raw.vouchers
         .filter((v) => v && str(v.name, 80))
@@ -3562,8 +3610,16 @@
     if (Array.isArray(raw.programs)) {
       s.programs = cleanPrograms(raw.programs);
       s.cards = Array.isArray(raw.cards) ? [...new Set(raw.cards.filter((id) => CARD_BY_ID[id]))] : [];
-      if (raw.renewals && typeof raw.renewals === 'object') { // annual-fee date per card you hold (month and day repeat)
-        for (const [id, v] of ownEntries(raw.renewals)) if (s.cards.includes(id) && parseISODate(v)) s.renewals[id] = v;
+      if (raw.cardSeen && typeof raw.cardSeen === 'object') { // per card you hold: the statuses it has put on your list
+        for (const [id, list] of ownEntries(raw.cardSeen)) {
+          if (!s.cards.includes(id) || !Array.isArray(list)) continue;
+          const keys = cardLines(CARD_BY_ID[id]).map((w) => w.key);
+          s.cardSeen[id] = keys.filter((key) => list.includes(key));
+        }
+      }
+      if (raw.renewals && typeof raw.renewals === 'object') { // annual-fee date per card (month and day repeat), kept
+        // after you remove a card, like its credits, so it's still there if you add the card back
+        for (const [id, v] of ownEntries(raw.renewals)) if (CARD_BY_ID[id] && parseISODate(v)) s.renewals[id] = v;
       }
       if (raw.bonuses && typeof raw.bonuses === 'object') { // welcome bonus per card you hold: points, spend, deadline
         for (const [id, b] of ownEntries(raw.bonuses)) {
@@ -3658,6 +3714,32 @@
     return { shown, hidden };
   }
 
+  // Keeps an untouched copy of saved data this version can't read or show (`raw`, or what's saved for this tracker),
+  // so nothing is lost. A later different copy is never skipped because an earlier one is there, but only the first
+  // and the newest few are kept, so a window that can't show another window's saves doesn't fill up storage.
+  const STASH_LIMIT = 5; // copies per tracker
+  function stashUnreadable(raw) {
+    const stash = `status-tracker-unreadable:${storageKey()}`; // not under KEY, so it's never mistaken for a person
+    try {
+      if (raw === undefined) raw = localStorage.getItem(storageKey());
+      if (!raw) return;
+      const later = []; // `${stash}@<time>` keys
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i) || '';
+        if (key !== stash && !key.startsWith(`${stash}@`)) continue;
+        if (localStorage.getItem(key) === raw) return; // kept already
+        if (key !== stash) later.push(key);
+      }
+      if (localStorage.getItem(stash) == null) { localStorage.setItem(stash, raw); return; }
+      const time = (key) => Number(key.slice(stash.length + 1));
+      later.sort((a, b) => time(a) - time(b));
+      while (later.length >= STASH_LIMIT - 1) localStorage.removeItem(later.shift()); // the oldest later copy makes room
+      let at = Date.now();
+      while (localStorage.getItem(`${stash}@${at}`) != null) at++; // two in the same millisecond
+      localStorage.setItem(`${stash}@${at}`, raw);
+    } catch (e) { /* storage unavailable */ }
+  }
+
   function load() {
     let raw = null;
     try {
@@ -3667,19 +3749,26 @@
     } catch (e) {
       // Saved data this version can't read: keep an untouched copy before starting fresh, so nothing is lost.
       console.error('Points & Status Tracker: could not read saved data', e);
-      const stash = `status-tracker-unreadable:${storageKey()}`; // not under KEY, so it's never mistaken for a person
-      try { if (raw && !localStorage.getItem(stash)) localStorage.setItem(stash, raw); } catch (err) { /* storage unavailable */ }
+      stashUnreadable(raw);
     }
     return blankState(); // null programs → first-run setup
   }
   function blankState() {
-    return { programs: null, view: 'detailed', cards: [], renewals: {}, creditsUsed: {}, creditsSkipped: {}, customCredits: {}, bonuses: {}, notes: '', memos: {}, balances: {}, history: {}, cpp: {}, hideValues: false, activity: {}, mqd: 0, progress: {}, members: {}, updated: {}, backedUp: '', game: { xp: 0, scans: 0, best: 0, weeks: [], badges: {}, confirmed: {}, log: [] }, goals: {}, vouchers: [] };
+    return { programs: null, view: 'detailed', cards: [], cardSeen: {}, renewals: {}, creditsUsed: {}, creditsUsedOn: {}, creditsSkipped: {}, customCredits: {}, bonuses: {}, notes: '', memos: {}, balances: {}, history: {}, cpp: {}, hideValues: false, activity: {}, mqd: 0, progress: {}, members: {}, updated: {}, backedUp: '', since: '', changed: '', game: { xp: 0, scans: 0, best: 0, weeks: [], badges: {}, confirmed: {}, log: [] }, goals: {}, vouchers: [] };
   }
 
   const state = load();
   let saveTimer = 0;
 
+  // Something in the tracker changed: dated for the backup nudge (backUp clears it).
+  function markChanged() {
+    if (!state.programs) return;
+    state.changed = todayISO();
+    if (!state.since) state.since = state.changed;
+  }
+
   function scheduleSave() {
+    markChanged();
     clearTimeout(saveTimer);
     saveTimer = setTimeout(saveNow, SAVE_DELAY);
   }
@@ -3697,6 +3786,17 @@
 
   // Another tab or window saved this tracker: take its copy, rather than overwrite it on this tab's next save.
   addEventListener('storage', (e) => {
+    // The people list changed there (someone added, renamed, or removed): take it, so this window's next save of
+    // the list doesn't drop them. This window keeps showing whoever it's showing.
+    if (e.key === PEOPLE_KEY) {
+      const fresh = readPeople().list;
+      const mine = activePerson();
+      if (mine && !fresh.some((person) => person.id === mine.id)) fresh.push(mine);
+      people.list.splice(0, people.list.length, ...fresh);
+      renderPeople(renaming != null); // mid-rename, only the header: redrawing the list would lose what's typed
+      if ($('#worth-sheet').open) renderWorth();
+      return;
+    }
     // Someone else's tracker changed there: refresh the household figures if they're on screen.
     if (e.key !== storageKey() && (e.key === KEY || (e.key || '').startsWith(`${KEY}:`))) {
       if ($('#worth-sheet').open) renderWorth();
@@ -3710,7 +3810,14 @@
     for (const key of Object.keys(state)) delete state[key];
     Object.assign(state, next);
     editMode = false;
-    renderAll();
+    // The whole tracker started over there: nothing open here belongs to it any more, as when switching person.
+    if (!state.programs) leaveTracker();
+    // The program open in the detail sheet or the editor may be gone there: close it, so Save can’t bring it back.
+    else {
+      if (detail.open && !detailProgram()) detail.close();
+      if (sheet.open && sheetId && !state.programs.some((p) => p.id === sheetId)) sheet.close();
+    }
+    renderSafely();
   });
 
   // Flush a pending save if the app is backgrounded or closed inside the debounce window.
@@ -3718,8 +3825,14 @@
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') {
       if (saveTimer) saveNow();
-    } else if (rollOver()) {
-      renderAll(); // a new qualifying year started while backgrounded
+      return;
+    }
+    // A new qualifying year may have started while backgrounded. If rolling it over fails partway, the half-changed
+    // copy is never saved: what's saved is set aside, as when the page can't be shown.
+    let rolled = false;
+    try { rolled = rollOver(); } catch (err) { openFresh(err); return; }
+    if (rolled) {
+      renderSafely();
     } else {
       renderToday();
       renderCredits(); // a month or quarter may have turned over
@@ -3738,23 +3851,30 @@
   }
 
   // Balance history for the trend in a program's details: one entry per day (the day's last value), capped.
-  function recordBalance(id, previous, value, source) {
+  // Each entry also keeps the last-activity date in effect before that day's change ('' for none), so Restore can
+  // put it back when the change was a misread.
+  function recordBalance(id, previous, value, source, activityBefore) {
     const list = state.history[id] || (state.history[id] = []);
     const today = todayISO();
     // The first change also keeps the balance it replaced, dated when it was entered.
     if (!list.length && previous != null && state.updated[id] && state.updated[id] < today) list.push([state.updated[id], previous]);
-    if (list.length && list[list.length - 1][0] === today) list[list.length - 1] = [today, value, source];
-    else list.push([today, value, source]);
+    const last = list[list.length - 1];
+    if (last && last[0] === today) list[list.length - 1] = [today, value, source, last.length > 3 ? last[3] : activityBefore]; // the day's first
+    else list.push([today, value, source, activityBefore]);
     if (list.length > HISTORY_MAX) list.splice(0, list.length - HISTORY_MAX);
   }
 
   function setField(field, value, source = 't') { // source: 's' read from a screenshot, 't' typed
+    // A new qualifying year that began while the page stayed open: keep last year's earned levels before a
+    // new-year value replaces the count they came from.
+    rollOver();
     if (field === 'mqd') {
       state.mqd = value ?? 0;
       state.updated.mqd = todayISO();
     } else {
       const [kind, id] = field.split(/:(.*)/s);
       const store = kind === 'prog' ? state.progress : state.balances;
+      const activityBefore = state.activity[id] || '';
       // A balance that goes up or down means you earned or redeemed — that resets an inactivity clock (only a
       // rise does where just earning counts).
       if (kind === 'bal' && store[id] != null && value != null && value !== store[id]) {
@@ -3762,7 +3882,7 @@
         const rule = program && expiryFor(program);
         if (!(rule && rule.earnOnly && value < store[id])) state.activity[id] = todayISO();
       }
-      if (kind === 'bal' && value != null && value !== store[id]) recordBalance(id, store[id], value, source);
+      if (kind === 'bal' && value != null && value !== store[id]) recordBalance(id, store[id], value, source, activityBefore);
       if (value == null) delete store[id];
       else store[id] = value;
       state.updated[kind === 'prog' ? field : id] = todayISO();
@@ -3803,9 +3923,26 @@
     return btn;
   }
 
+  // The qualifying year a count belongs to: Delta's MQDs, or a program's nights, flights or points. Null for a
+  // balance, which carries over from year to year.
+  function countYear(field) {
+    if (field === 'mqd') return mqdYear();
+    if (!field.startsWith('prog:')) return null;
+    const p = state.programs.find((x) => x.id === field.slice(5).replace(/\+alt$/, ''));
+    const track = p && trackFor(p);
+    return track ? qualYear(track) : null;
+  }
+
   function startEdit(btn) {
+    // A new qualifying year began while the page stayed open (no visibility change): show it before editing.
+    if (rollOver()) {
+      renderAll();
+      if (detail.open && detailProgram()) renderDetail();
+      return;
+    }
     const field = btn.dataset.field;
     const before = getField(field);
+    const year = countYear(field); // the year the number was opened in
     const input = h('input', {
       type: 'text',
       inputmode: 'numeric',
@@ -3829,13 +3966,22 @@
       const counted = field.startsWith('prog:') ? state.programs.find((p) => p.id === field.slice(5).replace(/\+alt$/, '')) : null;
       const balancesBefore = { ...state.balances };
       const earnedBefore = counted && earnedTier(counted);
+      // A new qualifying year began while the number was open: roll over first. A count typed against last
+      // year's figure belongs to last year (kept as a status if it earned one), so it isn't saved as this year's.
+      const rolled = commit && rollOver();
       if (commit) {
         const parsed = parseEntry(input.value);
-        if (parsed && parsed.value !== before) setField(field, parsed.value);
-        else if (!parsed) showToast('Couldn’t read that number, so nothing changed');
+        if (parsed && parsed.value !== before) {
+          if (countYear(field) === year) setField(field, parsed.value);
+          else showToast('New qualifying year: counts start over, so that number wasn’t saved');
+        } else if (!parsed) showToast('Couldn’t read that number, so nothing changed');
       }
       paintNum(btn);
       input.replaceWith(btn);
+      if (rolled) { // every program's counts and kept statuses, not just this number
+        renderAll();
+        if (detail.open && detailProgram()) renderDetail();
+      }
       if (commit && state.programs && !field.startsWith('prog:')) renderGame(); // streak, up to date, 30-day gain
       if (commit && field.startsWith('bal:')) {
         const row = btn.closest('li');
@@ -3854,12 +4000,20 @@
       }
       if (field === 'mqd') {
         updateMedallion();
-        // Crossed into a higher Medallion tier: celebrate.
+        // Crossed into a higher Medallion tier: celebrate — unless a higher one you hold (e.g. Platinum kept from
+        // last year) still outranks it; then just say how long the new one lasts. Nothing to say when you already
+        // hold it at least as long (Million Miler, from a card, or already through the same date).
         const was = TIERS.indexOf(medallionFor(before || 0).current);
-        const now = medallionFor(state.mqd).current;
-        if (TIERS.indexOf(now) > was) {
-          confetti($('.delta'));
-          showToast(`Welcome to ${now.name} Medallion!`);
+        const now = TIERS.indexOf(medallionFor(state.mqd).current);
+        const held = TIERS.indexOf(effectiveMedallion());
+        if (now > was && now > medallionHolds().lasting) {
+          const tier = TIERS[now];
+          if (now >= held) {
+            confetti($('#programs .delta'));
+            showToast(`Welcome to ${tier.name} Medallion!`);
+          } else {
+            showToast(`${tier.name} Medallion earned — yours through ${dateFmt.format(medallionThrough())}`);
+          }
         }
       } else if (counted) {
         renderPrograms();
@@ -3881,7 +4035,11 @@
           return;
         }
       }
-      if (refocus) btn.focus();
+      if (!refocus) return;
+      // After a roll-over the page was drawn again: focus the new copy of this number (in an open sheet first).
+      const sel = `[data-field="${CSS.escape(field)}"]`;
+      const again = rolled && !btn.isConnected && ($(`dialog[open] ${sel}`) || $(sel));
+      (again || btn).focus();
     };
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') { e.preventDefault(); finish(true, true); }
@@ -4026,25 +4184,28 @@
     $('#mqd-plan').style.width = `${Math.min(total / MQD_GOAL, 1) * 100}%`;
     const now = medallionFor(state.mqd).current;
     const then = medallionFor(total);
-    const held = effectiveMedallion();
+    const { lasting, lapsing } = medallionHolds();
+    const held = TIERS[lapsing]; // a tier from last year that ends before one earned this year would
+    const goal = mqdGoal(total);
+    // Reaching a tier counts unless you already hold it (or higher) for good, e.g. lifetime Gold.
+    const reaches = then.current && then.current !== now && TIERS.indexOf(then.current) > lasting;
     let result;
     if (!add) result = ['Drag to see where upcoming trips or card spend would get you.'];
-    else if (then.current && then.current !== now && held && TIERS.indexOf(then.current) <= TIERS.indexOf(held)) {
+    else if (reaches && held && TIERS.indexOf(then.current) <= lapsing) {
       // A tier you already hold from last year: this is about keeping it for another year.
       result = [then.current === held ? 'That requalifies you for ' : 'That earns ', h('strong', null, `${then.current.name} Medallion`),
         ` through ${dateFmt.format(medallionThrough())} with ${fmt(total)} MQDs`, fromSpend ? ` (${fmt(fromSpend)} from card spend)` : '',
         then.current === held ? '.' : `, after your ${held.name} ends.`];
     }
-    else if (then.current && then.current !== now) {
+    else if (reaches) {
       const tier = perksFor(medallionProgram(), `${then.current.name} Medallion`);
       result = ['That gets you to ', h('strong', null, `${then.current.name} Medallion`), ` with ${fmt(total)} MQDs`,
         fromSpend ? ` (${fmt(fromSpend)} from card spend)` : '',
         tier ? ` — ${tier.perks.slice(0, 2).map((perk) => perk.charAt(0).toLowerCase() + perk.slice(1)).join(', ')}, and more.` : '.'];
     }
-    else if (then.next && held && TIERS.indexOf(held) > TIERS.indexOf(then.current)) {
-      result = [`${fmt(total)} MQDs — still `, h('strong', null, `${fmt(held.min - total)} short`), ` of keeping ${held.name}.`];
+    else if (goal) {
+      result = [`${fmt(total)} MQDs — still `, h('strong', null, `${fmt(goal.tier.min - total)} short`), ` of ${goal.keep ? 'keeping ' : ''}${goal.tier.name}.`];
     }
-    else if (then.next) result = [`${fmt(total)} MQDs — still `, h('strong', null, `${fmt(then.next.min - total)} short`), ` of ${then.next.name}.`];
     else result = [`${fmt(total)} MQDs — you'd keep `, h('strong', null, 'Diamond'), '.'];
     $('#plan-result').replaceChildren(...result);
   }
@@ -4062,7 +4223,10 @@
     const info = progressInfo(p);
     if (!info || !info.entered) return null;
     const start = new Date(qualYear(info.track), (info.track.starts || 1) - 1, 1);
-    const pace = info.value != null && paceText(info.n, progressStamp(p), start, info.next && info.next.at, info.next && info.next.name, info.track.unit);
+    // Paced from when the first count was entered (the second count has its own date), toward the same figure as
+    // "1,000 to Silver" (United's flights path needs less PQP than PQP alone).
+    const goal = info.next && info.n + info.next.left;
+    const pace = info.value != null && paceText(info.n, parseISODate(state.updated[`prog:${p.id}`]), start, goal, info.next && info.next.name, info.track.unit);
     return h('div', { class: 'prog-mini' },
       h('div', null, h('strong', null, countsText(info)),
         info.next ? ` · ${nextText(info.next, info.track)}` : ' · top level reached'),
@@ -4141,7 +4305,8 @@
     return h('li', { class: 'row' }, main, withMedallion ? medallionPanel() : null);
   }
 
-  const medallionProgram = () => state.programs.find((p) => p.medallion); // one tracker, on the first flagged program
+  // One tracker, on the first flagged program. (No list yet on the setup screen, where a scan can still read MQDs.)
+  const medallionProgram = () => (state.programs || []).find((p) => p.medallion);
 
   // Simple view: your highest active level and when it ends ("Platinum Elite · thru 2/28/28"), or the Medallion
   // you hold with this year's MQDs.
@@ -4164,18 +4329,20 @@
     const tiers = benefitsFor(p);
     const active = mergedLines(p.status).filter((g) => g.tier && !(g.exp && daysLeft(g.exp) < 0));
     const earned = newlyEarned(p);
-    let best = null; // { index, exp } — the highest level; among equals, the one lasting longest (no end date wins)
-    const consider = (index, exp) => {
+    let best = null; // { index, exp, end } — the highest level; among equals, the one lasting longest (no end date wins)
+    // `end` is the date itself: an earned level's can be past what parseISODate takes back (a progress date in
+    // year 9000 earns a level through 9002).
+    const consider = (index, exp, end = parseISODate(exp)) => {
       if (index < 0) return;
-      if (!best || index > best.index || (index === best.index && best.exp && (!exp || exp > best.exp))) best = { index, exp };
+      if (!best || index > best.index || (index === best.index && best.exp && (!exp || exp > best.exp))) best = { index, exp, end };
     };
     if (tiers) {
       for (const g of active) for (const part of splitParts(g.tier)) consider(findTier(tiers, part), g.exp || null);
-      if (earned) consider(earned.index, isoOf(earned.thru));
+      if (earned) consider(earned.index, isoOf(earned.thru), earned.thru);
     }
     if (best) {
       return h('div', { class: 'simple-status' }, pill(tiers[best.index].name),
-        best.exp ? h('span', { class: 'via' }, `thru ${mdy(parseISODate(best.exp))}`) : null);
+        best.exp && best.end ? h('span', { class: 'via' }, `thru ${mdy(best.end)}`) : null);
     }
     if (!active.length) return null;
     const g = active[0]; // a level we have no data for (custom programs, lounges): show it as entered
@@ -4191,9 +4358,12 @@
     const c = CATALOG_BY_ID[p.id] || catalogByName(p.name);
     return c ? CATEGORY_BY_ID[c.id] : 'Other';
   };
-  // Elite = a real tier: the computed Medallion for the Delta tracker, any typed/card status elsewhere (not lounges).
+  // Elite = a real tier, not lounges. On the Delta tracker that's a Medallion: this year's from MQDs, or one on its
+  // status list (kept from last year, typed in) — not a Delta card's "MQD Headstart" line. Elsewhere any typed/card
+  // status counts.
   const hasStatus = (p) => p.id !== 'lounges'
-    && (p === medallionProgram() ? !!medallionFor(state.mqd).current : p.status.some((line) => line.tier && !lineExpired(line)) || !!earnedTier(p));
+    && (p === medallionProgram() ? !!medallionFor(state.mqd).current || !!effectiveMedallion()
+      : p.status.some((line) => line.tier && !lineExpired(line)) || !!earnedTier(p));
   const matchesFilter = (p) => filter === 'all' || (filter === 'status' ? hasStatus(p) : categoryOf(p) === filter);
 
   function renderFilters() {
@@ -4203,7 +4373,8 @@
       ['status', 'Elite', list.filter(hasStatus).length],
       ...CATEGORIES.map((c) => [c, c, list.filter((p) => categoryOf(p) === c).length]),
     ].filter(([key, , n]) => key === 'all' || n > 0);
-    if (!options.some(([key]) => key === filter)) filter = 'all';
+    // Under 4 programs there are no chips, so nothing on screen could take a filter off again.
+    if (list.length < 4 || !options.some(([key]) => key === filter)) filter = 'all';
     $('#filters').hidden = editMode || list.length < 4;
     $('#filters').replaceChildren(...options.map(([key, label, n]) => h('button', {
       type: 'button',
@@ -5339,8 +5510,8 @@
   // The next level with the counts a screen shows: "17 to Diamond", "$3,760 to Platinum".
   function goalWith(p, vals) {
     if (vals.mqd !== undefined && (p.medallion || (catalogFor(p) || {}).id === 'delta')) {
-      const { next } = medallionFor(vals.mqd);
-      return next ? `${money(next.min - vals.mqd)} to ${next.name}` : 'top Medallion reached';
+      const goal = mqdGoal(vals.mqd);
+      return goal ? `${money(goal.tier.min - vals.mqd)} to ${goal.keep ? 'keep ' : ''}${goal.tier.name}` : 'top Medallion reached';
     }
     if (vals.progress === undefined && vals.alt === undefined) return null;
     const keys = [p.id, altKey(p.id)];
@@ -5472,7 +5643,7 @@
     const p = own || programFromCatalog(CATALOG_BY_ID[cid]);
     const vals = valsFrom(found, p);
     if (playing.balancePick != null && p.unit) vals.balance = playing.balancePick; // picked on the card
-    Object.assign(playing, { choice: own ? own.id : `add:${p.id}`, vals });
+    Object.assign(playing, { choice: own ? own.id : `add:${p.id}`, vals, years: readYears(trackFor(p)) });
     const doubts = own ? doubtsAbout(p, vals) : [];
     let changes = ['balance', 'mqd', 'progress', 'alt', 'member'].filter((k) => vals[k] !== undefined).length;
     // Judged as Update will, with a new program already on your list (Delta's Medallion then counts from MQDs).
@@ -5535,9 +5706,9 @@
     if (!playing || !playing.choice) return;
     stopCountdown();
     const from = ($('#play-loot .loot-bal') || $('#play-loot li') || $('#play-shot')).getBoundingClientRect();
-    const { choice, vals } = playing;
+    const { choice, vals, years } = playing;
     closePlay();
-    collect(choice, vals, from);
+    collect(choice, vals, from, years);
   }
   // "Fix something": the review form, with the screenshot above it.
   function fixPlay() {
@@ -5656,7 +5827,7 @@
     Object.assign(state, before);
     if (state.programs) saveNow();
     else try { localStorage.removeItem(storageKey()); } catch (e) { /* private mode */ }
-    renderAll();
+    renderSafely();
   }
 
   // Your programs, then every other program in the app (by type), so any screen can be matched to a program.
@@ -5715,6 +5886,7 @@
     const found = cid === detected.programId ? detected : { ...detected, tierIndex: -1, exp: null, progress: null, altProgress: null, mqd: null };
     const field = scanField;
     const numberInput = scanNumber;
+    const track = cid && TRACKS[cid];
     const out = [];
     if (!p || p.unit) { // car rental and lounge programs have no balance
       const unit = p && p.unit ? p.unit : 'points';
@@ -5731,8 +5903,8 @@
       date.value = found.exp || '';
       out.push(field('tier', 'Status', [select, date], found.tierIndex >= 0, 'Add its end date if the screen shows one.'));
     }
+    scanned.years = readYears(track); // the years the count fields below are labelled for
     if (cid === 'delta' || (p && p.medallion)) out.push(field('mqd', `${mqdYear()} MQDs`, numberInput('mqd', found.mqd, 'MQDs this year'), found.mqd != null, `Now ${fmt(state.mqd)}`));
-    const track = cid && TRACKS[cid];
     if (track) {
       const year = qualLabel(track, qualYear(track));
       out.push(field('progress', `${year} ${track.unit}`, numberInput('progress', found.progress, `${track.unit} this year`), found.progress != null,
@@ -5767,10 +5939,11 @@
     const choice = $('#scan-program').value;
     if (!choice) { $('#scan-program').focus(); return; }
     const vals = formVals();
+    const years = scanned && scanned.years;
     const from = $('#scan-apply').getBoundingClientRect();
     quietClose = true;
     scanSheet.close();
-    collect(choice, vals, from);
+    collect(choice, vals, from, years);
   }
 
   // Puts what a screenshot showed into one program (adding it if it's new) and says what changed.
@@ -5814,7 +5987,10 @@
         const line = outcome.line;
         if (vals.exp && line.exp !== vals.exp) notes.push(`${line.tier} through ${mdy(parseISODate(vals.exp))}`);
         if (vals.exp) line.exp = vals.exp;
-        else if (line.exp && lineExpired(line)) delete line.exp;
+        else if (line.exp && lineExpired(line)) {
+          if (thruDate(line.via)) line.exp = ''; // cleared: don't read the past date back from "thru …" on the next load
+          else delete line.exp;
+        }
         if (!line.via) line.via = 'from your account';
         changes.push('status');
       } else if (outcome.kind === 'new') {
@@ -5827,14 +6003,32 @@
     return { p, added, firstRun, before, changes, statusNew, real, notes };
   }
 
+  // The qualifying years a screen's counts are read for (Delta's MQDs, and the program's nights or points), so
+  // one read before New Year and applied after it isn't saved as the new year's count.
+  const readYears = (track) => ({ mqd: mqdYear(), prog: track ? qualYear(track) : null });
+  // The counts in `vals` whose qualifying year has ended since they were read (`years`, from readYears).
+  function staleCounts(choice, vals, years) {
+    const own = (state.programs || []).find((x) => x.id === choice);
+    const track = own ? trackFor(own) : TRACKS[choice.replace(/^add:/, '')];
+    return ['mqd', 'progress', 'alt'].filter((key) => vals[key] !== undefined
+      && (key === 'mqd' ? years.mqd !== mqdYear() : !!track && years.prog !== qualYear(track)));
+  }
+
   // Applies a screenshot, then celebrates: points fly into the program's row, the number counts up, XP and badges.
-  function collect(choice, vals, from) {
+  function collect(choice, vals, from, years) {
+    // A new qualifying year began after the screen was read (the card or review sheet stayed open over New Year):
+    // roll over first, and leave out last year's counts (kept as a status if they earned one), like the number
+    // editor and Update balances do.
+    if (rollOver()) renderAll();
+    const stale = years ? staleCounts(choice, vals, years) : [];
+    if (stale.length) vals = Object.fromEntries(Object.entries(vals).filter(([key]) => !stale.includes(key)));
     const previous = clone(state);
     const who = people.active;
     const result = applyRead(choice, vals);
     if (!result.changes.length && !result.added) {
       Object.assign(state, previous);
-      showToast('Nothing new to update');
+      showToast(stale.length ? `New qualifying year: counts start over, so ${stale.length > 1 ? 'those numbers weren’t' : 'that number wasn’t'} saved`
+        : 'Nothing new to update');
       if (batch) { finishOne(false); setTimeout(nextInQueue); }
       return;
     }
@@ -5845,8 +6039,9 @@
         text: result.added ? ['added', ...result.notes].join(' · ') : result.notes.join(' · ') || 'confirmed, no change' });
       g.log.length = Math.min(g.log.length, LOG_MAX);
     }
+    markChanged(); // a member number or status alone doesn't go through setField
     saveNow();
-    if (result.firstRun) markNewsSeen();
+    if (result.firstRun) skipNewsForNewSetup();
     if (!matchesFilter(result.p)) filter = 'all';
     renderAll();
     celebrate(result, reward, from);
@@ -6074,7 +6269,13 @@
 
   // One screen to type every balance (and Delta MQDs), saved together.
   const quickSheet = $('#quick-sheet');
+  let quickYear = 0; // the MQD year the sheet's MQD row was filled for
+  let quickMqd = 0; // and the count it was filled with
   function openQuick() {
+    // A new qualifying year began while the page stayed open: start the sheet from this year's MQDs.
+    if (rollOver()) renderAll();
+    quickYear = mqdYear();
+    quickMqd = state.mqd;
     const rows = [];
     const medallion = medallionProgram();
     for (const p of state.programs) {
@@ -6108,13 +6309,21 @@
   });
   $('#quick-form').addEventListener('submit', (e) => {
     e.preventDefault();
+    // A new qualifying year began while the sheet was open: roll over before reading any row. An MQD row filled
+    // in last year holds last year's count (now kept as a status), so it's left out rather than counted again.
+    const rolled = rollOver();
     let changed = 0;
     let unreadable = 0;
+    let stale = 0; // an MQD count typed into last year's row
     const balancesBefore = { ...state.balances };
     for (const input of quickSheet.querySelectorAll('[data-quick]')) {
+      const field = input.dataset.quick;
       const parsed = parseEntry(input.value);
       if (!parsed) { unreadable++; continue; } // not a number: leave it as it was, and say so
-      const field = input.dataset.quick;
+      if (field === 'mqd' && quickYear !== mqdYear()) {
+        if ((parsed.value ?? 0) !== quickMqd) stale++; // changed, so say it wasn't saved
+        continue;
+      }
       const before = field === 'mqd' ? state.mqd : (state.balances[field.slice(4)] ?? null);
       const after = field === 'mqd' ? (parsed.value ?? 0) : parsed.value;
       if (after === before) continue;
@@ -6122,12 +6331,15 @@
       changed++;
     }
     quickSheet.close();
+    if (rolled) renderAll(); // kept statuses and this year's counts
+    const said = rolled && rolled.length; // the roll-over's message about kept levels stays up
     if (unreadable) showToast(`Couldn’t read ${plural(unreadable, 'number')}, so ${unreadable === 1 ? 'it was' : 'they were'} left as before`);
-    if (!changed) { if (!unreadable) showToast('No changes'); return; }
+    if (stale) showToast('New qualifying year: counts start over, so that number wasn’t saved');
+    if (!changed) { if (!unreadable && !said && !stale) showToast('No changes'); return; }
     saveNow();
     renderPrograms();
     renderUpcoming();
-    showToast(`Updated ${plural(changed, 'balance')}`);
+    if (!said && !stale) showToast(`Updated ${plural(changed, 'balance')}`);
     celebrateGoals(balancesBefore);
     offerBonusLanding(balancesBefore);
   });
@@ -6193,7 +6405,8 @@
   }
 
   // A new qualifying year: counts start over, and a level earned with last year's count is kept as a regular
-  // status with its end date, so it keeps counting (and shows up in reminders) until it lapses.
+  // status with its end date, so it keeps counting (and shows up in reminders) until it lapses. Returns false when
+  // nothing turned over, or else the levels kept (empty when last year's counts earned none, and no message shows).
   function rollOver() {
     if (!state.programs) return false;
     const now = new Date();
@@ -6237,15 +6450,43 @@
       showToast(kept.length > 1 ? `New qualifying year: the ${kept.length} statuses you earned stay on your list until they end`
         : `New qualifying year: ${kept[0]} stays on your list until it ends`);
     }
-    return true;
+    return kept;
+  }
+
+  // Medallions on Delta's status list, as TIERS indexes (-1 for none), split like heldThroughIndex and keepIndex:
+  // `lasting` is the highest you hold at least as long as one earned this year would (no end date, e.g. Million
+  // Miler, from a card, or ending later); `lapsing` is the highest that runs out sooner and needs earning again.
+  function medallionHolds() {
+    const p = medallionProgram();
+    const tiers = p && benefitsFor(p);
+    const holds = { lasting: -1, lapsing: -1 };
+    if (!tiers) return holds;
+    const thru = isoOf(medallionThrough());
+    for (const line of p.status) {
+      if (!line.tier || lineExpired(line)) continue;
+      const key = line.exp && !line.card && line.exp < thru ? 'lapsing' : 'lasting';
+      for (const part of splitParts(line.tier)) {
+        const tier = tiers[findTier(tiers, part)];
+        if (tier) holds[key] = Math.max(holds[key], TIERS.findIndex((t) => tier.name.startsWith(t.name)));
+      }
+    }
+    return holds;
+  }
+
+  // This year's MQD goal: the next tier above what the MQDs have earned and what you hold for good, or keeping a
+  // tier from last year that's above that. null once there's nothing higher to earn.
+  function mqdGoal(mqd = state.mqd) {
+    const { lasting, lapsing } = medallionHolds();
+    const next = TIERS[Math.max(TIERS.indexOf(medallionFor(mqd).current), lasting) + 1];
+    if (!next) return null;
+    return lapsing >= TIERS.indexOf(next) ? { tier: TIERS[lapsing], keep: true } : { tier: next, keep: false };
   }
 
   // "3,000 to Platinum", or "10,000 to keep Gold" while a tier held from last year is above this year's next one.
   function mqdNextText(mqd = state.mqd) {
-    const { next } = medallionFor(mqd);
-    const held = effectiveMedallion();
-    if (!next) return 'Diamond — top tier';
-    return held && held.min >= next.min ? `${fmt(held.min - mqd)} to keep ${held.name}` : `${fmt(next.min - mqd)} to ${next.name}`;
+    const goal = mqdGoal(mqd);
+    if (!goal) return 'Diamond — top tier';
+    return `${fmt(goal.tier.min - mqd)} to ${goal.keep ? 'keep ' : ''}${goal.tier.name}`;
   }
 
   function medallionFor(mqd) {
@@ -6260,7 +6501,7 @@
   function updateMedallion() {
     if (!$('#mqd-bar')) { renderStats(); return; } // Delta row filtered out or in edit mode
     const mqd = state.mqd;
-    const { current, next } = medallionFor(mqd);
+    const { current } = medallionFor(mqd);
 
     $('#medallion-status').replaceChildren(...(current
       ? [pill(`${current.name} Medallion`), h('span', { class: 'via' }, viaSpans([`earned in ${mqdYear()}`, `thru ${mdy(medallionThrough())}`]))]
@@ -6269,7 +6510,8 @@
     $('#medallion-perks').hidden = !top;
     if (top) $('#medallion-perks').replaceChildren(...perkLineContent(top));
     $('#mqd-next').textContent = mqdNextText(mqd);
-    const pace = paceText(mqd, parseISODate(state.updated.mqd), new Date(mqdYear(), 0, 1), next && next.min, next && `${next.name} Medallion`, 'MQDs', true);
+    const goal = mqdGoal(mqd); // the same tier the line above names (keeping last year's, when that's the goal)
+    const pace = paceText(mqd, parseISODate(state.updated.mqd), new Date(mqdYear(), 0, 1), goal && goal.tier.min, goal && `${goal.tier.name} Medallion`, 'MQDs', true);
     $('#mqd-pace').hidden = !pace;
     $('#mqd-pace').textContent = pace || '';
 
@@ -6359,7 +6601,8 @@
     if (go === 'medallion') {
       if (!matchesFilter(medallionProgram())) filter = 'all';
       renderPrograms();
-      const panel = $('.delta');
+      const panel = $('#programs .delta'); // (not a count's progress box left in the closed detail sheet)
+      if (!panel) { openDetail(medallionProgram().id); return; } // Simple view has no inline progress panel
       jumpTo(panel, 'center');
       setTimeout(() => pulse(panel), 350);
       return;
@@ -6431,9 +6674,9 @@
   let sheetId = null; // program being edited; null when adding
 
   function statusEditorRow(line) {
-    return h('div', { class: 'sl', 'data-card': line.card || null },
-      h('input', { type: 'text', class: 'sl-tier', maxlength: '80', placeholder: 'Gold', 'aria-label': 'Status level', value: line.tier }),
-      h('input', { type: 'text', class: 'sl-via', maxlength: '80', placeholder: 'Amex Platinum', 'aria-label': 'Where the status comes from (optional)', value: line.via }),
+    return h('div', { class: 'sl', 'data-card': line.card || null, 'data-cleared': line.exp === '' ? 'yes' : null }, // you cleared its "thru" date
+      h('input', { type: 'text', class: 'sl-tier', maxlength: '120', placeholder: 'Gold', 'aria-label': 'Status level', value: line.tier }),
+      h('input', { type: 'text', class: 'sl-via', maxlength: '120', placeholder: 'Amex Platinum', 'aria-label': 'Where the status comes from (optional)', value: line.via }),
       h('button', { type: 'button', class: 'icon-btn sl-del', 'aria-label': 'Remove this status' }, svgIcon(ICON.x)),
       h('label', { class: 'sl-exp' }, 'Expires',
         h('input', { type: 'date', class: 'sl-date', 'aria-label': 'Expiration date (optional)', value: line.exp || '' })));
@@ -6500,9 +6743,15 @@
     const status = [...$('#p-status').querySelectorAll('.sl')]
       .map((row) => {
         const line = { tier: row.querySelector('.sl-tier').value.trim(), via: row.querySelector('.sl-via').value.trim() };
-        if (row.dataset.card) line.card = row.dataset.card;
-        const exp = row.querySelector('.sl-date').value;
-        if (parseISODate(exp)) line.exp = exp;
+        if (row.dataset.card && cardGives(row.dataset.card, line)) line.card = row.dataset.card; // reworded: yours now
+        const date = row.querySelector('.sl-date');
+        const via = row.querySelector('.sl-via');
+        const fromText = thruDate(line.via);
+        if (parseISODate(date.value)) line.exp = date.value;
+        // No date beside a "thru …" date you didn't change (rewording around it is fine), where you emptied the date or
+        // had cleared it before: it stays empty. Otherwise the text gives the date now, so saving the editor again
+        // before a reload can't lose it.
+        else if (fromText) line.exp = thruDate(via.defaultValue) === fromText && (date.defaultValue || row.dataset.cleared) ? '' : fromText;
         return line;
       })
       .filter((line) => line.tier || line.via);
@@ -6534,8 +6783,11 @@
     const saved = {
       balance: state.balances[id], member: state.members[id], progress: state.progress[id],
       updated: state.updated[id], progUpdated: state.updated[`prog:${id}`], activity: state.activity[id], memo: state.memos[id], goal: state.goals[id],
-      history: state.history[id],
+      history: state.history[id], cpp: state.cpp[id],
     };
+    delete state.cpp[id]; // a program added back later with the same id starts fresh
+    // Today's re-check stays (dropped at the next load if the program's still gone): added back the same day,
+    // confirming it again doesn't earn the XP twice.
     delete state.activity[id];
     delete state.history[id];
     delete state.memos[id];
@@ -6564,6 +6816,7 @@
       if (saved.memo) state.memos[id] = saved.memo;
       if (saved.goal) state.goals[id] = saved.goal;
       if (saved.history) state.history[id] = saved.history;
+      if (saved.cpp != null) state.cpp[id] = saved.cpp;
       scheduleSave();
       renderPrograms();
     });
@@ -6641,7 +6894,8 @@
   function expiryVerdict(p) {
     const info = pointsExpiry(p);
     const reset = info.rule.earnOnly ? 'earn any amount' : 'earn or redeem any amount';
-    const text = !info.date ? ['exp-text', 'Add your last activity date for a reminder before they expire.']
+    const text = info.empty ? ['exp-text', 'Nothing to expire at a zero balance.']
+      : !info.date ? ['exp-text', 'Add your last activity date for a reminder before they expire.']
       : info.days < 0 ? ['exp-text danger', `Expired ${dateFmt.format(info.date)} — contact the program; some reinstate points.`]
         : info.days <= STATUS_SOON_DAYS ? ['exp-text warn', `Expire ${dateFmt.format(info.date)} · ${plural(info.days, 'day')} left — ${reset} to reset the clock`]
           : ['exp-text', `Safe until ${dateFmt.format(info.date)} · ${plural(info.days, 'day')} left`];
@@ -6684,7 +6938,8 @@
     const rows = [...list].reverse().slice(0, 15).map(([d, v, src], i, newest) => {
       const prev = newest[i + 1];
       const from = src === 's' ? 'from a screenshot' : src === 't' ? 'typed' : '';
-      const restore = v !== now ? h('button', { type: 'button', class: 'link', 'data-restore': String(v), 'aria-label': `Restore ${fmt(v)} ${p.unit}` }, 'Restore') : null;
+      const restore = v !== now ? h('button', { type: 'button', class: 'link', 'data-restore': String(v), 'data-restore-at': String(list.length - 1 - i),
+        'aria-label': `Restore ${fmt(v)} ${p.unit}` }, 'Restore') : null;
       return h('li', null, h('span', { class: 'log-date' }, monthDayFmt.format(parseISODate(d))),
         h('span', { class: 'log-main' }, h('b', null, fmt(v)), prev && prev[1] !== v ? ` ${signed(v - prev[1])}` : '', from ? h('small', null, from) : null),
         restore);
@@ -6759,8 +7014,10 @@
     if (!c) return null;
     const own = (id) => state.programs.find((x) => catalogFor(x) && catalogFor(x).id === id);
     const sources = Object.entries(TRANSFERS).flatMap(([bankId, info]) => info.partners.filter(([id]) => id === c.id)
-      .map(([, a, b]) => ({ bank: own(bankId), a, b })))
-      .filter((x) => x.bank && state.balances[x.bank.id] > 0)
+      .map(([, a, b]) => ({ bank: own(bankId), ratio: cardRatio(bankId, c.id, a, b) })))
+      // no ratio: your cards can't transfer there; a caveat: what they get isn't known, so no sum built on it
+      .filter((x) => x.bank && x.ratio && !x.ratio[2] && state.balances[x.bank.id] > 0)
+      .map(({ bank, ratio: [a, b] }) => ({ bank, a, b }))
       .map((x) => ({ ...x, adds: Math.floor((state.balances[x.bank.id] * x.b) / x.a), needs: Math.ceil((left * x.a) / x.b) }))
       .sort((x, y) => y.adds - x.adds);
     if (!sources.length) return null;
@@ -6769,6 +7026,25 @@
     const total = sources.reduce((sum, x) => sum + x.adds, 0);
     return h('p', { class: 'goal-cover' }, `Transferring all your ${sources.map((x) => x.bank.name).join(' and ')} points would add ${fmt(total)}`
       + `${total >= left ? ', enough to get there.' : `, leaving ${fmt(left - total)} to earn.`}`);
+  }
+
+  // The ratio the cards you hold get from a bank to a partner (from the TRANSFERS notes), or null when none of them
+  // can transfer there. With no card listed that earns the bank's points, the table's ratio, as the table assumes.
+  // A third item is a caveat: the table's ratio isn't what your cards get, and the notes don't say what is.
+  function cardRatio(bankId, partnerId, a, b) {
+    const earning = state.cards.filter((id) => bonusProgramFor(id) === bankId);
+    if (!earning.length) return [a, b];
+    const has = (ids) => earning.some((id) => ids.includes(id));
+    if (bankId === 'chase') { // Freedom points have to move to a Sapphire or Ink Preferred first
+      if (!has(['sapphire-reserve', 'sapphire-reserve-business', 'sapphire-preferred', 'ink-preferred'])) return null;
+      if (partnerId === 'hyatt' && !has(['sapphire-reserve', 'sapphire-reserve-business'])) return [4, 3];
+    }
+    if (bankId === 'citi' && !has(['strata-premier', 'strata-elite'])) { // no-fee cards: 7 partner points for every 10
+      // 10:7 as the note says, American included. The note gives no ratio for partners that aren't 1:1, so the
+      // table's, with a caveat.
+      return a === b ? [10, 7] : [a, b, 'with Strata Premier or Strata Elite; no-fee Citi cards get less — check Citi'];
+    }
+    return [a, b];
   }
 
   // On a program's row: "ANA First: 75%" with a thin bar.
@@ -6840,7 +7116,10 @@
     const box = $('#d-transfers');
     const c = catalogFor(p);
     const own = (id) => state.programs.find((x) => catalogFor(x) && catalogFor(x).id === id);
-    const row = (target, a, b, note, balance, unit) => {
+    const row = (target, a, b, note, balance, unit, ratio = [a, b]) => {
+      if (!ratio) return row(target, a, b, [note, 'your cards can’t transfer here'].filter(Boolean).join(' · '), null, unit);
+      [a, b] = ratio; // what the cards you hold get
+      if (ratio[2]) [note, balance] = [[note, ratio[2]].filter(Boolean).join(' · '), null]; // not known: no "→" figure
       const mine = typeof target === 'object' && own(target.id);
       // "85,000 → 170,000 points" only where the ratio changes the number; 1:1 speaks for itself.
       const amount = balance != null && a !== b ? ` · ${fmt(balance)} → ${fmt(Math.floor((balance * b) / a))}${unit ? ` ${unit}` : ''}` : '';
@@ -6857,10 +7136,15 @@
       parts.push(h('h3', { class: 'd-label' }, 'Transfer partners'),
         h('ul', { class: 'xfer' }, programs.map(([id, a, b, note]) => {
           const target = CATALOG_BY_ID[id];
-          return row(target, a, b, note, balance, target.unit || 'points');
+          return row(target, a, b, note, balance, target.unit || 'points', cardRatio(c.id, id, a, b));
         })));
       const others = bank.partners.filter(([id]) => !CATALOG_BY_ID[id]);
-      if (others.length) parts.push(h('p', { class: 'fine' }, `Also: ${others.map(([name, a, b]) => `${name} ${ratioText(a, b)}`).join(' · ')}.`));
+      const other = ([name, a, b]) => { // at the ratio your cards get, like the rows above
+        const ratio = cardRatio(c.id, name, a, b);
+        if (!ratio) return `${name} ${ratioText(a, b)} (your cards can’t transfer here)`;
+        return `${name} ${ratioText(ratio[0], ratio[1])}${ratio[2] ? ` (${ratio[2]})` : ''}`;
+      };
+      if (others.length) parts.push(h('p', { class: 'fine' }, `Also: ${others.map(other).join(' · ')}.`));
       if (bank.note) parts.push(h('p', { class: 'fine' }, bank.note));
     } else if (c) {
       const sources = Object.entries(TRANSFERS).flatMap(([bankId, info]) => info.partners.filter(([id]) => id === c.id).map(([, a, b, note]) => [bankId, a, b, note]));
@@ -6869,8 +7153,10 @@
         parts.push(h('h3', { class: 'd-label' }, 'Top up with card points'),
           h('ul', { class: 'xfer' }, sources.map(([bankId, a, b, note]) => {
             const mine = own(bankId);
-            return row(CATALOG_BY_ID[bankId], a, b, note, mine ? state.balances[mine.id] : null, p.unit || 'points');
+            return row(CATALOG_BY_ID[bankId], a, b, note, mine ? state.balances[mine.id] : null, p.unit || 'points', cardRatio(bankId, c.id, a, b));
           })));
+        // Which cards a bank's ratios are for, as on the bank's own page.
+        for (const [bankId] of sources) if (TRANSFERS[bankId].note) parts.push(h('p', { class: 'fine' }, TRANSFERS[bankId].note));
       }
     }
     box.hidden = !parts.length;
@@ -7032,6 +7318,7 @@
     if (!group) return;
     for (const line of group.refs) {
       if (parseISODate(value)) line.exp = value;
+      else if (thruDate(line.via)) line.exp = ''; // cleared: don't read it back from "thru …" on the next load
       else delete line.exp;
     }
     expEditing = null;
@@ -7127,15 +7414,25 @@
     if (restore) {
       const p = detailProgram();
       const was = state.balances[p.id];
-      const back = (value) => {
+      const activity = state.activity[p.id];
+      // Putting back an earlier amount fixes a misread; it isn't earning or redeeming. The last-activity date goes
+      // back to the one in effect before the first change after that amount (when the history kept it), so a
+      // misread's reset of the expiry clock is undone too; otherwise it stays as it is.
+      const list = state.history[p.id] || [];
+      const at = Number(restore.dataset.restoreAt);
+      const after = list[at] && list[at][1] === Number(restore.dataset.restore) ? list[at + 1] : null;
+      const restored = after && after.length > 3 ? after[3] : activity;
+      const back = (value, date) => {
         setField(`bal:${p.id}`, value);
+        if (date) state.activity[p.id] = date;
+        else delete state.activity[p.id];
         saveNow();
         if (detailProgram() === p) renderDetail();
         renderPrograms();
         renderWorth();
       };
-      back(Number(restore.dataset.restore));
-      showToast(`${p.name} back to ${fmt(state.balances[p.id])} ${p.unit}`, () => back(was));
+      back(Number(restore.dataset.restore), restored);
+      showToast(`${p.name} back to ${fmt(state.balances[p.id])} ${p.unit}`, () => back(was, activity));
       return;
     }
     const btn = e.target.closest('button');
@@ -7155,7 +7452,7 @@
     if (data.open != null) { openDetail(data.open); return; } // a transfer partner on your list
     if (data.expCal != null) {
       const group = mergedLines(p.status)[Number(data.expCal)];
-      saveCalendar(buildICS([statusItem(p, group)]), `${slugify(`${p.name} ${group.tier}`)}-reminder.ics`, btn);
+      saveCalendar(buildICS([statusItem(p, group)]), `${fileTag()}${slugify(`${p.name} ${group.tier}`)}-reminder.ics`, btn);
       return;
     }
     switch (btn.id) {
@@ -7359,8 +7656,12 @@
       const earned = [];
       const count = newlyEarned(p);
       if (count) earned.push({ tier: count.tier.name, via: `earned in ${qualLabel(trackFor(p), count.year)}`, exp: isoOf(count.thru) });
+      // (Like newlyEarned: not when a status on the list at that level or higher already lasts as long.)
       const medallion = p === medallionProgram() && medallionFor(state.mqd).current;
-      if (medallion) earned.push({ tier: `${medallion.name} Medallion`, via: `earned in ${mqdYear()}`, exp: isoOf(medallionThrough()) });
+      const medallionIndex = medallion ? findTier(benefitsFor(p) || [], `${medallion.name} Medallion`) : -1;
+      if (medallion && !coveredThrough(p, medallionIndex, isoOf(medallionThrough()))) {
+        earned.push({ tier: `${medallion.name} Medallion`, via: `earned in ${mqdYear()}`, exp: isoOf(medallionThrough()) });
+      }
       for (const group of [...earned, ...mergedLines(p.status)]) {
         if (!group.tier || !parseISODate(group.exp) || p.id === 'lounges' || outlasted(p, group)) continue;
         const item = statusItem(p, group);
@@ -7397,7 +7698,7 @@
       }
     }
     for (const p of state.programs || []) {
-      const info = pointsExpiry(p);
+      const info = pointsExpiry(p); // no date for a zero balance: nothing left to expire
       if (info && info.date && inWindow(info.days, STATUS_SOON_DAYS)) items.push({ kind: 'points', p, date: info.date, days: info.days, rule: info.rule });
     }
     if (!future) {
@@ -7430,11 +7731,12 @@
     const items = setup ? [] : upcomingItems();
     const backup = setup ? null : backupDue();
     renderBackupStatus();
-    $('#cal-btn').hidden = setup || !upcomingItems({ future: true }).length;
+    const exportable = !setup && upcomingItems({ future: true }).length > 0; // what Add to calendar would save
+    $('#cal-btn').hidden = !exportable;
     updateBadge(items.filter((i) => i.days <= 30).length);
     $('#upcoming').hidden = !items.length && !backup;
     if ($('#upcoming').hidden) return;
-    $('#up-cal').hidden = !items.length;
+    $('#up-cal').hidden = !exportable; // a list of only lapsed items, credits or year-end pushes has nothing to add
     $('#up-count').textContent = `· ${items.length + (backup ? 1 : 0)}`;
     const backupRow = backup && h('li', null, h('button', { type: 'button', class: 'up-item', 'data-backup': '' },
       h('span', { class: 'v-ico', 'aria-hidden': 'true' }, svgIcon(ICON.download)),
@@ -7545,9 +7847,9 @@
       let description;
       if (item.kind === 'status') {
         const tier = splitParts(item.group.tier).join(' · ');
-        const info = perksFor(item.p, splitParts(item.group.tier)[0]);
+        const info = tier ? perksFor(item.p, splitParts(item.group.tier)[0]) : null; // "·" alone names no level
         uid = `status-${uidPart(item.p.id)}-${uidPart(tier)}`;
-        subject = `${item.p.name} ${tier}`;
+        subject = tier ? `${item.p.name} ${tier}` : item.p.name;
         description = [
           item.group.via && (/^earned\b/i.test(item.group.via) ? `Earned ${item.group.via.slice(7)}.` : `From ${splitParts(item.group.via).join(' · ')}.`),
           info && info.earn && `To requalify: ${info.earn}.`,
@@ -7583,6 +7885,10 @@
         subject = `Voucher: ${item.v.name}`;
         description = [item.v.note, 'Use it before it expires. Reminder from Points & Status Tracker.'].filter(Boolean).join('\n');
       }
+      // Someone else on this device with the same status or card gets their own event instead of replacing yours
+      // (the first tracker keeps its plain ids, so events added before still update).
+      if (people.active !== 'me') uid = `${uidPart(people.active)}-${uid}`;
+      if (people.list.length > 1) subject = `${personName(activePerson())}: ${subject}`;
       // Same id twice (two identical vouchers) would make calendars keep only one event.
       for (let n = 2, base = uid; used.has(uid); n++) uid = `${base}-${n}`;
       used.add(uid);
@@ -7591,7 +7897,8 @@
       const verb = item.kind === 'card' ? 'renews' : item.kind === 'points' ? 'expire' : item.kind === 'bonus' ? 'due' : 'expires';
       lines.push('BEGIN:VEVENT', `UID:${uid}@statuspoints.github.io`, `DTSTAMP:${stamp}`,
         `DTSTART;VALUE=DATE:${icsDate(item.date)}`, `DTEND;VALUE=DATE:${icsDate(end)}`,
-        ...(item.kind === 'card' ? ['RRULE:FREQ=YEARLY'] : []), // the fee comes back every year
+        // The fee comes back every year; a Feb 29 date on the last day of February, or it would only repeat in leap years.
+        ...(item.kind === 'card' ? [/-02-29$/.test(state.renewals[item.card.id] || '') ? 'RRULE:FREQ=YEARLY;BYMONTH=2;BYMONTHDAY=-1' : 'RRULE:FREQ=YEARLY'] : []),
         `SUMMARY:${icsText(`${subject} ${verb}`)}`, `DESCRIPTION:${icsText(description)}`, 'TRANSP:TRANSPARENT');
       for (const [trigger, when] of [['-P29DT15H', 'in 30 days'], ['-P6DT15H', 'in 7 days'], ['PT9H', 'today']]) {
         lines.push('BEGIN:VALARM', 'ACTION:DISPLAY', `DESCRIPTION:${icsText(`${subject} ${verb} ${when}`)}`, `TRIGGER:${trigger}`, 'END:VALARM');
@@ -7628,7 +7935,7 @@
   function addAllToCalendar(btn) {
     const items = upcomingItems({ future: true });
     if (!items.length) { showToast('Nothing with an expiration date yet'); return; }
-    saveCalendar(buildICS(items), 'points-status-reminders.ics', btn);
+    saveCalendar(buildICS(items), `${fileTag()}points-status-reminders.ics`, btn);
   }
 
   $('#upcoming').addEventListener('click', (e) => {
@@ -7774,11 +8081,13 @@
   }
 
   function finishSetup(setup) {
-    markNewsSeen(); // everything is new to a new tracker
+    skipNewsForNewSetup(); // everything is new to a new tracker
     state.programs = setup.programs;
     state.cards = setup.cards;
+    state.cardSeen = setup.cardSeen || {};
     state.notes = setup.notes;
     editMode = false;
+    markChanged();
     saveNow();
     intro = true;
     renderAll();
@@ -7868,8 +8177,22 @@
     const input = e.target.closest('[data-renewal]');
     if (!input) return;
     const id = input.dataset.renewal;
+    // A card-year credit marked used is used when it was used in the card year the new date gives: its mark moves
+    // to that period, even one the old date put in an earlier period. Used before that card year began, it's
+    // unused. A mark saved without the day it was made moves only when the new card year began no later than its
+    // period (so the use is inside it), and keeps that period's start as the earliest it can have been used, so
+    // undoing the change (or clearing the date) brings it back.
+    const marked = heldCredits().filter((x) => x.card.id === id && state.creditsUsed[x.key] && x.credit.resets === 'card' && x.credit.period === 'year');
     if (parseISODate(input.value)) state.renewals[id] = input.value;
     else delete state.renewals[id];
+    const startOf = (key) => (key.startsWith('A') ? key.slice(1) : `${key}-01-01`); // "A2025-11-15" or "2026"
+    for (const x of marked) {
+      const period = creditPeriod(id, x.credit.period, x.credit.resets);
+      const since = state.creditsUsedOn[x.key] || startOf(state.creditsUsed[x.key]);
+      if (!parseISODate(since) || since < startOf(period.key)) continue; // not a period this credit has
+      state.creditsUsed[x.key] = period.key;
+      state.creditsUsedOn[x.key] = since;
+    }
     scheduleSave();
     $(`#cards-renewals [data-next="${CSS.escape(id)}"]`).textContent = renewalText(id); // input untouched while typing
     renderUpcoming();
@@ -8092,6 +8415,7 @@
     g.xp += unlocked.length * BADGE_XP;
     const after = levelOf(g.xp);
     if (bonusEditing === cardId) bonusEditing = null;
+    markChanged(); // saved straight away, so not through scheduleSave
     saveNow();
     renderAll();
     if (cardsSheet.open) renderRenewals();
@@ -8183,6 +8507,8 @@
     const m = typeof s === 'string' && /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
     if (!m) return null;
     if (Number(m[1]) < 1900) return null; // half-typed years ("0002") aren't dates
+    // Nor are far-future ones (a clock set ahead): a level earned from one would end past year 9999.
+    if (Number(m[1]) > 9000) return null;
     const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
     return d.getMonth() === Number(m[2]) - 1 && d.getDate() === Number(m[3]) ? d : null; // e.g. Feb 30 → null
   }
@@ -8386,10 +8712,11 @@
         const tier = splitParts(line.tier).join(' · ');
         const via = splitParts(line.via).join(' · ');
         const expDate = parseISODate(line.exp);
-        const expires = expDate ? ` — ${daysUntil(expDate) < 0 ? 'EXPIRED' : 'valid through'} ${dateFmt.format(expDate)}` : '';
-        const kept = expDate && daysUntil(expDate) >= 0 && outlasted(p, line); // a longer-lasting status covers it
+        const expired = !!expDate && daysUntil(expDate) < 0; // every line merged into it has ended
+        const expires = expDate ? ` — ${expired ? 'EXPIRED' : 'valid through'} ${dateFmt.format(expDate)}` : '';
+        const kept = expDate && !expired && outlasted(p, line); // a longer-lasting status covers it
         out.push(`  ${tier && via ? `${tier} (${via})` : tier || via}${expires}${kept ? ' (you keep this level longer through another status)' : ''}`);
-        if (!kept) for (const part of splitParts(line.tier)) pushPerks(p, part);
+        if (!kept && !expired) for (const part of splitParts(line.tier)) pushPerks(p, part); // an expired level's perks are gone
       }
       out.push('');
     }
@@ -8414,7 +8741,7 @@
         const b = bonuses()[id] && cleanBonus(id, bonuses()[id]);
         return [`${CARD_BY_ID[id].name}${iso ? ` — annual fee around ${dateFmt.format(nextRenewal(iso))}` : ''}`,
           ...(b ? [`  - Welcome bonus: ${b.points ? `${fmt(b.points)} ${bonusUnit(b)}` : 'size not entered'}${b.spend ? ` for ${money(b.spend)} spend` : ''}${b.by ? ` by ${dateFmt.format(parseISODate(b.by))}` : ''} — ${bonusText(b)}`] : []),
-          ...credits.filter((x) => x.card.id === id).map((x) => `  - ${x.credit.name}: ${creditMoney(x.credit.amount)} ${CREDIT_PERIODS[x.credit.period]} — ${x.used ? 'used' : 'not used yet'} (${x.period.label})`)];
+          ...credits.filter((x) => x.card.id === id).map((x) => `  - ${x.credit.name}: ${creditRate(x.credit)} — ${x.used ? 'used' : 'not used yet'} (${x.period.label})`)];
       }), '');
     }
     if (state.notes.trim()) out.push('', 'NOTE', '', state.notes.trim(), '');
@@ -8432,9 +8759,10 @@
 
   async function backUp() {
     const today = todayISO();
-    const json = JSON.stringify({ app: 'points-status-tracker', exportedAt: new Date().toISOString(), data: { ...state, backedUp: today } }, null, 2);
+    const json = JSON.stringify({ app: 'points-status-tracker', exportedAt: new Date().toISOString(), data: { ...state, backedUp: today, changed: '' } }, null, 2);
     if (!(await saveFile(`points-status-backup-${fileTag()}${today}.json`, json, 'application/json'))) return; // share sheet dismissed
     state.backedUp = today;
+    state.changed = ''; // everything so far is in the file
     saveNow();
     renderStats(); // refreshes "Coming up" and the footer's last-backup line
   }
@@ -8442,13 +8770,11 @@
   $('#export-btn').addEventListener('click', backUp);
 
   // Your data only lives on this device. Nudge a backup once you've been entering data for two weeks without one,
-  // or when the last backup is 60+ days old and things have changed since.
+  // or when the last backup is 60+ days old and anything has changed since (cards, vouchers and notes too).
   function backupDue() {
-    if (!state.programs) return null;
-    const dates = Object.values(state.updated).filter((d) => parseISODate(d)).sort();
-    if (!dates.length) return null;
-    if (!state.backedUp) return daysUntil(parseISODate(dates[0])) <= -14 ? 'never' : null;
-    return daysUntil(parseISODate(state.backedUp)) <= -60 && dates[dates.length - 1] > state.backedUp ? 'stale' : null;
+    if (!state.programs || !parseISODate(state.since)) return null;
+    if (!state.backedUp) return daysUntil(parseISODate(state.since)) <= -14 ? 'never' : null;
+    return daysUntil(parseISODate(state.backedUp)) <= -60 && state.changed ? 'stale' : null;
   }
 
   function renderBackupStatus() {
@@ -8482,6 +8808,7 @@
     stopScanning();
     Object.assign(state, next);
     editMode = false;
+    filter = 'all'; // a different tracker starts from All, as when switching person
     rollOver();
     intro = true;
     try {
@@ -8588,17 +8915,24 @@
   $('#send-cancel').addEventListener('click', () => sendSheet.close());
   sendSheet.addEventListener('click', (e) => { if (backdropTap(e, sendSheet)) sendSheet.close(); });
 
-  // Opening a link made above: ask before changing anything, unless this device has nothing set up yet.
+  // Opening a link made above: ask before changing anything, unless this device has one tracker and it isn't set up
+  // yet (a person just added, not set up, still gets the choice of adding the link's tracker as its own person).
   const receiveSheet = $('#receive-sheet');
   let received = null;
+  // Some browsers have DecompressionStream but not the 'deflate-raw' format links use (Chromium before 103).
+  const canInflate = () => { try { new DecompressionStream('deflate-raw'); return true; } catch (err) { return false; } };
   async function receiveFromLink() {
     const match = /^#import=([zj][A-Za-z0-9_-]+)$/.exec(location.hash);
     if (!match) return;
     history.replaceState(null, '', location.pathname + location.search); // a reload won't ask again
-    if (match[1][0] === 'z' && !('DecompressionStream' in window)) { showToast('This browser is too old to open that link — update it, or use a backup file'); return; }
+    if (match[1][0] === 'z' && !canInflate()) { showToast('This browser is too old to open that link — update it, or use a backup file'); return; }
     try { received = await readTrackerLink(match[1]); } catch (err) { received = null; }
     if (!received) { showToast('That link couldn’t be read — it may have been cut off'); return; }
-    if (!state.programs) { replaceTracker(received.data, 'Tracker copied to this device'); received = null; return; }
+    if (people.list.length === 1 && !state.programs) {
+      replaceTracker(received.data, 'Tracker copied to this device');
+      received = null;
+      return;
+    }
     const { data, name } = received;
     const dates = Object.values(data.updated).filter((d) => parseISODate(d)).sort();
     $('#receive-summary').textContent = [
@@ -8607,6 +8941,8 @@
       data.cards.length ? `and ${plural(data.cards.length, 'card')}` : '',
       dates.length ? `· last updated ${dateFmt.format(parseISODate(dates[dates.length - 1]))}` : '',
     ].filter(Boolean).join(' ');
+    // Replacing swaps only whoever is showing: with several people, say whose.
+    $('#receive-replace').textContent = people.list.length > 1 ? `Replace ${whose(activePerson())} tracker` : 'Replace the tracker on this device';
     receiveSheet.showModal();
   }
   $('#receive-replace').addEventListener('click', () => {
@@ -8632,6 +8968,7 @@
 
   let toastTimer = 0;
   let undoAction = null;
+  let heldNote = null; // see showNote()
 
   // Open sheets sit in the browser's top layer, so toasts and confetti go inside the open one to stay visible.
   function topLayer() {
@@ -8644,6 +8981,7 @@
     if ($('#toast').parentNode !== host) host.append($('#toast'));
     $('#toast-msg').textContent = message;
     undoAction = onUndo || null;
+    heldNote = null; // a note waiting for the toast this one replaces would come up out of place later
     $('#toast-undo').hidden = !onUndo;
     $('#toast-undo').textContent = actionLabel;
     $('#toast').classList.add('show');
@@ -8651,7 +8989,12 @@
     clearTimeout(toastTimer);
     toastTimer = setTimeout(hideToast, toastMs);
     // The control you used went away (a deleted row, a closed sheet): Undo takes focus so a keyboard can reach it.
-    if (onUndo && (!document.activeElement || document.activeElement === document.body)) $('#toast-undo').focus({ preventScroll: true });
+    if (onUndo && (!document.activeElement || document.activeElement === document.body)) {
+      $('#toast-undo').focus({ preventScroll: true });
+      // That focus isn't you lingering on the toast: start its timer again (the focusin below just stopped it).
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(hideToast, toastMs);
+    }
   }
   let toastMs = 5000;
   // While you point at or focus the toast it stays; it goes a few seconds after you leave.
@@ -8668,7 +9011,37 @@
     clearTimeout(toastTimer);
     $('#toast').classList.remove('show');
     undoAction = null;
+    // A note held back while a removal's Undo or the Reload offer was up gets its turn now.
+    const note = heldNote;
+    heldNote = null;
+    if (note) showToast(note);
   }
+
+  // The toast for a tracker that's been replaced: it goes, unless its button isn't that tracker's. Undo for
+  // removed people (their trackers are already out of storage, so it's their only way back) and Reload for a new
+  // version stay.
+  function hideTrackerToast() {
+    if (undoAction !== undoRemovals && undoAction !== reloadForUpdate) hideToast();
+  }
+
+  // A plain note (no button) that waits for those two to go rather than cover them; the newest note waits.
+  function showNote(message) {
+    if (undoAction === undoRemovals || undoAction === reloadForUpdate) heldNote = message;
+    else showToast(message);
+  }
+
+  // Reload for the new-version toast (see the service worker at the end).
+  function reloadForUpdate() {
+    if (saveTimer) saveNow();
+    location.reload();
+  }
+
+  // A closed sheet is hidden along with everything in it: a toast still inside (and its Undo or Reload) moves to
+  // whatever is on top now. 'close' doesn't bubble, so this listens on the way down.
+  document.addEventListener('close', (e) => {
+    const toast = $('#toast');
+    if (toast.parentNode === e.target) topLayer().append(toast);
+  }, true);
 
   $('#toast-undo').addEventListener('click', () => {
     const action = undoAction;
@@ -8680,7 +9053,18 @@
 
   const peopleSheet = $('#people-sheet');
   let renaming = null; // id of the person whose name is being edited
-  let recentRemovals = []; // people removed in the current Undo window
+  let recentRemovals = []; // people removed while the current Undo toast has been up
+
+  // Undo for the removals: everyone goes back in their place, with their saved tracker.
+  function undoRemovals() {
+    for (const r of recentRemovals.reverse()) {
+      people.list.splice(Math.min(r.index, people.list.length), 0, r.person);
+      try { if (r.saved) localStorage.setItem(storageKey(r.person.id), r.saved); } catch (err) { /* storage full */ }
+    }
+    recentRemovals = [];
+    savePeople();
+    renderPeople();
+  }
 
   // What's saved for someone: their program count, or null if they haven't set up yet.
   function programCount(id) {
@@ -8691,7 +9075,8 @@
     } catch (e) { return null; }
   }
 
-  function renderPeople() {
+  // The header's person chip and People button, and the People list if it's open (unless `headerOnly`).
+  function renderPeople(headerOnly) {
     const many = people.list.length > 1;
     const me = activePerson();
     $('#person-chip').hidden = !many;
@@ -8701,7 +9086,7 @@
       $('#person-chip').setAttribute('aria-label', `Showing ${whose(me)} tracker. Switch person`);
     }
     $('#people-btn-label').textContent = many ? `People on this device (${people.list.length})` : 'Add a person';
-    if (!peopleSheet.open) return;
+    if (headerOnly || !peopleSheet.open) return;
     $('#people-list').replaceChildren(...people.list.map((person) => {
       const active = person.id === people.active;
       const count = programCount(person.id);
@@ -8733,9 +9118,16 @@
   // Shows someone else's tracker: saves this one, loads theirs, and starts from the top.
   function switchPerson(id) {
     if (id === people.active) return;
+    // A row left on this list (mid-rename) for someone another window has since removed.
+    if (!people.list.some((person) => person.id === id)) {
+      renaming = null;
+      renderPeople();
+      showNote('That person was removed in another window');
+      return;
+    }
     if (saveTimer) saveNow();
     stopScanning();
-    hideToast(); // its Undo belongs to the person being left
+    hideTrackerToast(); // its Undo belongs to the person being left (not an Undo for removed people, or Reload)
     people.active = id;
     savePeople();
     const next = load();
@@ -8749,11 +9141,10 @@
     planSpend = 0;
     picked.clear();
     pickedCards.clear();
-    rollOver();
     intro = true;
-    renderAll();
+    const shown = renderSafely(rollOver); // if not, their saved tracker was set aside, and openFresh said so
     scrollTo(0, 0);
-    showToast(state.programs ? `Showing ${whose(activePerson())} tracker` : `Let’s set up ${whose(activePerson())} tracker`);
+    if (shown) showNote(state.programs ? `Showing ${whose(activePerson())} tracker` : `Let’s set up ${whose(activePerson())} tracker`);
   }
 
   function saveRename(id) {
@@ -8797,20 +9188,13 @@
     const [person] = people.list.splice(index, 1);
     let saved = null;
     try { saved = localStorage.getItem(storageKey(id)); localStorage.removeItem(storageKey(id)); } catch (err) { /* nothing stored */ }
-    // Removals within the Undo window stack up, so a quick second tap can't make the first one permanent.
-    recentRemovals = recentRemovals.filter((r) => Date.now() - r.at < 8000);
-    recentRemovals.push({ person, index, saved, at: Date.now() });
+    // Removals stack up for as long as their Undo toast is still up (hiding it clears undoAction), so a second tap
+    // can't make an earlier one permanent while its Undo is on screen.
+    if (undoAction !== undoRemovals) recentRemovals = [];
+    recentRemovals.push({ person, index, saved });
     savePeople();
     renderPeople();
-    showToast(recentRemovals.length > 1 ? `Removed ${recentRemovals.length} trackers` : `Removed ${whose(person)} tracker`, () => {
-      for (const r of recentRemovals.reverse()) {
-        people.list.splice(Math.min(r.index, people.list.length), 0, r.person);
-        try { if (r.saved) localStorage.setItem(storageKey(r.person.id), r.saved); } catch (err) { /* storage full */ }
-      }
-      recentRemovals = [];
-      savePeople();
-      renderPeople();
-    }, 'Undo', 8000);
+    showToast(recentRemovals.length > 1 ? `Removed ${recentRemovals.length} trackers` : `Removed ${whose(person)} tracker`, undoRemovals, 'Undo', 8000);
   });
 
   peopleSheet.addEventListener('keydown', (e) => {
@@ -8877,7 +9261,9 @@
   function heldCredits() {
     return state.cards.flatMap((cardId) => {
       const card = CARD_BY_ID[cardId];
-      const preset = (CREDITS[cardId] || []).map(([id, name, amount, period, resets, note]) => ({ id, name, amount, period, resets, note }));
+      const december = new Date().getMonth() === 11;
+      const preset = (CREDITS[cardId] || []).map(([id, name, amount, period, resets, note, dec]) =>
+        ({ id, name, amount: december && dec ? dec : amount, period, resets, note, december: Boolean(december && dec) }));
       const custom = (state.customCredits[cardId] || []).map(([id, name, amount, period]) => ({ id, name, amount, period, resets: 'calendar', custom: true }));
       return [...preset, ...custom].map((credit) => {
         const key = creditId(cardId, credit.id);
@@ -8888,6 +9274,9 @@
       });
     });
   }
+
+  // "$15 a month", or "$35 this month" when December's bigger amount applies (it isn't every month).
+  const creditRate = (credit) => `${creditMoney(credit.amount)} ${credit.december ? 'this month' : CREDIT_PERIODS[credit.period]}`;
 
   let addingCreditFor = null; // card id whose "add a credit" form is open
   const creditOpen = new Map(); // card id → open/closed once you've tapped it (otherwise: open if something resets soon)
@@ -8919,7 +9308,7 @@
           return h('li', { class: x.used ? 'credit used' : 'credit' },
             h('div', { class: 'credit-body' },
               h('span', { class: 'credit-name' }, x.credit.name),
-              h('small', null, `${creditMoney(x.credit.amount)} ${CREDIT_PERIODS[x.credit.period]} · ${x.period.label}${x.credit.note ? ` · ${x.credit.note}` : ''}`),
+              h('small', null, `${creditRate(x.credit)} · ${x.period.label}${x.credit.note ? ` · ${x.credit.note}` : ''}`),
               soon ? h('small', { class: 'warn' }, x.days === 0 ? 'Last day to use it is today' : `Use by ${dateFmt.format(x.period.end)} · ${plural(x.days, 'day')} left`) : null),
             h('button', { type: 'button', class: 'credit-use', 'data-credit-use': x.key, 'aria-pressed': String(x.used),
               'aria-label': `${x.used ? 'Used' : 'Mark used'}: ${x.credit.name}` }, x.used ? '✓ Used' : 'Mark used'),
@@ -8959,8 +9348,8 @@
     if (d.creditUse) {
       const x = heldCredits().find((c) => c.key === d.creditUse);
       if (!x) return;
-      if (x.used) delete state.creditsUsed[x.key];
-      else state.creditsUsed[x.key] = x.period.key;
+      if (x.used) { delete state.creditsUsed[x.key]; delete state.creditsUsedOn[x.key]; }
+      else { state.creditsUsed[x.key] = x.period.key; state.creditsUsedOn[x.key] = todayISO(); }
     } else if (d.creditSkip) {
       const x = heldCredits().find((c) => c.key === d.creditSkip);
       if (x && x.credit.custom) { // one you added: remove it
@@ -9041,6 +9430,9 @@
   const NEWS_ID = '2026-10h';
   const newsSeen = () => { try { return localStorage.getItem(NEWS_KEY) === NEWS_ID; } catch (e) { return true; } };
   const markNewsSeen = () => { try { localStorage.setItem(NEWS_KEY, NEWS_ID); } catch (e) { /* private mode */ } };
+  // The card is one for the whole device: a new setup skips it only when no one else here already uses the app
+  // (they haven't seen what's new yet).
+  const skipNewsForNewSetup = () => { if (!householdTrackers().some((t) => t.person.id !== people.active)) markNewsSeen(); };
   function renderNews() {
     $('#news').hidden = !state.programs || newsSeen();
   }
@@ -9118,6 +9510,40 @@
     intro = false;
   }
 
+  // The tracker on screen was replaced (another window started it over, or saved data that can't be shown):
+  // nothing open belongs to it any more, as when switching person.
+  function leaveTracker() {
+    hideTrackerToast(); // an Undo for the tracker that's gone
+    stopScanning(); // or closing the scan sheet would move on to the next screenshot
+    for (const open of document.querySelectorAll('dialog[open]')) open.close();
+  }
+
+  // renderAll for data just loaded (at launch, another person, another window's save, Undo), after `prepare` (e.g.
+  // rollOver). Saved data that breaks the page is set aside (like unreadable data in load()) and that tracker opens
+  // fresh, so the app, share links, and updates keep working, and no one else's rows are left on screen.
+  // False when that happened.
+  function renderSafely(prepare) {
+    try {
+      if (prepare) prepare();
+      renderAll();
+      return true;
+    } catch (err) {
+      openFresh(err);
+      return false;
+    }
+  }
+  // Also for a rollover that fails on return to the app (see visibilitychange). It says so, since setup on screen
+  // would otherwise look like a tracker that was never set up (or was lost).
+  function openFresh(err) {
+    console.error('Points & Status Tracker: could not show saved data', err);
+    stashUnreadable();
+    for (const key of Object.keys(state)) delete state[key];
+    Object.assign(state, blankState());
+    leaveTracker(); // its sheets' buttons would act on the tracker just set aside
+    renderAll();
+    showNote(`Couldn’t show ${whose(activePerson())} saved tracker — it’s kept aside on this device, not deleted`);
+  }
+
   // Opening flourish (app launch, finishing setup, restoring a backup): rows ease in, numbers count up.
   let intro = true;
   function runIntro() {
@@ -9129,22 +9555,7 @@
 
   $('#catalog-names').replaceChildren(...CATALOG_ITEMS.map((c) => h('option', { value: c.name })));
   renderToday();
-  rollOver();
-  try {
-    renderAll();
-  } catch (err) {
-    // Saved data that breaks the page: set it aside (like unreadable data in load()) and open fresh, so the app,
-    // share links, and updates keep working.
-    console.error('Points & Status Tracker: could not show saved data', err);
-    try {
-      const raw = localStorage.getItem(storageKey());
-      const stash = `status-tracker-unreadable:${storageKey()}`;
-      if (raw && !localStorage.getItem(stash)) localStorage.setItem(stash, raw);
-    } catch (e) { /* storage unavailable */ }
-    for (const key of Object.keys(state)) delete state[key];
-    Object.assign(state, blankState());
-    renderAll();
-  }
+  renderSafely(rollOver);
   receiveFromLink();
 
   if (IS_STANDALONE && navigator.storage && navigator.storage.persist) {
@@ -9161,7 +9572,7 @@
     // The service worker fetched a newer version in the background: offer it now rather than next launch.
     navigator.serviceWorker.addEventListener('message', (e) => {
       if (!e.data || e.data.type !== 'updated') return;
-      showToast('A new version is ready', () => { if (saveTimer) saveNow(); location.reload(); }, 'Reload', 15000);
+      showToast('A new version is ready', reloadForUpdate, 'Reload', 15000);
     });
   }
 })();
