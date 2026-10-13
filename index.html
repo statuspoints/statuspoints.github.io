@@ -5480,7 +5480,7 @@
     return lootTag(`${after > before ? '+' : '−'}${prefix}${fmt(Math.abs(after - before))}`, after > before ? 'up' : 'down');
   }
 
-  // One row per thing found, each with what it changes: "+2,400", "New status!", "No change".
+  // One row per thing found, each with what it changes: "+2,400", "New status", "No change".
   // Reads that look wrong or out of date, said plainly: a balance cut by more than 40% or multiplied by 3+ (often a
   // dropped or extra digit), this year's counts going down, or a screenshot older than the last update.
   function doubtsAbout(p, vals) {
@@ -5531,7 +5531,7 @@
     const track = cid && TRACKS[cid];
     const goal = goalWith(p, vals);
     const was = (store, key) => (own && store[key] != null ? store[key] : null);
-    const rows = [h('li', null, avatar(p), lootText(p.name, own ? 'On your list' : 'Adding it to your list'), lootTag(own ? 'Found' : 'New!', own ? '' : 'new'))];
+    const rows = [h('li', null, avatar(p), lootText(p.name, own ? 'On your list' : 'Adding it to your list'), lootTag(own ? 'Found' : 'New', own ? '' : 'new'))];
     if (vals.balance !== undefined) {
       rows.push(h('li', { class: 'loot-bal' }, lootIcon('balance', MARK_COLORS.balance), lootText(`${fmt(vals.balance)} ${p.unit}`, 'Balance'),
         deltaTag(was(state.balances, p.id), vals.balance)));
@@ -5540,7 +5540,7 @@
       const name = scanTiersFor(cid)[vals.tierIndex].name;
       const exp = parseISODate(vals.exp);
       rows.push(h('li', null, lootIcon('star', MARK_COLORS.status), lootText(name, exp ? `Status through ${dateFmt.format(exp)}` : 'Status'),
-        outcome.kind === 'new' ? lootTag('New status!', 'new') : lootTag(outcome.kind === 'same' ? 'Confirmed' : outcome.why)));
+        outcome.kind === 'new' ? lootTag('New status', 'new') : lootTag(outcome.kind === 'same' ? 'Confirmed' : outcome.why)));
     }
     if (vals.mqd !== undefined) {
       rows.push(h('li', null, lootIcon('count', MARK_COLORS.count), lootText(`$${fmt(vals.mqd)} MQDs`, goal || `${mqdYear()} so far`), deltaTag(own ? state.mqd : null, vals.mqd, '$')));
@@ -5623,7 +5623,8 @@
     }
   }
 
-  // The result: boxes on the screenshot, the loot, the XP it's worth, and Collect (automatic after a few seconds).
+  // The result: boxes on the screenshot, what was found and what it changes, and Update (automatic after a few
+  // seconds when nothing looks off).
   // `choice` (a program on your list, or "add:<id>") reads the screen as that program instead of guessing.
   function showLoot(read, choice) {
     const programs = state.programs || [];
@@ -5655,31 +5656,18 @@
     const rows = lootRows(p, own, vals, outcome);
     if (doubts.length) rows.splice(1, 0, doubtRow(doubts, found, vals));
     $('#play-loot').replaceChildren(...rows.map((li, i) => { li.style.setProperty('--i', i); return li; }));
-    sound('loot', rows.length);
     if (own && !changes) {
       $('#play-title').textContent = `Found your ${p.name}, but no points or status to update`;
       setActions([later, ['Check it', true, fixPlay]]);
       return;
     }
-    $('#play-title').textContent = confirmOnly ? `Your ${p.name} is up to date` : own ? `Found your ${p.name}!` : `New program: ${p.name}!`;
-    const streakOf = confirmOnly ? 0 : comboNext();
-    const gain = confirmOnly ? confirmXp(p.id) : xpFor(real, !own, !!outcome && outcome.kind === 'new') + comboBonus(streakOf);
-    const lv = levelOf(game().xp);
-    const next = levelOf(game().xp + gain);
-    const from = Math.round(lv.progress * 100);
-    const to = next.index > lv.index ? 100 : Math.round(next.progress * 100);
-    $('#play-xp').replaceChildren(...[
-      h('span', { class: 'xp-gain' }, confirmOnly && !gain ? 'Checked today' : `+${gain} XP`),
-      streakOf > 1 ? h('span', { class: 'combo' }, `Combo ×${streakOf}`) : null,
-      h('span', { class: 'xp-track', 'aria-hidden': 'true' }, h('span', { class: 'xp-fill', style: `width:${from}%` }),
-        h('span', { class: 'xp-add', style: `left:${from}%;width:${Math.max(2, to - from)}%` })),
-      h('span', { class: 'xp-lv' }, next.index > lv.index ? `Level up: ${next.name}!` : `Lv ${lv.n} · ${lv.name}`)].filter(Boolean));
-    $('#play-xp').hidden = false;
+    $('#play-title').textContent = confirmOnly ? `Your ${p.name} is up to date` : own ? `Found your ${p.name}` : `New program: ${p.name}`;
+    $('#play-xp').hidden = true; // plain card: what was found and what changes, no XP or combo
     setActions([['Fix something', false, fixPlay],
-      [[h('span', { class: 'fill', 'aria-hidden': 'true' }), confirmOnly ? 'Confirm' : 'Collect', h('span', { class: 'cd', 'aria-hidden': 'true' })], true, collectNow, 'play-collect']]);
+      [[h('span', { class: 'fill', 'aria-hidden': 'true' }), confirmOnly ? 'Confirm' : 'Update', h('span', { class: 'cd', 'aria-hidden': 'true' })], true, collectNow, 'play-collect']]);
     const said = [...$('#play-loot').children].slice(1).map((li) => li.innerText.replace(/\n+/g, ', ')).join('. ');
     const auto = autoCollect && !doubts.length; // something looks off: wait for a tap
-    announce(`${$('#play-title').textContent} ${said}.${auto ? ` ${confirmOnly ? 'Confirming' : 'Collecting'} in ${COLLECT_SECONDS} seconds; press Tab to look first.` : ''}`);
+    announce(`${$('#play-title').textContent} ${said}.${auto ? ` ${confirmOnly ? 'Confirming' : 'Updating'} in ${COLLECT_SECONDS} seconds; press Tab to look first.` : ''}`);
     if (auto) startCountdown();
   }
 
@@ -5712,13 +5700,15 @@
   }
   // "Fix something": the review form, with the screenshot above it.
   function fixPlay() {
-    const { text, url, choice, found } = playing;
+    const { text, url, choice, found, balancePick } = playing;
+    // A balance you picked on the card ("Use 26,948") is the one the form starts with.
+    const picked = found && balancePick != null ? { ...found, balances: [balancePick, ...found.balances.filter((v) => v !== balancePick)] } : found;
     playing.url = null; // the review sheet shows it now
     closePlay();
     openScan();
     $('#scan-preview').src = url;
     $('#scan-preview').hidden = false;
-    showScanResult(text, choice, choice ? found : null);
+    showScanResult(text, choice, choice || balancePick != null ? picked : null);
   }
   function closePlay() { if (play.open) play.close(); }
 
@@ -5815,7 +5805,7 @@
     const b = batch;
     batch = null;
     if (b && b.collected && b.person === people.active) {
-      showToast(`Collected ${plural(b.collected, 'screenshot')} · +${b.xp} XP`, () => undoTo(b.before, b.person));
+      showToast(`Updated from ${plural(b.collected, 'screenshot')}`, () => undoTo(b.before, b.person));
       offerBonusLanding(b.before.balances);
     }
   }
@@ -5994,6 +5984,9 @@
         if (!line.via) line.via = 'from your account';
         changes.push('status');
       } else if (outcome.kind === 'new') {
+        // The screen shows your status now: it replaces one read from an earlier screen (an upgrade or a drop), while
+        // statuses you typed in or have from a card stay.
+        p.status = p.status.filter((l) => l.card || l.via !== 'from your account');
         p.status.unshift(vals.exp ? { tier: outcome.tier.name, via: 'from your account', exp: vals.exp } : { tier: outcome.tier.name, via: 'from your account' });
         changes.push('status');
         notes.push(outcome.tier.name);
@@ -6045,11 +6038,10 @@
     if (!matchesFilter(result.p)) filter = 'all';
     renderAll();
     celebrate(result, reward, from);
-    celebrateGoals(previous.balances);
     const { p, added } = result;
     if (batch) finishOne(true, reward.xp); // one toast, with one Undo, when the batch ends
-    else if (!result.real && !added) showToast(`${p.name} is up to date${reward.xp ? ` · +${reward.xp} XP` : ''}`, () => undoTo(previous, who));
-    else showToast(`${added ? 'Added' : 'Updated'} ${p.name} · +${reward.xp} XP${reward.combo > 1 ? ` · combo ×${reward.combo}` : ''}`, () => undoTo(previous, who));
+    else if (!result.real && !added) showToast(`${p.name} is up to date`, () => undoTo(previous, who));
+    else showToast(`${added ? 'Added' : 'Updated'} ${p.name}`, () => undoTo(previous, who));
     offerBonusLanding(previous.balances);
   }
 
@@ -6064,17 +6056,13 @@
       const balChanged = result.changes.includes('balance') && now != null;
       if (num && balChanged) { num._count = null; num.textContent = before.balance == null ? '—' : fmt(before.balance); } // until the points land
       const target = num || opener;
-      if (!reduceMotion.matches) { await wait(450); await flyCoins(from, target); }
-      sound('coin');
       if (num && balChanged) countBetween(num, before.balance ?? 0, now, fmt, 900);
       const delta = balChanged && before.balance != null ? now - before.balance : null;
-      floatTag(target, delta ? `${delta > 0 ? '+' : '−'}${fmt(Math.abs(delta))}` : result.added ? 'Added!' : balChanged ? `+${fmt(now)}` : 'Updated', delta < 0 ? 'down' : '');
+      floatTag(target, delta ? `${delta > 0 ? '+' : '−'}${fmt(Math.abs(delta))}` : result.added ? 'Added' : balChanged ? `+${fmt(now)}` : 'Updated', delta < 0 ? 'down' : '');
       li.classList.remove('collected');
       void li.offsetWidth; // restart the glow
       li.classList.add('collected');
-      if (result.added || result.statusNew || delta > 0 || (balChanged && before.balance == null)) confetti(target);
     }
-    queueAchievements(reward);
     if (batch) setTimeout(nextInQueue, reduceMotion.matches ? 400 : 700);
   }
 
