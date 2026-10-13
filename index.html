@@ -5467,7 +5467,11 @@
     const current = state.programs && p === medallionProgram() && medallionFor(mqd).current;
     const fromMqd = current && findTier(tiers, `${current.name} Medallion`) === tierIndex;
     if (fromMqd) return { kind: 'covered', why: 'Matches your MQDs' };
-    if (benefitsFor(p) && coveredThrough(p, tierIndex, exp || '9999-12-31')) return { kind: 'covered', why: 'Your card gives this' };
+    // Only a card's level (this one or higher, lasting as long) makes the screen's level nothing new. A higher one read
+    // from an earlier screen doesn't: the screen shows where you are now, so it replaces that one (see applyRead).
+    const byCard = benefitsFor(p) && p.status.some((line) => line.card && line.tier && (!line.exp || line.exp >= (exp || '9999-12-31'))
+      && splitParts(line.tier).some((part) => findTier(tiers, part) >= tierIndex));
+    if (byCard) return { kind: 'covered', why: 'Your card gives this' };
     return { kind: 'new', tier: tiers[tierIndex] };
   }
 
