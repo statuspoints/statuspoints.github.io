@@ -593,4 +593,9 @@ export default [
   { name: 'Comma read as “»”: 128 »400 is 128,400', text: `MARRIOTT\nBONVOY\nPOINTS\nWelcome, Alex\nGold Elite 128 »400\nMember number 123456789\n31 nights this year`,
     expect: { program: 'marriott', balance: 128400, tier: 'Gold Elite' } },
   { name: 'Comma read as “’”: 57’900 is 57,900', text: `AAdvantage®\nAward miles 57’900`, expect: { program: 'american', balance: 57900 } },
+  // The live serif reading: both readings wrong in different ways; the surer one (87%) isn't sure enough to settle it.
+  { name: 'Two readings: 87% against 76% is not sure enough: flagged', passes: [
+    { text: `AAdvantage®\nPlatinum Pro\nAAdvantage # 7KX1P92\n37,900\nAward miles\nLoyalty Points\n61,250\n63,750 to Executive Platinum`, words: [['37,900', 87], ['61,250', 97]] },
+    { text: `AAdvantage®\nPlatinum Pro\nAAdvantage # 7KX1P92\n97,900\nAward miles\nLoyalty Points\n61,250\n63,750 to Executive Platinum`, words: [['97,900', 76], ['61,250', 97]], disputed: [97900] }],
+    expect: { program: 'american', balance: 37900, unsure: true } },
 ];

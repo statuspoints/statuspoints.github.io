@@ -5198,9 +5198,10 @@
       else if (mine && theirs && mine !== theirs) {
         const [sureMine, sureTheirs] = [sureOf(best.pass, f.balances[0]), sureOf(pass, o.balances[0])];
         if (sureTheirs > sureMine + 5) { f.balances = [o.balances[0], ...f.balances.filter((v) => v !== o.balances[0])]; from = pass; }
-        // Neither the layout (one reading found clearly more) nor the reader's confidence settles it ("37,900" at 83%
-        // and "57,900" at 79%): the card says so and waits for you.
-        else if (best.worth - worth < 3 && sureMine <= sureTheirs + 5) f.unsure = true;
+        // Neither the layout (one reading found clearly more) nor a confident read (90%+, clearly surer than the
+        // other) settles it ("37,900" at 87% against "97,900" at 76%, for 57,900): the card says so and waits for you.
+        const confident = Math.max(sureMine, sureTheirs) >= 90 && Math.abs(sureMine - sureTheirs) > 5;
+        if (best.worth - worth < 3 && !confident) f.unsure = true;
       }
     }
     // The reader read the balance two ways in its own reading (see useReread).
