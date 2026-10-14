@@ -44,5 +44,28 @@ for (const c of cases) {
     console.log(`✗ ${c.name}: ${wrong.map(([k, v]) => `${k} expected ${JSON.stringify(v)}, got ${JSON.stringify(got[k] ?? null)}`).join('; ')}`);
   } else console.log(`✓ ${c.name}`);
 }
-console.log(`\n${cases.length - failed}/${cases.length} passed`);
+// A screen that doesn't name its program: the one program on your list whose level it names, else no guess.
+const guessSrc = slice('  const GUESS_COMMON', '  // A screen that doesn\'t name its program: pick it on the card');
+vm.runInContext(`${guessSrc}
+  globalThis.guess = (ids, text) => {
+    state.programs = ids.map((id) => ({ ...programFromCatalog(CATALOG_BY_ID[id]), status: [] }));
+    try { return guessProgram({ passes: [{ text, lines: [] }] }); } finally { state.programs = []; }
+  };`, context);
+const unnamed = 'Hello Alex,\nPlatinum Elite Member\nMember #123456789\nYOUR POINTS\n26,948';
+const guesses = [
+  ['only IHG on your list: IHG', ['ihg'], unnamed, 'ihg'],
+  ['IHG and Chase: IHG (Chase has no levels)', ['chase', 'ihg'], unnamed, 'ihg'],
+  ['IHG and Marriott both have Platinum Elite: no guess', ['ihg', 'marriott'], unnamed, null],
+  ['no listed program has the level: no guess', ['chase', 'delta'], unnamed, null],
+  ['no level on screen: no guess', ['ihg'], 'YOUR POINTS\n26,948', null],
+];
+let guessed = 0;
+for (const [name, ids, text, want] of guesses) {
+  const got = context.guess(ids, text) ?? null;
+  const ok = got === want;
+  if (ok) guessed++; else failed++;
+  console.log(`${ok ? '✓' : '✗'} Guess: ${name}${ok ? '' : `: expected ${want}, got ${got}`}`);
+}
+const total = cases.length + guesses.length;
+console.log(`\n${total - failed}/${total} passed`);
 process.exit(failed ? 1 : 0);

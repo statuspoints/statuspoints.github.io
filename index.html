@@ -5810,12 +5810,18 @@
     $('#play-shot').className = 'play-shot done';
     const later = batch ? ['Skip', false, skipPlay] : ['Try another', false, pickAnother];
     if (!own && !cid && playing.hint && (state.programs || []).some((x) => x.id === playing.hint)) { showLoot(read, playing.hint); return; }
-    if (!own && !cid) { pickProgram(read, later); return; }
+    if (!own && !cid) {
+      const guess = guessProgram(read);
+      if (guess) { playing.guessed = true; showLoot(read, guess); return; }
+      pickProgram(read, later);
+      return;
+    }
     const p = own || programFromCatalog(CATALOG_BY_ID[cid]);
     const vals = valsFrom(found, p);
     if (playing.balancePick != null && p.unit) vals.balance = playing.balancePick; // picked on the card
     Object.assign(playing, { choice: own ? own.id : `add:${p.id}`, vals, years: readYears(trackFor(p)) });
     const doubts = own ? doubtsAbout(p, vals) : [];
+    if (playing.guessed && choice) doubts.push('the screenshot doesn’t name the program, so make sure it’s this one');
     let changes = ['balance', 'mqd', 'progress', 'alt', 'member'].filter((k) => vals[k] !== undefined).length;
     // Judged as Update will, with a new program already on your list (Delta's Medallion then counts from MQDs).
     const outcome = vals.tierIndex >= 0 ? asListed(p, own, () => statusOutcome(p, vals.tierIndex, vals.exp, vals.mqd ?? state.mqd)) : null;
@@ -5831,7 +5837,8 @@
       setActions([later, ['Check it', true, fixPlay]]);
       return;
     }
-    $('#play-title').textContent = confirmOnly ? `Your ${p.name} is up to date` : own ? `Found your ${p.name}` : `New program: ${p.name}`;
+    $('#play-title').textContent = playing.guessed && choice ? `This looks like your ${p.name}`
+      : confirmOnly ? `Your ${p.name} is up to date` : own ? `Found your ${p.name}` : `New program: ${p.name}`;
     $('#play-xp').hidden = true; // plain card: what was found and what changes, no XP or combo
     setActions([['Fix something', false, fixPlay],
       [[h('span', { class: 'fill', 'aria-hidden': 'true' }), confirmOnly ? 'Confirm' : 'Update', h('span', { class: 'cd', 'aria-hidden': 'true' })], true, collectNow, 'play-collect']]);
@@ -5881,6 +5888,19 @@
     showScanResult(text, choice, choice || balancePick != null ? picked : null);
   }
   function closePlay() { if (play.open) play.close(); }
+
+  // A screen that doesn't name its program (its logo unread): the one program on your list whose level the screen
+  // names ("Platinum Elite Member" with only IHG on your list). When two or more fit (IHG and Marriott both have
+  // Platinum Elite) or none does, you pick.
+  // Only a level's full name counts ("Platinum Elite", "Gold Medallion", "Explorist"), never a lone common word
+  // ("Gold", "Platinum") that many programs share.
+  const GUESS_COMMON = /^(?:silver|gold|platinum|diamond|bronze|titanium|blue|red|green|classic|elite|member|plus|select)$/;
+  function guessProgram(read) {
+    const hay = ` ${(read.passes || [read]).map((pass) => normTier(pass.text || '')).join(' ')} `;
+    const fits = (state.programs || []).filter((p) => p.unit && catalogFor(p) && scanTiersFor(catalogFor(p).id)
+      .some((t) => { const name = normTier(t.name); return !GUESS_COMMON.test(name) && hay.includes(` ${name} `); }));
+    return fits.length === 1 ? fits[0].id : null;
+  }
 
   // A screen that doesn't name its program: pick it on the card, and it's read again as that program.
   function pickProgram(read, later) {
