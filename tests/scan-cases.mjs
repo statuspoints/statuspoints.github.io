@@ -571,4 +571,18 @@ export default [
   { name: 'Two readings: about as sure of each, the first stays', passes: [
     { text: `AAdvantage®\nAward miles 57,900`, words: [['57,900', 95]] }, { text: `AAdvantage®\nAward miles 97,900`, words: [['97,900', 97]] }],
     expect: { program: 'american', balance: 57900 } },
+  // ---------- When two readings disagree on the balance and nothing settles it, the card says so ----------
+  { name: 'Two readings: different balances, about as sure, nothing else to go on: flagged', passes: [
+    { text: `AAdvantage®\nPlatinum Pro\nAAdvantage # 7KX1P92\n37,900\nAward miles\nLoyalty Points\n61,250`, words: [['37,900', 83], ['61,250', 97]] },
+    { text: `AAdvantage®\nPlatinum Pro\nAAdvantage # 7KX1P92\n57,900\nAward miles\nLoyalty Points\n61,250`, words: [['57,900', 79], ['61,250', 97]] }],
+    expect: { program: 'american', balance: 37900, unsure: true } },
+  // The real IHG pair: the reading by blocks found its caption, the one-block reading ran the number into the greeting
+  // — the layout settles it, so it updates as usual.
+  { name: 'Two readings: the IHG pair is settled by its layout, not flagged', passes: [
+    `IHG 4 SEaros\nHello Alex,\nPlatinum Elite Member\nMember #123456789\nOverview Rewards Wallet Account Activity Settings\nMy Account Stays and Events Points Offers\nYOUR POINTS\n26,948\nPurchase points\nMember Benefits`,
+    `IHG 4 WARDS My Account Stays and Events Points Offers\n"\nYOUR POINTS\nHello Alex, 26 048\n. [J] ’\nPlatinum Elite Member\nRedeem Points\nMember #123456789\nPurchase points\nOverview Rewards Wallet Account Activity Settings Member Benefits`],
+    expect: { program: 'ihg', balance: 26948, tier: 'Platinum Elite', unsure: false } },
+  { name: 'Two readings: a clearly surer one settles it, not flagged', passes: [
+    { text: `AAdvantage®\nAward miles 97,900`, words: [['97,900', 82]] }, { text: `AAdvantage®\nAward miles 57,900`, words: [['57,900', 97]] }],
+    expect: { program: 'american', balance: 57900, unsure: false } },
 ];

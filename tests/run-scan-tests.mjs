@@ -32,7 +32,7 @@ vm.runInContext(`${stubs}\n${head}\n${dates}\nconst state = { programs: [], bala
     const r = c.passes ? readingOf({ passes: c.passes.map(pass) }).found : parseAccountText(c.text);
     const tiers = r.programId ? scanTiersFor(r.programId) : [];
     return { program: r.programId, balance: r.balances[0] ?? null, tier: r.tierIndex >= 0 ? tiers[r.tierIndex].name : null,
-      exp: r.exp, progress: r.progress, alt: r.altProgress, mqd: r.mqd, member: r.member };
+      exp: r.exp, progress: r.progress, alt: r.altProgress, mqd: r.mqd, member: r.member, unsure: !!r.unsure };
   };`, context);
 
 let failed = 0;
@@ -92,6 +92,19 @@ const bigChecks = [];
   const [group] = context.big.bigNumbers(pass.lines);
   bigChecks.push(['an unsure re-read (56%) changes nothing', [context.big.useReread(pass, group, '152,311', 56), pass.text.split('\n')[1]], [false, 'Gold Member 1 52,31 0']]);
   bigChecks.push(['a re-read that isn’t a whole number changes nothing', context.big.useReread(pass, group, '2,', 96), false]);
+}
+{ // A whole number read as one word: a re-read never loses digits, and only a surer one replaces it.
+  const one = (text, confidence) => {
+    const w = word(text, 100, 400, 100, 200, confidence);
+    const pass = { text: `Points\n${text}\n`, lines: [{ text, words: [w] }] };
+    return { pass, group: { line: pass.lines[0], words: [w] } };
+  };
+  let t = one('128,400', 97);
+  bigChecks.push(['“128,400” at 97% isn’t cut to “128” by a re-read', [context.big.useReread(t.pass, t.group, '128', 99), t.pass.text], [false, 'Points\n128,400\n']]);
+  t = one('84,250', 96);
+  bigChecks.push(['“84,250” at 96% stays when a re-read is no surer (“34,250” at 98%)', context.big.useReread(t.pass, t.group, '34,250', 98), false]);
+  t = one('37,900', 83);
+  bigChecks.push(['“37,900” at 83% gives way to a surer re-read (“57,900” at 90%)', [context.big.useReread(t.pass, t.group, '57,900', 90), t.pass.text], [true, 'Points\n57,900\n']]);
 }
 for (const [name, got, want] of bigChecks) {
   const ok = JSON.stringify(got) === JSON.stringify(want);

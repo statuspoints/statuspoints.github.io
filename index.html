@@ -5180,7 +5180,7 @@
     // How sure the reader was of a number: its best word's confidence in that reading (0 when it isn't one word).
     const sureOf = (pass, value) => Math.max(0, ...(pass.lines || []).flatMap((l) => l.words || [])
       .filter((w) => cleanScanText(w.text).replace(/\D/g, '') === String(value)).map((w) => w.confidence || 0));
-    for (const { pass, found: o } of tried) {
+    for (const { pass, found: o, worth } of tried) {
       if (o === f || o.programId !== f.programId) continue;
       f.balances = [...new Set([...f.balances, ...o.balances])].slice(0, 4);
       if (f.tierIndex < 0 && o.tierIndex >= 0) [f.tierIndex, f.exp] = [o.tierIndex, o.exp];
@@ -5192,8 +5192,12 @@
       if (mine && theirs.length > mine.length && theirs.endsWith(mine)) f.balances = [o.balances[0], ...f.balances.filter((v) => v !== o.balances[0])];
       // Two different balances otherwise: the one the reader was clearly surer of ("97,900" at 82% where the other
       // reading has "57,900" at 97%: a big bold digit misread in one layout).
-      else if (mine && theirs && mine !== theirs && sureOf(pass, o.balances[0]) > sureOf(best.pass, f.balances[0]) + 5) {
-        f.balances = [o.balances[0], ...f.balances.filter((v) => v !== o.balances[0])];
+      else if (mine && theirs && mine !== theirs) {
+        const [sureMine, sureTheirs] = [sureOf(best.pass, f.balances[0]), sureOf(pass, o.balances[0])];
+        if (sureTheirs > sureMine + 5) f.balances = [o.balances[0], ...f.balances.filter((v) => v !== o.balances[0])];
+        // Neither the layout (one reading found clearly more) nor the reader's confidence settles it ("37,900" at 83%
+        // and "57,900" at 79%): the card says so and waits for you.
+        else if (best.worth - worth < 3 && sureMine <= sureTheirs + 5) f.unsure = true;
       }
     }
     return { ...read, text: best.pass.text, lines: best.pass.lines, found: f };
@@ -5370,6 +5374,10 @@
     const now = text.trim();
     const was = group.words.map((w) => w.text).join(' ');
     if (!/^(?:\d{1,3}(?:,\d{3})+|\d{1,7})$/.test(now) || confidence < 85 || now === was) return false;
+    // Never fewer digits ("128" for "128,400"), and a whole number read as one word only gives way to a surer read.
+    if (now.replace(/\D/g, '').length < was.replace(/\D/g, '').length) return false;
+    const whole = group.words.length === 1 && /^(?:\d{1,3}(?:,\d{3})+|\d+)$/.test(was);
+    if (whole && confidence <= (group.words[0].confidence || 0) + 3) return false;
     const at = pass.text.indexOf(was);
     if (at < 0) return false;
     pass.text = pass.text.slice(0, at) + now + pass.text.slice(at + was.length);
@@ -5810,7 +5818,7 @@
     const others = found.balances.filter((v) => v !== vals.balance).slice(0, 3);
     return h('li', { class: 'loot-warn' }, lootIcon('warn', '#B45309'),
       h('div', { class: 'loot-main' }, h('b', null, 'Check this first'), h('small', null, `${doubts.join('; ')}.`),
-        others.length && /would go from/.test(doubts[0]) ? h('div', { class: 'loot-alts' }, others.map((v) => h('button', {
+        others.length && doubts.some((d) => /would go from|balance was hard/.test(d)) ? h('div', { class: 'loot-alts' }, others.map((v) => h('button', {
           type: 'button', class: 'scan-alt', 'data-pick-balance': String(v), 'aria-label': `Use ${fmt(v)} as the balance` }, `Use ${fmt(v)}`))) : null));
   }
 
@@ -5959,6 +5967,7 @@
     Object.assign(playing, { choice: own ? own.id : `add:${p.id}`, vals, years: readYears(trackFor(p)) });
     const doubts = own ? doubtsAbout(p, vals) : [];
     if (playing.guessed && choice) doubts.push('the screenshot doesn’t name the program, so make sure it’s this one');
+    if (found.unsure && vals.balance !== undefined && playing.balancePick == null) doubts.push('the balance was hard to read, so check it');
     let changes = ['balance', 'mqd', 'progress', 'alt', 'member'].filter((k) => vals[k] !== undefined).length;
     // Judged as Update will, with a new program already on your list (Delta's Medallion then counts from MQDs).
     const outcome = vals.tierIndex >= 0 ? asListed(p, own, () => statusOutcome(p, vals.tierIndex, vals.exp, vals.mqd ?? state.mqd)) : null;
