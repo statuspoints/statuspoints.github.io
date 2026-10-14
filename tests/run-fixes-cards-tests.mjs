@@ -273,6 +273,24 @@ check('a card’s dated status (IHG thru 12/31/27) cleared: stays cleared', !!pr
     [app.lineExpired(prog('ihg').status[0]), prog('ihg').status[0].exp], [false, '']);
 }
 
+{ // a screenshot showing another level than one read from an earlier screen: it replaces that one
+  app.state = app.normalize({ programs: [{ id: 'ihg', name: 'IHG One Rewards', unit: 'points',
+    status: [{ tier: 'Diamond Elite', via: 'from your account' }, { tier: 'Gold Elite', via: 'status match' }] }], cards: [] });
+  app.applyRead('ihg', { tierIndex: app.findTier(app.scanTiersFor('ihg'), 'Platinum Elite') });
+  check('a lower level on screen replaces the one read from an earlier screen; one you typed stays',
+    prog('ihg').status.map((l) => `${l.tier} | ${l.via}`), ['Platinum Elite | from your account', 'Gold Elite | status match']);
+  app.applyRead('ihg', { tierIndex: app.findTier(app.scanTiersFor('ihg'), 'Diamond Elite') });
+  check('…and a higher one later replaces it again', prog('ihg').status.map((l) => `${l.tier} | ${l.via}`),
+    ['Diamond Elite | from your account', 'Gold Elite | status match']);
+}
+start(['ihg-premier']);
+{ // a card's level still covers a screen showing the same level or lower
+  const before = prog('ihg').status.length;
+  app.applyRead('ihg', { tierIndex: app.findTier(app.scanTiersFor('ihg'), 'Gold Elite') });
+  check('a card’s Platinum Elite covers a screen showing Gold Elite: nothing added, the card’s line stays',
+    [prog('ihg').status.length, prog('ihg').status.some((l) => l.card === 'ihg-premier')], [before, true]);
+}
+
 /* ---------- Turning a card off keeps programs that still hold your data ---------- */
 
 const keeps = (label, add) => {
