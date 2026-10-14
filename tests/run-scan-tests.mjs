@@ -66,6 +66,38 @@ for (const [name, ids, text, want] of guesses) {
   if (ok) guessed++; else failed++;
   console.log(`${ok ? '✓' : '✗'} Guess: ${name}${ok ? '' : `: expected ${want}, got ${got}`}`);
 }
-const total = cases.length + guesses.length;
+// Big numbers read again on their own: which words count as one big number, and when a re-read replaces them.
+const bigSrc = slice('  const boxAround', '  /* ---------- The game');
+vm.runInContext(`${bigSrc}\nglobalThis.big = { bigNumbers, useReread };`, context);
+const word = (text, x0, x1, y0, y1, confidence = 95) => ({ text, confidence, bbox: { x0, x1, y0, y1 } });
+const hilton = () => {
+  const top = { text: 'Hilton Honors', words: [word('Hilton', 50, 200, 40, 80), word('Honors', 210, 380, 40, 80)] };
+  const merged = { text: 'Gold Member 1 52,31 0', words: [word('Gold', 46, 200, 280, 340), word('Member', 210, 500, 280, 340),
+    word('1', 1500, 1530, 240, 330, 97), word('52,31', 1545, 1760, 240, 330, 96), word('0', 1765, 1812, 240, 330, 94)] };
+  const low = { text: 'Member #1234567890 Nights this year 21', words: [word('Member', 46, 180, 370, 400), word('#1234567890', 190, 420, 370, 400),
+    word('Nights', 1500, 1600, 370, 400), word('this', 1610, 1670, 370, 400), word('year', 1680, 1760, 370, 400), word('21', 1780, 1812, 370, 400)] };
+  return { text: 'Hilton Honors\nGold Member 1 52,31 0\nMember #1234567890 Nights this year 21\n', lines: [top, merged, low] };
+};
+const bigChecks = [];
+{
+  const pass = hilton();
+  const groups = context.big.bigNumbers(pass.lines);
+  bigChecks.push(['the split big number is one group; small numbers aren’t', groups.map((g) => g.words.map((w) => w.text).join(' ')), ['1 52,31 0']]);
+  bigChecks.push(['a sure re-read replaces it in the text', [context.big.useReread(pass, groups[0], '152,310\n', 96), pass.text.split('\n')[1]], [true, 'Gold Member 152,310']]);
+  bigChecks.push(['…and in the line’s words, as one word', pass.lines[1].words.map((w) => w.text), ['Gold', 'Member', '152,310']]);
+  bigChecks.push(['…which the scan reads as the balance', context.read({ text: `${pass.text}Points balance` }).balance, 152310]);
+}
+{
+  const pass = hilton();
+  const [group] = context.big.bigNumbers(pass.lines);
+  bigChecks.push(['an unsure re-read (56%) changes nothing', [context.big.useReread(pass, group, '152,311', 56), pass.text.split('\n')[1]], [false, 'Gold Member 1 52,31 0']]);
+  bigChecks.push(['a re-read that isn’t a whole number changes nothing', context.big.useReread(pass, group, '2,', 96), false]);
+}
+for (const [name, got, want] of bigChecks) {
+  const ok = JSON.stringify(got) === JSON.stringify(want);
+  if (!ok) failed++;
+  console.log(`${ok ? '✓' : '✗'} Big number: ${name}${ok ? '' : `: expected ${JSON.stringify(want)}, got ${JSON.stringify(got)}`}`);
+}
+const total = cases.length + guesses.length + bigChecks.length;
 console.log(`\n${total - failed}/${total} passed`);
 process.exit(failed ? 1 : 0);

@@ -5129,7 +5129,7 @@
   const OCR_BASE = 'https://cdn.jsdelivr.net/npm/';
   let ocrWorker = null;
   let ocrProgress = () => {}; // set by the scan in progress
-  let ocrPass = { at: 0, of: 1 }; // which reading of the screenshot is running, so progress goes once from 0 to 100%
+  let ocrPass = { at: 0, of: 1, quiet: false }; // which reading of the screenshot is running, so progress goes once from 0 to 100%
   const OCR_CACHE = 'status-tracker-ocr-v2'; // same name as in sw.js
   // Gives up after 2 minutes (a stalled download) so the next scan can try again; a reader that finishes starting
   // after that is shut down rather than left running beside the next one.
@@ -5149,7 +5149,7 @@
         workerPath: `${OCR_BASE}tesseract.js@5.1.1/dist/worker.min.js`,
         corePath: `${OCR_BASE}tesseract.js-core@5.1.1`,
         langPath: `${OCR_BASE}@tesseract.js-data/eng@1.0.0/4.0.0_best_int`,
-        logger: (m) => ocrProgress(m.status === 'recognizing text' ? { ...m, progress: (ocrPass.at + (m.progress || 0)) / ocrPass.of } : m),
+        logger: (m) => { if (!ocrPass.quiet) ocrProgress(m.status === 'recognizing text' ? { ...m, progress: (ocrPass.at + (m.progress || 0)) / ocrPass.of } : m); },
         errorHandler: fail,
       }).then((worker) => {
         if (settled) { worker.terminate(); return; }
@@ -5236,12 +5236,75 @@
     const passes = [];
     for (const [at, layout] of OCR_LAYOUTS.entries()) {
       ocrPass = { at, of: OCR_LAYOUTS.length };
-      await worker.setParameters({ tessedit_pageseg_mode: layout });
+      await worker.setParameters({ tessedit_pageseg_mode: layout, tessedit_char_whitelist: '' });
       const { data } = await worker.recognize(canvas, {}, { text: true, blocks: true });
       const lines = data.lines || (data.blocks || []).flatMap((b) => (b.paragraphs || []).flatMap((para) => para.lines || []));
-      passes.push({ text: data.text || '', lines });
+      const pass = { text: data.text || '', lines };
+      await rereadBig(worker, canvas, pass);
+      passes.push(pass);
     }
     return { ...passes[0], passes, width: canvas.width, height: canvas.height };
+  }
+
+  // Numbers in big type (a balance) can come out wrong when the reader runs them into smaller text on the same line
+  // ("Gold Member 1 52,31 0" for 152,310): each is read again on its own, as one line of digits.
+  async function rereadBig(worker, canvas, pass) {
+    const groups = bigNumbers(pass.lines);
+    if (!groups.length) return;
+    ocrPass.quiet = true;
+    try {
+      await worker.setParameters({ tessedit_pageseg_mode: '7', tessedit_char_whitelist: '0123456789,' });
+      for (const group of groups) {
+        const box = boxAround(group.words);
+        const pad = Math.round((box.y1 - box.y0) * 0.35);
+        const crop = document.createElement('canvas');
+        crop.width = box.x1 - box.x0 + 2 * pad;
+        crop.height = box.y1 - box.y0 + 2 * pad;
+        const ctx = crop.getContext('2d');
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, crop.width, crop.height);
+        ctx.drawImage(canvas, box.x0 - pad, box.y0 - pad, crop.width, crop.height, 0, 0, crop.width, crop.height);
+        const { data } = await worker.recognize(crop);
+        useReread(pass, group, data.text || '', data.confidence || 0);
+      }
+    } finally {
+      await worker.setParameters({ tessedit_char_whitelist: '' });
+      ocrPass.quiet = false;
+    }
+  }
+  const boxAround = (words) => ({ x0: Math.min(...words.map((w) => w.bbox.x0)), y0: Math.min(...words.map((w) => w.bbox.y0)),
+    x1: Math.max(...words.map((w) => w.bbox.x1)), y1: Math.max(...words.map((w) => w.bbox.y1)) });
+  // The big numbers on a reading: number-only words much taller than most words (1.6×), side by side pieces of one
+  // number together ("1", "52,31", "0").
+  function bigNumbers(lines) {
+    const words = (lines || []).flatMap((line) => (line.words || []).filter((w) => w && w.bbox).map((word) => ({ word, line })));
+    const heights = words.map(({ word }) => word.bbox.y1 - word.bbox.y0).sort((a, b) => a - b);
+    const median = heights[Math.floor(heights.length / 2)] || 0;
+    const groups = [];
+    for (const { word, line } of words) {
+      const tall = word.bbox.y1 - word.bbox.y0;
+      if (!/\d/.test(word.text) || !/^[\d,.]+$/.test(word.text) || tall <= 1.6 * median) continue;
+      const last = groups[groups.length - 1];
+      const prev = last && last.words[last.words.length - 1];
+      if (prev && last.line === line && word.bbox.x0 - prev.bbox.x1 < 0.8 * tall) last.words.push(word);
+      else groups.push({ line, words: [word] });
+    }
+    return groups;
+  }
+  // A big number read again replaces what was read, when it's a whole number read with confidence (85%+).
+  function useReread(pass, group, text, confidence) {
+    const now = text.trim();
+    const was = group.words.map((w) => w.text).join(' ');
+    if (!/^(?:\d{1,3}(?:,\d{3})+|\d{1,7})$/.test(now) || confidence < 85 || now === was) return false;
+    const at = pass.text.indexOf(was);
+    if (at < 0) return false;
+    pass.text = pass.text.slice(0, at) + now + pass.text.slice(at + was.length);
+    const line = group.line;
+    const first = line.words.indexOf(group.words[0]);
+    line.words = [...line.words.slice(0, first), { text: now, confidence, bbox: boxAround(group.words) },
+      ...line.words.slice(first).filter((w) => !group.words.includes(w))];
+    if (typeof line.text === 'string') line.text = line.text.replace(was, now);
+    return true;
   }
 
   /* ---------- The game: XP and levels, a weekly streak, how many balances are up to date, badges ---------- */
