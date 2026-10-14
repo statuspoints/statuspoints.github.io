@@ -27,7 +27,9 @@ const context = vm.createContext({ console, Intl, Math, Date, Number, String, Ob
 vm.runInContext(`${stubs}\n${head}\n${dates}\nconst state = { programs: [], balances: {}, progress: {}, updated: {} };\n${parser}\n
   // A case's text, or each of its readings (passes) with the better one kept, as the app does with a screenshot.
   globalThis.read = (c) => {
-    const r = c.passes ? readingOf({ passes: c.passes.map((text) => ({ text, lines: [] })) }).found : parseAccountText(c.text);
+    // A reading is its text, or { text, words: [[word, confidence], …] } for how sure the reader was of each word.
+    const pass = (x) => (typeof x === 'string' ? { text: x, lines: [] } : { text: x.text, lines: [{ text: '', words: x.words.map(([text, confidence]) => ({ text, confidence })) }] });
+    const r = c.passes ? readingOf({ passes: c.passes.map(pass) }).found : parseAccountText(c.text);
     const tiers = r.programId ? scanTiersFor(r.programId) : [];
     return { program: r.programId, balance: r.balances[0] ?? null, tier: r.tierIndex >= 0 ? tiers[r.tierIndex].name : null,
       exp: r.exp, progress: r.progress, alt: r.altProgress, mqd: r.mqd, member: r.member };

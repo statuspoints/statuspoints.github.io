@@ -561,4 +561,14 @@ export default [
     expect: { program: 'hilton', balance: 84000, progress: 32, alt: 14 } },
   { name: 'Caption row over a value row: nights first, then stays', text: `Hilton Honors\nGold\nPoints 84,000\nQualifying nights Stays this year\n32 14`,
     expect: { program: 'hilton', balance: 84000, progress: 32, alt: 14 } },
+  // ---------- The text reader's real output for an American app screen (made-up number), with its confidence ----------
+  // By blocks, the big bold 5 came out as a 9 at 82%; as one block it read 57,900 at 97%.
+  { name: 'Two readings: different balances, the surer one wins', passes: [
+    { text: `AAdvantage®\nPlatinum Pro\nAAdvantage # 7KX1P92\n97,900\nAward miles\nLoyalty Points\n61,250\n63,750 to Executive Platinum`, words: [['7KX1P92', 82], ['97,900', 82], ['61,250', 97], ['63,750', 96]] },
+    { text: `AAdvantage®\nPlatinum Pro\nAAdvantage # 7KX1P92\n57,900\nAward miles\nLoyalty Points\n61,250\n63,750 to Executive Platinum`, words: [['7KX1P92', 82], ['57,900', 97], ['61,250', 97], ['63,750', 96]] }],
+    expect: { program: 'american', balance: 57900, tier: 'Platinum Pro', progress: 61250 } },
+  // Close confidences don't overturn the first reading.
+  { name: 'Two readings: about as sure of each, the first stays', passes: [
+    { text: `AAdvantage®\nAward miles 57,900`, words: [['57,900', 95]] }, { text: `AAdvantage®\nAward miles 97,900`, words: [['97,900', 97]] }],
+    expect: { program: 'american', balance: 57900 } },
 ];

@@ -4968,7 +4968,10 @@
     });
     const best = tried.reduce((a, b) => (b.worth > a.worth ? b : a));
     const f = best.found;
-    for (const { found: o } of tried) {
+    // How sure the reader was of a number: its best word's confidence in that reading (0 when it isn't one word).
+    const sureOf = (pass, value) => Math.max(0, ...(pass.lines || []).flatMap((l) => l.words || [])
+      .filter((w) => cleanScanText(w.text).replace(/\D/g, '') === String(value)).map((w) => w.confidence || 0));
+    for (const { pass, found: o } of tried) {
       if (o === f || o.programId !== f.programId) continue;
       f.balances = [...new Set([...f.balances, ...o.balances])].slice(0, 4);
       if (f.tierIndex < 0 && o.tierIndex >= 0) [f.tierIndex, f.exp] = [o.tierIndex, o.exp];
@@ -4978,6 +4981,11 @@
       // 112,450): narrow digits split off big numbers, so the longer one is the balance.
       const [mine, theirs] = [String(f.balances[0] ?? ''), String(o.balances[0] ?? '')];
       if (mine && theirs.length > mine.length && theirs.endsWith(mine)) f.balances = [o.balances[0], ...f.balances.filter((v) => v !== o.balances[0])];
+      // Two different balances otherwise: the one the reader was clearly surer of ("97,900" at 82% where the other
+      // reading has "57,900" at 97%: a big bold digit misread in one layout).
+      else if (mine && theirs && mine !== theirs && sureOf(pass, o.balances[0]) > sureOf(best.pass, f.balances[0]) + 5) {
+        f.balances = [o.balances[0], ...f.balances.filter((v) => v !== o.balances[0])];
+      }
     }
     return { ...read, text: best.pass.text, lines: best.pass.lines, found: f };
   }
