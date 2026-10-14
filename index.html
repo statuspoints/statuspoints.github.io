@@ -4706,6 +4706,25 @@
       if (here.length) { if (scanOdd(here[0].value, label.exec(lines[i])[0])) continue; return { value: here[0].value, line: i }; }
       // A label with only a target on its line ("Earn 12,000 more PQP") doesn't borrow the next line's number.
       if (/\d/.test(lines[i].replace(/\b(?:19|20)\d\d\b/g, ''))) continue;
+      // A row of captions over a row of values, one each ("Premier qualifying points (PQP) Premier qualifying
+      // flights (PQF)" over "9,820 of 12,000 24 of 30"): the value in the same place as this caption.
+      const row = lineAmounts(lines[i + 1] || '', dollars);
+      if (row.length > 1 && !/[a-z]/i.test((lines[i + 1] || '').replace(/\b(?:out of|of)\b/gi, ''))) {
+        // Each label where it sits (the nights label's "not free or award nights" check, which spans from the
+        // line's start, is left off).
+        const where = (re) => [...lines[i].matchAll(new RegExp(re.source.replace(/^\^\(\?!.*?\)\.\*\?/, ''), 'gi'))].map((m) => [m.index, m.index + m[0].length]);
+        const spans = Object.values(SCAN_LABELS).flatMap(where).sort((a, b) => a[0] - b[0]);
+        // Overlapping matches, or a name and its short form in brackets ("… points (PQP)"), are one caption.
+        const groups = spans.reduce((list, span) => {
+          const last = list[list.length - 1];
+          if (last && (span[0] < last[1] || /^\s*\(\s*$/.test(lines[i].slice(last[1], span[0])))) last[1] = Math.max(last[1], span[1]);
+          else list.push([...span]);
+          return list;
+        }, []);
+        const at = (where(label)[0] || [-1])[0];
+        const k = groups.findIndex(([from, to]) => at >= from && at < to);
+        if (groups.length === row.length && k >= 0) return { value: row[k].value, line: i + 1 };
+      }
       // A tile's caption: the value it labels (its own share when one caption line spans several values).
       if (layout.owner.has(i)) {
         const v = layout.owner.get(i);
@@ -4955,6 +4974,10 @@
       if (f.tierIndex < 0 && o.tierIndex >= 0) [f.tierIndex, f.exp] = [o.tierIndex, o.exp];
       else if (!f.exp && o.exp && o.tierIndex === f.tierIndex) f.exp = o.exp;
       for (const k of ['member', 'progress', 'altProgress', 'mqd']) if (f[k] == null) f[k] = o[k];
+      // The same balance with its first digits missing ("1 1 2,450" read as 2,450 where the other reading has
+      // 112,450): narrow digits split off big numbers, so the longer one is the balance.
+      const [mine, theirs] = [String(f.balances[0] ?? ''), String(o.balances[0] ?? '')];
+      if (mine && theirs.length > mine.length && theirs.endsWith(mine)) f.balances = [o.balances[0], ...f.balances.filter((v) => v !== o.balances[0])];
     }
     return { ...read, text: best.pass.text, lines: best.pass.lines, found: f };
   }

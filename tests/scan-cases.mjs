@@ -549,4 +549,16 @@ export default [
   // …but not from a reading that found another program.
   { name: 'Two readings: nothing borrowed across programs', passes: [`IHG One Rewards\nYOUR POINTS\n26,948`, `Hilton Honors\nDiamond\nMember #987654321`],
     expect: { program: 'ihg', balance: 26948, tier: null, member: null } },
+  // ---------- The text reader's real output for a United web page (made-up name and number) ----------
+  { name: 'United web, one block: balance alone on its line, PQP and PQF in a caption row', text: `UNITED MileagePlus\nAlex Smith Available miles\nPremier Gold\n112,450\nMileagePlus® #ABC12345\nPremier qualifying points (PQP) Premier qualifying flights (PQF)\n9,820 of 12,000 24 of 30`,
+    expect: { program: 'united', balance: 112450, tier: 'Premier Gold', progress: 9820, member: 'ABC12345' } },
+  // Read by blocks, the big number's narrow 1s split off ("1 1 2,450"); the other reading has all of it.
+  { name: 'Two readings: a balance missing its first digits loses to the whole one', passes: [`UNITED MileagePlus\nAlex Smith Available miles\nPremier Gold 1 1 2,450\nMileagePlus® #ABC12345\nPremier qualifying points (PQP) Premier qualifying flights (PQF)\n9,820 of 12,000 24 of 30`,
+    `UNITED MileagePlus\nAlex Smith Available miles\nPremier Gold\n112,450\nMileagePlus® #ABC12345\nPremier qualifying points (PQP) Premier qualifying flights (PQF)\n9,820 of 12,000 24 of 30`],
+    expect: { program: 'united', balance: 112450, tier: 'Premier Gold', progress: 9820 } },
+  // A caption row read in either order: each count takes the value in its own place.
+  { name: 'Caption row over a value row: stays first, then nights', text: `Hilton Honors\nGold\nPoints 84,000\nStays this year Qualifying nights\n14 32`,
+    expect: { program: 'hilton', balance: 84000, progress: 32, alt: 14 } },
+  { name: 'Caption row over a value row: nights first, then stays', text: `Hilton Honors\nGold\nPoints 84,000\nQualifying nights Stays this year\n32 14`,
+    expect: { program: 'hilton', balance: 84000, progress: 32, alt: 14 } },
 ];
