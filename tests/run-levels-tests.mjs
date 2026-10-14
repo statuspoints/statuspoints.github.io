@@ -51,7 +51,8 @@ check('later checks are dated', Object.keys(CHECKED_ON).every((id) => BENEFITS[i
 
 // Free entry levels
 const bases = Object.entries(BENEFITS).filter(([, tiers]) => tiers[0].base).map(([id, tiers]) => `${id}:${tiers[0].name}`).sort();
-check('free entry levels', bases, ['accor:Classic', 'ba:Blue', 'emirates:Blue', 'flyingblue:Explorer', 'qatar:Burgundy', 'turkish:Classic', 'virgin:Red']);
+check('free entry levels', bases, ['accor:Classic', 'aerlingus:Green', 'ba:Blue', 'cathay:Green', 'emirates:Blue', 'etihad:Bronze',
+  'flyingblue:Explorer', 'qantas:Bronze', 'qatar:Burgundy', 'turkish:Classic', 'virgin:Red']);
 check('an invitation-only top level isn’t an entry level', BENEFITS.accor.at(-1).base, false);
 
 // Whole-name matching where "Elite" and "Plus" are levels of their own
@@ -65,6 +66,15 @@ check('Singapore: "Gold" alone isn’t a level', index('singapore', 'Gold'), -1)
 check('BA: "Gold Guest List" over "Gold"', index('ba', 'Gold Guest List'), 4);
 check('Hilton still matches without filler words', index('hilton', 'Diamond Reserve status'), 3);
 check('Marriott: "Gold" finds Gold Elite', index('marriott', 'Gold'), 1);
+
+// Official names, with the shorter names screenshots use kept as aliases
+check('Korean Air: "Morning Calm Premium" without "Club"', index('koreanair', 'Morning Calm Premium'), 2);
+check('Korean Air: "Morning Calm" without "Club"', index('koreanair', 'SKYPASS Morning Calm'), 0);
+check('Lufthansa: "HON Circle" finds HON Circle Member', index('lufthansa', 'HON Circle'), 2);
+check('ANA: "Diamond" finds Diamond Service', index('ana', 'Diamond'), 2);
+check('JAL: "JGC Diamond" is Diamond, not JGC Premier', index('jal', 'JGC Diamond'), 3);
+check('JAL: "JGC Premier"', index('jal', 'JGC Premier'), 2);
+check('Qantas: "Platinum One" over "Platinum"', index('qantas', 'Platinum One'), 4);
 
 console.log(`\n${total - failed}/${total} passed`);
 if (failed) process.exit(1);

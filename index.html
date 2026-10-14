@@ -2340,9 +2340,18 @@
     jetblue: 'https://www.jetblue.com/trueblue/mosaic',
     choice: 'https://www.choicehotels.com/choice-privileges/benefits',
     accor: 'https://all.accor.com/loyalty-program/cards-status-benefits-details/index.en.shtml',
+    koreanair: 'https://www.koreanair.com/contents/skypass/benefits/tier/morning-calm?hl=en',
+    lufthansa: 'https://www.miles-and-more.com/row/en/program/status-benefits/status-levels.html',
+    cathay: 'https://www.cathaypacific.com/cx/en_US/membership/benefits.html',
+    qantas: 'https://www.qantas.com/en-us/frequent-flyer/status-tiers',
+    ana: 'https://www.ana.co.jp/en/us/amc/premium-members/',
+    jal: 'https://www.jal.co.jp/jp/en/jalmile/flyon/status.html',
+    etihad: 'https://www.etihad.com/en-us/etihadguest/tiers-and-benefits',
+    aerlingus: 'https://www.aerlingus.com/aerclub/aerclub-tiers/tier-benefits/',
   };
   // Programs checked on a later day than BENEFITS_CHECKED.
-  const CHECKED_ON = { flyingblue: 'Oct 8, 2026', ba: 'Oct 8, 2026', virgin: 'Oct 8, 2026', emirates: 'Oct 8, 2026', singapore: 'Oct 8, 2026', qatar: 'Oct 8, 2026', turkish: 'Oct 8, 2026', jetblue: 'Oct 8, 2026', choice: 'Oct 8, 2026', accor: 'Oct 8, 2026' };
+  const CHECKED_ON = { flyingblue: 'Oct 8, 2026', ba: 'Oct 8, 2026', virgin: 'Oct 8, 2026', emirates: 'Oct 8, 2026', singapore: 'Oct 8, 2026', qatar: 'Oct 8, 2026', turkish: 'Oct 8, 2026', jetblue: 'Oct 8, 2026', choice: 'Oct 8, 2026', accor: 'Oct 8, 2026',
+    koreanair: 'Oct 10, 2026', lufthansa: 'Oct 10, 2026', cathay: 'Oct 10, 2026', qantas: 'Oct 10, 2026', ana: 'Oct 10, 2026', jal: 'Oct 10, 2026', etihad: 'Oct 10, 2026', aerlingus: 'Oct 10, 2026' };
   const BENEFITS = {
     delta: [
       ['Silver Medallion', '$5,000 MQDs in a calendar year', ["Free upgrades", "Free Preferred seats", "1 free bag"], ['7 miles per $1 spent (2 bonus)', 'Complimentary upgrades, clearing 1 day out', 'Free Preferred seats', 'First checked bag free', 'SkyTeam Elite']],
@@ -2425,7 +2434,7 @@
       ["President's Circle", '15 rentals or $3,000 a year', ["Guaranteed upgrade", "Pick your car", "50% bonus"], ['Guaranteed one-class upgrade (up to full-size)', 'Pick from the President’s Circle area', '50% bonus points', 'Dedicated service line']],
     ],
     national: [
-      ['Executive', '12 paid rentals or 40 paid days a year', ["Pick any Executive car", "Midsize price", "Skip the counter"], ['Book midsize, pick any car in the Executive Area, and pay the midsize rate', 'Guaranteed one-class upgrade when you book full-size or above', 'A free rental day for every 6 rentals', 'Skip the counter'], ['exec']],
+      ['Executive', '12 paid rentals or 40 paid days a year', ["Pick any Executive car", "Midsize price", "Skip the counter"], ['Book midsize, pick any car in the Executive Area, and pay the midsize rate', 'Guaranteed one-class upgrade when you book full-size through luxury (US and Canada; not specialty vehicles)', 'A free rental day for every 6 rentals', 'Skip the counter'], ['exec']],
       ['Executive Elite', '25 paid rentals or 85 paid days a year', ["Guaranteed car", "Free day every 5 rentals"], ['A guaranteed car (up to full-size) when you book 24 hours ahead', 'A free rental day for every 5 rentals, on any available car class (not trucks or exotics), no blackout dates', 'Everything in Executive'], ['exec elite']],
     ],
     flyingblue: [
@@ -2491,6 +2500,54 @@
       ["Diamond", "26,000 status points a year (nights alone don’t qualify)", ["Weekend breakfast", "Gift Gold status", "100% bonus"], ["100% bonus Reward points on stays", "Free breakfast on weekends for you and your roommates (Fri and Sat nights in the U.S.)", "10 Dining & Spa Rewards worth €10 each (€100 total)", "Gift Gold status to one person", "Fairmont Gold lounge access", "Everything in Platinum"]],
       ["Limitless", "By invitation only", ["24/7 personal assistant", "Gift Platinum status", "Transfer points"], ["24/7 personal assistant and concierge", "Gift Platinum status to one person", "Transfer Reward points to up to 5 members (12 transfers a year)", "100% bonus Reward points on stays", "Everything in Diamond"]],
     ],
+    koreanair: [
+      ["Morning Calm Club", "50,000 miles (at least 30,000 flown on Korean Air) or 80 Korean Air flight points (1 per flight within Korea, 2 per international flight); keep it every 2 years with 30,000 miles (at least 20,000 flown on Korean Air) or 40 flight points", ["4 lounge visits", "1 extra free bag", "Free standard seats"], ["1 extra free checked bag (not in Economy on flights to or from the Americas)", "Korean Air Prestige Lounge access up to 4 times every 2 years", "Morning Calm bag-drop counter and priority bag handling on Korean Air flights", "Free standard seat selection in Economy on international flights", "Priority on booking waitlists in the same booking class", "SkyTeam Elite on partner airlines"], ["morning calm"]],
+      ["Morning Calm Select Club", "100,000 miles on Korean Air and SkyTeam flights or 140 Korean Air flight points, earned while a Morning Calm Club member within its 2-year qualification period; valid 2 years and kept with the same totals", ["SkyTeam Elite Plus", "Lounge + 1 guest", "Priority check-in"], ["SkyTeam Elite Plus: partner lounges and priority on SkyTeam flights", "Korean Air Prestige Lounge access plus 1 guest (the guest must be on your flight at airports without a Korean Air-run lounge)", "Priority check-in counters (or SkyPriority where there’s no dedicated counter)", "1 extra free checked bag (23kg in Economy, 32kg in First/Prestige) with priority handling", "Free front-zone or standard seats in Economy on international flights (not extra legroom)", "Priority on booking waitlists in the same booking class"], ["morning calm select"]],
+      ["Morning Calm Premium Club", "500,000 miles on Korean Air and SkyTeam flights in total; status is for life", ["Lifetime status", "Off-peak awards always", "Free award changes"], ["Lifetime status with SkyTeam Elite Plus", "Off-peak mileage pricing on award tickets even in peak season", "No award ticket reissue fees (counter and phone service charges still apply)", "Prestige Lounge access plus 1 guest; Miler Club or First lounges when flying Prestige", "1 extra free checked bag (23kg in Economy, 32kg in First/Prestige) with priority handling", "Priority check-in counters", "Free front-zone or standard seats in Economy on international flights"], ["morning calm premium"]],
+      ["Million Miler Club", "1,000,000 miles on Korean Air and SkyTeam flights in total; status is for life", ["Lifetime status", "Free extra legroom seats", "32kg extra bag"], ["Lifetime status with SkyTeam Elite Plus", "1 extra free 32kg checked bag in any cabin, with priority handling", "Free extra legroom or front-zone seats in Economy on international flights (not on Class T fares)", "Off-peak mileage pricing on award tickets even in peak season", "No award ticket reissue fees (counter and phone service charges still apply)", "Prestige Lounge access plus 1 guest; Miler Club or First lounges when flying Prestige", "Priority check-in counters"], ["million miler"]],
+    ],
+    lufthansa: [
+      ["Frequent Traveller", "650 Points and 325 Qualifying Points in a calendar year (Qualifying Points come only from Lufthansa Group airlines, partner airlines LOT, Croatia and Luxair, and Lufthansa Group rail)", ["Business lounges", "Priority check-in", "Miles never expire"], ["Up to 50% more miles on flights (Executive Bonus)", "Lufthansa, SWISS, Austrian, and Brussels Airlines business lounges, even when flying Economy", "Business Class check-in on Lufthansa Group and partner airline flights, whatever cabin you booked", "1 extra free checked bag in Economy (not on Economy Basic or Light fares)", "Miles don’t expire while you keep status", "Star Alliance Silver, plus third-highest waitlist priority on Star Alliance flights"]],
+      ["Senator", "2,000 Points and 1,000 Qualifying Points in a calendar year", ["Senator lounges + guest", "2 upgrade vouchers", "Free seat selection"], ["Up to 50% more miles on flights (Executive Bonus)", "Senator and Star Alliance Gold lounges, with 1 guest on the same flight", "2 upgrade eVouchers when you qualify and with every renewal", "Free advance seat selection for you and companions on the same booking (not on Light or Basic fares)", "First Class check-in, fast lane, and priority boarding (Group 2)", "1 extra free checked bag in every cabin (not on Economy Basic or Light fares)", "Booking guarantee up to 48 hours before departure, and Marriott Bonvoy Gold Elite when you link accounts"]],
+      ["HON Circle Member", "6,000 HON Circle Points in a calendar year (earned on Business and First Class flights with Lufthansa Group and partner airlines)", ["First Class lounges", "4 upgrade vouchers", "Chauffeur service"], ["Lufthansa First Class, SWISS First, and Austrian HON Circle lounges, with a companion plus your spouse or partner", "Lufthansa First Class Terminal in Frankfurt in any cabin", "4 upgrade eVouchers when you qualify and with every renewal", "Free advance seat selection for you and companions on the same booking (not on Light or Basic fares)", "Priority boarding (Group 1), First Class check-in, and fast lane", "Chauffeur and transfer service, plus personal HON Circle service", "Highest waitlist priority, booking guarantee up to 24 hours before departure, and a Senator partner card"], ["hon circle"]],
+    ],
+    cathay: [
+      ["Green", "Free to join (you become a lifetime Green member)", ["48-hr online check-in", "24-hr free cancellation", "Lounge pass at 200 pts"], ["Earn Asia Miles and Status Points on Cathay Pacific and oneworld flights", "Priority online check-in up to 48 hours before departure (add your membership number when you book)", "24-hour free cancellation on bookings made on Cathay’s website or app (not when the first flight is within 8 days)", "Use Asia Miles for extra-legroom seats and extra baggage", "1 Business class lounge pass when you reach 200 Status Points"]],
+      ["Silver", "300 Status Points in a membership year, plus at least 1 eligible Cathay Pacific flight (2027 status is based on Status Points earned Jan 1–Dec 31, 2026)", ["Business lounges", "Business check-in", "Priority boarding"], ["Cathay Pacific Business class lounges when you fly Cathay Pacific (just you)", "Business class check-in and priority group boarding, for you and your travel companions", "Priority baggage handling and a 10 kg cabin bag allowance on Cathay Pacific flights", "Advance seat reservation and priority waitlisting on paid tickets", "2 Business class lounge passes for companions when you reach 450 Status Points", "oneworld Ruby"]],
+      ["Gold", "600 Status Points in a membership year, plus at least 1 eligible Cathay Pacific flight (2027 status is based on Status Points earned Jan 1–Dec 31, 2026)", ["Lounges + 1 guest", "Extra checked bag", "Free inflight Wi-Fi"], ["Business class lounges on Cathay Pacific and oneworld flights, plus 1 guest", "1 extra checked bag (varies by where your flight starts) and a 10 kg cabin bag allowance on Cathay Pacific", "Free inflight Wi-Fi on Cathay Pacific", "Extra-legroom and preferred seats when you book; a guaranteed Economy seat (Y fare) up to 72 hours before departure", "Business class check-in, priority boarding, and priority baggage handling", "2 lounge passes at 800 Status Points and 4 bookable upgrades at 1,000 Status Points", "oneworld Sapphire"]],
+      ["Diamond", "1,200 Status Points in a membership year, plus at least 1 eligible Cathay Pacific flight (2027 status is based on Status Points earned Jan 1–Dec 31, 2026, and needs at least 2 eligible Cathay Pacific-marketed flights)", ["First class lounges", "Guaranteed Business seat", "Lounges + 2 guests"], ["Cathay Pacific First and Business class lounges on Cathay Pacific and oneworld flights, plus up to 2 guests (1 at partner lounges)", "First or Business class check-in, priority boarding, and priority baggage handling", "1 extra checked bag (varies by where your flight starts) and a 15 kg cabin bag allowance on Cathay Pacific", "Guaranteed Economy, Premium Economy, and Business seats (Y, W, J fares) up to 24 hours before departure (Business excludes the A321neo)", "Free inflight Wi-Fi, plus 10% off miles on Cathay Pacific award flights booked with Miles Plus Cash", "2 lounge passes at 1,400 Status Points, 4 bookable upgrades at 1,600, and a Gold membership to gift at 1,800", "oneworld Emerald"]],
+    ],
+    qantas: [
+      ["Bronze", "Free to join (entry level; Qantas says a joining fee may apply). Earn 300 Status Credits, including 4 Qantas or Jetstar flights, in your membership year to move up to Silver", ["Earn points & Status Credits", "Classic Flight Rewards", "24-hr free cancellation"], ["Earn Qantas Points and Status Credits on Qantas, Jetstar, oneworld, and partner flights", "Book Classic Flight Rewards and Classic Plus Flight Rewards with points", "Free standard seat selection on Qantas flights departing Australia (booked direct)", "Cancel an eligible booking made direct within 24 hours, with no cancellation fee", "Family Transfers to gift points to eligible family members"]],
+      ["Silver", "300 Status Credits in your membership year, including 4 Qantas or Jetstar flights (250 to keep it)", ["50% bonus points", "1 lounge invitation", "Extra checked bags"], ["50% bonus Qantas Points on Qantas, Jetstar, and American Airlines flights", "1 Complimentary Lounge Invitation (Qantas Club, International Business, or International lounges)", "Priority check-in, using Business counters on international trips", "Extra checked bags on Qantas flights: 3 pieces up to 32 kg in Economy to and from the Americas (Bronze gets 1)", "Free standard seats on all Qantas flights, plus select Forward seats", "Early access to Classic Flight Reward seats and priority on waitlists", "oneworld Ruby"]],
+      ["Gold", "700 Status Credits in your membership year, including 4 Qantas or Jetstar flights (600 to keep it)", ["Lounge access", "Priority boarding", "75% bonus points"], ["75% bonus Qantas Points on Qantas, Jetstar, and American Airlines flights", "Qantas Club, Qantas International Business, oneworld business, and Emirates lounges on eligible flights, in any cabin", "Priority check-in, boarding, and baggage on Qantas flights", "Extra checked bags on Qantas flights: 3 pieces up to 32 kg in Economy to and from the Americas", "Free Economy Plus or Extra Legroom seats within 24 hours of departure (when available)", "Earlier Classic Flight Reward access and higher upgrade priority than Silver", "oneworld Sapphire"]],
+      ["Platinum", "1,400 Status Credits in your membership year, including 4 Qantas or Jetstar flights (1,200 to keep it)", ["First lounges", "100% bonus points", "Free Economy Plus"], ["100% bonus Qantas Points on Qantas, Jetstar, and American Airlines flights", "Qantas First Lounges (Los Angeles, Singapore, Sydney, Melbourne) and Business lounges, plus oneworld First and Business lounges and Emirates lounges (including the Dubai First Lounge) on eligible flights", "Check in at First counters; priority boarding and baggage", "Free Economy Plus or Extra Legroom seats (excluding Front rows)", "Higher Classic Upgrade Reward priority than Gold", "Platinum Bonus Reward at 2,400 Status Credits: 50,000 points or Gold status for a family member or friend", "oneworld Emerald"]],
+      ["Platinum One", "3,600 Status Credits in your membership year, with at least 2,700 on Qantas (QF) flights (same to keep it)", ["Gift Platinum status", "VIP Service Team", "Top upgrade priority"], ["Gift Platinum status to a family member or friend", "Dedicated Qantas VIP Service Team, with no booking fees on eligible new Qantas bookings", "Top priority for Classic Upgrade Rewards (international confirmed up to 7 days out, where possible)", "2 Complimentary Lounge Invitations to gift", "75,000 bonus points at 5,000 Status Credits on Qantas and Jetstar flights, and 100,000 more at 7,000", "Everything in Platinum, including Qantas First Lounges and oneworld Emerald"]],
+    ],
+    ana: [
+      ["Bronze Service", "30,000 Premium Points in a calendar year (at least 15,000 on ANA Group flights)", ["Star Alliance Silver", "40% bonus miles", "Extra free bag"], ["40% bonus miles on ANA, United, Lufthansa, Swiss, and Austrian flights (50% from your 2nd straight year)", "Star Alliance Silver", "Extra free checked bag on ANA international flights", "ANA lounge access paid with miles or Upgrade Points", "Priority waitlist and airport standby", "Priority check-in when flying Premium Economy", "Upgrade Points for seat upgrades (ending; FY2026 points usable until March 31, 2027)"], ["bronze"]],
+      ["Platinum Service", "50,000 Premium Points in a calendar year (at least 25,000 on ANA Group flights)", ["Star Alliance Gold", "Lounge access", "Priority boarding"], ["90% bonus miles on ANA, United, Lufthansa, Swiss, and Austrian flights (100% from your 2nd straight year)", "Star Alliance Gold: ANA and Star Alliance lounges, plus 1 guest at ANA lounges", "Extra free checked bag", "Priority check-in, security, boarding, and baggage", "Free advance seat selection in Economy on ANA international flights", "Priority booking and waitlists for award and upgrade seats", "Upgrade Points for seat upgrades (ending; FY2026 points usable until March 31, 2027)"], ["platinum"]],
+      ["Diamond Service", "100,000 Premium Points in a calendar year (at least 50,000 on ANA Group flights)", ["ANA Suite Lounge", "Miles never expire", "115% bonus miles"], ["115% bonus miles on ANA, United, Lufthansa, Swiss, and Austrian flights (125% from your 2nd straight year)", "ANA SUITE LOUNGE access plus 1 guest; Star Alliance Gold lounges", "Miles never expire while you hold Diamond", "Dedicated concierge at Tokyo Haneda and Narita", "No ticketing or exchange/reissue service charges", "1 selectable gift a year (like ANA SKY COINS or a restaurant invitation)", "Extra free bag plus priority check-in, security, boarding, and baggage"], ["diamond"]],
+    ],
+    jal: [
+      ["JMB Crystal", "30,000 FLY ON Points (15,000 on JAL Group flights), or 30 flights (15 on JAL Group) plus 10,000 FLY ON Points, in a calendar year (Jan–Dec)", ["55% bonus miles", "Priority boarding", "Extra checked bag"], ["55% bonus miles on JAL, American, British Airways, Finnair and Iberia flights (also Malaysia Airlines Japan–Malaysia and Garuda Indonesia Japan–Indonesia routes)", "Priority check-in, also on oneworld (on JAL: Class J in Japan, or airports with JAL Business Class counters; one companion included)", "Priority boarding on JAL international flights", "1 extra checked bag on JAL international flights (+10 kg on JAL flights within Japan)", "Priority waitlist and standby, also on oneworld", "6 Sakura Lounge passes for JAL flights within Japan (current promotion, Apr 2026–Mar 2027)", "oneworld Ruby"], ["jgc crystal"]],
+      ["JMB Sapphire", "50,000 FLY ON Points (25,000 on JAL Group flights), or 50 flights (25 on JAL Group) plus 15,000 FLY ON Points, in a calendar year (Jan–Dec)", ["Business lounges", "105% bonus miles", "Extra checked bag"], ["105% bonus miles on JAL, American, British Airways, Finnair, and Iberia flights", "JAL Sakura Lounges and oneworld business lounges, plus 1 guest", "1 extra checked bag on international flights, also on oneworld (+20 kg on JAL flights within Japan)", "Priority check-in, boarding, and baggage, also on oneworld", "Free advance front-seat selection on JAL flights", "oneworld Sapphire", "Free Marriott Bonvoy Silver Elite (Gold after 10 eligible nights in 6 months)"], ["jgc sapphire"]],
+      ["JGC Premier", "JAL Global Club members only: 80,000 FLY ON Points (40,000 on JAL Group flights), or 80 flights (40 on JAL Group) plus 25,000 FLY ON Points, in a calendar year (Jan–Dec)", ["First Class lounges", "105% bonus miles", "Miles don’t expire"], ["JAL First Class Lounges and Diamond/Premier Lounges plus 1 guest, and oneworld first class lounges", "105% bonus miles on JAL, American, British Airways, Finnair, and Iberia flights", "Your miles don’t expire while you hold the status", "Priority security lane, check-in, boarding, and baggage, also on oneworld", "1 extra checked bag on international flights, also on oneworld", "Free Wi-Fi codes for JAL international flights, plus a yearly Service Selection benefit from April", "oneworld Emerald, plus free Marriott Bonvoy Gold Elite"]],
+      ["JMB Diamond", "100,000 FLY ON Points (50,000 on JAL Group flights), or 120 flights (60 on JAL Group) plus 35,000 FLY ON Points, in a calendar year (Jan–Dec)", ["130% bonus miles", "First Class lounges", "Miles don’t expire"], ["130% bonus miles on JAL, American, British Airways, Finnair, and Iberia flights", "JAL First Class Lounges and Diamond/Premier Lounges plus 1 guest, and oneworld first class lounges", "Your miles don’t expire while you hold the status", "Dedicated reservation desk, priority waitlist, and priority security lane", "1 extra checked bag on international flights, also on oneworld", "Free Wi-Fi codes for JAL international flights, plus a yearly Service Selection benefit from April", "oneworld Emerald, plus free Marriott Bonvoy Gold Elite (Platinum after 10 eligible nights in 6 months, first year only)"], ["jgc diamond"]],
+    ],
+    etihad: [
+      ["Bronze", "Free to join (entry level). Earn 25,000 Tier Miles, 10,000 of them from flying, in a rolling 12 months to reach Silver", ["Free chat Wi-Fi", "No tier expiry", "Promo award seats"], ["Earn Etihad Guest Miles and Tier Miles on Etihad and partner airlines", "Free onboard Wi-Fi for chat", "Bronze never expires", "Book Promo award seats, the fixed-mileage reward fares open to every member", "Miles last 18 months, and flying on Etihad or a partner airline extends them another 18 months", "Pool miles in a Family Membership account with up to 9 other people"]],
+      ["Silver", "25,000 Tier Miles in a rolling 12 months, including 10,000 from flying (18,750 and 7,500 through Mar 31, 2027). Renew with 20,000, including 10,000 from flying", ["25% bonus miles", "Guaranteed Economy seat", "Pick 2 extra perks"], ["25% bonus miles on Etihad flights (also on Virgin Australia, Saudia, Gulf Air, and Air Serbia)", "Guaranteed Economy seat up to 48 hours before departure, on Deluxe fares", "Dedicated check-in counters in Abu Dhabi", "Free onboard Wi-Fi for chat", "Pick 2 extra perks: Abu Dhabi Business lounge access for you, free Standard Economy seat selection for you, up to 10% off extra bags, or 2 Reward Shop vouchers", "30% off AWNIC insurance; UAE co-brand cardholders can buy back their tier with 75,000 miles"]],
+      ["Gold", "50,000 Tier Miles in a rolling 12 months, including 20,000 from flying. Renew with 40,000, including 20,000 from flying. Until Mar 31, 2027, members who held a tier on Mar 17, 2026 need 25% less: 37,500 to qualify and 30,000 to renew, with 15,000 from flying", ["50% bonus miles", "Priority boarding", "Pick 4 extra perks"], ["50% bonus miles on Etihad and select partner flights", "Business Class check-in, priority boarding, priority bags, and fast-track immigration at select airports", "Free Standard seat selection for you and 1 companion", "24/7 dedicated contact center", "Pick 4 extra perks, such as Business lounge access for you and 1 guest, up to 15 kg extra baggage, an Etihad chauffeur in the UAE, or a free Promo award refund", "Up to 10% off Promo award seats", "At 75,000 Tier Miles, pick 2 more: 2 Business lounge passes, a Silver status nomination, or 10,000 bonus miles"]],
+      ["Platinum", "125,000 Tier Miles in a rolling 12 months, including 40,000 from flying (93,750 and 30,000 through Mar 31, 2027). Renew with 100,000, including 40,000 from flying (75,000 and 30,000 through Mar 31, 2027)", ["100% bonus miles", "Lounges + 1 guest", "Gift Gold status"], ["100% bonus miles on Etihad flights, and your miles never expire", "Business lounge access for you and 1 guest on Etihad-operated flights", "First Class check-in, priority boarding, priority bags, and fast-track immigration", "Guaranteed Business seat up to 48 hours before departure on Deluxe fares; free Standard seats for you and 3 companions", "Free onboard Wi-Fi, a Gold status nomination, and a one-time 6-month tier extension", "Pick 5 extra perks, such as First lounge access plus 1 guest, same-day flight changes, up to 20 kg extra baggage, or 2 upgrades on select routes", "At 175,000 Tier Miles, pick 2 more: 3 Business lounge passes, 3 Priority access passes, or 20,000 bonus miles"]],
+      ["Emerald", "USD 150,000 spent on Etihad flights (excluding taxes) in a rolling 12 months; renew with the same spend (not part of the 25% reduction)", ["Guaranteed award seats", "100% bonus miles", "All Platinum perks"], ["100% bonus miles, and your miles never expire", "Guaranteed Business Promo award seat (not on restricted or overbooked flights)", "Up to 10% off Promo award seats", "Platinum-level benefits, including Business lounge access plus 1 guest, First Class check-in, and fast-track immigration", "15 minutes of free spa time at Abu Dhabi’s Zayed International Airport"]],
+    ],
+    aerlingus: [
+      ["Green", "Free to join (entry level). Earn 301 Tier Credits and fly at least 2 Aer Lingus flights between April 1 and March 31 to move up to Silver", ["Collect Avios", "Earn Tier Credits", "Member offers"], ["Collect Avios on Aer Lingus and selected partner airline flights", "Collect Avios with shopping, hotel, car hire and other partners, including the Avios eStore", "Spend Avios on Reward Flights with Aer Lingus and selected partners, or use Pay with Avios", "Earn Tier Credits on Aer Lingus and partner flights toward Silver", "Member-only offers on collecting and spending Avios"]],
+      ["Silver", "301 Tier Credits and at least 2 Aer Lingus flights between April 1 and March 31", ["Lounge access", "Fast Track", "25% bonus Avios"], ["25% bonus Avios on Aer Lingus flights", "AerClub check-in area (selected airports) and priority boarding (Group 2 on transatlantic flights)", "Fast Track security at Dublin, Shannon, Belfast, London Heathrow, Birmingham and Amsterdam", "Aer Lingus lounges in Ireland, Heathrow and JFK and on US routes (not Chicago or San Francisco), plus partner airline lounges", "Free 10kg carry-on bag for the member", "Pause your status for maternity, adoption leave or serious illness"]],
+      ["Platinum", "601 Tier Credits and at least 4 Aer Lingus flights between April 1 and March 31", ["Business upgrade", "Lounges + companion", "Free checked bag"], ["50% bonus Avios on Aer Lingus flights", "1 one-way complimentary upgrade to business class on a transatlantic flight (request by email, subject to availability)", "Lounge access, Fast Track and priority boarding for you plus a companion", "1 free checked bag in economy for the member (23kg on US routes; not on Saver fares; call the Platinum line to add it)", "Priority on the business class upgrade waitlist", "Priority check-in and a free 10kg carry-on bag"]],
+      ["Concierge", "1,051 Tier Credits and at least 6 Aer Lingus flights between April 1 and March 31", ["4 business upgrades", "Companion ticket", "Free changes"], ["75% bonus Avios on Aer Lingus flights", "4 one-way complimentary upgrades to business class on transatlantic flights", "1 round-trip companion ticket in your cabin (taxes and fees apply)", "No change or refund admin fees on direct Aer Lingus bookings, plus free same-day switch to an earlier flight", "Guaranteed seat on a full flight (full-fare economy, 24 hours’ notice) and a dedicated Concierge help desk", "Up to 400MB free Wi-Fi on transatlantic flights", "Lounges plus a companion, a free checked bag, and Silver status to gift a Green member"]],
+    ],
   };
 
   // Progress toward each level this qualifying year: the metric and one threshold per BENEFITS tier (same order).
@@ -2505,7 +2562,7 @@
     ihg: { unit: 'nights', steps: [10, 20, 40, 70], alt: { unit: 'qualifying points', steps: [null, 40000, 60000, 120000] }, thru: endOf(1, 12), note: 'Qualifying nights (nights past the Gold, Platinum, or Diamond mark roll over to next year), or qualifying points from Gold up.' },
     hyatt: { unit: 'nights', steps: [10, 30, 60], alt: { unit: 'base points', steps: [25000, 50000, 100000] }, thru: endOf(2, 2), note: 'Qualifying nights, or base points.' },
     wyndham: { unit: 'nights', steps: [5, 15, 40], thru: endOf(1, 12), note: 'Qualifying nights. Nights beyond your level roll over and don’t expire, so add any banked rollover nights to this year’s count.' },
-    united: { unit: 'PQP', steps: [6000, 12000, 18000, 28000], alt: { unit: 'flights', steps: [15, 30, 45, 60], with: [5000, 10000, 15000, 22000] }, thru: endOf(2, 1), note: 'PQP alone, or fewer PQP plus Premier qualifying flights (15/30/45/60 flights with 5,000/10,000/15,000/22,000 PQP).' },
+    united: { unit: 'PQP', steps: [6000, 12000, 18000, 28000], alt: { unit: 'flights', steps: [15, 30, 45, 60], with: [5000, 10000, 15000, 22000] }, thru: endOf(2, 1), note: 'PQP alone, or fewer PQP plus Premier qualifying flights (15/30/45/60 flights with 5,000/10,000/15,000/22,000 PQP). Either way, you need at least 4 paid flights on United or United Express that year.' },
     american: { unit: 'Loyalty Points', steps: [40000, 75000, 125000, 200000], starts: 3, thru: endOf(2, 3), note: 'American’s qualifying year runs March 1 through the end of February.' },
     southwest: { unit: 'tier points', steps: [35000, 70000], alt: { unit: 'flights', steps: [20, 40] }, thru: endOf(1, 12), note: 'Tier qualifying points, or qualifying one-way flights.' },
     alaska: { unit: 'status points', steps: [20000, 40000, 80000, 135000], thru: endOf(2, 1), note: 'Status points this calendar year.' },
@@ -2551,8 +2608,8 @@
     'amex-platinum': [
       ['hotel', 'Hotel credit', 300, 'half', 'calendar', FHR],
       ['airline', 'Airline fee credit', 200, 'year', 'calendar', 'incidental fees on the airline you pick'],
-      ['resy', 'Resy dining', 100, 'quarter', 'calendar', 'U.S. Resy restaurants; enroll'],
-      ['lululemon', 'lululemon', 75, 'quarter', 'calendar', 'U.S. stores and online; enroll'],
+      ['resy', 'Resy / Tock dining', 100, 'quarter', 'calendar', 'U.S. Resy or Tock restaurants; enroll'],
+      ['lululemon', 'lululemon', 75, 'quarter', 'calendar', 'U.S. stores (not outlets) and lululemon.com; enroll'],
       ['uber', 'Uber Cash', 15, 'month', 'calendar', '$35 in December', 35],
       ['entertainment', 'Digital entertainment', 25, 'month', 'calendar', 'streaming and news subscriptions; enroll'],
       ['walmart', 'Walmart+', 12.95, 'month', 'calendar', 'monthly membership, plus tax'],
@@ -2569,17 +2626,17 @@
       ['dell', 'Dell', 150, 'year', 'calendar', 'U.S. purchases; enroll ($1,000 more after $5,000 with Dell)'],
       ['indeed', 'Indeed', 90, 'quarter', 'calendar', 'enroll'],
       ['hilton', 'Hilton', 50, 'quarter', 'calendar', 'Hilton for Business; enroll'],
-      ['wireless', 'Wireless', 10, 'month', 'calendar', 'U.S. wireless providers'],
+      ['wireless', 'Wireless', 10, 'month', 'calendar', 'U.S. wireless providers; enroll'],
       ['clear', 'CLEAR+', 219, 'year', 'calendar', ''],
     ],
     'amex-gold': [
-      ['resy', 'Resy dining', 50, 'half', 'calendar', 'U.S. Resy restaurants; enroll'],
+      ['resy', 'Resy dining', 50, 'half', 'calendar', 'U.S. Resy or eligible Tock restaurants; enroll'],
       ['dining', 'Dining credit', 10, 'month', 'calendar', 'Grubhub, Five Guys, Cheesecake Factory, Buffalo Wild Wings, Wonder; enroll'],
       ['uber', 'Uber Cash', 10, 'month', 'calendar', 'U.S. Uber rides or Uber Eats'],
       ['dunkin', 'Dunkin’', 7, 'month', 'calendar', 'enroll'],
     ],
     'hilton-aspire': [
-      ['resort', 'Hilton Resorts credit', 200, 'half', 'calendar', 'booked directly with participating Hilton Resorts'],
+      ['resort', 'Hilton Resorts credit', 200, 'half', 'calendar', 'charged directly by participating Hilton Resorts; not Advance Purchase/non-refundable rates or SLH'],
       ['flight', 'Flight credit', 50, 'quarter', 'calendar', 'booked directly with an airline or via Amex Travel'],
       ['clear', 'CLEAR+', 219, 'year', 'calendar', ''],
     ],
@@ -2598,11 +2655,22 @@
     ],
     'delta-gold': [
       ['stays', 'Delta Stays', 100, 'year', 'calendar', 'prepaid hotels on delta.com'],
-      ['rideshare', 'Rideshare', 10, 'month', 'calendar', 'Uber, Lyft, Curb, Alto; starts after your 2026 renewal; enroll'],
+      ['rideshare', 'Rideshare', 10, 'month', 'calendar', 'Uber, Lyft, Curb, Alto; available 12 months after account opening (right away if you switched from Platinum/Reserve); enroll'],
     ],
-    'delta-reserve-business': [['stays', 'Delta Stays', 250, 'year', 'calendar', 'prepaid hotels on delta.com']],
-    'delta-platinum-business': [['stays', 'Delta Stays', 200, 'year', 'calendar', 'prepaid hotels on delta.com']],
-    'delta-gold-business': [['stays', 'Delta Stays', 150, 'year', 'calendar', 'prepaid hotels on delta.com']],
+    'delta-reserve-business': [
+      ['stays', 'Delta Stays', 250, 'year', 'calendar', 'prepaid hotels on delta.com'],
+      ['resy', 'Resy / Tock dining', 20, 'month', 'calendar', 'enroll'],
+      ['rideshare', 'Rideshare', 10, 'month', 'calendar', 'Uber, Lyft, Curb, Alto; enroll'],
+    ],
+    'delta-platinum-business': [
+      ['stays', 'Delta Stays', 200, 'year', 'calendar', 'prepaid hotels on delta.com'],
+      ['resy', 'Resy / Tock dining', 10, 'month', 'calendar', 'enroll'],
+      ['rideshare', 'Rideshare', 10, 'month', 'calendar', 'Uber, Lyft, Curb, Alto; enroll'],
+    ],
+    'delta-gold-business': [
+      ['stays', 'Delta Stays', 150, 'year', 'calendar', 'prepaid hotels on delta.com'],
+      ['rideshare', 'Rideshare', 10, 'month', 'calendar', 'Uber, Lyft, Curb, Alto; available 12 months after account opening; enroll'],
+    ],
     'sapphire-reserve': [
       ['travel', 'Travel credit', 300, 'year', 'card', 'any travel purchase'],
       ['edit', 'The Edit hotel credit', 500, 'year', 'calendar', 'two $250 prepaid 2+ night stays'],
@@ -2610,15 +2678,25 @@
       ['dining', 'Exclusive Tables dining', 150, 'half', 'calendar', 'Sapphire Reserve Exclusive Tables restaurants'],
       ['stubhub', 'StubHub / viagogo', 150, 'half', 'calendar', 'activate first'],
       ['doordash', 'DoorDash', 15, 'month', 'calendar', 'any order from Oct 2026 ($5 before)'],
+      ['doordash-grocery', 'DoorDash groceries & retail', 20, 'month', 'calendar', 'two $10 promos on non-restaurant orders'],
       ['lyft', 'Lyft', 10, 'month', 'calendar', 'in the Lyft app'],
+      ['peloton', 'Peloton', 10, 'month', 'calendar', 'Peloton memberships through 2027; activate first'],
     ],
     'sapphire-reserve-business': [
       ['travel', 'Travel credit', 300, 'year', 'card', 'any travel purchase'],
       ['edit', 'The Edit hotel credit', 500, 'year', 'calendar', 'two $250 prepaid 2+ night stays'],
+      ['select-hotels', 'Select hotels credit (2026)', 250, 'year', 'calendar', 'IHG, Montage, Pendry, Omni and more via Chase Travel'],
       ['ziprecruiter', 'ZipRecruiter', 200, 'half', 'calendar', ''],
+      ['google', 'Google Workspace', 200, 'year', 'calendar', 'bought directly from Google Workspace; through 12/31/27'],
+      ['giftcards', 'Curated gift cards', 50, 'half', 'calendar', 'gift cards at giftcards.com/reservebusiness'],
+      ['doordash', 'DoorDash', 5, 'month', 'calendar', 'one restaurant order; with DashPass'],
+      ['doordash-grocery', 'DoorDash groceries & retail', 20, 'month', 'calendar', 'two $10 promos on separate non-restaurant orders'],
       ['lyft', 'Lyft', 10, 'month', 'calendar', 'in the Lyft app'],
     ],
-    'sapphire-preferred': [['hotel', 'Chase Travel hotel credit', 100, 'year', 'card', 'a hotel booked through Chase Travel']],
+    'sapphire-preferred': [
+      ['hotel', 'Chase Travel hotel credit', 100, 'year', 'card', 'a hotel booked through Chase Travel'],
+      ['doordash', 'DoorDash', 10, 'month', 'calendar', 'one non-restaurant order with DashPass'],
+    ],
     'united-club': [
       ['hotels', 'Renowned Hotels', 200, 'year', 'card', 'prepaid through United Hotels'],
       ['jsx', 'JSX', 200, 'year', 'card', 'booked directly with JSX'],
@@ -2641,10 +2719,13 @@
       ['rideshare', 'Rideshare', 5, 'month', 'calendar', 'register each year'],
       ['instacart', 'Instacart', 10, 'month', 'calendar', 'with Instacart+'],
     ],
-    'ihg-premier': [['united', 'United TravelBank credit', 50, 'year', 'calendar', 'link the card in MileagePlus']],
-    'chase-aeroplan': [['aircanada', 'Air Canada credit', 50, 'half', 'calendar', 'Air Canada purchases']],
+    'ihg-premier': [['united-half', 'United TravelBank credit', 25, 'half', 'calendar', 'register once in your IHG One Rewards account; each $25 expires Jul 15 / Jan 15']],
+    'chase-aeroplan': [
+      ['aircanada', 'Air Canada credit', 50, 'half', 'calendar', 'Air Canada purchases'],
+      ['doordash', 'DoorDash', 10, 'month', 'calendar', 'one non-restaurant order with Chase DashPass; quarterly if DashPass was activated before Sep 2026'],
+    ],
     'venture-x': [['travel', 'Capital One Travel credit', 300, 'year', 'card', 'bookings through Capital One Travel']],
-    'venture-x-business': [['travel', 'Capital One Travel credit', 300, 'year', 'card', 'bookings through Capital One Travel']],
+    'venture-x-business': [['travel', 'Capital One Business Travel credit', 300, 'year', 'card', 'bookings through Capital One Business Travel']],
     'strata-elite': [
       ['hotel', 'Hotel credit', 300, 'year', 'calendar', '2+ nights through Citi Travel'],
       ['splurge', 'Splurge credit', 200, 'year', 'calendar', 'at the merchants you chose'],
@@ -2655,6 +2736,7 @@
       ['vacations', 'American Airlines Vacations', 250, 'half', 'calendar', ''],
       ['avis', 'Avis / Budget', 120, 'year', 'calendar', 'prepaid on avis.com or budget.com'],
       ['lyft', 'Lyft', 15, 'month', 'calendar', 'after 3 rides that month'],
+      ['inflight', 'Inflight / Admirals Club', 100, 'year', 'calendar', 'AA domestic inflight and Admirals Club food & drink; not day passes'],
     ],
     'bilt-palladium': [
       ['hotel', 'Bilt Travel hotel credit', 200, 'half', 'calendar', '2+ nights through Bilt Travel'],
@@ -2665,32 +2747,82 @@
       ['lifestyle', 'Lifestyle credit', 150, 'year', 'calendar', 'streaming, food delivery, fitness, rideshare'],
     ],
     'premium-rewards': [['airline', 'Airline incidentals', 100, 'year', 'calendar', 'bags, seats, lounge day passes']],
-    'autograph-journey': [['airline', 'Airline credit', 50, 'year', 'card', 'one $50+ airline purchase']],
+    'autograph-journey': [['airline', 'Airline credit', 50, 'year', 'card', 'one $50+ airline purchase; your credit year starts the 1st of the month after your annual fee posts']],
   };
   // Certificates cards issue: [name, what it's good for, months it stays valid, when it arrives].
   const HILTON_NIGHT = 'Standard room at most Hilton hotels; can’t add points';
   const MARRIOTT_35 = 'Up to 35,000 points a night; you can add up to 25,000 points';
+  const MARRIOTT_50 = 'Up to 50,000 points a night; you can add up to 25,000 points';
+  const MARRIOTT_85 = 'Up to 85,000 points a night; you can add up to 25,000 points';
+  const IHG_60 = 'Up to 60,000 points a night; you can add points for pricier hotels';
+  const DELTA_RESERVE_COMPANION = 'Round trip in Main, Comfort, Premium Select, or First in the US, Mexico, Caribbean, or Central America; book and fly before it expires';
   const HYATT_NIGHT = 'Category 1–4 hotel; check out before it expires';
   const UNITED_DISCOUNT = '10,000 miles off an award; book before it expires';
   const CERTS = {
-    'hilton-aspire': [['free night', HILTON_NIGHT, 12, 'each card renewal'], ['free night (spend bonus)', HILTON_NIGHT, 12, 'after $30,000 spend in a calendar year']],
+    'hilton-aspire': [
+      ['free night', HILTON_NIGHT, 12, 'in your first card year, then each card renewal'],
+      ['free night (spend bonus)', HILTON_NIGHT, 12, 'after $30,000 spend in a calendar year'],
+      ['free night (2nd spend bonus)', HILTON_NIGHT, 12, 'after $60,000 spend in a calendar year'],
+    ],
     'hilton-surpass': [['free night', HILTON_NIGHT, 12, 'after $15,000 spend in a calendar year']],
-    'bonvoy-brilliant': [['85k free night', 'Up to 85,000 points a night; you can add up to 25,000 points', 12, 'each card anniversary']],
+    'bonvoy-brilliant': [
+      ['85k free night', MARRIOTT_85, 12, 'each card anniversary'],
+      ['85k free night (Earned Choice)', MARRIOTT_85, 12, 'if picked as your Earned Choice Award after $60,000 spend in a calendar year (choose by Feb 1)'],
+    ],
+    'bonvoy-bevy': [['50k free night (spend bonus)', MARRIOTT_50, 12, 'after $15,000 spend in a calendar year']],
     'bonvoy-business': [['35k free night', MARRIOTT_35, 12, 'each card anniversary'], ['35k free night (spend bonus)', MARRIOTT_35, 12, 'after $60,000 spend in a calendar year']],
     'bonvoy-boundless': [['35k free night', MARRIOTT_35, 12, 'each card anniversary']],
-    'ihg-premier': [['anniversary night', 'Up to 40,000 points a night; you can add points for pricier hotels', 12, 'each card anniversary']],
-    'ihg-premier-business': [['anniversary night', 'Up to 40,000 points a night (50,000 for nights issued from 2027); you can add points', 12, 'each card anniversary']],
+    'bonvoy-bountiful': [['50k free night (spend bonus)', MARRIOTT_50, 12, 'after $15,000 spend in a calendar year']],
+    'ritz-carlton': [
+      ['85k free night', MARRIOTT_85, 12, 'each card anniversary'],
+      ['3 Club Level upgrades', 'Ritz-Carlton Club Level on paid stays booked with the card, up to 7 nights each', 12, 'each account anniversary year'],
+    ],
+    'ihg-premier-select': [
+      ['anniversary night', IHG_60, 12, 'each card anniversary'],
+      ['free night (spend bonus)', IHG_60, 12, 'after $40,000 spend in a calendar year'],
+    ],
+    'ihg-premier': [['anniversary night', 'Up to 50,000 points a night (raised Oct 2026; for existing cardmembers, nights issued before the effective date in Chase’s October notice are capped at 40,000); you can add points for pricier hotels', 12, 'each card anniversary']],
+    'ihg-premier-business': [
+      ['anniversary night', 'Up to 40,000 points a night (50,000 for nights issued from 2027); you can add points', 12, 'each card anniversary'],
+      ['free night (spend bonus)', 'Up to 50,000 points a night; you can add points', 12, 'after $60,000 spend in a calendar year'],
+    ],
     'hyatt-card': [['Category 1–4 free night', HYATT_NIGHT, 12, 'each card anniversary'], ['Category 1–4 free night (spend bonus)', HYATT_NIGHT, 12, 'after $15,000 spend in a calendar year']],
     'delta-platinum': [['companion certificate', 'Main Cabin round trip in the US, Mexico, Caribbean, or Central America; book and fly before it expires', 12, 'each card renewal']],
     'delta-platinum-business': [['companion certificate', 'Main Cabin round trip in the US, Mexico, Caribbean, or Central America; book and fly before it expires', 12, 'each card renewal']],
-    'delta-reserve': [['companion certificate', 'Round trip in Main, Comfort, or First; book and fly before it expires', 12, 'each card renewal']],
-    'delta-reserve-business': [['companion certificate', 'Round trip in Main, Comfort, or First; book and fly before it expires', 12, 'each card renewal']],
+    'delta-reserve': [['companion certificate', DELTA_RESERVE_COMPANION, 12, 'each card renewal']],
+    'delta-reserve-business': [['companion certificate', DELTA_RESERVE_COMPANION, 12, 'each card renewal']],
     'delta-gold': [['$200 flight credit', 'Not for award tickets', 12, 'after $10,000 spend in a calendar year']],
     'delta-gold-business': [['$200 flight credit', 'Not for award tickets', 12, 'after $10,000 spend in a calendar year']],
-    'atmos-summit': [['Global Companion Award (25K)', 'Up to 25,000 points off a companion’s award; book within a year', 12, 'each card anniversary']],
-    'atmos-ascent': [['companion fare', '$99 plus taxes (from $23); book within 12 months', 12, 'each anniversary, after $6,000 spend in the card year before']],
-    'united-quest': [['10,000-mile award discount', UNITED_DISCOUNT, 12, 'each card anniversary'], ['10,000-mile award discount (spend bonus)', UNITED_DISCOUNT, 12, 'after $20,000 spend in a calendar year']],
-    'united-explorer': [['10,000-mile award discount', UNITED_DISCOUNT, 12, 'after $20,000 spend in a calendar year']],
+    'atmos-summit': [
+      ['Global Companion Award (25K)', 'Up to 25,000 points off a companion’s award; book within a year', 12, 'each card anniversary'],
+      ['Global Companion Award (100K)', 'Up to 100,000 points off a companion’s award; book within a year', 12, 'after $60,000 spend in a card anniversary year'],
+    ],
+    'atmos-ascent': [['companion fare', '$99 plus taxes (from $23) for a companion on a paid Saver or Main fare, Alaska/Hawaiian flights in North America; book within 12 months', 12, 'each anniversary, after $6,000 spend in the card year before']],
+    'united-quest': [
+      ['10,000-mile award discount', UNITED_DISCOUNT, 12, 'each card anniversary'],
+      ['10,000-mile award discount (spend bonus)', UNITED_DISCOUNT, 12, 'after $20,000 spend in a calendar year'],
+      ['2 Economy Plus seat upgrades (spend bonus)', 'Economy Plus on United flights worldwide, for you only; buy the ticket with the card', 12, 'after $40,000 spend in a calendar year'],
+    ],
+    'united-explorer': [
+      ['10,000-mile award discount', UNITED_DISCOUNT, 12, 'after $20,000 spend in a calendar year'],
+      ['$100 United travel credit', 'TravelBank cash for United or United Express flights; book within 12 months', 12, 'after $10,000 spend in a calendar year'],
+    ],
+    'united-club': [
+      ['10,000-mile award discount (spend bonus)', UNITED_DISCOUNT, 12, 'after $20,000 spend in a calendar year'],
+      ['10,000-mile award discount (2nd spend bonus)', UNITED_DISCOUNT, 12, 'after $40,000 spend in a calendar year'],
+    ],
+    'united-club-business': [['2 Economy Plus seat upgrades (spend bonus)', 'Economy Plus on United or United Express flights worldwide, for you only; buy the ticket with the card', 12, 'after $40,000 spend in a calendar year']],
+    'united-business': [['2 Economy Plus seat upgrades (spend bonus)', 'Economy Plus on United flights in the continental U.S. (not Alaska or Hawaii), for you only; buy the ticket with the card', 12, 'after $25,000 spend in a calendar year']],
+    // Sapphire Reserve credits unlocked by spend ($120,000 on the Business card). Each is good through Dec 31 of
+    // the next year, so set that date when one arrives (12 months is only the starting guess).
+    'sapphire-reserve': [
+      ['$500 Southwest credit (spend bonus)', 'Statement credits for Southwest Airlines purchases on Chase Travel; good through Dec 31 of the next year; that spend earns no points', 12, 'after $75,000 spend in a calendar year'],
+      ['$250 The Shops at Chase credit (spend bonus)', 'Statement credits for purchases at The Shops at Chase; good through Dec 31 of the next year', 12, 'after $75,000 spend in a calendar year'],
+    ],
+    'sapphire-reserve-business': [
+      ['$500 Southwest credit (spend bonus)', 'Statement credits for Southwest flights booked through Chase Travel; good through Dec 31 of the next year', 12, 'after $120,000 spend in a calendar year'],
+      ['$500 The Shops at Chase credit (spend bonus)', 'Statement credits for purchases at The Shops at Chase; good through Dec 31 of the next year', 12, 'after $120,000 spend in a calendar year'],
+    ],
   };
 
   // Typical cents-per-point values for estimates, from The Points Guy's monthly valuations (VALUES_SOURCE).
@@ -2704,24 +2836,25 @@
 
   // Where each bank's points transfer, as of TRANSFERS_AS_OF: [partner id (or name), bank points, partner points,
   // note]. Ratios are for the issuers' premium cards; `note` covers the exceptions.
-  const TRANSFERS_AS_OF = 'September 2026';
+  const TRANSFERS_AS_OF = 'October 2026';
   const TRANSFERS = {
     amex: {
       partners: [['delta', 1, 1], ['aeroplan', 1, 1], ['flyingblue', 1, 1], ['ba', 1, 1], ['virgin', 1, 1], ['jetblue', 5, 4],
-        ['hilton', 1, 2], ['marriott', 1, 1], ['choice', 1, 1],
+        ['hilton', 1, 2], ['marriott', 1, 1], ['choice', 1, 1], ['lhw', 4, 1],
         ['aerlingus', 1, 1], ['ana', 1, 1], ['avianca', 1, 1], ['iberia', 1, 1], ['qantas', 1, 1], ['qatar', 1, 1],
         ['singapore', 1, 1], ['aeromexico', 1, 1.6], ['emirates', 5, 4], ['cathay', 5, 4]],
+      note: 'Transfers to U.S. airlines (Delta, JetBlue) add an excise tax offset fee of $0.0006 per point, up to $99, charged to your card or paid with points.',
     },
     chase: {
       partners: [['united', 1, 1], ['southwest', 1, 1], ['jetblue', 1, 1], ['aeroplan', 1, 1], ['flyingblue', 1, 1], ['ba', 1, 1],
-        ['virgin', 1, 1], ['hyatt', 1, 1, '4:3 with Sapphire Preferred or Ink Preferred from Oct 1, 2026 (1:1 with Sapphire Reserve)'],
+        ['virgin', 1, 1], ['hyatt', 1, 1, '4:3 with Sapphire Preferred, Ink Preferred, Ink Plus, or Corporate Flex since Oct 1, 2026 (1:1 with Sapphire Reserve)'],
         ['marriott', 1, 1], ['ihg', 1, 1], ['wyndham', 1, 1], ['aerlingus', 1, 1], ['iberia', 1, 1], ['singapore', 1, 1]],
-      note: 'Transfers need a Sapphire Preferred, Sapphire Reserve, or Ink Preferred; move Freedom or Ink Cash points to one first.',
+      note: 'Transfers need a Sapphire Preferred, Sapphire Reserve (personal or for Business), or Ink Preferred (or legacy Ink Plus); move Freedom or Ink Cash points to one first.',
     },
     citi: {
       partners: [['american', 1, 1], ['jetblue', 1, 1], ['flyingblue', 1, 1], ['virgin', 1, 1], ['choice', 1, 1.5], ['wyndham', 1, 1],
         ['accor', 2, 1], ['avianca', 1, 1], ['cathay', 1, 1], ['etihad', 1, 1], ['EVA', 1, 1], ['jal', 1, 1], ['qantas', 1, 1],
-        ['qatar', 1, 1], ['singapore', 1, 1], ['Thai', 1, 1], ['turkish', 1, 1], ['emirates', 5, 4], ['iprefer', 1, 2]],
+        ['qatar', 1, 1], ['singapore', 1, 1], ['Thai', 1, 1], ['turkish', 1, 1], ['emirates', 5, 4], ['iprefer', 1, 2], ['lhw', 5, 1]],
       note: 'Ratios with Strata Premier or Strata Elite. No-fee Citi cards (Strata, Double Cash, Custom Cash) transfer at 10:7, American included.',
     },
     capitalone: {
@@ -2732,9 +2865,10 @@
     },
     bilt: {
       partners: [['united', 1, 1], ['southwest', 1, 1], ['alaska', 1, 1], ['aeroplan', 1, 1], ['flyingblue', 1, 1], ['ba', 1, 1],
-        ['virgin', 1, 1], ['hyatt', 1, 1], ['marriott', 1, 1], ['ihg', 1, 1], ['hilton', 1, 1], ['wyndham', 1, 1], ['accor', 3, 2],
+        ['virgin', 1, 1, 'also to Virgin Red 1:1'], ['hyatt', 1, 1], ['marriott', 1, 1, '+5,000 bonus points for every 20,000 transferred at once'],
+        ['ihg', 1, 1], ['hilton', 1, 1], ['wyndham', 1, 1], ['accor', 3, 2],
         ['aerlingus', 1, 1], ['avianca', 1, 1], ['cathay', 1, 1], ['emirates', 1, 1], ['etihad', 1, 1], ['iberia', 1, 1],
-        ['jal', 1, 1], ['qatar', 1, 1], ['TAP', 1, 1], ['turkish', 1, 1], ['iprefer', 1, 2]],
+        ['jal', 1, 1], ['qatar', 1, 1], ['TAP', 1, 1], ['turkish', 1, 1], ['iprefer', 1, 2], ['Amtrak Guest Rewards', 2, 1]],
     },
   };
   // "1:1", "5:4", "1:1.5" — bank points to partner points.
@@ -2781,8 +2915,9 @@
   // "Diamond Reserve" isn't mistaken for "Diamond".
   const normTier = (text) => text.toLowerCase().replace(/[’`]/g, "'").replace(/[^a-z0-9']+/g, ' ').trim();
   const TIER_FILLER = /\b(status|elite|medallion|premier|atmos|member|level|tier)\b/g;
-  // At these, "Elite" or "Plus" is a level of its own, so levels match by their full names only.
-  const FULL_TIER_NAMES = new Set(['singapore', 'turkish']);
+  // At these, "Elite" or "Plus" is a level of its own (or "Premier" is part of a name, as in JAL's JGC Premier),
+  // so levels match by their full names only.
+  const FULL_TIER_NAMES = new Set(['singapore', 'turkish', 'jal']);
   for (const [id, tiers] of Object.entries(BENEFITS)) {
     BENEFITS[id] = tiers.map(([name, earn, short, perks, also = []]) => {
       const full = normTier(name);
@@ -4467,20 +4602,20 @@
   const STATUS_NAMES = {
     flyingblue: ['Explorer', 'Silver', 'Gold', 'Platinum', 'Ultimate'],
     ba: ['Blue', 'Bronze', 'Silver', 'Gold', 'Gold Guest List'],
-    koreanair: ['Morning Calm', 'Morning Calm Select', 'Morning Calm Premium', 'Million Miler'],
+    koreanair: ['Morning Calm Club', 'Morning Calm Select Club', 'Morning Calm Premium Club', 'Million Miler Club'],
     virgin: ['Red', 'Silver', 'Gold'],
     jetblue: ['Mosaic 1', 'Mosaic 2', 'Mosaic 3', 'Mosaic 4'],
     emirates: ['Blue', 'Silver', 'Gold', 'Platinum'],
     singapore: ['Elite Silver', 'Elite Gold', 'PPS Club', 'Solitaire PPS Club'],
     qatar: ['Burgundy', 'Silver', 'Gold', 'Platinum'],
     turkish: ['Classic', 'Classic Plus', 'Elite', 'Elite Plus'],
-    lufthansa: ['Frequent Traveller', 'Senator', 'HON Circle'],
+    lufthansa: ['Frequent Traveller', 'Senator', 'HON Circle Member'],
     cathay: ['Green', 'Silver', 'Gold', 'Diamond'],
     qantas: ['Bronze', 'Silver', 'Gold', 'Platinum', 'Platinum One'],
-    ana: ['Bronze', 'Platinum', 'Diamond'],
+    ana: ['Bronze Service', 'Platinum Service', 'Diamond Service'],
     jal: ['JMB Crystal', 'JMB Sapphire', 'JGC Premier', 'JMB Diamond'],
     avianca: ['Red Plus', 'Silver', 'Gold', 'Diamond', 'Magno'],
-    etihad: ['Bronze', 'Silver', 'Gold', 'Platinum'],
+    etihad: ['Bronze', 'Silver', 'Gold', 'Platinum', 'Emerald'],
     iberia: ['Clásica', 'Plata', 'Oro', 'Platino', 'Platino Prime', 'Infinita', 'Infinita Prime'],
     aerlingus: ['Green', 'Silver', 'Platinum', 'Concierge'],
     aeromexico: ['Classic', 'Silver', 'Gold', 'Platinum', 'Titanium'],
@@ -9281,6 +9416,8 @@
   }
 
   // Every credit on the cards you hold: presets plus ones you've added, with where each stands this period.
+  // Credits offered for one year only, by card and credit id: the last year each counts.
+  const CREDIT_LAST_YEAR = { 'sapphire-reserve:select-hotels': 2026, 'sapphire-reserve-business:select-hotels': 2026 };
   function heldCredits() {
     return state.cards.flatMap((cardId) => {
       const card = CARD_BY_ID[cardId];
@@ -9288,7 +9425,7 @@
       const preset = (CREDITS[cardId] || []).map(([id, name, amount, period, resets, note, dec]) =>
         ({ id, name, amount: december && dec ? dec : amount, period, resets, note, december: Boolean(december && dec) }));
       const custom = (state.customCredits[cardId] || []).map(([id, name, amount, period]) => ({ id, name, amount, period, resets: 'calendar', custom: true }));
-      return [...preset, ...custom].map((credit) => {
+      return [...preset, ...custom].filter((credit) => !(new Date().getFullYear() > CREDIT_LAST_YEAR[`${cardId}:${credit.id}`])).map((credit) => {
         const key = creditId(cardId, credit.id);
         const period = creditPeriod(cardId, credit.period, credit.resets);
         // A card-year credit without your fee date has no known reset, so it never counts as "soon".

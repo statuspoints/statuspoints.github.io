@@ -46,7 +46,7 @@ export default [
   { name: 'Cathay', text: `Cathay\nMembership Diamond\nAsia Miles 64,500`,
     expect: { program: 'cathay', balance: 64500, tier: 'Diamond' } },
   { name: 'Korean Air', text: `SKYPASS\nMorning Calm Premium\n152,300 miles`,
-    expect: { program: 'koreanair', balance: 152300, tier: 'Morning Calm Premium' } },
+    expect: { program: 'koreanair', balance: 152300, tier: 'Morning Calm Premium Club' } },
   { name: 'Avianca', text: `LifeMiles\nDiamond\n45,000 LifeMiles`,
     expect: { program: 'avianca', tier: 'Diamond' } },
 
@@ -436,7 +436,7 @@ export default [
   { name: 'R2 Accor: spaced balance before "Reward points", 16-digit card no.', text: `ALL - Accor Live Limitless\nSilver\n2 450 Reward points\n= €49 to spend\nStatus until 28/02/2028\nMember no. 3081 0312 3456 7890`,
     expect: { program: 'accor', balance: 2450, tier: 'Silver', exp: '2028-02-28', member: '3081031234567890' } },
   { name: 'R2 Miles & More HON: spaced million balance before award miles', text: `Miles & More\nHON Circle\n1 204 553 award miles\nHON Circle Points 6,200\nStatus valid until 28 Feb 2029`,
-    expect: { program: 'lufthansa', balance: 1204553, tier: 'HON Circle', exp: '2029-02-28' } },
+    expect: { program: 'lufthansa', balance: 1204553, tier: 'HON Circle Member', exp: '2029-02-28' } },
   // What's still needed for a level ("needed for Gold", "required for Elite") is a target, not the status.
   { name: 'R2 Virgin: "Tier points needed for Gold"', text: `Virgin Atlantic Flying Club\nSilver\nVirgin Points\n48 900\nTier Points\n215\nTier points needed for Gold: 185\nSilver until 30/09/2027`,
     expect: { program: 'virgin', balance: 48900, tier: 'Silver', exp: '2027-09-30' } },
