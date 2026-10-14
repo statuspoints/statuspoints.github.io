@@ -3,6 +3,8 @@
 // Run on https://statuspoints.github.io with the programs on your list (see `programs` below), from the console:
 //   const m = await import('/tests/lookalikes.js'); m.setUp();   // replaces this browser's tracker; reloads
 //   const m = await import('/tests/lookalikes.js'); await m.run(); // then: m.results, m.results.filter((r) => !r.ok)
+// Harder copies: m.run(m.pages, { scale: 0.5 }) (a low-resolution screenshot), { jpeg: 0.5 } (compressed),
+// { font: 'Georgia, serif' } or { light: true } (thin text) — any mix.
 // It never applies a read (each card is closed), and setUp() is for a test browser only.
 
 const W = '#fff';
@@ -104,16 +106,18 @@ export const pages = [
     expect: { program: 'Bilt', balance: 36215 } },
 ];
 
-export function draw(page) {
+export function draw(page, variant = {}) {
+  const k = variant.scale || 1;
   const canvas = document.createElement('canvas');
-  canvas.width = page.w;
-  canvas.height = page.h;
+  canvas.width = Math.round(page.w * k);
+  canvas.height = Math.round(page.h * k);
   const g = canvas.getContext('2d');
+  g.scale(k, k);
   g.fillStyle = page.bg || W;
   g.fillRect(0, 0, page.w, page.h);
   for (const [x, y, w, h, color] of page.rects || []) { g.fillStyle = color; g.fillRect(x, y, w, h); }
   for (const [text, x, y, size, weight, color, align] of page.text) {
-    g.font = `${weight} ${size}px Helvetica Neue, Arial`;
+    g.font = `${variant.light ? Math.min(weight, 300) : weight} ${size}px ${variant.font || 'Helvetica Neue, Arial'}`;
     g.fillStyle = color || page.ink || '#111';
     g.textAlign = align;
     g.fillText(text, x, y);
@@ -124,10 +128,10 @@ export function draw(page) {
 const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // Pastes one page and reads the result card, then closes it without applying anything.
-export async function scan(page) {
-  const blob = await new Promise((resolve) => draw(page).toBlob(resolve, 'image/png'));
+export async function scan(page, variant = {}) {
+  const blob = await new Promise((resolve) => draw(page, variant).toBlob(resolve, variant.jpeg ? 'image/jpeg' : 'image/png', variant.jpeg));
   const data = new DataTransfer();
-  data.items.add(new File([blob], 'lookalike.png', { type: 'image/png', lastModified: Date.now() }));
+  data.items.add(new File([blob], 'lookalike', { type: blob.type, lastModified: Date.now() }));
   window.dispatchEvent(new ClipboardEvent('paste', { clipboardData: data, bubbles: true }));
   let title = '';
   for (let i = 0; i < 600; i++) {
@@ -150,9 +154,10 @@ export async function scan(page) {
 }
 
 export const results = [];
-export async function run(list = pages) {
+export async function run(list = pages, variant = {}) {
   results.length = 0;
-  for (const page of list) results.push(await scan(page));
+  results.done = false;
+  for (const page of list) results.push(await scan(page, variant));
   results.done = true;
   return results;
 }
