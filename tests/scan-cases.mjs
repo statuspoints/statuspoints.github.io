@@ -585,4 +585,12 @@ export default [
   { name: 'Two readings: a clearly surer one settles it, not flagged', passes: [
     { text: `AAdvantage®\nAward miles 97,900`, words: [['97,900', 82]] }, { text: `AAdvantage®\nAward miles 57,900`, words: [['57,900', 97]] }],
     expect: { program: 'american', balance: 57900, unsure: false } },
+  // A balance the reader read two ways in its own reading (a re-read disagreed): flagged even when both readings agree.
+  { name: 'A balance read two ways within one reading: flagged', passes: [
+    { text: `AAdvantage®\nAward miles\n57,900`, words: [['57,900', 82]], disputed: [57900] }, { text: `AAdvantage®\nAward miles\n57,900`, words: [['57,900', 83]], disputed: [57900] }],
+    expect: { program: 'american', balance: 57900, unsure: true } },
+  // A thousands comma misread as a mark.
+  { name: 'Comma read as “»”: 128 »400 is 128,400', text: `MARRIOTT\nBONVOY\nPOINTS\nWelcome, Alex\nGold Elite 128 »400\nMember number 123456789\n31 nights this year`,
+    expect: { program: 'marriott', balance: 128400, tier: 'Gold Elite' } },
+  { name: 'Comma read as “’”: 57’900 is 57,900', text: `AAdvantage®\nAward miles 57’900`, expect: { program: 'american', balance: 57900 } },
 ];

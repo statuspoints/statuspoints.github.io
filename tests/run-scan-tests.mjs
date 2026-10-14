@@ -28,7 +28,8 @@ vm.runInContext(`${stubs}\n${head}\n${dates}\nconst state = { programs: [], bala
   // A case's text, or each of its readings (passes) with the better one kept, as the app does with a screenshot.
   globalThis.read = (c) => {
     // A reading is its text, or { text, words: [[word, confidence], …] } for how sure the reader was of each word.
-    const pass = (x) => (typeof x === 'string' ? { text: x, lines: [] } : { text: x.text, lines: [{ text: '', words: x.words.map(([text, confidence]) => ({ text, confidence })) }] });
+    const pass = (x) => (typeof x === 'string' ? { text: x, lines: [] }
+      : { text: x.text, disputed: x.disputed, lines: [{ text: '', words: (x.words || []).map(([text, confidence]) => ({ text, confidence })) }] });
     const r = c.passes ? readingOf({ passes: c.passes.map(pass) }).found : parseAccountText(c.text);
     const tiers = r.programId ? scanTiersFor(r.programId) : [];
     return { program: r.programId, balance: r.balances[0] ?? null, tier: r.tierIndex >= 0 ? tiers[r.tierIndex].name : null,
@@ -104,7 +105,10 @@ const bigChecks = [];
   t = one('84,250', 96);
   bigChecks.push(['“84,250” at 96% stays when a re-read is no surer (“34,250” at 98%)', context.big.useReread(t.pass, t.group, '34,250', 98), false]);
   t = one('37,900', 83);
-  bigChecks.push(['“37,900” at 83% gives way to a surer re-read (“57,900” at 90%)', [context.big.useReread(t.pass, t.group, '57,900', 90), t.pass.text], [true, 'Points\n57,900\n']]);
+  bigChecks.push(['“37,900” at 83% gives way to a clearly surer re-read (“57,900” at 95%)', [context.big.useReread(t.pass, t.group, '57,900', 95), t.pass.text], [true, 'Points\n57,900\n']]);
+  t = one('57,900', 82);
+  bigChecks.push(['“57,900” at 82% read again as “37,900” at 86%: kept, and noted as read two ways',
+    [context.big.useReread(t.pass, t.group, '37,900', 86), t.pass.text, t.pass.disputed], [false, 'Points\n57,900\n', [57900]]]);
 }
 for (const [name, got, want] of bigChecks) {
   const ok = JSON.stringify(got) === JSON.stringify(want);

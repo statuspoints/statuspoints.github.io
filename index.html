@@ -4737,6 +4737,8 @@
       .replace(/\bpremier[ \t]*[il1|!][ \t]*k\b/gi, 'Premier 1K')
       // A card's masked last four ("(...4417)", "•••• 1009", "xxxx7731") read as "ending 4417", never a balance.
       .replace(/(?:(?:[•●*]{2,}|\b[xX]{2,})[•●*xX \t]*|(?:\.{2,}|…)[•●*xX]*)(\d{4})(?![\d,])/g, 'ending $1')
+      // A thousands comma misread as a mark ("128 »400", "57’900"): a comma again.
+      .replace(/\b(\d{1,3})[ \t]?[»«’'‚;][ \t]?(\d{3})(?![\d,])/g, '$1,$2')
       .replace(/[®™©•·|]/g, ' ')
       // A letter in a word that's otherwise digits is a misread digit; a word with no digit stays as it is.
       .replace(/\b[\dOolI]*\d[\dOolI]*\b/g, (n) => n.replace(/[Oo]/g, '0').replace(/[lI]/g, '1'))
@@ -5177,6 +5179,7 @@
     });
     const best = tried.reduce((a, b) => (b.worth > a.worth ? b : a));
     const f = best.found;
+    let from = best.pass; // the reading the balance comes from
     // How sure the reader was of a number: its best word's confidence in that reading (0 when it isn't one word).
     const sureOf = (pass, value) => Math.max(0, ...(pass.lines || []).flatMap((l) => l.words || [])
       .filter((w) => cleanScanText(w.text).replace(/\D/g, '') === String(value)).map((w) => w.confidence || 0));
@@ -5189,17 +5192,19 @@
       // The same balance with its first digits missing ("1 1 2,450" read as 2,450 where the other reading has
       // 112,450): narrow digits split off big numbers, so the longer one is the balance.
       const [mine, theirs] = [String(f.balances[0] ?? ''), String(o.balances[0] ?? '')];
-      if (mine && theirs.length > mine.length && theirs.endsWith(mine)) f.balances = [o.balances[0], ...f.balances.filter((v) => v !== o.balances[0])];
+      if (mine && theirs.length > mine.length && theirs.endsWith(mine)) { f.balances = [o.balances[0], ...f.balances.filter((v) => v !== o.balances[0])]; from = pass; }
       // Two different balances otherwise: the one the reader was clearly surer of ("97,900" at 82% where the other
       // reading has "57,900" at 97%: a big bold digit misread in one layout).
       else if (mine && theirs && mine !== theirs) {
         const [sureMine, sureTheirs] = [sureOf(best.pass, f.balances[0]), sureOf(pass, o.balances[0])];
-        if (sureTheirs > sureMine + 5) f.balances = [o.balances[0], ...f.balances.filter((v) => v !== o.balances[0])];
+        if (sureTheirs > sureMine + 5) { f.balances = [o.balances[0], ...f.balances.filter((v) => v !== o.balances[0])]; from = pass; }
         // Neither the layout (one reading found clearly more) nor the reader's confidence settles it ("37,900" at 83%
         // and "57,900" at 79%): the card says so and waits for you.
         else if (best.worth - worth < 3 && sureMine <= sureTheirs + 5) f.unsure = true;
       }
     }
+    // The reader read the balance two ways in its own reading (see useReread).
+    if ((from.disputed || []).includes(f.balances[0])) f.unsure = true;
     return { ...read, text: best.pass.text, lines: best.pass.lines, found: f };
   }
 
@@ -5361,7 +5366,7 @@
     const groups = [];
     for (const { word, line } of words) {
       const tall = word.bbox.y1 - word.bbox.y0;
-      if (!/\d/.test(word.text) || !/^[\d,.]+$/.test(word.text) || tall <= 1.6 * median) continue;
+      if (!/\d/.test(word.text) || !/^[\d,.»«’'‚;]+$/.test(word.text) || tall <= 1.6 * median) continue;
       const last = groups[groups.length - 1];
       const prev = last && last.words[last.words.length - 1];
       if (prev && last.line === line && word.bbox.x0 - prev.bbox.x1 < 0.8 * tall) last.words.push(word);
@@ -5377,7 +5382,12 @@
     // Never fewer digits ("128" for "128,400"), and a whole number read as one word only gives way to a surer read.
     if (now.replace(/\D/g, '').length < was.replace(/\D/g, '').length) return false;
     const whole = group.words.length === 1 && /^(?:\d{1,3}(?:,\d{3})+|\d+)$/.test(was);
-    if (whole && confidence <= (group.words[0].confidence || 0) + 3) return false;
+    // A whole number the re-read reads differently without being clearly surer (10 points): it stays, and the reader
+    // has read it two ways, so the card asks you to check it.
+    if (whole && confidence <= (group.words[0].confidence || 0) + 10) {
+      (pass.disputed || (pass.disputed = [])).push(Number(was.replace(/\D/g, '')));
+      return false;
+    }
     const at = pass.text.indexOf(was);
     if (at < 0) return false;
     pass.text = pass.text.slice(0, at) + now + pass.text.slice(at + was.length);
