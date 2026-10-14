@@ -145,12 +145,14 @@ export async function scan(page, variant = {}) {
   await pause(300);
   const balance = rows.map((r) => /^([\d,]+) (?:points|miles)/i.exec(r)).find(Boolean);
   const status = rows.find((r) => /\| Status/.test(r));
-  const got = { title, balance: balance ? Number(balance[1].replace(/,/g, '')) : null, tier: status ? status.split(' | ')[0] : null,
+  const got = { title, flagged: rows.some((r) => /^Check this first/.test(r)) || /Which program/.test(title),
+    balance: balance ? Number(balance[1].replace(/,/g, '')) : null, tier: status ? status.split(' | ')[0] : null,
     counts: rows.filter((r) => !/Balance|\| Status|Member number|On your list|Adding it|Check this/.test(r)).map((r) => r.split(' | ')[0]) };
   const e = page.expect;
   const ok = title.includes(e.program) && got.balance === e.balance && (e.tier === undefined || got.tier === e.tier)
     && (e.counts || []).every((c) => got.counts.includes(c));
-  return { name: page.name, ok, got };
+  // Wrong without saying so is the failure that matters: a flagged card waits for you to check it.
+  return { name: page.name, ok, silentlyWrong: !ok && !got.flagged, got };
 }
 
 export const results = [];
