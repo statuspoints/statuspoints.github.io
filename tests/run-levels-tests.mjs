@@ -51,8 +51,9 @@ check('later checks are dated', Object.keys(CHECKED_ON).every((id) => BENEFITS[i
 
 // Free entry levels
 const bases = Object.entries(BENEFITS).filter(([, tiers]) => tiers[0].base).map(([id, tiers]) => `${id}:${tiers[0].name}`).sort();
-check('free entry levels', bases, ['accor:Classic', 'aerlingus:Green', 'ba:Blue', 'cathay:Green', 'emirates:Blue', 'etihad:Bronze',
-  'flyingblue:Explorer', 'qantas:Bronze', 'qatar:Burgundy', 'turkish:Classic', 'virgin:Red']);
+check('free entry levels', bases, ['accor:Classic', 'aerlingus:Green', 'aeromexico:Classic', 'ba:Blue', 'bestwestern:Blue', 'cathay:Green',
+  'emirates:Blue', 'etihad:Bronze', 'flyingblue:Explorer', 'iberia:Clásica', 'iprefer:Silver', 'qantas:Bronze', 'qatar:Burgundy',
+  'shangrila:Gold', 'sonesta:Bronze', 'turkish:Classic', 'virgin:Red']);
 check('an invitation-only top level isn’t an entry level', BENEFITS.accor.at(-1).base, false);
 
 // Whole-name matching where "Elite" and "Plus" are levels of their own
