@@ -5957,6 +5957,14 @@
     let cid = choice ? (own ? (catalogFor(own) || {}).id || null : choice.slice(4)) : null;
     const reading = readingOf(read, choice ? cid || '' : undefined);
     const { found } = reading;
+    // For checking the reader: with localStorage 'status-tracker-debug-scan' set, each reading goes to the console.
+    try {
+      if (localStorage.getItem('status-tracker-debug-scan')) {
+        console.debug('scan', JSON.stringify({ passes: (read.passes || [read]).map((pass) => ({ text: pass.text, disputed: pass.disputed || [],
+          numbers: (pass.lines || []).flatMap((l) => l.words || []).filter((w) => /\d/.test(w.text)).map((w) => `${w.text}@${Math.round(w.confidence || 0)}`) })),
+        balances: found.balances, unsure: !!found.unsure, programId: found.programId }));
+      }
+    } catch { /* storage blocked: no debug */ }
     if (!choice) {
       cid = found.programId;
       own = cid ? programs.find((x) => catalogFor(x) && catalogFor(x).id === cid) || null : null;
