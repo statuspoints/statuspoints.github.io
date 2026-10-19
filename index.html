@@ -2362,6 +2362,24 @@
   // Programs checked on a later day than BENEFITS_CHECKED.
   const CHECKED_ON = { avianca: 'Oct 14, 2026', iberia: 'Oct 14, 2026', aeromexico: 'Oct 14, 2026', latam: 'Oct 14, 2026', frontier: 'Oct 14, 2026', bestwestern: 'Oct 14, 2026', sonesta: 'Oct 14, 2026', iprefer: 'Oct 14, 2026', shangrila: 'Oct 14, 2026', enterprise: 'Oct 14, 2026', flyingblue: 'Oct 8, 2026', ba: 'Oct 8, 2026', virgin: 'Oct 8, 2026', emirates: 'Oct 8, 2026', singapore: 'Oct 8, 2026', qatar: 'Oct 8, 2026', turkish: 'Oct 8, 2026', jetblue: 'Oct 8, 2026', choice: 'Oct 8, 2026', accor: 'Oct 8, 2026',
     koreanair: 'Oct 10, 2026', lufthansa: 'Oct 10, 2026', cathay: 'Oct 10, 2026', qantas: 'Oct 10, 2026', ana: 'Oct 10, 2026', jal: 'Oct 10, 2026', etihad: 'Oct 10, 2026', aerlingus: 'Oct 10, 2026' };
+  // Lifetime status, by each program's own terms (checked Oct 19, 2026 by two reviewers each), with the page it's from.
+  const LIFETIME = {
+    delta: ['Million Miler: 1 million flight miles on Delta and partners (award trips count, Basic Economy doesn’t) gives Gold Medallion every year for life; 2 million, Platinum; 3 and 4 million, Diamond; 5 million and up, a yearly Delta 360° invitation.',
+      'https://www.delta.com/us/en/skymiles/medallion-program/million-miler'],
+    united: ['Million Miler: 1 million flight miles on paid United and United Express flights (not award tickets or partner-operated flights) gives Premier Gold for life; 2 million, Premier Platinum; 3 million, Premier 1K; 4 million and up, Global Services.',
+      'https://www.united.com/en/us/fly/mileageplus/premier/million-miler-program.html'],
+    american: ['Million Miler: 1 million miles flown on American and eligible partners (not bonus miles or Loyalty Points) gives Lifetime Gold and 35,000 bonus miles; 2 million, Lifetime Platinum and 4 systemwide upgrades (4 more each extra million); 4 million, Lifetime Platinum Pro; 5 million, Lifetime Executive Platinum.',
+      'https://www.aa.com/web/i18n/aadvantage-program/discover/how-aadvantage-works.html'],
+    alaska: ['Million Miler: 1 million miles flown on Alaska and Hawaiian gives Atmos Gold every year for life, with 4 upgrade certificates and 20,000 starting status points a year; 2 million, Atmos Platinum for life.',
+      'https://www.alaskaair.com/atmosrewards/content/benefits/million-miler'],
+    hilton: ['Lifetime Diamond: 10 years at Diamond (each a full 365 days, not necessarily in a row), plus either 1,000 paid or Reward nights or $200,000 of eligible spend over your membership.',
+      'https://www.hilton.com/en/hilton-honors/terms/'],
+    marriott: ['Lifetime Silver Elite: 250 nights and 5 years at Silver Elite or higher. Lifetime Gold Elite: 400 nights and 7 years at Gold or higher. Lifetime Platinum Elite: 600 nights and 10 years at Platinum or higher. Lifetime members’ points don’t expire for inactivity.',
+      'https://www.marriott.com/loyalty/member-benefits/lifetime-status.mi'],
+    hyatt: ['Lifetime Globalist: 1,000,000 lifetime base points (the points you earn from spending, not bonuses).',
+      'https://www.hyatt.com/help/terms/world-of-hyatt'],
+    ihg: ['No lifetime status: every level is earned again each year.', 'https://www.ihg.com/content/us/en/customer-care/member-tc'],
+  };
   const BENEFITS = {
     delta: [
       ['Silver Medallion', '$5,000 MQDs in a calendar year', ["Free upgrades", "Free Preferred seats", "1 free bag"], ['7 miles per $1 spent (2 bonus)', 'Complimentary upgrades, clearing 1 day out', 'Free Preferred seats', 'First checked bag free', 'SkyTeam Elite']],
@@ -7727,6 +7745,14 @@
       '. Programs change benefits often, so that page has the last word.');
   }
 
+  // "Lifetime: …" under the levels, with the program's own page for it.
+  function lifetimeLine(p) {
+    const c = catalogFor(p);
+    const rule = c && LIFETIME[c.id];
+    return rule ? h('p', { class: 'fine' }, h('b', null, 'Lifetime: '), `${rule[0]} `,
+      h('a', { href: rule[1], target: '_blank', rel: 'noopener noreferrer' }, `${new URL(rule[1]).hostname.replace(/^www\./, '')} ↗`)) : null;
+  }
+
   function renderLevels(p) {
     const tiers = benefitsFor(p);
     $('#d-levels').hidden = !tiers;
@@ -7748,6 +7774,7 @@
     $('#d-levels').replaceChildren(
       h('h3', { class: 'd-label' }, 'All levels'),
       h('div', null, levels),
+      lifetimeLine(p),
       officialLine(p));
   }
 

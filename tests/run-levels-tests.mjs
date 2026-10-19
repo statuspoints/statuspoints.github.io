@@ -23,8 +23,8 @@ const stubs = `
 `;
 const context = vm.createContext({ console, Intl, Math, Date, Number, String, Object, Array, Set, Map, RegExp, JSON, URL });
 vm.runInContext(`${stubs}\n${head}\n${statusNames}\n
-  globalThis.api = { BENEFITS, STATUS_NAMES, OFFICIAL, CHECKED_ON, BENEFITS_CHECKED, findTier };`, context);
-const { BENEFITS, STATUS_NAMES, OFFICIAL, CHECKED_ON, BENEFITS_CHECKED, findTier } = context.api;
+  globalThis.api = { BENEFITS, STATUS_NAMES, OFFICIAL, CHECKED_ON, BENEFITS_CHECKED, findTier, LIFETIME };`, context);
+const { BENEFITS, STATUS_NAMES, OFFICIAL, CHECKED_ON, BENEFITS_CHECKED, findTier, LIFETIME } = context.api;
 
 let failed = 0;
 let total = 0;
@@ -48,6 +48,13 @@ for (const [id, tiers] of Object.entries(BENEFITS)) {
 }
 check('every status-names program with levels was checked on a date', Object.keys(BENEFITS).filter((id) => !(CHECKED_ON[id] || BENEFITS_CHECKED)), []);
 check('later checks are dated', Object.keys(CHECKED_ON).every((id) => BENEFITS[id] && /^[A-Z][a-z]{2} \d{1,2}, 20\d\d$/.test(CHECKED_ON[id])), true);
+
+// Lifetime status lines
+for (const [id, [text, url]] of Object.entries(LIFETIME)) {
+  check(`${id}: lifetime rule belongs to a program with levels`, !!BENEFITS[id], true);
+  check(`${id}: lifetime rule links to an official https page`, /^https:\/\/[^/]+\.[a-z]+\//.test(url), true);
+  check(`${id}: lifetime rule is one plain paragraph`, text.length > 20 && text.length < 400 && !/\n/.test(text), true);
+}
 
 // Free entry levels
 const bases = Object.entries(BENEFITS).filter(([, tiers]) => tiers[0].base).map(([id, tiers]) => `${id}:${tiers[0].name}`).sort();
