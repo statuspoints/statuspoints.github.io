@@ -604,11 +604,21 @@ export default [
     { text: `IHG One Rewards\nPlatinum Elite Member\nMember #123456789\nYOUR POINTS\n26 948`, words: [['26', 95], ['948', 95]] },
     { text: `IHG One Rewards\nYOUR POINTS\n26,048`, words: [['26,048', 60]] }],
     expect: { program: 'ihg', balance: 26948, unsure: false } },
-  // The layout favors one reading, the other is surer but not confident (88% against 82%): the card asks you to check.
-  { name: 'Two readings: a surer but not confident read against the layout: flagged', passes: [
+  // The layout favors one reading; the other is surer but not confident (88% against 82%): the layout's balance stands.
+  { name: 'Two readings: a surer but not confident read doesn’t overturn the layout', passes: [
     { text: `IHG One Rewards\nPlatinum Elite Member\nMember #123456789\nYOUR POINTS\n26,948`, words: [['26,948', 82]] },
     { text: `IHG One Rewards\nYOUR POINTS\n26,048`, words: [['26,048', 88]] }],
-    expect: { program: 'ihg', unsure: true } },
+    expect: { program: 'ihg', balance: 26948, unsure: false } },
+  // The real IHG pair with the one-block reading's split "26 048" read confidently (92–93%): the layout's 26,948
+  // stands, and since the other read is confident and surer, the card asks you to check.
+  { name: 'Two readings: a confident split read against the layout keeps the layout’s balance and asks', passes: [
+    { text: `IHG 4 SEaros\nHello Alex,\nPlatinum Elite Member\nMember #123456789\nYOUR POINTS\n26,948\nPurchase points`, words: [['26,948', 85]] },
+    { text: `IHG 4 WARDS My Account Stays and Events Points Offers\nYOUR POINTS\nHello Alex, 26 048\nPlatinum Elite Member\nMember #123456789`, words: [['Hello', 95], ['Alex,', 95], ['26', 93], ['048', 92]] }],
+    expect: { program: 'ihg', balance: 26948, unsure: true } },
+  { name: 'Two readings: …and when the layout’s read is sure itself, no question', passes: [
+    { text: `IHG 4 SEaros\nHello Alex,\nPlatinum Elite Member\nMember #123456789\nYOUR POINTS\n26,948\nPurchase points`, words: [['26,948', 96]] },
+    { text: `IHG 4 WARDS My Account Stays and Events Points Offers\nYOUR POINTS\nHello Alex, 26 048\nPlatinum Elite Member\nMember #123456789`, words: [['Hello', 95], ['Alex,', 95], ['26', 93], ['048', 92]] }],
+    expect: { program: 'ihg', balance: 26948, unsure: false } },
   { name: 'Member number split by spaces under a points line is the member number, not a balance', text: `Hilton Honors\nYour points\nMember 123 456 789\nGold`,
     expect: { program: 'hilton', balance: null, member: '123456789' } },
   { name: '…and the balance below it is still read', text: `Hilton Honors\nYour points\nMember 123 456 789\n12,345`,

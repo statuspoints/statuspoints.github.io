@@ -5235,13 +5235,14 @@
       // reading has "57,900" at 97%: a big bold digit misread in one layout).
       else if (mine && theirs && mine !== theirs) {
         const [sureMine, sureTheirs] = [sureOf(best.pass, f.balances[0]), sureOf(pass, o.balances[0])];
-        const swap = sureTheirs > sureMine + 5;
-        if (swap) { f.balances = [o.balances[0], ...f.balances.filter((v) => v !== o.balances[0])]; from = pass; }
-        // Neither the layout (one reading found clearly more) nor a confident read (90%+, clearly surer than the
-        // other) settles it ("37,900" at 87% against "97,900" at 76%, for 57,900): the card says so and waits for you.
-        // So does a surer read that isn't confident going against the layout (88% against 82%).
+        // The layout settles it when one reading found clearly more (the IHG page's caption over its balance): a
+        // surer read from the other only makes the card ask, and only when it's confident (90%+) and clearly surer.
+        // Otherwise the confident read decides ("97,900" at 82% against "57,900" at 97%), and when neither is
+        // confident ("37,900" at 87% against "97,900" at 76%, for 57,900) the card says so and waits for you.
+        const settled = best.worth - worth >= 3;
+        if (!settled && sureTheirs > sureMine + 5) { f.balances = [o.balances[0], ...f.balances.filter((v) => v !== o.balances[0])]; from = pass; }
         const confident = Math.max(sureMine, sureTheirs) >= 90 && Math.abs(sureMine - sureTheirs) > 5;
-        if ((best.worth - worth < 3 || swap) && !confident) f.unsure = true;
+        if (settled ? sureTheirs >= 90 && sureTheirs > sureMine + 5 : !confident) f.unsure = true;
       }
     }
     // The reader read the balance two ways in its own reading (see useReread).
