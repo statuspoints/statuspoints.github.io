@@ -7745,11 +7745,11 @@
       '. Programs change benefits often, so that page has the last word.');
   }
 
-  // "Lifetime: …" under the levels, with the program's own page for it.
+  // How lifetime status works ("Million Miler: …", "Lifetime Diamond: …") under the levels, with the program's page.
   function lifetimeLine(p) {
     const c = catalogFor(p);
     const rule = c && LIFETIME[c.id];
-    return rule ? h('p', { class: 'fine' }, h('b', null, 'Lifetime: '), `${rule[0]} `,
+    return rule ? h('p', { class: 'fine' }, `${rule[0]} `,
       h('a', { href: rule[1], target: '_blank', rel: 'noopener noreferrer' }, `${new URL(rule[1]).hostname.replace(/^www\./, '')} ↗`)) : null;
   }
 
