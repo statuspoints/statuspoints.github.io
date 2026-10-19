@@ -281,6 +281,14 @@ check('December: other monthly credits still “a month”', rate('amex-platinum
 now = new Date(2026, 9, 8, 12);
 check('October: “$15 a month”', rate('amex-platinum', 'uber'), '$15 a month');
 
+// Credits that end after 2027 (Peloton, Google Workspace) are gone in 2028, like those that end after 2026
+const has = (cardId, id) => app.heldCredits().some((x) => x.key === `${cardId}:${id}`);
+setup({ cards: ['sapphire-reserve', 'sapphire-reserve-business'] });
+check('2026: Peloton and Google Workspace credits listed', [has('sapphire-reserve', 'peloton'), has('sapphire-reserve-business', 'google')], [true, true]);
+now = new Date(2028, 0, 2, 12);
+check('2028: Peloton and Google Workspace credits gone', [has('sapphire-reserve', 'peloton'), has('sapphire-reserve-business', 'google')], [false, false]);
+now = new Date(2026, 9, 8, 12);
+
 // 5. Imported numbers above the most you can type are capped, like typed ones
 const big = app.normalize({ programs: [prog('hilton', 'Hilton Honors'), prog('delta', 'Delta SkyMiles', 'miles')], cards: [], balances: { hilton: 5e12, delta: 1000 }, progress: { hilton: 2e12 }, mqd: 3e12,
   history: { hilton: [['2026-09-01', 4e12, 't'], ['2026-10-01', 5e12]] } });

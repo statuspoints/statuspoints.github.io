@@ -110,6 +110,48 @@ const bigChecks = [];
   bigChecks.push(['“57,900” at 82% read again as “37,900” at 86%: kept, and noted as read two ways',
     [context.big.useReread(t.pass, t.group, '37,900', 86), t.pass.text, t.pass.disputed], [false, 'Points\n57,900\n', [57900]]]);
 }
+{ // The re-read replaces the number where it stands, not the same digits inside an earlier number.
+  const w = word('16', 100, 200, 300, 400, 70);
+  const nights = { text: '16', words: [w] };
+  const pass = { text: 'Marriott Bonvoy\nMember 1234516890\nNights\n16\n', lines: [{ text: 'Member 1234516890', words: [] }, nights] };
+  bigChecks.push(['“16” re-read as “18” changes the 16 on its own line, not the member number',
+    [context.big.useReread(pass, { line: nights, words: [w] }, '18', 95), pass.text, nights.text], [true, 'Marriott Bonvoy\nMember 1234516890\nNights\n18\n', '18']]);
+  const v = word('2,450', 100, 300, 300, 400, 70);
+  const tile = { text: '2,450', words: [v] };
+  const pass2 = { text: 'Points\n12,450 pending\n2,450\n', lines: [{ text: '12,450 pending', words: [] }, tile] };
+  bigChecks.push(['“2,450” re-read as “2,460” doesn’t touch “12,450”',
+    [context.big.useReread(pass2, { line: tile, words: [v] }, '2,460', 95), pass2.text], [true, 'Points\n12,450 pending\n2,460\n']]);
+}
+{ // The group's own line and word get the re-read, even when the same number appears more than once.
+  const l1 = { text: '16', words: [word('16', 10, 60, 100, 200, 60)] };
+  const l2 = { text: '16', words: [word('16', 10, 60, 300, 400, 60)] };
+  const pass = { text: 'Nights\n16\nStays\n16\n', lines: [{ text: 'Nights', words: [word('Nights', 10, 90, 50, 70)] }, l1, { text: 'Stays', words: [word('Stays', 10, 90, 250, 270)] }, l2] };
+  context.big.useReread(pass, { line: l2, words: l2.words }, '18', 95);
+  bigChecks.push(['the same number on two lines: the group’s own line changes', [pass.text, l1.text, l2.text], ['Nights\n16\nStays\n18\n', '16', '18']]);
+  const line = { text: 'Night 16 of 16', words: [word('Night', 0, 80, 0, 30), word('16', 90, 120, 0, 30, 60), word('of', 130, 160, 0, 30), word('16', 170, 200, 0, 30, 60)] };
+  const one = { text: 'Night 16 of 16\n', lines: [line] };
+  context.big.useReread(one, { line, words: [line.words[3]] }, '18', 95);
+  bigChecks.push(['the same number twice on a line: the group’s own word changes', one.text, 'Night 16 of 18\n']);
+  const comma = { text: 'Hilton Honors', words: [word('Hilton', 0, 80, 0, 30), word('Honors', 90, 180, 0, 30)] };
+  const counts = { text: 'Nights 16, stays 4', words: [word('Nights', 0, 80, 50, 80), word('16,', 90, 130, 50, 80, 60), word('stays', 140, 200, 50, 80), word('4', 210, 225, 50, 80)] };
+  const withComma = { text: 'Hilton Honors\nNights 16, stays 4\n', lines: [comma, counts] };
+  bigChecks.push(['a re-read still applies before a punctuation comma', [context.big.useReread(withComma, { line: counts, words: [counts.words[1]] }, '18', 95), withComma.text],
+    [true, 'Hilton Honors\nNights 18, stays 4\n']]);
+}
+{ // Rows and lines that don't line up, double spaces, and "$" in a word (review of the follow-up).
+  const a = { text: '16', words: [word('16', 10, 60, 100, 200, 60)] };
+  const b = { text: '16', words: [word('16', 10, 60, 300, 400, 60)] };
+  const pass = { text: 'Points\n16\nNights\n16\n', lines: [{ text: 'Points', words: [word('Points', 0, 90, 50, 70)] }, a, b] }; // one line short
+  context.big.useReread(pass, { line: b, words: b.words }, '18', 95);
+  bigChecks.push(['lines one short of the rows: the 2nd “16” line is the 2nd “16” row', pass.text, 'Points\n16\nNights\n18\n']);
+  const sp = { text: 'Points 16', words: [word('Points', 0, 90, 0, 30), word('16', 100, 130, 0, 30, 60)] };
+  const spaced = { text: 'Points  16\n', lines: [sp] };
+  bigChecks.push(['a row with double spaces still takes the re-read', [context.big.useReread(spaced, { line: sp, words: [sp.words[1]] }, '18', 95), spaced.text], [true, 'Points 18\n']]);
+  const dl = { text: "MQDs $'x 16", words: [word('MQDs', 0, 60, 0, 30), word("$'x", 70, 110, 0, 30), word('16', 120, 150, 0, 30, 60)] };
+  const dollar = { text: "MQDs $'x 16\nTail\n", lines: [dl, { text: 'Tail', words: [word('Tail', 0, 50, 40, 70)] }] };
+  context.big.useReread(dollar, { line: dl, words: [dl.words[2]] }, '18', 95);
+  bigChecks.push(['a “$” sequence in a word doesn’t garble the row', dollar.text, "MQDs $'x 18\nTail\n"]);
+}
 for (const [name, got, want] of bigChecks) {
   const ok = JSON.stringify(got) === JSON.stringify(want);
   if (!ok) failed++;

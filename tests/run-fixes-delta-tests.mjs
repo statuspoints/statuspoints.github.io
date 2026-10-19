@@ -64,6 +64,8 @@ vm.runInContext(`${dom}\n${stubs}\n${head}
   enter = () => {}; // (enter, confetti and pulse are the app's own; replaced here)
   const renderPrograms = () => {}; const openPerks = () => {}; const jumpTo = () => {};
   const showToast = (message) => shown.toasts.push(message);
+  // A note waits while a removal's Undo or a Reload is up (see showNote); recorded apart from toasts here.
+  const showNote = (message) => (shown.notes || (shown.notes = [])).push(message);
   confetti = (from) => shown.confetti.push(from);
   pulse = (el) => shown.pulsed.push(el);
   const openDetail = (id) => shown.opened.push(id);
@@ -121,6 +123,8 @@ const lifetimeGold = { tier: 'Gold Medallion', via: 'Million Miler' };
 use([delta()], withMqd(12000, '2025-11-01'));
 check('rollOver keeps last year’s Gold as a status line', [api.rollOver(), program().status.map((l) => l.exp), api.getState().mqd], [['Gold Medallion'], ['2027-01-31'], 0]);
 check('…and Delta still counts as elite status', api.hasStatus(program()), true);
+check('…its message is a note, so it can’t replace a removal’s Undo (switching to someone whose year turned over)',
+  [api.shown.toasts.length, (api.shown.notes || []).at(-1)], [0, 'New qualifying year: Gold Medallion stays on your list until it ends']);
 use([delta([keptPlatinum])]);
 check('a typed Medallion with no MQDs yet is elite status', api.hasStatus(program()), true);
 use([delta([{ tier: 'Gold Medallion', via: 'earned in 2024', exp: '2026-01-31' }])]);

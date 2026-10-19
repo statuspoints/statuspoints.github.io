@@ -74,6 +74,7 @@ vm.runInContext(`${stubs}\n${head}
   const relativeDay = () => 'today';
   const renderPrograms = () => {}; const renderUpcoming = () => {}; const celebrateGoals = () => {}; const offerBonusLanding = () => {};
   const showToast = (message) => shown.toasts.push(message);
+  const showNote = showToast; // (no Undo or Reload toast up in these checks, so a note shows right away)
   const renderAll = () => { shown.renders++; };
   const detail = { open: false }; const detailProgram = () => null; const renderDetail = () => {};
   const renderGame = () => {}; const renderWorth = () => {}; const updateMedallion = () => {}; const CSS = { escape: (s) => s };

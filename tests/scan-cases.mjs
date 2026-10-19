@@ -598,4 +598,41 @@ export default [
     { text: `AAdvantage®\nPlatinum Pro\nAAdvantage # 7KX1P92\n37,900\nAward miles\nLoyalty Points\n61,250\n63,750 to Executive Platinum`, words: [['37,900', 87], ['61,250', 97]] },
     { text: `AAdvantage®\nPlatinum Pro\nAAdvantage # 7KX1P92\n97,900\nAward miles\nLoyalty Points\n61,250\n63,750 to Executive Platinum`, words: [['97,900', 76], ['61,250', 97]], disputed: [97900] }],
     expect: { program: 'american', balance: 37900, unsure: true } },
+  // ---------- Found in review: readings, member numbers, level names ----------
+  // A balance read as two words ("26", "948", both at 95%) is as sure as its words, so a one-word 60% read doesn't replace it.
+  { name: 'Two readings: a balance read as two sure words stays against an unsure one-word read', passes: [
+    { text: `IHG One Rewards\nPlatinum Elite Member\nMember #123456789\nYOUR POINTS\n26 948`, words: [['26', 95], ['948', 95]] },
+    { text: `IHG One Rewards\nYOUR POINTS\n26,048`, words: [['26,048', 60]] }],
+    expect: { program: 'ihg', balance: 26948, unsure: false } },
+  // The layout favors one reading, the other is surer but not confident (88% against 82%): the card asks you to check.
+  { name: 'Two readings: a surer but not confident read against the layout: flagged', passes: [
+    { text: `IHG One Rewards\nPlatinum Elite Member\nMember #123456789\nYOUR POINTS\n26,948`, words: [['26,948', 82]] },
+    { text: `IHG One Rewards\nYOUR POINTS\n26,048`, words: [['26,048', 88]] }],
+    expect: { program: 'ihg', unsure: true } },
+  { name: 'Member number split by spaces under a points line is the member number, not a balance', text: `Hilton Honors\nYour points\nMember 123 456 789\nGold`,
+    expect: { program: 'hilton', balance: null, member: '123456789' } },
+  { name: '…and the balance below it is still read', text: `Hilton Honors\nYour points\nMember 123 456 789\n12,345`,
+    expect: { program: 'hilton', balance: 12345, member: '123456789' } },
+  { name: 'Account number split by spaces: not a balance', text: `Hilton Honors\nYour points\nAccount 123 456 789\nGold`,
+    expect: { program: 'hilton', balance: null, member: '123456789' } },
+  { name: 'Status screen with a split member number: no made-up balance', text: `Hilton Honors\nGold Member\nMember 123 456 789`,
+    expect: { program: 'hilton', balance: null, member: '123456789' } },
+  { name: 'Pieces of a split membership number aren’t balances', text: `Hilton Honors\nGold Member\nMembership 123 456 789`,
+    expect: { program: 'hilton', balance: null, member: '123456789' } },
+  { name: '“Platinum Elite Member 126 948” is still a balance', text: `IHG One Rewards\nYOUR POINTS\nPlatinum Elite Member 126 948`,
+    expect: { program: 'ihg', balance: 126948 } },
+  { name: 'National Executive', text: `Emerald Club\nExecutive Member\nFree Days 2\nMember #123456789`,
+    expect: { program: 'national', tier: 'Executive' } },
+  { name: 'National Executive Elite', text: `Emerald Club\nExecutive Elite\nMember #123456789`,
+    expect: { program: 'national', tier: 'Executive Elite' } },
+  { name: 'Iberia Clasica without its accent', text: `Iberia Club\nClasica\n12 500 Avios`,
+    expect: { program: 'iberia', tier: 'Clásica', balance: 12500 } },
+  { name: 'Iberia Clásica with its accent', text: `Iberia Club\nClásica\n12 500 Avios`,
+    expect: { program: 'iberia', tier: 'Clásica', balance: 12500 } },
+  // ---------- Review round 3: a balance after "Account"/"Member", and a balance that contains the member number ----------
+  { name: 'Account 126 948 miles is a balance, not a member number', text: `Delta SkyMiles\nAccount 126 948 miles`, expect: { program: 'delta', balance: 126948, member: null } },
+  { name: 'Member 126 948 Miles is a balance too', text: `Delta SkyMiles\nMember 126 948 Miles`, expect: { program: 'delta', balance: 126948 } },
+  { name: 'Account 126 948 Points (Hilton)', text: `Hilton Honors\nAccount 126 948 Points`, expect: { program: 'hilton', balance: 126948 } },
+  { name: 'A balance whose digits start with the member number still counts', text: `Hilton Honors\nMember # 123456\nYour points\n1234567`, expect: { program: 'hilton', balance: 1234567, member: '123456' } },
+  { name: 'A spaced member number at the start of a line still joins', text: `Hilton Honors\nYour points\nMember 123 456 789\nGold`, expect: { program: 'hilton', balance: null, member: '123456789' } },
 ];

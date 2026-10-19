@@ -83,6 +83,8 @@ check('ANA: "Diamond" finds Diamond Service', index('ana', 'Diamond'), 2);
 check('JAL: "JGC Diamond" is Diamond, not JGC Premier', index('jal', 'JGC Diamond'), 3);
 check('JAL: "JGC Premier"', index('jal', 'JGC Premier'), 2);
 check('Qantas: "Platinum One" over "Platinum"', index('qantas', 'Platinum One'), 4);
+check('Iberia: "Clasica" without its accent is Clásica', [index('iberia', 'Clasica'), index('iberia', 'Clásica'), index('iberia', 'Cla\u0301sica')], [0, 0, 0]);
+check('National: "Executive" is Executive, "Executive Elite" is Executive Elite', [index('national', 'Executive'), index('national', 'Executive Elite')], [0, 1]);
 
 console.log(`\n${total - failed}/${total} passed`);
 if (failed) process.exit(1);

@@ -290,6 +290,20 @@ start(['ihg-premier']);
   check('a card’s Platinum Elite covers a screen showing Gold Elite: nothing added, the card’s line stays',
     [prog('ihg').status.length, prog('ihg').status.some((l) => l.card === 'ihg-premier')], [before, true]);
 }
+start(['ihg-premier']);
+{ // a screen showing the card's level, with a higher level read from an earlier screen: the drop registers
+  prog('ihg').status.push({ tier: 'Diamond Elite', via: 'from your account' });
+  const result = app.applyRead('ihg', { tierIndex: app.findTier(app.scanTiersFor('ihg'), 'Gold Elite') });
+  check('a card’s level on screen replaces a higher one read from an earlier screen, as a real change',
+    [prog('ihg').status.some((l) => l.tier === 'Diamond Elite'), prog('ihg').status.some((l) => l.card === 'ihg-premier'), result.real > 0],
+    [false, true, true]);
+}
+{ // confirming an expired status reactivates it: a real change, with a note
+  app.state = app.normalize({ programs: [{ id: 'ihg', name: 'IHG One Rewards', unit: 'points',
+    status: [{ tier: 'Platinum Elite', via: 'from your account · thru 12/31/25' }] }], cards: [] });
+  const result = app.applyRead('ihg', { tierIndex: app.findTier(app.scanTiersFor('ihg'), 'Platinum Elite') });
+  check('a screenshot reactivating an expired status counts as a change, with a note', [result.real, result.notes.length > 0], [1, true]);
+}
 
 /* ---------- Turning a card off keeps programs that still hold your data ---------- */
 

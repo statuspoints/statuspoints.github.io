@@ -3005,11 +3005,12 @@
 
   // Tier lookup: "Gold Elite", "Gold" and "Gold Medallion" all find the right level. Longest alias wins, so
   // "Diamond Reserve" isn't mistaken for "Diamond".
-  const normTier = (text) => text.toLowerCase().replace(/[’`]/g, "'").replace(/[^a-z0-9']+/g, ' ').trim();
+  // Accents go first, so "Clásica" and "Clasica" are the same level.
+  const normTier = (text) => text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[’`]/g, "'").replace(/[^a-z0-9']+/g, ' ').trim();
   const TIER_FILLER = /\b(status|elite|medallion|premier|atmos|member|level|tier)\b/g;
-  // At these, "Elite" or "Plus" is a level of its own (or "Premier" is part of a name, as in JAL's JGC Premier),
-  // so levels match by their full names only.
-  const FULL_TIER_NAMES = new Set(['singapore', 'turkish', 'jal']);
+  // At these, "Elite" or "Plus" is a level of its own (or "Premier" is part of a name, as in JAL's JGC Premier, or
+  // National's Executive Elite is a level above Executive), so levels match by their full names only.
+  const FULL_TIER_NAMES = new Set(['singapore', 'turkish', 'jal', 'national']);
   for (const [id, tiers] of Object.entries(BENEFITS)) {
     BENEFITS[id] = tiers.map(([name, earn, short, perks, also = []]) => {
       const full = normTier(name);
@@ -4749,7 +4750,7 @@
   // Text from a screenshot, tidied: trademark marks dropped, "26.948", "78 450 Miles", "2 450 Reward points", "Avios 96 320" and a lone
   // "78 450" beside a Miles caption ("Miles", "Virgin Points") read as thousands, O/l misread as digits ("l8", "2O",
   // "6l,4OO"), "Premier IK" as 1K. Digit groups after a member-number label ("Member # 123 456 789", "SkyMiles Number"
-  // over "9123 456 789") are one id, not thousands.
+  // over "9123 456 789", "Member 123 456 789" starting a line) are one id, not thousands.
   function cleanScanText(text) {
     return String(text || '')
       .replace(/\bpremier[ \t]*[il1|!][ \t]*k\b/gi, 'Premier 1K')
@@ -4760,7 +4761,10 @@
       .replace(/[®™©•·|]/g, ' ')
       // A letter in a word that's otherwise digits is a misread digit; a word with no digit stays as it is.
       .replace(/\b[\dOolI]*\d[\dOolI]*\b/g, (n) => n.replace(/[Oo]/g, '0').replace(/[lI]/g, '1'))
-      .replace(/((?:\bnumber|\bno\.|\bid|#)[ \t]*:?[ \t]*\n?[ \t]*#?[ \t]*)(\d{3,4}(?:[ \u00a0\u202f]\d{3,4}){1,3})(?![\d,.])/gi, (all, pre, n) => `${pre}${n.replace(/\D/g, '')}`)
+      .replace(/((?:\bnumber|\bno\.|\bid|#|(?:^|\n)[ \t]*(?:member|account)\b(?=[ \t]*:?[ \t]*#?[ \t]*\d))[ \t]*:?[ \t]*\n?[ \t]*#?[ \t]*)(\d{3,4}(?:[ \u00a0\u202f]\d{3,4}){1,3})(?![\d,.])/gi, (all, pre, n, at, text) =>
+        // Two groups with a unit after them are a balance ("Account 126 948 miles"), not an id.
+        (n.split(/[ \u00a0\u202f]/).length === 2 && /^[ \t]*(?:[a-z]+[ \t]+){0,2}(?:miles|points|avios|pts|mi)\b/i.test(text.slice(at + all.length, at + all.length + 40))
+          ? all : `${pre}${n.replace(/\D/g, '')}`))
       .replace(/\b(\d{1,3})((?:[ \u00a0\u202f]\d{3})+)(?=[ \t]*(?:(?!of\b|to\b)[a-z]+[ \t]+){0,2}(?:miles|points|avios|pts|mi)\b)/gi, (all, a, b) => `${a}${b.replace(/\D/g, ',')}`)
       .replace(/(\b(?:miles|points|avios|pts|balance)[ \t]*:?[ \t]*)(\d{1,3}(?:[ \u00a0\u202f]\d{3})+)(?![\d,.])/gi, (all, pre, n) => `${pre}${n.replace(/\D/g, ',')}`)
       .replace(/(^|\n)(\d{1,3}(?:[ \u00a0\u202f]\d{3})+)[ \t]*(?=\n[ \t]*(?:[a-z]+[ \t]+){0,2}(?:miles|points|avios|pts)\b)/gi, (all, pre, n) => `${pre}${n.replace(/\D+/g, ',')}`)
@@ -5062,6 +5066,7 @@
     }
     // Member number: mostly digits after "Member", "#", "Account" — never "ending 1234" card digits.
     let member = null;
+    let memberText = null; // as printed ("123 456 789"), so its pieces aren't read as the balance
     // The number itself: digits, maybe split by single spaces, with an airline prefix ("EK 123456789", "EK 123 456 789")
     // or not ("1234 5678 90"), or one run of letters/digits — on the label's line, or under a "Member number" or
     // "… number" caption ("Flying Blue number").
@@ -5074,7 +5079,7 @@
       // Not card digits ("ending", "Card #" on the label's own line) or a booking's number ("Confirmation # 845…").
       const before = lower.slice(Math.max(lower.lastIndexOf('\n', m.index - 1) + 1, m.index - 12), m.index);
       if (/ending|ends in|card|confirmation|reservation|booking|order|ticket|itinerary|phone/.test(before + m[0].toLowerCase())) continue;
-      if (/\d{5,}/.test(id) && id.length <= 16 && (id.match(/[a-z]/gi) || []).length <= 3) { member = id; break; }
+      if (/\d{5,}/.test(id) && id.length <= 16 && (id.match(/[a-z]/gi) || []).length <= 3) { member = id; memberText = m[2]; break; }
     }
     // Counts for this year, in the program's units (and its second path), plus Delta MQDs.
     const layout = scanLayout(lines);
@@ -5106,6 +5111,10 @@
       for (const m of line.matchAll(/(\$?)\s?(\b\d{1,3}(?:,\d{3})+\b|\b\d{3,9}\b)(?:\.\d{1,2})?/g)) {
         const value = toNumber(m[2]);
         if ((member && m[2].replace(/,/g, '') === member) || (!m[2].includes(',') && m[2].length >= 8)) continue;
+        // A piece of a member number split by spaces ("Membership 123 456 789"): part of the id, never a balance.
+        const memberHit = memberText ? new RegExp(`(^|\\D)${memberText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?!\\d)`).exec(line) : null;
+        const memberAtLine = memberHit ? memberHit.index + memberHit[1].length : -1;
+        if (memberAtLine >= 0 && m.index + m[0].indexOf(m[2]) >= memberAtLine && m.index < memberAtLine + memberText.length) continue;
         if (/^0\d/.test(m[2])) continue; // "048": the end of a number split by a space, or an id — never a balance
         if (!m[2].includes(',') && value >= 1990 && value <= 2100) continue; // a year
         const end = m.index + m[0].length;
@@ -5198,9 +5207,20 @@
     const best = tried.reduce((a, b) => (b.worth > a.worth ? b : a));
     const f = best.found;
     let from = best.pass; // the reading the balance comes from
-    // How sure the reader was of a number: its best word's confidence in that reading (0 when it isn't one word).
-    const sureOf = (pass, value) => Math.max(0, ...(pass.lines || []).flatMap((l) => l.words || [])
-      .filter((w) => cleanScanText(w.text).replace(/\D/g, '') === String(value)).map((w) => w.confidence || 0));
+    // How sure the reader was of a number: its best read in that reading (0 when it isn't there), where a number read
+    // as side-by-side words on one line ("26", "948") is as sure as its least sure word.
+    const sureOf = (pass, value) => Math.max(0, ...(pass.lines || []).flatMap(({ words = [] }) => words.flatMap((_, i) => {
+      let digits = '';
+      let sure = 100;
+      for (const w of words.slice(i)) {
+        if (!/\d/.test(w.text)) return [];
+        digits += cleanScanText(w.text).replace(/\D/g, '');
+        sure = Math.min(sure, w.confidence || 0);
+        if (digits === String(value)) return [sure];
+        if (!String(value).startsWith(digits)) return [];
+      }
+      return [];
+    })));
     for (const { pass, found: o, worth } of tried) {
       if (o === f || o.programId !== f.programId) continue;
       f.balances = [...new Set([...f.balances, ...o.balances])].slice(0, 4);
@@ -5215,11 +5235,13 @@
       // reading has "57,900" at 97%: a big bold digit misread in one layout).
       else if (mine && theirs && mine !== theirs) {
         const [sureMine, sureTheirs] = [sureOf(best.pass, f.balances[0]), sureOf(pass, o.balances[0])];
-        if (sureTheirs > sureMine + 5) { f.balances = [o.balances[0], ...f.balances.filter((v) => v !== o.balances[0])]; from = pass; }
+        const swap = sureTheirs > sureMine + 5;
+        if (swap) { f.balances = [o.balances[0], ...f.balances.filter((v) => v !== o.balances[0])]; from = pass; }
         // Neither the layout (one reading found clearly more) nor a confident read (90%+, clearly surer than the
         // other) settles it ("37,900" at 87% against "97,900" at 76%, for 57,900): the card says so and waits for you.
+        // So does a surer read that isn't confident going against the layout (88% against 82%).
         const confident = Math.max(sureMine, sureTheirs) >= 90 && Math.abs(sureMine - sureTheirs) > 5;
-        if (best.worth - worth < 3 && !confident) f.unsure = true;
+        if ((best.worth - worth < 3 || swap) && !confident) f.unsure = true;
       }
     }
     // The reader read the balance two ways in its own reading (see useReread).
@@ -5407,14 +5429,30 @@
       (pass.disputed || (pass.disputed = [])).push(Number(was.replace(/\D/g, '')));
       return false;
     }
-    const at = pass.text.indexOf(was);
-    if (at < 0) return false;
-    pass.text = pass.text.slice(0, at) + now + pass.text.slice(at + was.length);
+    // The group's own line of the text: the reader writes one row per line it found, its words joined by spaces, so
+    // the row is rebuilt from the words — exact even when the same number appears twice ("Night 16 of 16").
     const line = group.line;
+    const rows = pass.text.split('\n');
+    const flat = (t) => t.trim().replace(/\s+/g, ' ');
+    const joined = line.words.map((w) => w.text).join(' ');
+    const filled = rows.map((r, i) => i).filter((i) => rows[i].trim());
+    const k = (pass.lines || []).indexOf(line);
+    let row = k >= 0 && filled.length === pass.lines.length ? filled[k] : -1;
+    if (row < 0 || flat(rows[row]) !== joined) {
+      // Rows and lines don't line up one to one: the same place among rows reading the same (the 2nd "16" line is
+      // the 2nd "16" row).
+      const nth = (pass.lines || []).filter((l) => (l.words || []).map((w) => w.text).join(' ') === joined).indexOf(line);
+      row = rows.map((r, i) => i).filter((i) => flat(rows[i]) === joined)[Math.max(0, nth)] ?? -1;
+    }
+    if (row < 0) return false;
     const first = line.words.indexOf(group.words[0]);
-    line.words = [...line.words.slice(0, first), { text: now, confidence, bbox: boxAround(group.words) },
+    const mark = /[,.;]$/.test(was) && !/[,.;]$/.test(now) ? was.slice(-1) : ''; // "16," stays punctuated as "18,"
+    line.words = [...line.words.slice(0, first), { text: now + mark, confidence, bbox: boxAround(group.words) },
       ...line.words.slice(first).filter((w) => !group.words.includes(w))];
-    if (typeof line.text === 'string') line.text = line.text.replace(was, now);
+    const rebuilt = line.words.map((w) => w.text).join(' ');
+    rows[row] = rows[row].match(/^\s*/)[0] + rebuilt;
+    pass.text = rows.join('\n');
+    if (typeof line.text === 'string') line.text = rebuilt;
     return true;
   }
 
@@ -5794,7 +5832,9 @@
     if (vals.progress !== undefined && was(state.progress, p.id) !== vals.progress) n++;
     if (vals.alt !== undefined && was(state.progress, altKey(p.id)) !== vals.alt) n++;
     if (vals.member && (!own || state.members[p.id] !== vals.member)) n++;
-    if (outcome && (outcome.kind === 'new' || (outcome.kind === 'same' && vals.exp && outcome.line.exp !== vals.exp))) n++;
+    // A status: new, a new end date, or one that had ended shown as held again.
+    if (outcome && (outcome.kind === 'new' || (outcome.kind === 'same'
+      && (vals.exp ? outcome.line.exp !== vals.exp : !!outcome.line.exp && lineExpired(outcome.line))))) n++;
     return n;
   }
 
@@ -5804,6 +5844,9 @@
     const tiers = scanTiersFor(catalogFor(p) ? catalogFor(p).id : null);
     const same = p.status.find((line) => !line.card && findTier(tiers, line.tier) === tierIndex);
     if (same) return { kind: 'same', line: same };
+    // A different level read from an earlier screen: the screen shows where you are now, so it replaces that one
+    // (see applyRead), even when your card or your MQDs give this level.
+    if (p.status.some((line) => !line.card && line.via === 'from your account')) return { kind: 'new', tier: tiers[tierIndex] };
     const current = state.programs && p === medallionProgram() && medallionFor(mqd).current;
     const fromMqd = current && findTier(tiers, `${current.name} Medallion`) === tierIndex;
     if (fromMqd) return { kind: 'covered', why: 'Matches your MQDs' };
@@ -6351,6 +6394,7 @@
         if (vals.exp && line.exp !== vals.exp) notes.push(`${line.tier} through ${mdy(parseISODate(vals.exp))}`);
         if (vals.exp) line.exp = vals.exp;
         else if (line.exp && lineExpired(line)) {
+          notes.push(`${line.tier} active again`);
           if (thruDate(line.via)) line.exp = ''; // cleared: don't read the past date back from "thru …" on the next load
           else delete line.exp;
         }
@@ -6807,8 +6851,9 @@
     }
     if (!changed) return false;
     saveNow();
+    // A note, so it waits rather than replace a removal's Undo or a Reload (switching to someone whose year turned over).
     if (kept.length) {
-      showToast(kept.length > 1 ? `New qualifying year: the ${kept.length} statuses you earned stay on your list until they end`
+      showNote(kept.length > 1 ? `New qualifying year: the ${kept.length} statuses you earned stay on your list until they end`
         : `New qualifying year: ${kept[0]} stays on your list until it ends`);
     }
     return kept;
@@ -9628,8 +9673,10 @@
   }
 
   // Every credit on the cards you hold: presets plus ones you've added, with where each stands this period.
-  // Credits offered for one year only, by card and credit id: the last year each counts.
-  const CREDIT_LAST_YEAR = { 'sapphire-reserve:select-hotels': 2026, 'sapphire-reserve-business:select-hotels': 2026 };
+  // Credits offered for a limited time (select hotels in 2026; Peloton and Google Workspace through 2027), by card
+  // and credit id: the last year each counts.
+  const CREDIT_LAST_YEAR = { 'sapphire-reserve:select-hotels': 2026, 'sapphire-reserve-business:select-hotels': 2026,
+    'sapphire-reserve:peloton': 2027, 'sapphire-reserve-business:google': 2027 };
   function heldCredits() {
     return state.cards.flatMap((cardId) => {
       const card = CARD_BY_ID[cardId];
