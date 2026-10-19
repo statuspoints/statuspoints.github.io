@@ -5271,9 +5271,10 @@
     for (let i = 0; i < px.length; i += 4) { const g = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2]; px[i] = px[i + 1] = px[i + 2] = g; sum += g; }
     if (sum / (px.length / 4) < 110) for (let i = 0; i < px.length; i += 4) px[i] = px[i + 1] = px[i + 2] = 255 - px[i];
     // A dark band across a light screen (a header bar with light text, a dark card) is flipped too, so its text reads
-    // dark on light like the rest: rows that are mostly dark, at least 12 rows tall (not a rule line).
+    // dark on light like the rest: rows where most pixels (60%+) are dark — rows through its light text count too, so
+    // the band flips whole — at least 12 rows tall (not a rule line).
     const width = canvas.width;
-    const dark = (y) => { let s = 0; for (let x = 0; x < width; x++) s += px[(y * width + x) * 4]; return s / width < 100; };
+    const dark = (y) => { let n = 0; for (let x = 0; x < width; x++) if (px[(y * width + x) * 4] < 100) n++; return n > width * 0.6; };
     for (let y = 0; y < canvas.height;) {
       if (!dark(y)) { y++; continue; }
       let end = y;
