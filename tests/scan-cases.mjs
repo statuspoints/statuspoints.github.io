@@ -645,4 +645,9 @@ export default [
   { name: 'Account 126 948 Points (Hilton)', text: `Hilton Honors\nAccount 126 948 Points`, expect: { program: 'hilton', balance: 126948 } },
   { name: 'A balance whose digits start with the member number still counts', text: `Hilton Honors\nMember # 123456\nYour points\n1234567`, expect: { program: 'hilton', balance: 1234567, member: '123456' } },
   { name: 'A spaced member number at the start of a line still joins', text: `Hilton Honors\nYour points\nMember 123 456 789\nGold`, expect: { program: 'hilton', balance: null, member: '123456789' } },
+  // The text reader's real output for a Wyndham web look-alike: the logo read as one word.
+  { name: 'Wyndham logo read as one word (WYNDHAMRewarDS)', text: `WYNDHAMRewarDS My Account\n\nHi, Morgan Points\n\nPlatinum 38,750\n\nMember # 104837265\n\nQualifying nights\n\n12\n\nGo Free® awards from 7,500 points per night`,
+    expect: { program: 'wyndham', balance: 38750, tier: 'Platinum', member: '104837265' } },
+  { name: 'Hilton logo read as one word (HiltonHonors)', text: `HiltonHonors\nDiamond\nPoints 245,100`, expect: { program: 'hilton', balance: 245100, tier: 'Diamond' } },
+  { name: 'A brand inside a longer word isn’t a sign (“hiltonhead”)', text: `Hiltonhead Island Resort\nPoints 1,200`, expect: { program: null } },
 ];

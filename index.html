@@ -4778,6 +4778,8 @@
   // Everyday words on account screens: never treated as a misspelled program name ("points" is not "Qpoints").
   const SCAN_COMMON = new Set(['points', 'miles', 'member', 'members', 'rewards', 'status', 'account', 'balance', 'elite', 'platinum',
     'diamond', 'silver', 'nights', 'stays', 'number', 'travel', 'hotels', 'flights', 'select', 'premier', 'redeem', 'offers', 'profile']);
+  // Words a brand's logo runs into when read as one word ("wyndhamrewards", "hiltonhonors", "marriottbonvoy").
+  const SCAN_GLUED = new Set(['rewards', 'honors', 'bonvoy', 'club', 'one', 'onerewards', 'plus', 'pass', 'miles', 'skymiles', 'privileges']);
   // Card issuers' own names: once a screen names a co-brand card ("Delta SkyMiles Gold Card" in the Amex app), the
   // issuer is only who issues it.
   const SCAN_ISSUERS = new Set(['american express', 'chase', 'citi', 'capital one', 'wells fargo', 'u.s. bank', 'us bank', 'bank of america']);
@@ -5056,6 +5058,8 @@
           const w = weight * (coBrand && SCAN_ISSUERS.has(sign) ? 0.15 : 1);
           if (signIn(sign, ll)) hits.push(sign.length * w);
           else if (!sign.includes(' ') && sign.length >= 6 && lineWords.some((x) => !SCAN_COMMON.has(x) && nearWord(x, sign))) hits.push(sign.length * w * 0.8);
+          // A logo read as one word, the brand run into the word after it ("WYNDHAMRewarDS", "HiltonHonors").
+          else if (!sign.includes(' ') && sign.length >= 5 && lineWords.some((x) => x.startsWith(sign) && SCAN_GLUED.has(x.slice(sign.length)))) hits.push(sign.length * w * 0.9);
         }
       });
       if (!hits.length) continue;
