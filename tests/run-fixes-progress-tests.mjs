@@ -315,6 +315,15 @@ api.collect('delta', { mqd: 4000 }, null, api.readYears(api.trackFor(program(s, 
 api.collect('hilton', { progress: 5 }, null, api.readYears(api.trackFor(program(s, 'hilton'))));
 check('read and applied in the same year: both counts saved', [s.mqd, s.progress.hilton], [4000, 5]);
 
+// A screenshot taken last year (its file's date) and read this year: its counts are last year's, not this year's.
+setNow(2027, 1, 3);
+s = tracker(['hilton'], { balances: { hilton: 80000 }, updated: { hilton: '2026-12-31' } });
+api.collect('hilton', { balance: 91000, progress: 45 }, null, api.readYears(api.trackFor(program(s, 'hilton')), new Date(2026, 11, 28)));
+check('a Dec 28 screenshot read Jan 3: the balance is saved, its 45 nights aren’t counted for 2027', [s.balances.hilton, s.progress.hilton], [91000, undefined]);
+s = tracker(['hilton'], { balances: { hilton: 80000 } });
+api.collect('hilton', { balance: 91000, progress: 2 }, null, api.readYears(api.trackFor(program(s, 'hilton')), new Date(2027, 0, 2)));
+check('…a Jan 2 screenshot read Jan 3: its 2 nights are this year’s', s.progress.hilton, 2);
+
 // Bug 22: United's flights path needs PQP too, so flights alone don't fill the bar or shorten the PQP left.
 setNow(2026, 10, 8);
 const united = (pqp, flights) => {

@@ -51,7 +51,7 @@ vm.runInContext(`${stubs}\n${head}
   const saveCalendar = (ics, name) => shown.saved.push({ ics, name });
   const saveFile = async (name, text) => { shown.files.push({ name, text }); return true; };
   const saveNow = () => {}; const renderStats = () => {};
-  let saveTimer = 0;
+  let saveTimer = 0; let undoAction = null; const hideToast = () => {};
   // Just enough of the game and the Cards sheet for marking a bonus earned.
   const game = () => state.game; const levelOf = () => ({ index: 0 }); const BADGE_XP = 50; const BADGES = [];
   let bonusEditing = null; const cardsSheet = { open: false };

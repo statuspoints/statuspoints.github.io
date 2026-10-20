@@ -3997,6 +3997,7 @@
   }
 
   function scheduleSave() {
+    if (undoAction && undoAction.snapshot) hideToast(); // its Undo would also undo this change
     markChanged();
     clearTimeout(saveTimer);
     saveTimer = setTimeout(saveNow, SAVE_DELAY);
@@ -5846,7 +5847,8 @@
     if (vals.member && (!own || state.members[p.id] !== vals.member)) n++;
     // A status: new, a new end date, or one that had ended shown as held again.
     if (outcome && (outcome.kind === 'new' || (outcome.kind === 'same'
-      && (vals.exp ? outcome.line.exp !== vals.exp : !!outcome.line.exp && lineExpired(outcome.line))))) n++;
+      && ((vals.exp ? outcome.line.exp !== vals.exp : !!outcome.line.exp && lineExpired(outcome.line))
+        || p.status.some((l) => l !== outcome.line && !l.card && l.via === 'from your account'))))) n++;
     return n;
   }
 
@@ -6056,7 +6058,11 @@
     const p = own || programFromCatalog(CATALOG_BY_ID[cid]);
     const vals = valsFrom(found, p);
     if (playing.balancePick != null && p.unit) vals.balance = playing.balancePick; // picked on the card
-    Object.assign(playing, { choice: own ? own.id : `add:${p.id}`, vals, years: readYears(trackFor(p)) });
+    // A screenshot taken in an earlier qualifying year (its file's date): its counts are that year's, so they're left out.
+    const taken = parseISODate(playing.taken);
+    const years = readYears(trackFor(p), taken && taken < new Date() ? taken : undefined);
+    for (const key of staleCounts(own ? own.id : `add:${p.id}`, vals, years)) delete vals[key];
+    Object.assign(playing, { choice: own ? own.id : `add:${p.id}`, vals, years });
     const doubts = own ? doubtsAbout(p, vals) : [];
     if (playing.guessed && choice) doubts.push('the screenshot doesn’t name the program, so make sure it’s this one');
     if (found.unsure && vals.balance !== undefined && playing.balancePick == null) doubts.push('the balance was hard to read, so check it');
@@ -6162,8 +6168,11 @@
     return { total, done: 0, collected: 0, xp: 0, before: clone(state), person: people.active };
   };
   function scanFiles(list) {
-    const images = [...(list || [])].filter((f) => /^image\//.test(f.type)).slice(0, 20);
+    const all = [...(list || [])].filter((f) => /^image\//.test(f.type));
+    const images = all.slice(0, 20);
     if (!images.length) return false;
+    // Said once the card is up (a toast behind it wouldn't show), after any "in line" toast.
+    if (all.length > images.length) setTimeout(() => showNote(`Only the first 20 screenshots were taken — add the other ${all.length - 20} after these`));
     unlockSound();
     if (replacePick && (play.open || scanSheet.open)) { // "Try another": this picture replaces the current one
       replacePick = false;
@@ -6175,12 +6184,12 @@
       return true;
     }
     replacePick = false;
-    if (play.open || batch) { // more while one is on the card: they wait their turn
+    if (play.open || batch || (scanSheet.open && scanned)) { // more while one is on the card or in review: they wait
       if (!batch) batch = newBatch(1);
       batch.total += images.length;
       scanQueue.push(...images);
       renderPlayCount();
-      if (play.open) showToast(`${plural(images.length, 'more screenshot')} in line`);
+      if (play.open || scanSheet.open) showToast(`${plural(images.length, 'more screenshot')} in line`);
       return true;
     }
     if (images.length > 1) batch = newBatch(images.length);
@@ -6233,7 +6242,7 @@
     const b = batch;
     batch = null;
     if (b && b.collected && b.person === people.active) {
-      showToast(`Updated from ${plural(b.collected, 'screenshot')}`, () => undoTo(b.before, b.person));
+      showToast(`Updated from ${plural(b.collected, 'screenshot')}`, Object.assign(() => undoTo(b.before, b.person), { snapshot: true }));
       offerBonusLanding(b.before.balances);
     }
   }
@@ -6405,6 +6414,9 @@
       if (outcome.kind === 'same') {
         // The screen shows you hold it now, so a past end date no longer applies.
         const line = outcome.line;
+        // Another level read from an earlier screen goes, as in 'new' below: the screen shows where you are now.
+        const old = p.status.filter((l) => l !== line && !l.card && l.via === 'from your account');
+        if (old.length) { p.status = p.status.filter((l) => !old.includes(l)); notes.push(line.tier); }
         if (vals.exp && line.exp !== vals.exp) notes.push(`${line.tier} through ${mdy(parseISODate(vals.exp))}`);
         if (vals.exp) line.exp = vals.exp;
         else if (line.exp && lineExpired(line)) {
@@ -6429,7 +6441,7 @@
 
   // The qualifying years a screen's counts are read for (Delta's MQDs, and the program's nights or points), so
   // one read before New Year and applied after it isn't saved as the new year's count.
-  const readYears = (track) => ({ mqd: mqdYear(), prog: track ? qualYear(track) : null });
+  const readYears = (track, d = new Date()) => ({ mqd: d.getFullYear(), prog: track ? qualYear(track, d) : null });
   // The counts in `vals` whose qualifying year has ended since they were read (`years`, from readYears).
   function staleCounts(choice, vals, years) {
     const own = (state.programs || []).find((x) => x.id === choice);
@@ -6481,8 +6493,10 @@
     celebrate(result, reward, from);
     const { p, added } = result;
     if (batch) finishOne(true, reward.xp); // one toast, with one Undo, when the batch ends
-    else if (!result.real && !added) showToast(`${p.name} is up to date`, () => undoTo(previous, who));
-    else showToast(`${added ? 'Added' : 'Updated'} ${p.name}`, () => undoTo(previous, who));
+    else {
+      const undo = Object.assign(() => undoTo(previous, who), { snapshot: true }); // puts the whole tracker back
+      showToast(!result.real && !added ? `${p.name} is up to date` : `${added ? 'Added' : 'Updated'} ${p.name}`, undo);
+    }
     offerBonusLanding(previous.balances);
   }
 
@@ -8892,13 +8906,13 @@
     }));
     if (!find()) return;
     const offer = () => {
+      if ($('#toast').classList.contains('show')) { setTimeout(offer, 1000); return; } // wait out the Undo (10 s or more)
       const id = who === people.active && find();
       // Kept short ("80,000-point bonus posted?"): the toast has two lines beside its button on a 320px phone, and
       // card names run to 30 letters. The size tells your bonuses apart; a tie offers nothing (pickLandedBonus).
       if (id) showToast(`${bonusName(bonuses()[id])} posted?`, () => markBonusEarned(id), 'Mark earned', 10000);
     };
-    if ($('#toast').classList.contains('show')) setTimeout(offer, 5200);
-    else offer();
+    offer();
   }
 
   $('#cards-picker').addEventListener('click', (e) => {

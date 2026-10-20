@@ -304,6 +304,13 @@ start(['ihg-premier']);
   const result = app.applyRead('ihg', { tierIndex: app.findTier(app.scanTiersFor('ihg'), 'Platinum Elite') });
   check('a screenshot reactivating an expired status counts as a change, with a note', [result.real, result.notes.length > 0], [1, true]);
 }
+{ // a drop to a level you typed: the higher one read from an earlier screen goes, and that's a real change
+  app.state = app.normalize({ programs: [{ id: 'ihg', name: 'IHG One Rewards', unit: 'points',
+    status: [{ tier: 'Gold Elite', via: '' }, { tier: 'Platinum Elite', via: 'from your account' }] }], cards: [] });
+  const result = app.applyRead('ihg', { tierIndex: app.findTier(app.scanTiersFor('ihg'), 'Gold Elite') });
+  check('screen shows Gold, with Gold typed and Platinum read earlier: Platinum goes, as a real change',
+    [prog('ihg').status.map((l) => l.tier), result.real > 0], [['Gold Elite'], true]);
+}
 
 /* ---------- Turning a card off keeps programs that still hold your data ---------- */
 
