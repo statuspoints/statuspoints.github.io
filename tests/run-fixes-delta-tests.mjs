@@ -133,6 +133,16 @@ use([delta()], withMqd(5000));
 check('this year’s MQDs alone still count', api.hasStatus(program()), true);
 use([delta()]);
 check('nothing at all doesn’t', api.hasStatus(program()), false);
+// A free entry level isn't elite status (Flying Blue Explorer, BA Blue); the level above it is.
+const fb = (tier) => ({ id: 'flyingblue', name: 'Air France-KLM Flying Blue', unit: 'miles', status: [{ tier }] });
+use([fb('Explorer')]);
+check('Flying Blue Explorer (free to join) isn’t elite status', api.hasStatus(api.getState().programs[0]), false);
+use([fb('Silver')]);
+check('…Silver is', api.hasStatus(api.getState().programs[0]), true);
+use([{ id: 'ba', name: 'British Airways Club', unit: 'Avios', status: [{ tier: 'Blue' }] }]);
+check('BA Blue isn’t', api.hasStatus(api.getState().programs[0]), false);
+use([{ id: 'hilton', name: 'Hilton Honors', unit: 'points', status: [{ tier: 'Some custom level' }] }]);
+check('a level the app doesn’t know still counts', api.hasStatus(api.getState().programs[0]), true);
 use([delta()], { cards: ['delta-platinum'] });
 check('a Delta card’s MQD Headstart line isn’t a Medallion', [program().status.length > 0, api.hasStatus(program())], [true, false]);
 use([], { cards: ['delta-reserve'] });

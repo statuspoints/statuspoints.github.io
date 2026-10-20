@@ -2674,7 +2674,7 @@
     alaska: { never: true, note: 'An account with no activity for 24 months is locked until you call Alaska, but the points stay.' },
     american: { months: 24, cards: ['aadvantage-executive'], note: 'Members under 21 and primary AAdvantage credit cardholders are exempt.' },
     aeroplan: { months: 18, from: '2026-11-30', exemptIfElite: true, cards: ['chase-aeroplan'], note: 'Elite members and primary Aeroplan cardholders (Chase: while the card is open) are exempt.' },
-    flyingblue: { months: 24, earnOnly: true, note: 'Earning miles resets the clock; redeeming doesn’t.' },
+    flyingblue: { months: 24, earnOnly: true, exemptIfElite: true, note: 'Any earning resets the clock for your whole balance; redeeming doesn’t. Miles don’t expire for Elite and Elite Plus members (Silver and up), Flying Blue Extra subscribers while subscribed, or members under 18.' },
     frontier: { months: 12, earnOnly: true, note: 'Only earning miles (a Frontier Mastercard purchase counts) resets the clock; redeeming doesn’t. Frontier Mastercard holders are exempt while the card is open and in good standing.' },
     ba: { months: 36 },
     koreanair: { note: 'SKYPASS miles expire 10 years after they’re earned (Dec 31 of the 10th year), and activity doesn’t extend them — check your account for the next batch due.' },
@@ -4590,9 +4590,15 @@
   // Elite = a real tier, not lounges. On the Delta tracker that's a Medallion: this year's from MQDs, or one on its
   // status list (kept from last year, typed in) — not a Delta card's "MQD Headstart" line. Elsewhere any typed/card
   // status counts.
+  // A free entry level (Flying Blue Explorer, BA Blue) isn't elite status: everyone starts there.
+  const entryOnly = (p, line) => {
+    const tiers = benefitsFor(p);
+    const found = tiers ? splitParts(line.tier).map((part) => findTier(tiers, part)).filter((i) => i >= 0) : [];
+    return found.length > 0 && found.every((i) => tiers[i].base);
+  };
   const hasStatus = (p) => p.id !== 'lounges'
     && (p === medallionProgram() ? !!medallionFor(state.mqd).current || !!effectiveMedallion()
-      : p.status.some((line) => line.tier && !lineExpired(line)) || !!earnedTier(p));
+      : p.status.some((line) => line.tier && !lineExpired(line) && !entryOnly(p, line)) || !!earnedTier(p));
   const matchesFilter = (p) => filter === 'all' || (filter === 'status' ? hasStatus(p) : categoryOf(p) === filter);
 
   function renderFilters() {
