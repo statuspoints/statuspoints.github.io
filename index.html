@@ -5382,7 +5382,57 @@
       await rereadBig(worker, canvas, pass);
       passes.push(pass);
     }
-    return { ...passes[0], passes, width: canvas.width, height: canvas.height };
+    // Neither reading names the program: its logo may be light text in a dark header bar, read again on its own.
+    const bands = passes.some((pass) => parseAccountText(pass.text).programId) ? '' : await readDarkBands(worker, canvas);
+    return { ...passes[0], passes, bands, width: canvas.width, height: canvas.height };
+  }
+
+  // Rows of a gray screenshot that are mostly dark across (a header bar, a dark card; its light text never covers
+  // most of a row), as { y0, y1 }: 12px or taller and under a third of the picture, the first three.
+  function darkBands(px, width, height) {
+    const bands = [];
+    let start = -1;
+    for (let y = 0; y <= height; y++) {
+      let dark = false;
+      if (y < height) {
+        let dim = 0;
+        let n = 0;
+        for (let x = 0; x < width; x += 4) { if (px[(y * width + x) * 4] < 100) dim++; n++; }
+        dark = dim > n / 2;
+      }
+      if (dark && start < 0) start = y;
+      if (!dark && start >= 0) {
+        if (y - start >= 12 && y - start < height / 3) bands.push({ y0: start, y1: y });
+        start = -1;
+      }
+    }
+    return bands.slice(0, 3);
+  }
+  // Each dark band read on its own, flipped to dark on light (and enlarged when thin): its text, only for naming the
+  // program.
+  async function readDarkBands(worker, canvas) {
+    const px = canvas.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, canvas.width, canvas.height).data;
+    const texts = [];
+    ocrPass.quiet = true;
+    try {
+      await worker.setParameters({ tessedit_pageseg_mode: '11', tessedit_char_whitelist: '' });
+      for (const band of darkBands(px, canvas.width, canvas.height)) {
+        const zoom = band.y1 - band.y0 < 120 ? 2 : 1;
+        const crop = document.createElement('canvas');
+        crop.width = canvas.width * zoom;
+        crop.height = (band.y1 - band.y0) * zoom;
+        const ctx = crop.getContext('2d', { willReadFrequently: true });
+        ctx.drawImage(canvas, 0, band.y0, canvas.width, band.y1 - band.y0, 0, 0, crop.width, crop.height);
+        const img = ctx.getImageData(0, 0, crop.width, crop.height);
+        for (let i = 0; i < img.data.length; i += 4) img.data[i] = img.data[i + 1] = img.data[i + 2] = 255 - img.data[i];
+        ctx.putImageData(img, 0, 0);
+        const { data } = await worker.recognize(crop);
+        texts.push(data.text || '');
+      }
+    } catch { /* a band that can't be read: the card asks which program it is */ } finally {
+      ocrPass.quiet = false;
+    }
+    return texts.join('\n');
   }
 
   // Numbers in big type (a balance) can come out wrong when the reader runs them into smaller text on the same line
@@ -6079,7 +6129,7 @@
       if (localStorage.getItem('status-tracker-debug-scan')) {
         console.debug('scan', JSON.stringify({ passes: (read.passes || [read]).map((pass) => ({ text: pass.text, disputed: pass.disputed || [],
           numbers: (pass.lines || []).flatMap((l) => l.words || []).filter((w) => /\d/.test(w.text)).map((w) => `${w.text}@${Math.round(w.confidence || 0)}`) })),
-        balances: found.balances, unsure: !!found.unsure, programId: found.programId }));
+        balances: found.balances, unsure: !!found.unsure, programId: found.programId, bands: read.bands || '' }));
       }
     } catch { /* storage blocked: no debug */ }
     if (!choice) {
@@ -6089,6 +6139,15 @@
     Object.assign(playing, { read, pickArg: choice, text: reading.text, found });
     $('#play-shot').className = 'play-shot done';
     const later = batch ? ['Skip', false, skipPlay] : ['Try another', false, pickAnother];
+    // The program named only in a dark header bar, read on its own (ocrImage): read as that program — not one in a
+    // dark offer or transfer banner ("Earn Marriott Bonvoy points").
+    const bandText = (read.bands || '').split('\n').filter((l) => !/\b(?:apply|earn|bonus|offers?|sign up|transfers?|partners?|book with|redeem)\b|pre-?approved/i.test(l)).join('\n');
+    const banded = !own && !cid && bandText.trim() ? parseAccountText(bandText).programId : null;
+    if (banded) {
+      const mine = programs.find((x) => catalogFor(x) && catalogFor(x).id === banded);
+      showLoot(read, mine ? mine.id : `add:${banded}`);
+      return;
+    }
     if (!own && !cid && playing.hint && (state.programs || []).some((x) => x.id === playing.hint)) { showLoot(read, playing.hint); return; }
     if (!own && !cid) {
       const guess = guessProgram(read);

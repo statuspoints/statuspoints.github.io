@@ -181,6 +181,19 @@ const bigChecks = [];
   const plain = { text: 'Gold', words: [word('Go1d', 60, 140, 250, 276, 20)] };
   bigChecks.push(['an unsure word on a line without a big number isn’t read again', context.big.shakyBeside(context.big.bigNumbers([plain, ...qatar(95).lines])).length, 0]);
 }
+{ // Dark bands across a gray screenshot (a header bar with a light logo), read again when nothing names the program.
+  vm.runInContext(`${slice('  function darkBands', '  // Each dark band read on its own')}\nglobalThis.big.darkBands = darkBands;`, context);
+  const gray = (w, h, shade) => {
+    const px = new Uint8ClampedArray(w * h * 4).fill(255);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const v = shade(x, y); px.fill(v, (y * w + x) * 4, (y * w + x) * 4 + 3); }
+    return px;
+  };
+  // A blue header (gray 66) with white logo letters, a 3px rule, and a dark card lower down.
+  const page = gray(100, 300, (x, y) => (y < 50 ? (y > 15 && y < 35 && x % 10 < 3 ? 255 : 66) : y >= 120 && y < 123 ? 40 : y >= 200 && y < 240 ? 30 : 255));
+  bigChecks.push(['a header bar and a dark card are dark bands; a thin rule isn’t', context.big.darkBands(page, 100, 300), [{ y0: 0, y1: 50 }, { y0: 200, y1: 240 }]]);
+  bigChecks.push(['a page dark all over (a third or more) has no bands', context.big.darkBands(gray(100, 300, () => 30), 100, 300), []]);
+  bigChecks.push(['a light page has no bands', context.big.darkBands(gray(100, 300, () => 250), 100, 300), []]);
+}
 for (const [name, got, want] of bigChecks) {
   const ok = JSON.stringify(got) === JSON.stringify(want);
   if (!ok) failed++;
