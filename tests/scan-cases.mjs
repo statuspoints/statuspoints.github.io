@@ -650,4 +650,9 @@ export default [
     expect: { program: 'wyndham', balance: 38750, tier: 'Platinum', member: '104837265' } },
   { name: 'Hilton logo read as one word (HiltonHonors)', text: `HiltonHonors\nDiamond\nPoints 245,100`, expect: { program: 'hilton', balance: 245100, tier: 'Diamond' } },
   { name: 'A brand inside a longer word isn’t a sign (“hiltonhead”)', text: `Hiltonhead Island Resort\nPoints 1,200`, expect: { program: null } },
+  // The same look-alike as a compressed JPEG: the glued word one letter off.
+  { name: 'Wyndham logo read as one word, one letter off (WYNDHAMRewaRrDS)', text: `WYNDHAMRewaRrDS My Account\n\nHi, Morgan Points\n\nPlatinum 38,750\n\nMember # 104837265\n\nQualifying nights\n\n12\n\nGo Free® awards from 7,500 points per night`,
+    expect: { program: 'wyndham', balance: 38750, tier: 'Platinum', member: '104837265' } },
+  { name: 'Hilton logo glued, one letter off (HiltonHonars)', text: `HiltonHonars\nGold\nPoints 52,100`, expect: { program: 'hilton', balance: 52100, tier: 'Gold' } },
+  { name: 'A brand glued to a word that’s two letters off isn’t a sign (“hiltonhonest”)', text: `Hiltonhonest Plumbing\nPoints 1,200`, expect: { program: null } },
 ];
