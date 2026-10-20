@@ -5388,21 +5388,31 @@
   async function rereadBig(worker, canvas, pass) {
     const groups = bigNumbers(pass.lines);
     if (!groups.length) return;
+    const runs = shakyBeside(groups);
+    const readAlone = async (words) => {
+      const box = boxAround(words);
+      const pad = Math.round((box.y1 - box.y0) * 0.35);
+      const crop = document.createElement('canvas');
+      crop.width = box.x1 - box.x0 + 2 * pad;
+      crop.height = box.y1 - box.y0 + 2 * pad;
+      const ctx = crop.getContext('2d');
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, crop.width, crop.height);
+      ctx.drawImage(canvas, box.x0 - pad, box.y0 - pad, crop.width, crop.height, 0, 0, crop.width, crop.height);
+      const { data } = await worker.recognize(crop);
+      return data;
+    };
     ocrPass.quiet = true;
     try {
       await worker.setParameters({ tessedit_pageseg_mode: '7', tessedit_char_whitelist: '0123456789,' });
       for (const group of groups) {
-        const box = boxAround(group.words);
-        const pad = Math.round((box.y1 - box.y0) * 0.35);
-        const crop = document.createElement('canvas');
-        crop.width = box.x1 - box.x0 + 2 * pad;
-        crop.height = box.y1 - box.y0 + 2 * pad;
-        const ctx = crop.getContext('2d');
-        ctx.fillStyle = '#fff';
-        ctx.fillRect(0, 0, crop.width, crop.height);
-        ctx.drawImage(canvas, box.x0 - pad, box.y0 - pad, crop.width, crop.height, 0, 0, crop.width, crop.height);
-        const { data } = await worker.recognize(crop);
+        const data = await readAlone(group.words);
         useReread(pass, group, data.text || '', data.confidence || 0);
+      }
+      if (runs.length) await worker.setParameters({ tessedit_char_whitelist: '' });
+      for (const run of runs) {
+        const data = await readAlone(run.words);
+        useSmallReread(pass, run, data.text || '', data.confidence || 0);
       }
     } finally {
       await worker.setParameters({ tessedit_char_whitelist: '' });
@@ -5442,9 +5452,40 @@
       (pass.disputed || (pass.disputed = [])).push(Number(was.replace(/\D/g, '')));
       return false;
     }
-    // The group's own line of the text: the reader writes one row per line it found, its words joined by spaces, so
-    // the row is rebuilt from the words — exact even when the same number appears twice ("Night 16 of 16").
-    const line = group.line;
+    const mark = /[,.;]$/.test(was) && !/[,.;]$/.test(now) ? was.slice(-1) : ''; // "16," stays punctuated as "18,"
+    return putWord(pass, group.line, group.words, { text: now + mark, confidence, bbox: boxAround(group.words) });
+  }
+  // Smaller words on a big number's line can come out as junk, the reader sizing them to the number ("i 58,940" for a
+  // gold-colored "Gold" beside the balance in a compressed screenshot): unsure ones (under 60%) side by side, each
+  // run read again on its own.
+  function shakyBeside(groups) {
+    const runs = [];
+    for (const line of new Set(groups.map((g) => g.line))) {
+      const big = groups.filter((g) => g.line === line).flatMap((g) => g.words);
+      const tall = Math.min(...big.map((w) => w.bbox.y1 - w.bbox.y0));
+      let run = null;
+      for (const word of line.words) {
+        const high = word.bbox ? word.bbox.y1 - word.bbox.y0 : tall;
+        const shaky = !big.includes(word) && word.bbox && (word.confidence || 0) < 60 && high < 0.8 * tall;
+        const prev = run && run.words[run.words.length - 1];
+        if (!shaky) run = null;
+        else if (prev && word.bbox.x0 - prev.bbox.x1 < 1.5 * high) run.words.push(word);
+        else runs.push(run = { line, words: [word] });
+      }
+    }
+    return runs.slice(0, 6);
+  }
+  // A run of unsure words read again replaces them when the re-read is sure (85%+) and on one line.
+  function useSmallReread(pass, run, text, confidence) {
+    const now = text.trim().replace(/[ \t]+/g, ' ');
+    const was = run.words.map((w) => w.text).join(' ');
+    if (!/[A-Za-z0-9]/.test(now) || /\n/.test(now) || confidence < 85 || now === was) return false;
+    return putWord(pass, run.line, run.words, { text: now, confidence, bbox: boxAround(run.words) });
+  }
+  // Puts one word in place of the given words of a line, and in that line's row of the text. The reader writes one
+  // row per line it found, its words joined by spaces, so the row is rebuilt from the words — exact even when the
+  // same number appears twice ("Night 16 of 16").
+  function putWord(pass, line, old, word) {
     const rows = pass.text.split('\n');
     const flat = (t) => t.trim().replace(/\s+/g, ' ');
     const joined = line.words.map((w) => w.text).join(' ');
@@ -5458,10 +5499,8 @@
       row = rows.map((r, i) => i).filter((i) => flat(rows[i]) === joined)[Math.max(0, nth)] ?? -1;
     }
     if (row < 0) return false;
-    const first = line.words.indexOf(group.words[0]);
-    const mark = /[,.;]$/.test(was) && !/[,.;]$/.test(now) ? was.slice(-1) : ''; // "16," stays punctuated as "18,"
-    line.words = [...line.words.slice(0, first), { text: now + mark, confidence, bbox: boxAround(group.words) },
-      ...line.words.slice(first).filter((w) => !group.words.includes(w))];
+    const first = line.words.indexOf(old[0]);
+    line.words = [...line.words.slice(0, first), word, ...line.words.slice(first).filter((w) => !old.includes(w))];
     const rebuilt = line.words.map((w) => w.text).join(' ');
     rows[row] = rows[row].match(/^\s*/)[0] + rebuilt;
     pass.text = rows.join('\n');

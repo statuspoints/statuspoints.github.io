@@ -69,7 +69,7 @@ for (const [name, ids, text, want] of guesses) {
 }
 // Big numbers read again on their own: which words count as one big number, and when a re-read replaces them.
 const bigSrc = slice('  const boxAround', '  /* ---------- The game');
-vm.runInContext(`${bigSrc}\nglobalThis.big = { bigNumbers, useReread };`, context);
+vm.runInContext(`${bigSrc}\nglobalThis.big = { bigNumbers, useReread, shakyBeside, useSmallReread };`, context);
 const word = (text, x0, x1, y0, y1, confidence = 95) => ({ text, confidence, bbox: { x0, x1, y0, y1 } });
 const hilton = () => {
   const top = { text: 'Hilton Honors', words: [word('Hilton', 50, 200, 40, 80), word('Honors', 210, 380, 40, 80)] };
@@ -151,6 +151,35 @@ const bigChecks = [];
   const dollar = { text: "MQDs $'x 16\nTail\n", lines: [dl, { text: 'Tail', words: [word('Tail', 0, 50, 40, 70)] }] };
   context.big.useReread(dollar, { line: dl, words: [dl.words[2]] }, '18', 95);
   bigChecks.push(['a “$” sequence in a word doesn’t garble the row', dollar.text, "MQDs $'x 18\nTail\n"]);
+}
+{ // Unsure smaller words on a big number's line (a colored level beside the balance, in a compressed screenshot).
+  const qatar = (tierConf = 0) => {
+    const top = { text: 'QATAR AIRWAYS Privilege Club', words: [word('QATAR', 40, 160, 40, 70), word('AIRWAYS', 170, 330, 40, 70), word('Privilege', 1300, 1450, 44, 70), word('Club', 1460, 1560, 44, 70)] };
+    const bal = { text: 'i 58,940', words: [word('i', 61, 139, 249, 275, tierConf), word('58,940', 1001, 1219, 243, 307, 96)] };
+    const small = { text: 'Membership no. 123456789', words: [word('Membership', 60, 230, 315, 340), word('no.', 240, 280, 315, 340), word('123456789', 290, 450, 315, 340)] };
+    return { text: 'QATAR AIRWAYS Privilege Club\n\ni 58,940\n\nMembership no. 123456789\n', lines: [top, bal, small] };
+  };
+  let pass = qatar();
+  let runs = context.big.shakyBeside(context.big.bigNumbers(pass.lines));
+  bigChecks.push(['an unsure small word beside a big number is read again', runs.map((r) => r.words.map((w) => w.text)), [['i']]]);
+  bigChecks.push(['…and a sure re-read replaces it', [context.big.useSmallReread(pass, runs[0], 'Gold\n', 96), pass.text.split('\n')[2]], [true, 'Gold 58,940']]);
+  bigChecks.push(['…which the scan reads as the level', context.read({ text: pass.text }).tier, 'Gold']);
+  pass = qatar();
+  runs = context.big.shakyBeside(context.big.bigNumbers(pass.lines));
+  bigChecks.push(['an unsure re-read (70%) changes nothing', [context.big.useSmallReread(pass, runs[0], 'Gold', 70), pass.text.split('\n')[2]], [false, 'i 58,940']]);
+  bigChecks.push(['a re-read of two lines changes nothing', context.big.useSmallReread(pass, runs[0], 'Gold\nMember', 96), false]);
+  bigChecks.push(['a re-read of only marks changes nothing', context.big.useSmallReread(pass, runs[0], '—', 96), false]);
+  bigChecks.push(['a sure small word (95%) isn’t read again', context.big.shakyBeside(context.big.bigNumbers(qatar(95).lines)).length, 0]);
+  const tall = { text: 'S8,940 points', words: [word('S8,940', 100, 300, 240, 310, 40), word('82,000', 900, 1100, 240, 310, 96)] };
+  bigChecks.push(['an unsure word as tall as the number isn’t (it may be the number)', context.big.shakyBeside(context.big.bigNumbers([tall, ...qatar(95).lines.slice(0, 1)])).length, 0]);
+  const two = { text: 'Pl atinum 58,940', words: [word('Pl', 60, 90, 250, 276, 20), word('atinum', 96, 200, 250, 276, 30), word('58,940', 1000, 1220, 243, 307, 96)] };
+  const twoPass = { text: 'Pl atinum 58,940\n', lines: [two, ...qatar(95).lines.slice(0, 1)] };
+  runs = context.big.shakyBeside(context.big.bigNumbers(twoPass.lines));
+  bigChecks.push(['unsure words side by side are read again together', runs.map((r) => r.words.map((w) => w.text)), [['Pl', 'atinum']]]);
+  bigChecks.push(['…and replaced by the re-read', [context.big.useSmallReread(twoPass, runs[0], 'Platinum Elite', 94), twoPass.text, two.words.map((w) => w.text)],
+    [true, 'Platinum Elite 58,940\n', ['Platinum Elite', '58,940']]]);
+  const plain = { text: 'Gold', words: [word('Go1d', 60, 140, 250, 276, 20)] };
+  bigChecks.push(['an unsure word on a line without a big number isn’t read again', context.big.shakyBeside(context.big.bigNumbers([plain, ...qatar(95).lines])).length, 0]);
 }
 for (const [name, got, want] of bigChecks) {
   const ok = JSON.stringify(got) === JSON.stringify(want);
