@@ -2658,7 +2658,7 @@
     american: { unit: 'Loyalty Points', steps: [40000, 75000, 125000, 200000], starts: 3, thru: endOf(2, 3), note: 'American’s qualifying year runs March 1 through the end of February.' },
     southwest: { unit: 'tier points', steps: [35000, 70000], alt: { unit: 'flights', steps: [20, 40] }, thru: endOf(1, 12), note: 'Tier qualifying points, or qualifying one-way flights.' },
     alaska: { unit: 'status points', steps: [20000, 40000, 80000, 135000], thru: endOf(2, 1), note: 'Status points this calendar year.' },
-    aeroplan: { unit: 'SQC', steps: [25000, 35000, 50000, 75000, 125000], thru: endOf(2, 1), note: 'Status Qualifying Credits this calendar year.' },
+    aeroplan: { unit: 'SQC', steps: [25000, 35000, 50000, 75000, 125000], thru: endOf(2, 1), note: 'Status Qualifying Credits this calendar year. Everyday-partner points (100,000 for 25K) and Chase Aeroplan card spend ($75,000 for 35K) count too, not tracked here.' },
   };
 
   // The qualifying year a date falls in, named by the year it starts; "2026", or "2026–27" for American.
@@ -4323,7 +4323,7 @@
     const { tier, via, exp } = group;
     const days = tier ? daysLeft(exp) : null;
     const parts = splitParts(via);
-    // Far-off end dates show as "thru 2/28/28"; within STATUS_SOON_DAYS the tag counts down instead, unless a
+    // Far-off end dates show as "thru 2/29/28"; within STATUS_SOON_DAYS the tag counts down instead, unless a
     // longer-lasting status at that level makes the countdown moot.
     const calm = days != null && (days > STATUS_SOON_DAYS || (days >= 0 && outlasted(p, group)));
     if (calm && !parts.some((part) => /\bthru\b/i.test(part))) parts.push(`thru ${mdy(parseISODate(exp))}`);
@@ -4538,7 +4538,7 @@
   // One tracker, on the first flagged program. (No list yet on the setup screen, where a scan can still read MQDs.)
   const medallionProgram = () => (state.programs || []).find((p) => p.medallion);
 
-  // Simple view: your highest active level and when it ends ("Platinum Elite · thru 2/28/28"), or the Medallion
+  // Simple view: your highest active level and when it ends ("Platinum Elite · thru 2/29/28"), or the Medallion
   // you hold with this year's MQDs.
   function simpleStatus(p) {
     if (p === medallionProgram()) {

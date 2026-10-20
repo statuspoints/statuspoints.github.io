@@ -35,7 +35,7 @@ The first time you open it, pick the programs you have and, optionally, the cred
 ### Progress toward status
 
 - **Delta:** type your MQDs for the year. The row shows the Medallion you've earned, e.g. "Gold Medallion · earned in 2026 · thru 1/31/28" (Delta status earned in a year lasts through January 31 two years later). If you still hold a higher tier from last year, add it with Edit, for example "Platinum Medallion" expiring Jan 31. The bar then shows what it takes to keep it ("10,000 to keep Platinum"). **Plan ahead** previews expected MQDs; if you hold a Delta Platinum or Reserve card, a second slider converts planned card spend at its MQD Boost rate ($20 or $10 per MQD). It tells you whether that gets you a new tier, requalifies the one you hold, or how far short you'd be.
-- **Hilton, Marriott, IHG, Hyatt, Wyndham, United, American, Southwest, Alaska Atmos, and Aeroplan:** open the program and tap the number in its progress section (e.g. **2026 progress**) to enter this year's nights, PQP, Loyalty Points, tier points, status points, or SQC. The row shows "42 nights · 8 to Platinum". Once you reach a level, it counts as your status with its real end date, for example "Platinum Elite · earned in 2026 · thru 2/28/28". Levels that also need spend (Hilton Diamond Reserve, Marriott Ambassador) are never awarded from a count alone.
+- **Hilton, Marriott, IHG, Hyatt, Wyndham, United, American, Southwest, Alaska Atmos, and Aeroplan:** open the program and tap the number in its progress section (e.g. **2026 progress**) to enter this year's nights, PQP, Loyalty Points, tier points, status points, or SQC. The row shows "42 nights · 8 to Platinum". Once you reach a level, it counts as your status with its real end date, for example "Platinum Elite · earned in 2026 · thru 2/29/28". Levels that also need spend (Hilton Diamond Reserve, Marriott Ambassador) are never awarded from a count alone.
 - **Second ways to qualify:** Hilton (stays), IHG (qualifying points), Hyatt (base points), Southwest (one-way flights), and United (Premier qualifying flights plus a lower PQP) have a second counter under the first. A level counts once either path reaches it, and the progress line shows both, e.g. "7 nights (or 3 stays) to Gold".
 - **Keeping what you have:** if you hold a level from last year that this year's count hasn't re-earned, progress shows "8 nights to keep Platinum" (Delta: "$1,000 to keep Gold"). In the last 100 days of the qualifying year, **Coming up** lists each status you're still short of keeping.
 - **New qualifying year:** counts start over (American's year starts March 1; the others January 1). Anything you earned with last year's count stays on your list as a status with its end date, so it keeps counting and gets reminders.
@@ -45,7 +45,8 @@ The first time you open it, pick the programs you have and, optionally, the cred
 | Delta | MQDs | Jan 31, 2028 |
 | United | PQP | Jan 31, 2028 |
 | American | Loyalty Points (Mar–Feb year) | Mar 31, 2028 (for Mar 2026–Feb 2027) |
-| Southwest, Alaska, Aeroplan | tier points, status points, SQC | Dec 31, 2027 |
+| Southwest | tier points | Dec 31, 2027 |
+| Alaska, Aeroplan | status points, SQC | Jan 31, 2028 |
 | Hilton | nights | Mar 31, 2028 |
 | Marriott, Hyatt | nights | end of Feb 2028 |
 | IHG, Wyndham | nights | Dec 31, 2027 |
@@ -71,7 +72,7 @@ Each program's details say whether its points or miles expire (checked October 2
 
 - Add an expiration date to any status from its detail sheet (**Add date**) or in **Edit**. Statuses noted "thru 12/31/27" (like IHG Platinum from the Sapphire Reserve) get their date automatically.
 - **Coming up** at the top lists statuses expiring within 90 days, vouchers within 60, and every open welcome-bonus deadline (plus anything that lapsed in the last month, and a missed bonus deadline for 120 days, while the bonus can still post). Rows show "48 days left" or "Expired"; expired statuses stop counting as elite. A status you keep anyway (you've requalified, or a card gives the same level) is left out, so reminders are only for things you'd actually lose.
-- Statuses with a far-off end date show it on the row ("thru 2/28/28").
+- Statuses with a far-off end date show it on the row ("thru 2/29/28").
 - **Add to calendar** saves every upcoming expiration as calendar events with alerts 30 days before, 7 days before, and on the day (9 a.m.) — real reminders even when the app is closed. On iPhone it opens straight into Calendar; elsewhere it downloads a `.ics` file to open.
 - On devices that support it, the installed app's icon shows a badge for anything due within 30 days.
 
