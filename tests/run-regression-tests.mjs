@@ -1,4 +1,4 @@
-// Runs every bug-fix check (tests/run-fixes-*-tests.mjs: cards, Delta, progress, people, Undo, money, calendar) in
+// Runs every bug-fix check (tests/run-fixes-*-tests.mjs: cards, Delta, progress, people, Undo, money, calendar, review sheet) in
 // one go. Each area keeps its own file, since each builds its own small fake app around different pieces of
 // index.html; this runs them one after another and adds up the results.
 // Usage: node tests/run-regression-tests.mjs  — exits non-zero if any check fails.

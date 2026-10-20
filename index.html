@@ -6285,7 +6285,7 @@
   }
 
   // Fields depend on the chosen program (its units, levels, and whether it tracks progress or MQDs). Picking a
-  // different program than the one detected drops the level and count read for the detected one.
+  // different program than the one detected reads the text again as that program, for its level and counts.
   function renderScanFields() {
     const first = $('#scan-result').firstElementChild;
     $('#scan-result').replaceChildren(first, ...scanFields(scanned.found));
@@ -6295,7 +6295,9 @@
     const mine = (state.programs || []).find((x) => x.id === choice);
     const cid = choice.startsWith('add:') ? choice.slice(4) : (mine && catalogFor(mine) ? catalogFor(mine).id : null);
     const p = mine || (cid ? programFromCatalog(CATALOG_BY_ID[cid]) : null);
-    const found = cid === detected.programId ? detected : { ...detected, tierIndex: -1, exp: null, progress: null, altProgress: null, mqd: null };
+    const again = cid === detected.programId ? null
+      : cid && scanned && scanned.text ? parseAccountText(scanned.text, cid) : { tierIndex: -1, exp: null, progress: null, altProgress: null, mqd: null };
+    const found = again ? { ...detected, tierIndex: again.tierIndex, exp: again.exp, progress: again.progress, altProgress: again.altProgress, mqd: again.mqd } : detected;
     const field = scanField;
     const numberInput = scanNumber;
     const track = cid && TRACKS[cid];
@@ -6436,6 +6438,16 @@
     // roll over first, and leave out last year's counts (kept as a status if they earned one), like the number
     // editor and Update balances do.
     if (rollOver()) renderAll();
+    // The chosen program as things stand now: another window may have removed it (it isn't brought back), or added
+    // the one you chose to add (that one is updated, not added twice).
+    if (choice.startsWith('add:')) {
+      const have = (state.programs || []).find((x) => catalogFor(x) && catalogFor(x).id === choice.slice(4));
+      if (have) choice = have.id;
+    } else if (!(state.programs || []).some((x) => x.id === choice)) {
+      showToast('That program was removed in another window, so nothing was updated');
+      if (batch) { finishOne(false); setTimeout(nextInQueue); }
+      return;
+    }
     const stale = years ? staleCounts(choice, vals, years) : [];
     if (stale.length) vals = Object.fromEntries(Object.entries(vals).filter(([key]) => !stale.includes(key)));
     const previous = clone(state);
@@ -6677,6 +6689,14 @@
     const alt = e.target.closest('[data-scan-balance]');
     if (alt) { $('#scan-balance').value = fmt(Number(alt.dataset.scanBalance)); $('#scan-use-balance').checked = true; }
   });
+  // Typing a value or choosing a level means using it: its row's box ticks (unticking a box by hand still works).
+  for (const type of ['input', 'change']) {
+    $('#scan-result').addEventListener(type, (e) => {
+      const row = e.target.closest('.scan-field');
+      const box = row && row.querySelector('input[type="checkbox"]');
+      if (box && box !== e.target) box.checked = true;
+    });
+  }
 
   // One screen to type every balance (and Delta MQDs), saved together.
   const quickSheet = $('#quick-sheet');
