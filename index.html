@@ -1586,6 +1586,44 @@
     cursor: pointer;
   }
 
+  /* Wide screens: a dashboard — the header as a band across the top, your programs on the left, and what's coming
+     up, vouchers and card credits in a column on the right. Phones keep the single column above. */
+  @media (min-width: 1000px) {
+    main {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 340px;
+      grid-template-rows: auto auto auto auto 1fr auto;
+      grid-template-areas: "hero hero" "setup setup" "list top" "list bottom" "list ." "foot foot";
+      column-gap: 28px;
+      align-items: start;
+      max-width: 1400px;
+      padding-left: max(32px, env(safe-area-inset-left));
+      padding-right: max(32px, env(safe-area-inset-right));
+    }
+    .hero { grid-area: hero; display: flex; align-items: center; gap: 32px; padding: 20px 24px; }
+    .hero-top { flex: 1; min-width: 0; }
+    .hero h1 { font-size: 24px; }
+    .stats { flex: 0 1 640px; margin-top: 0; gap: 10px; }
+    #setup { grid-area: setup; width: 100%; max-width: 920px; justify-self: center; }
+    #programs-section { grid-area: list; min-width: 0; }
+    .side { min-width: 0; }
+    .side-top { grid-area: top; padding-top: 12px; }
+    .side-bottom { grid-area: bottom; }
+    .side .vform { grid-template-columns: 1fr auto; grid-template-areas: "name name" "note note" "exp add"; }
+    .foot { grid-area: foot; margin-top: 44px; padding-top: 24px; border-top: 1px solid var(--line); }
+    .scan-hub { display: flex; align-items: center; flex-wrap: wrap; }
+    .scan-hub .scan-cta { flex: 1 1 320px; }
+    .scan-hub .game-strip { padding: 12px; }
+  }
+  /* Wider still: programs two across (one column while you reorder them in Edit). */
+  @media (min-width: 1280px) {
+    main { grid-template-columns: minmax(0, 1fr) 380px; column-gap: 32px; }
+    .programs:not(.editing) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .programs:not(.editing) > .row { border-top: 0; border-bottom: 1px solid var(--line); margin-bottom: -1px; }
+    .programs:not(.editing) > .row:nth-child(odd) { border-right: 1px solid var(--line); }
+    .programs:not(.editing) > .empty-row { grid-column: 1 / -1; }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { transition: none !important; animation: none !important; }
   }
@@ -1614,6 +1652,7 @@
     </div>
   </header>
 
+  <div class="side side-top">
   <div class="card install" id="install" role="note" hidden>
     <div class="install-body">
       <strong>Put it on your Home Screen</strong>
@@ -1644,6 +1683,7 @@
     </div>
     <ul class="up-list" id="up-list"></ul>
   </section>
+  </div>
 
   <section id="setup" aria-labelledby="h-setup" hidden>
     <div class="card setup-card">
@@ -1728,6 +1768,7 @@
     </div>
   </section>
 
+  <div class="side side-bottom">
   <section id="vouchers-section" aria-labelledby="h-vouchers" hidden>
     <div class="sec-row">
       <h2 class="sec" id="h-vouchers">Vouchers <span class="count" id="v-count"></span></h2>
@@ -1763,6 +1804,7 @@
     <div class="card credits-card" id="credits-list"></div>
     <p class="fine credits-fine" id="credits-fine"></p>
   </section>
+  </div>
 
   <footer class="foot">
     <div class="backup">
@@ -4644,6 +4686,7 @@
       rows.push(h('li', { class: 'empty-row' }, 'Nothing here yet.'));
     }
     $('#programs').replaceChildren(...rows);
+    $('#programs').classList.toggle('editing', editMode); // reordering stays one column on wide screens
     $('#p-count').textContent = list.length;
     $('#edit-toggle').textContent = editMode ? 'Done' : 'Edit';
     $('#perks-btn').hidden = editMode;
