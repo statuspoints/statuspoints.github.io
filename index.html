@@ -1666,10 +1666,10 @@
     <div class="install-body">
       <strong>New in your tracker</strong>
       <ul class="news-list">
+        <li><b>Made for big screens too</b>: on a laptop or desktop, your programs spread across the page, with what’s coming up, vouchers, and card credits beside them.</li>
+        <li><b>Update from a screenshot</b>: drop or choose screenshots of your account pages (several at once works) and your points and status update. Small and compressed screenshots read better now.</li>
         <li><b>Welcome bonuses</b>: add a new card’s bonus under <b>Your cards</b> and see how much is left to spend, with reminders before the deadline.</li>
-        <li><b>Scan &amp; collect</b>: drop or choose screenshots of your account pages (several at once works), watch them scan, and collect your points and status. Earn XP, combos, a weekly streak, and badges.</li>
         <li><b>Simple view</b> and <b>Type balances</b>: just points and status, updated in one go.</li>
-        <li><b>Card credits</b>, <b>free night certificates</b>, and <b>what your points are worth</b>.</li>
       </ul>
     </div>
     <button class="icon-btn" id="news-close" type="button" aria-label="Dismiss what’s new"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M2.5 2.5l9 9M11.5 2.5l-9 9"/></svg></button>
@@ -10035,7 +10035,7 @@
 
   // A one-time card listing new features for people who already use the app; new setups skip it.
   const NEWS_KEY = 'status-tracker-news';
-  const NEWS_ID = '2026-10h';
+  const NEWS_ID = '2026-10u';
   const newsSeen = () => { try { return localStorage.getItem(NEWS_KEY) === NEWS_ID; } catch (e) { return true; } };
   const markNewsSeen = () => { try { localStorage.setItem(NEWS_KEY, NEWS_ID); } catch (e) { /* private mode */ } };
   // The card is one for the whole device: a new setup skips it only when no one else here already uses the app
