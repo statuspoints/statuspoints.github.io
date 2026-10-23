@@ -6179,9 +6179,12 @@
       cid = found.programId;
       own = cid ? programs.find((x) => catalogFor(x) && catalogFor(x).id === cid) || null : null;
     }
-    Object.assign(playing, { read, pickArg: choice, text: reading.text, found });
+    Object.assign(playing, { read, pickArg: choice, text: reading.text, found, many: null });
     $('#play-shot').className = 'play-shot done';
     const later = batch ? ['Skip', false, skipPlay] : ['Try another', false, pickAnother];
+    // Several programs on one page (a card's benefits page), unless you picked one program to read it as.
+    const many = choice ? null : readMany(read);
+    if (many) { showManyLoot(read, many); return; }
     // The program named only in a dark header bar, read on its own (ocrImage): read as that program — not one in a
     // dark offer or transfer banner ("Earn Marriott Bonvoy points").
     const bandText = (read.bands || '').split('\n').filter((l) => !/\b(?:apply|earn|bonus|offers?|sign up|transfers?|partners?|book with|redeem)\b|pre-?approved/i.test(l)).join('\n');
@@ -6255,6 +6258,7 @@
   }
 
   function collectNow() {
+    if (playing && playing.many) { collectMany(); return; }
     if (!playing || !playing.choice) return;
     stopCountdown();
     const from = ($('#play-loot .loot-bal') || $('#play-loot li') || $('#play-shot')).getBoundingClientRect();
@@ -6287,6 +6291,90 @@
     const fits = (state.programs || []).filter((p) => p.unit && catalogFor(p) && scanTiersFor(catalogFor(p).id)
       .some((t) => { const name = normTier(t.name); return !GUESS_COMMON.test(name) && hay.includes(` ${name} `); }));
     return fits.length === 1 ? fits[0].id : null;
+  }
+
+  // A screen listing several programs (a card's benefits page: "Marriott Bonvoy Gold Elite Status", "Hilton Honors
+  // Gold Status", each with a member number): the text split where each program is named. A line naming two
+  // programs (two columns read as one line) is split between them.
+  function splitPrograms(text) {
+    const signIn = (sign, ll) => new RegExp(`(^|[^a-z])${sign.replace(/[-+.]/g, (c) => `\\${c}`)}([^a-z]|$)`).exec(ll);
+    const parts = [];
+    for (const line of text.split('\n')) {
+      const ll = line.toLowerCase();
+      const named = []; // [at, id] where each program's longest sign starts on the line
+      for (const [id, signs] of Object.entries(SCAN_SIGNS)) {
+        const hit = signs.map((s) => signIn(s, ll)).filter(Boolean).sort((a, b) => b[0].length - a[0].length)[0];
+        if (hit) named.push([hit.index + hit[1].length, id]);
+      }
+      named.sort((a, b) => a[0] - b[0]);
+      if (!named.length) { if (parts.length) parts[parts.length - 1].text += `\n${line}`; continue; }
+      named.forEach(([at, id], i) => {
+        const piece = line.slice(i ? at : 0, i + 1 < named.length ? named[i + 1][0] : line.length);
+        const last = parts[parts.length - 1];
+        if (last && last.id === id) last.text += `\n${piece}`; // "Hilton Honors Number: …" under "Hilton Honors Gold"
+        else parts.push({ id, text: piece });
+      });
+    }
+    return parts;
+  }
+  // Two or more programs each shown with a status (and no balance on the page): read each on its own, as
+  // [{ id, tierIndex, member }], or null when the page is about one program.
+  function readMany(read) {
+    let best = null;
+    for (const pass of read.passes || [read]) {
+      const whole = parseAccountText(pass.text);
+      if (whole.score >= 3) continue; // a balance with its unit: one program's account page
+      const found = [];
+      for (const part of splitPrograms(pass.text)) {
+        if (found.some((f) => f.id === part.id)) continue;
+        const r = parseAccountText(part.text, part.id);
+        if (r.tierIndex >= 0) found.push({ id: part.id, tierIndex: r.tierIndex, exp: r.exp, member: r.member });
+      }
+      if (found.length >= 2 && (!best || found.length > best.length)) best = found;
+    }
+    return best;
+  }
+
+  // The card for a page with several statuses: each program, its level and member number, and Update for all.
+  function showManyLoot(read, many) {
+    const programs = state.programs || [];
+    const items = many.map((f) => {
+      const own = programs.find((x) => catalogFor(x) && catalogFor(x).id === f.id) || null;
+      const p = own || programFromCatalog(CATALOG_BY_ID[f.id]);
+      const vals = { tierIndex: f.tierIndex, exp: f.exp || '' };
+      if (f.member && !state.members[p.id]) vals.member = f.member;
+      const outcome = asListed(p, own, () => statusOutcome(p, vals.tierIndex, vals.exp));
+      return { p, own, choice: own ? own.id : `add:${f.id}`, vals, outcome };
+    });
+    Object.assign(playing, { many: items, choice: null, found: null });
+    $('#play-shot').className = 'play-shot done';
+    const later = batch ? ['Skip', false, skipPlay] : ['Try another', false, pickAnother];
+    const rows = items.map(({ p, own, vals, outcome }) => {
+      const name = scanTiersFor(catalogFor(p).id)[vals.tierIndex].name;
+      const sub = [name, vals.member ? `number •••• ${vals.member.slice(-4)}` : null, own ? null : 'adding it to your list'].filter(Boolean).join(' · ');
+      return h('li', null, avatar(p), lootText(p.name, sub),
+        outcome.kind === 'new' ? lootTag(own ? 'New status' : 'New', 'new') : lootTag(outcome.kind === 'same' ? 'Confirmed' : outcome.why));
+    });
+    $('#play-loot').replaceChildren(...rows.map((li, i) => { li.style.setProperty('--i', i); return li; }));
+    const changed = items.filter(({ own, vals, outcome }) => !own || vals.member || (outcome.kind === 'new'));
+    $('#play-title').textContent = changed.length ? `Found ${plural(items.length, 'status', 'statuses')} on this page` : `These ${items.length} statuses are up to date`;
+    $('#play-xp').hidden = true;
+    setActions([['Fix something', false, () => { playing.many = null; pickProgram(read, later); }],
+      [[h('span', { class: 'fill', 'aria-hidden': 'true' }), changed.length ? 'Update all' : 'Confirm', h('span', { class: 'cd', 'aria-hidden': 'true' })], true, collectNow, 'play-collect']]);
+    announce(`${$('#play-title').textContent} ${items.map(({ p, vals }) => `${p.name}: ${scanTiersFor(catalogFor(p).id)[vals.tierIndex].name}`).join('. ')}.${autoCollect ? ` Updating in ${COLLECT_SECONDS} seconds; press Tab to look first.` : ''}`);
+    if (autoCollect) startCountdown();
+  }
+  // Update for every program on the page: one batch, so there's one toast and one Undo.
+  function collectMany() {
+    const items = playing.many;
+    stopCountdown();
+    const from = ($('#play-loot li') || $('#play-shot')).getBoundingClientRect();
+    closePlay();
+    if (batch) batch.total += items.length - 1;
+    else batch = newBatch(items.length);
+    batch.many = true;
+    const years = readYears(null);
+    for (const { choice, vals } of items) collect(choice, vals, from, years);
   }
 
   // A screen that doesn't name its program: pick it on the card, and it's read again as that program.
@@ -6385,7 +6473,7 @@
     const b = batch;
     batch = null;
     if (b && b.collected && b.person === people.active) {
-      showToast(`Updated from ${plural(b.collected, 'screenshot')}`, Object.assign(() => undoTo(b.before, b.person), { snapshot: true }));
+      showToast(b.many ? `Updated ${plural(b.collected, 'program')}` : `Updated from ${plural(b.collected, 'screenshot')}`, Object.assign(() => undoTo(b.before, b.person), { snapshot: true }));
       offerBonusLanding(b.before.balances);
     }
   }

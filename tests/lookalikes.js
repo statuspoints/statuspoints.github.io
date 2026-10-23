@@ -121,6 +121,7 @@ export const pages = [
   {"name": "Best Western web, Diamond Select", "w": 1440, "h": 760, "rects": [[0, 0, 1440, 96, "#003c7e"]], "text": [["BEST WESTERN", 40, 62, 34, 700, "#fff", "left"], ["Rewards", 320, 62, 26, 400, "#fff", "left"], ["Welcome, Taylor", 60, 210, 44, 700, null, "left"], ["Diamond Select Member", 60, 270, 34, 700, "#003c7e", "left"], ["Member # 6005123456789012", 60, 330, 26, 400, "#444", "left"], ["Points balance", 900, 210, 26, 400, "#444", "left"], ["61,480", 900, 290, 72, 700, null, "left"], ["Qualifying nights this year", 60, 520, 26, 400, "#444", "left"], ["27", 60, 580, 48, 700, null, "left"], ["Free nights from 8,000 points", 900, 690, 24, 400, "#444", "left"]], "expect": {"program": "Best Western", "balance": 61480, "tier": "Diamond Select"}},
   {"name": "Hertz app, Five Star with a President's Circle goal", "w": 1170, "h": 1600, "rects": [[0, 0, 1170, 160, "#f2c200"]], "text": [["Hertz", 60, 110, 60, 700, "#1a1a1a", "left"], ["Gold Plus Rewards®", 60, 280, 48, 700, null, "left"], ["Five Star", 60, 370, 56, 700, "#a07800", "left"], ["Member # 71482936", 60, 430, 32, 400, "#444", "left"], ["2,940", 60, 620, 110, 700, null, "left"], ["Points", 60, 690, 36, 400, "#444", "left"], ["Rentals this year: 9 of 15 to President's Circle", 60, 860, 32, 400, "#444", "left"], ["Redeem from 550 points per day", 60, 1000, 30, 400, "#444", "left"], ["Upcoming: Hertz LAX, Nov 14", 60, 1140, 32, 400, null, "left"]], "expect": {"program": "Hertz", "balance": null, "tier": "Five Star"}},
   {"name": "National web, no points balance", "w": 1440, "h": 760, "rects": [[0, 0, 1440, 96, "#0b7a3e"]], "text": [["National", 40, 62, 38, 700, "#fff", "left"], ["Emerald Club", 1400, 62, 26, 400, "#fff", "right"], ["Hi, Riley", 60, 210, 44, 700, null, "left"], ["Emerald Club Executive", 60, 270, 34, 700, "#0b7a3e", "left"], ["Member # 812345679", 60, 330, 26, 400, "#444", "left"], ["Rental credits", 900, 210, 26, 400, "#444", "left"], ["4 of 7", 900, 290, 64, 700, null, "left"], ["toward your next Free Day", 900, 340, 26, 400, "#444", "left"], ["Paid rentals this year", 60, 520, 26, 400, "#444", "left"], ["14 of 25", 60, 580, 48, 700, null, "left"], ["Reach Executive Elite at 25 rentals", 60, 640, 24, 400, "#444", "left"]], "expect": {"program": "National", "balance": null, "tier": "Executive"}},
+  {"name": "Amex Platinum benefits web, four statuses with member numbers", "w": 2000, "h": 620, "rects": [[160, 20, 840, 220, "#f3f4f6"], [1040, 20, 840, 220, "#f3f4f6"], [160, 280, 840, 280, "#f3f4f6"], [1040, 280, 840, 280, "#f3f4f6"]], "text": [["Marriott Bonvoy® Gold Elite Status", 194, 105, 32, 700, "#333", "left"], ["Marriott Bonvoy Number: - 4471", 206, 155, 20, 600, "#1a7f4b", "left"], ["Hilton Honors™ Gold Status", 1076, 105, 32, 700, "#333", "left"], ["Hilton Honors Number: 2045318860", 1086, 155, 20, 600, "#1a7f4b", "left"], ["Leaders Club Sterling Status from The", 194, 380, 32, 700, "#333", "left"], ["Leading Hotels of the World®", 194, 420, 32, 700, "#333", "left"], ["Leaders Club Number: 5523190", 206, 472, 20, 600, "#1a7f4b", "left"], ["The American Express Global Lounge", 1076, 366, 32, 700, "#333", "left"], ["Collection®", 1076, 406, 32, 700, "#333", "left"], ["Enrolled in Priority Pass Select Membership Number:", 1086, 458, 20, 600, "#1a7f4b", "left"], ["3301742255", 1086, 486, 20, 600, "#1a7f4b", "left"]], "expect": {"many": ["Marriott Bonvoy", "Hilton Honors", "Leading Hotels of the World"]}},
 ];
 
 export function draw(page, variant = {}) {
@@ -154,7 +155,7 @@ export async function scan(page, variant = {}) {
   for (let i = 0; i < 600; i++) {
     await pause(250);
     title = document.querySelector('#play-title').textContent;
-    if (/^Found|^New program|up to date|Which program|Couldn|looks like|no points or status/.test(title)) break;
+    if (/^Found|^New program|up to date|Which program|Couldn|looks like|no points or status|^These/.test(title)) break;
   }
   document.querySelector('#play').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); // no automatic update
   const rows = [...document.querySelectorAll('#play-loot li')].map((li) => li.innerText.replace(/\n+/g, ' | '));
@@ -166,6 +167,11 @@ export async function scan(page, variant = {}) {
     balance: balance ? Number(balance[1].replace(/,/g, '')) : null, tier: status ? status.split(' | ')[0] : null,
     counts: rows.filter((r) => !/Balance|\| Status|Member number|On your list|Adding it|Check this/.test(r)).map((r) => r.split(' | ')[0]) };
   const e = page.expect;
+  // A page with several statuses (a card's benefits page): every program named, each with its level.
+  if (e.many) {
+    const ok = /^Found \d+ statuses|^These \d+ statuses/.test(title) && e.many.every((name) => rows.some((r) => r.startsWith(`${name} |`)));
+    return { name: page.name, ok, silentlyWrong: !ok && !got.flagged, got: { ...got, rows } };
+  }
   const ok = title.includes(e.program) && got.balance === e.balance && (e.tier === undefined || got.tier === e.tier)
     && (e.counts || []).every((c) => got.counts.includes(c));
   // Wrong without saying so is the failure that matters: a flagged card waits for you to check it.
