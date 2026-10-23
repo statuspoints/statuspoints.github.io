@@ -4745,7 +4745,7 @@
     delta: ['skymiles', 'medallion', 'mqd', 'mqds', 'delta air lines', 'delta'], united: ['mileageplus', 'premier 1k', 'pqp', 'pqf', 'united'],
     american: ['aadvantage', 'american airlines', 'loyalty points'], southwest: ['rapid rewards', 'a-list', 'southwest', 'companion pass'],
     alaska: ['atmos rewards', 'atmos', 'alaska airlines'], jetblue: ['trueblue', 'jetblue', 'mosaic'], aeroplan: ['aeroplan', 'air canada'],
-    flyingblue: ['flying blue', 'air france', 'klm'], ba: ['british airways', 'avios'], koreanair: ['skypass', 'korean air'],
+    flyingblue: ['flying blue', 'air france', 'klm'], ba: ['british airways', 'executive club', 'avios'], koreanair: ['skypass', 'korean air'],
     virgin: ['flying club', 'virgin atlantic', 'virgin points', 'virgin red'], hilton: ['hilton honors', 'hilton'], marriott: ['bonvoy', 'marriott'],
     ihg: ['ihg one rewards', 'one rewards', 'ihg'], hyatt: ['world of hyatt', 'hyatt', 'globalist', 'explorist', 'discoverist'],
     wyndham: ['wyndham rewards', 'wyndham'], choice: ['choice privileges', 'choice hotels'], accor: ['live limitless', 'accor'],
@@ -4821,7 +4821,7 @@
 
   // Labels for this year's counts, by the unit each program tracks (TRACKS[...].unit / .alt.unit), and for MQDs.
   const SCAN_LABELS = {
-    nights: /^(?!.*\b(?:free|award|certificate|cert)\b).*?(?:\b(?:qualifying |elite |)nights?\b|\bnight credits?\b)/i,
+    nights: /^(?!.*\b(?:free|awards?|certificates?|certs?)\b).*?(?:\b(?:qualifying |elite |)nights?\b|\bnight credits?\b)/i,
     stays: /\b(?:qualifying |)stays\b(?! and events)/i,
     PQP: /\bPQP\b|premier qualifying points/i,
     flights: /\bPQF\b|qualifying flights|one-way flights|\bflights\b/i,
@@ -4838,11 +4838,19 @@
   // A day in a written date: after its month ("Dec 31, 2026", "from Jan 1") or before month and year ("31 Dec 2026").
   const SCAN_DAY_AFTER_MONTH = new RegExp(`\\b(?:${SCAN_MONTH})\\.?\\s*$`);
   const SCAN_DAY_BEFORE_MONTH = new RegExp(`^\\s*(?:${SCAN_MONTH})\\.?,?\\s+\\d{2,4}`);
+  // A date in a caption: written ("Mar 1", "Mar 1, 2026", "31 Dec 2026"), numeric ("10/18/2026"), or a year or year
+  // range ("2026", "2026/27", "2026-27").
+  const SCAN_DATE = new RegExp(`\\b(?:(?:${SCAN_MONTH})\\.?\\s+\\d{1,2}(?:,?\\s+(?:19|20)\\d\\d)?|\\d{1,2}\\s+(?:${SCAN_MONTH})\\.?,?(?:\\s+(?:19|20)\\d\\d)?|\\d{1,2}[/.]\\d{1,2}[/.]\\d{2,4}|(?:19|20)\\d\\d(?:[/\\-\u2013\u2014](?:\\d{2}|(?:19|20)\\d\\d))?)\\b`, 'gi');
+  // A line without its dates and the dashes and brackets around them: "Loyalty Points since Mar 1" → "Loyalty Points
+  // since", "PQP (Jan 1 – Dec 31)" → "PQP".
+  const scanDateless = (line) => line.replace(SCAN_DATE, ' ').replace(/(?:^|\s)[-\u2013\u2014]+(?=\s|$)|\(\s*\)/g, ' ').replace(/\s+/g, ' ').trim();
+  // A line that is only a date or a date range ("Mar 1, 2026 – Feb 28, 2027"), as a tile's caption may be followed by.
+  const scanDateOnly = (line) => /\d/.test(line) && !/^\W*(?:19|20)\d\d\W*$/.test(line) && !/[a-z\d]/i.test(scanDateless(line).replace(/\b(?:to|through|thru|until|from)\b/gi, ''));
   const toNumber = (text) => Number(String(text).replace(/[^\d]/g, ''));
 
   // Text from a screenshot, tidied: trademark marks dropped, "26.948", "78 450 Miles", "2 450 Reward points", "Avios 96 320" and a lone
   // "78 450" beside a Miles caption ("Miles", "Virgin Points") read as thousands, O/l misread as digits ("l8", "2O",
-  // "6l,4OO"), "Premier IK" as 1K. Digit groups after a member-number label ("Member # 123 456 789", "SkyMiles Number"
+  // "6l,4OO"; S/B too inside a comma-grouped number, "1S2,400"), "Premier IK" as 1K. Digit groups after a member-number label ("Member # 123 456 789", "SkyMiles Number"
   // over "9123 456 789", "Member 123 456 789" starting a line) are one id, not thousands.
   function cleanScanText(text) {
     return String(text || '')
@@ -4858,14 +4866,50 @@
         // Two groups with a unit after them are a balance ("Account 126 948 miles"), not an id.
         (n.split(/[ \u00a0\u202f]/).length === 2 && /^[ \t]*(?:[a-z]+[ \t]+){0,2}(?:miles|points|avios|pts|mi)\b/i.test(text.slice(at + all.length, at + all.length + 40))
           ? all : `${pre}${n.replace(/\D/g, '')}`))
-      .replace(/\b(\d{1,3})((?:[ \u00a0\u202f]\d{3})+)(?=[ \t]*(?:(?!of\b|to\b)[a-z]+[ \t]+){0,2}(?:miles|points|avios|pts|mi)\b)/gi, (all, a, b) => `${a}${b.replace(/\D/g, ',')}`)
-      .replace(/(\b(?:miles|points|avios|pts|balance)[ \t]*:?[ \t]*)(\d{1,3}(?:[ \u00a0\u202f]\d{3})+)(?![\d,.])/gi, (all, pre, n) => `${pre}${n.replace(/\D/g, ',')}`)
-      .replace(/(^|\n)(\d{1,3}(?:[ \u00a0\u202f]\d{3})+)[ \t]*(?=\n[ \t]*(?:[a-z]+[ \t]+){0,2}(?:miles|points|avios|pts)\b)/gi, (all, pre, n) => `${pre}${n.replace(/\D+/g, ',')}`)
-      // Also when the reader ran the line into the column beside it ("YOUR POINTS" over "Hello Alex, 26 948").
-      .replace(/((?:^|\n)[^\n\d]*\b(?:miles|points|avios|pts)\b[^\n\d]*\n[^\n\d]*?)(\d{1,3}(?:[ \u00a0\u202f]\d{3})+)[ \t]*(?=\n|$)/gi, (all, pre, n) => `${pre}${n.replace(/\D+/g, ',')}`)
-      .replace(/\b[\dOolI]{1,3}(?:[,.][\dOolI]{3})+\b/g, (n) => (/\d/.test(n) ? n.replace(/[Oo]/g, '0').replace(/[lI]/g, '1') : n))
+      // A row of tile values with spaced thousands ("78 450 182" under "Miles XP", "12 400 3 250" under "Reward points
+      // Status points"): one number per caption, the numbers two spaces apart so they aren't joined below.
+      .replace(/(^|\n)[ \t]*(\d{1,3}(?:[ \u00a0\u202f]\d{1,3})+)[ \t]*(?=\n|$)/g, (all, pre, row, at, text) => {
+        const next = text.slice(at + all.length + 1).split('\n')[0] || '';
+        const prev = pre ? text.slice(0, at).split('\n').pop() : '';
+        const caption = [next, prev].find((c) => !/\d/.test(c) && c.split(/\s+/).filter((w) => SCAN_UNIT.test(w)).length >= 2);
+        return caption ? `${pre}${scanRow(row, caption)}` : all;
+      })
+      .replace(/\b(\d{1,3})((?:[ \u00a0\u202f]\d{3})+)(?=[ \t]*(?:(?!of\b|to\b)[a-z]+[ \t]+){0,2}(?:miles|points|avios|pts|mi|sqc|pqp|mqds?|xp|qpoints)\b)/gi, (all, a, b) => `${a}${b.replace(/\D/g, ',')}`)
+      .replace(/(\b(?:miles|points|avios|pts|balance|sqc|pqp|mqds?|xp|qpoints|credits)[ \t]*:?[ \t]*\$?[ \t]*)(\d{1,3}(?:[ \u00a0\u202f]\d{3})+)(?![\d,.])/gi, (all, pre, n) => `${pre}${n.replace(/\D/g, ',')}`)
+      .replace(/(^|\n)(\d{1,3}(?:[ \u00a0\u202f]\d{3})+)[ \t]*(?=\n[ \t]*(?:[a-z]+[ \t]+){0,2}(?:miles|points|avios|pts|sqc|pqp|mqds?|xp|qpoints|credits)\b)/gi, (all, pre, n) => `${pre}${n.replace(/\D+/g, ',')}`)
+      // Also when the reader ran the line into the column beside it ("YOUR POINTS" over "Hello Alex, 26 948"), and
+      // when the caption names its year ("PQP (2026)", "Tier Points 2026/27").
+      .replace(/((?:^|\n)[^\n\d]*\b(?:miles|points|avios|pts|sqc|pqp|mqds?|xp|qpoints|credits)\b[^\n\d]*(?:\(?(?:19|20)\d\d(?:[/\-\u2013]\d{2,4})?\)?[^\n\d]*)?\n[^\n\d]*?)(\d{1,3}(?:[ \u00a0\u202f]\d{3})+)[ \t]*(?=\n|$)/gi, (all, pre, n) => `${pre}${n.replace(/\D+/g, ',')}`)
+      // Inside a comma-grouped number every place is a digit, so S and B are 5 and 8 too ("1S2,400", "4B,320").
+      .replace(/\b[\dOolISB]{1,3}(?:[,.][\dOolISB]{3})+\b/g, (n) => (/\d/.test(n) ? n.replace(/[Oo]/g, '0').replace(/[lI]/g, '1').replace(/S/g, '5').replace(/B/g, '8') : n))
       .replace(/(^|[^$\d.,])(\d{1,3}(?:\.\d{3})+)(?![\d.,])/g, (all, pre, n) => `${pre}${n.replace(/\./g, ',')}`)
+      // A dollar amount's thousands comma read as a period or a space ("$11.240", "$11 240"): three digits can't be cents.
+      .replace(/\$([1-9]\d{0,2})[. \u00a0\u202f](\d{3})(?![\d.,])/g, (all, a, b) => `$${a},${b}`)
       .replace(/[ \t]+/g, ' ');
+  }
+
+  // A row of spaced digit groups split into one number per unit word of its caption line: a group of 1–2 digits
+  // always starts a number ("12 400 3 250" → "12,400  3,250"), and a caption that's never in the thousands (XP,
+  // nights, stays, flights) takes a single group ("78 450 182" under "Miles XP" → "78,450  182"). When more than one
+  // split fits, the row is left as it is.
+  function scanRow(row, caption) {
+    const groups = row.split(/[ \u00a0\u202f]/);
+    const words = caption.split(/\s+/);
+    if (!SCAN_UNIT.test(words[words.length - 1])) return row; // a caption ending in a word we don't know ("Miles XP UXP")
+    const k = words.filter((w) => SCAN_UNIT.test(w)).length;
+    const parts = splitCaption(caption, k) || [];
+    const small = (j) => /xp|night|stay|flight|pqf|segment/i.test(parts[j] || '');
+    const fits = [];
+    const walk = (from, taken) => {
+      if (taken.length === k) { if (from === groups.length) fits.push(taken); return; }
+      for (let to = from + 1; to <= groups.length - (k - taken.length - 1); to++) {
+        const number = groups.slice(from, to);
+        if (number.slice(1).some((g) => g.length !== 3) || (small(taken.length) && number.length > 1)) break;
+        walk(to, [...taken, number.join(',')]);
+      }
+    };
+    if (groups.length >= k) walk(0, []);
+    return fits.length === 1 ? fits[0].join('  ') : row;
   }
 
   // Everyday words on account screens: never treated as a misspelled program name ("points" is not "Qpoints").
@@ -4909,17 +4953,28 @@
     return (STATUS_NAMES[id] || []).map((name) => ({ name, aliases: [normTier(name)] }));
   }
 
-  // What follows a number that's still to earn: "8 more", "17 nights to go", "42,000 Loyalty Points away from".
-  const SCAN_TO_GO = /^\s*(?:[a-z&]+\s+){0,3}(?:more|to go|away|needed|until|to reach|to unlock|to qualify|to earn)\b/;
+  // What follows a number that's still to earn: "8 more", "17 nights to go", "42,000 Loyalty Points away from",
+  // "36,500 status points to Platinum" (a level's name right after "to").
+  // Every program's level names ("Platinum", "Premier 1K", "A-List Preferred"), longest first, as one pattern.
+  const SCAN_LEVELS = [...new Set([...Object.keys(BENEFITS), ...Object.keys(STATUS_NAMES)].flatMap((id) => scanTiersFor(id).flatMap((t) => t.aliases)))]
+    .sort((a, b) => b.length - a.length).map((a) => a.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/ /g, '[\\s-]+')).join('|');
+  const SCAN_TO_GO = new RegExp(`^\\s*(?:[a-z&]+\\s+){0,3}(?:more|to go|away|needed|until|to reach|to unlock|to qualify|to earn|to (?:${SCAN_LEVELS}))\\b`);
   // Amounts on a line (not "of 15,000" targets or "8 more to go"), in reading order, with where each sits.
   function lineAmounts(line, dollars) {
     const out = [];
     for (const m of line.matchAll(/(\$?)\s?(\d{1,3}(?:,\d{3})+|\d+)(?:\.\d{1,2})?/g)) {
       const before = line.slice(Math.max(0, m.index - 8), m.index).toLowerCase();
       const after = line.slice(m.index + m[0].length, m.index + m[0].length + 48).toLowerCase();
-      if (/(of|\/|out of|need|needed|reach)\s*\$?\s*$/.test(before) || /^\s*(?:%|(?:[a-z&]+\s+){0,3}(?:left|remaining)\b)/.test(after) || SCAN_TO_GO.test(after)) continue;
+      if (/(of|\/|out of|need|needed|reach)\s*\$?\s*$/.test(before) || /^\s*(?:%|(?:[a-z&]+\s+){0,3}(?:left|remaining)\b)/.test(after) || SCAN_TO_GO.test(after)) {
+        // The other way to the same target ("48 nights or 41,600 qualifying points to Diamond Elite") is still to earn too.
+        if (out.length && SCAN_TO_GO.test(after) && /^\s*(?:[a-z&]+\s+){0,3}or\s*$/i.test(line.slice(out[out.length - 1].end, m.index))) out.pop();
+        continue;
+      }
       if (dollars === false && m[1]) continue;
+      // A number run into one letter is a level ("Premier 1K", "35K") or a misread digit ("3B"), not a count.
+      if (/^[a-z](?![a-z])/i.test(line.slice(m.index + m[0].length))) continue;
       if (!m[1] && /^\d{4}$/.test(m[2]) && Number(m[2]) >= 1990 && Number(m[2]) <= 2100) continue; // a year, as in "in 2026"
+      if (!m[1] && m[2].length <= 2 && /(?:19|20)\d\d[-\u2013\u2014/]\s?$/.test(before)) continue; // the second year of "2026-27"
       // A day or month in a date ("through Dec 31, 2026", "from Jan 1", "03/31/2028"), not a count.
       const lead = line.slice(Math.max(0, m.index - 12), m.index).toLowerCase();
       if (!m[1] && (SCAN_DAY_AFTER_MONTH.test(lead) || SCAN_DAY_BEFORE_MONTH.test(after) || /^\s?\d{1,2}[/.]\d{1,2}[/.]\d{2,4}/.test(line.slice(m.index)))) continue;
@@ -4942,11 +4997,14 @@
 
   // Tile layouts put values and captions on lines of their own: a bare value line ("78,450", "1,840 / 3,500",
   // "302,118 61 24") and a caption line (short, no digits: "Miles", "Qualifying nights").
-  const scanBare = (line) => /\d/.test(line) && !/%|\d{1,2}[/.]\d{1,2}[/.]\d{2,4}/.test(line) && /^[\W\d]*$/.test(line.replace(/\b(?:out of|of)\b/gi, ' '));
-  // A unit caption may name its year ("Miles earned in 2026", "Tier Points 2026/27").
+  // A line that is only a year ("2026") is a heading, not a value.
+  const scanBare = (line) => /\d/.test(line) && !/%|\d{1,2}[/.]\d{1,2}[/.]\d{2,4}/.test(line) && !/^\W*(?:19|20)\d\d\W*$/.test(line) && /^[\W\d]*$/.test(line.replace(/\b(?:out of|of)\b/gi, ' '));
+  // A unit caption may name its year or period ("Miles earned in 2026", "Tier Points 2026/27", "Loyalty Points since
+  // Mar 1", "PQP (Jan 1 – Dec 31)", "as of 10/18/2026") — an offer with its end date ("Double points through Dec 31") is none.
+  const scanOffer = (line) => /\b(?:earn|double|triple|bonus|offer|promo|\d+x)\b/i.test(line);
   const scanCaption = (line) => {
-    const t = line.replace(/\b(?:19|20)\d\d(?:\/\d{2,4})?\b/g, '');
-    return !/\d/.test(t) && /[a-z]/i.test(t) && line.split(/\s+/).length <= 5 && (t === line || SCAN_UNIT.test(t));
+    const t = scanDateless(line);
+    return !/\d/.test(t) && /[a-z]/i.test(t) && t.split(/\s+/).length <= 5 && (t === line || SCAN_UNIT.test(t)) && !(/\d/.test(line) && scanOffer(line));
   };
   // Words that make a caption a value's label rather than a header or a level ("Gold", "Hilton Honors").
   const SCAN_UNIT = /\b(?:points?|miles?|avios|pts|skymiles|lifemiles|qpoints|balance|available|redeemable|cash|dollars|mqds?|pqps?|pqfs?|xp|sqc|nights?|stays?|credits?|flights?|segments?|tiles)\b/i;
@@ -5014,26 +5072,66 @@
   // ("MQD Headstart", "MQDs from card spend", "Nights from your card", "PQP earned with card"), prices and offers ("Free nights starting at
   // 3,500 points", "Earn 500 points", "Refer a friend") and Companion Pass progress (a Southwest pass, not status: on
   // its line or under its heading) are skipped. "From" a date ("Nights stayed from Jan 1") is still the count.
-  function labeledNumber(lines, label, dollars, layout = scanLayout(lines)) {
-    const skip = /lifetime|member since|head ?start|jump ?start|rollover|\bfrom\b(?! (?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.? \d| \d{1,2}[/.]\d)|card spend|\b(?:with|on|by) (?:your |the |my |)card\b|boost|companion|starting at|as low as|\bearn\b|\brefer(?:rals?)?\b/i;
+  // Under a "Lifetime" heading ("Lifetime Status Progress", "Lifetime Activity", "Lifetime"), until the next heading
+  // ("This Year", "2026"), counts are lifetime totals. `levels` are the program's level names: a heading that is only a
+  // held level ("Lifetime Platinum Elite") heads the page, not a lifetime section.
+  function labeledNumber(lines, label, dollars, layout = scanLayout(lines), levels = []) {
+    const heldLevel = (l) => {
+      const hay = ` ${normTier(l)} `;
+      return levels.some((a) => hay.includes(` ${a} `)) && !levels.reduce((h, a) => h.split(` ${a} `).join(' '), hay).replace(/\b(?:lifetime|status|elite|member)\b/g, '').trim();
+    };
+    const underLifetime = (i) => {
+      if (/this year|year to date|\bytd\b|current year|calendar year/i.test(lines[i])) return false; // its own heading
+      for (let j = i - 1; j >= 0; j--) {
+        const t = scanDateless(lines[j]);
+        if (/\d/.test(t)) continue; // a value or a count row
+        // A tile's own caption ("Lifetime Tier Points") heads nothing; a progress heading ("Lifetime Globalist
+        // progress") covers only its "412,000 of 1,000,000" rows.
+        if (/lifetime/i.test(t)) return !heldLevel(t) && !layout.owner.has(j) && (!/progress/i.test(t) || /\b(?:of|\/)\s*\$?\d/.test(lines[i]));
+        if (t && SCAN_UNIT.test(t) && !/year|ytd|to date|current/i.test(t)) continue; // the section's own captions ("Nights", "Stays")
+        return false; // another heading ("This Year", "2026", "Your status")
+      }
+      return false;
+    };
+    const skip = /lifetime|member since|head ?start|jump ?start|rollover|\bnext\b|milestone|\breach\b|\brequire[sd]?\b|\bfrom\b(?! (?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.? \d| \d{1,2}[/.]\d)|card spend|\b(?:with|on|by) (?:your |the |my |)card\b|boost|companion|starting at|as low as|\bearn\b|\brefer(?:rals?)?\b/i;
     // A line that's just a value, maybe with its target ("$11,240 of $15,000") and a word or two.
     const short = (line) => line && /^\W*\$?\d[\d,]*(?:\.\d{1,2})?(?:\s*(?:of|\/)\s*\$?\d[\d,]*)?\W*(?:[a-z]+\W*){0,3}$/i.test(line.trim());
-    // Under a "Companion Pass progress" heading, until the next heading ("A-List progress").
+    // Under a "Companion Pass progress" heading, until the next heading ("A-List progress"), past the section's own
+    // captions ("Points" over "98,000 of 135,000").
     const underCompanion = (i) => {
       // A status count in between ("Tier qualifying points 80,200") is another section's; a pass held, with its own
       // end date under it ("Companion Pass" over "Valid through 12/31/2028"), heads no progress.
       for (let j = i; j >= 0; j--) {
         if (/tier|a-list|status/i.test(lines[j])) return false;
-        if (j < i && !/\d/.test(lines[j])) return /companion/i.test(lines[j]) && !/holder|member/i.test(lines[j]) && !/^(?:valid|good|expires|through|thru|until)\b/i.test(lines[j + 1] || '');
+        if (j < i && !/\d/.test(lines[j]) && /companion/i.test(lines[j])) return !/holder|member/i.test(lines[j]) && !/^(?:valid|good|expires|through|thru|until)\b/i.test(lines[j + 1] || '');
       }
       return false;
     };
+    // A level's requirement ("Gold Elite 25 Nights", "Explorist 30 nights or 50,000 base points"): a level's name, the
+    // number, then a count's unit, on a line that doesn't say whose or which year's count it is. A merged line
+    // ("A-List Preferred 112,050 pts Tier pts 71,300") puts the balance's unit after the number. One such line alone
+    // may be the count beside the level held ("Explorist 34 nights"); a ladder has at least two.
+    const levelRow = (line) => {
+      if (/this year|\byour\b|qualifying|earned/i.test(line)) return false;
+      const hay = ` ${normTier(line)} `;
+      return levels.some((a) => {
+        const m = new RegExp(` ${a} \\d[\\d ]*?([a-z]+(?: [a-z]+)?)`).exec(hay);
+        return m && Object.values(SCAN_LABELS).some((re) => re.test(m[1]));
+      });
+    };
+    const ladder = lines.filter(levelRow).length >= 2;
+    const ladderRow = (line) => ladder && levelRow(line);
     const order = lines.map((_, i) => i).sort((a, b) => /\btotal\b/i.test(lines[b]) - /\btotal\b/i.test(lines[a]));
     for (const i of order) {
-      if (!label.test(lines[i]) || underCompanion(i)) continue;
+      if (!label.test(lines[i]) || underCompanion(i) || underLifetime(i) || ladderRow(lines[i])) continue;
       const here = lineAmounts(lines[i], dollars);
+      // A target line ("Reach Explorist: 30 nights or 50,000 base points", "Next milestone: 30 nights"): none of its amounts.
+      if (here.length && /\bnext\b|milestone|\breach\b/i.test(lines[i].slice(0, here[0].start))) continue;
       if (here.length > 1) {
         const labels = amountLabels(lines[i], here);
+        // Milestone markers ("20 nights 30 nights 40 nights 50 nights"): the same label on rising amounts is a scale.
+        const live = labels.map((t, k) => [t.trim().toLowerCase(), here[k].value]).filter(([t]) => label.test(t) && !skip.test(t));
+        if (live.length > 1 && live.every(([t, v], k) => t === live[0][0] && (!k || v > live[k - 1][1]))) continue;
         const k = labels.findIndex((t) => label.test(t) && !skip.test(t));
         if (k >= 0) return { value: here[k].value, line: i };
         if (labels.some((t) => label.test(t))) continue;
@@ -5041,8 +5139,10 @@
       if (skip.test(lines[i])) continue;
       // Not thousands of stays: "Points 34,500 My Stays" is a balance beside a tab.
       if (here.length) { if (scanOdd(here[0].value, label.exec(lines[i])[0])) continue; return { value: here[0].value, line: i }; }
-      // A label with only a target on its line ("Earn 12,000 more PQP") doesn't borrow the next line's number.
-      if (/\d/.test(lines[i].replace(/\b(?:19|20)\d\d\b/g, ''))) continue;
+      // A label with only a target on its line ("Earn 12,000 more PQP") or an offer with its end date ("Double Elite
+      // Night Credits through Dec 31, 2026") doesn't borrow the next line's number; a label with its period
+      // ("Loyalty Points since Mar 1", "PQP (Jan 1 – Dec 31)") does.
+      if (/\d/.test(scanDateless(lines[i])) || (/\d/.test(lines[i]) && scanOffer(lines[i]))) continue;
       // A row of captions over a row of values, one each ("Premier qualifying points (PQP) Premier qualifying
       // flights (PQF)" over "9,820 of 12,000 24 of 30"): the value in the same place as this caption.
       const row = lineAmounts(lines[i + 1] || '', dollars);
@@ -5070,9 +5170,15 @@
         if (pick && !(dollars === false && pick.dollar)) return { value: pick.value, line: v };
         continue;
       }
+      // A points line beside a nights, stays or flights label ("34,500 Points" over "Upcoming stays", "26,948 pts" over
+      // "Book Reward Nights") is the balance, never thousands of nights.
+      const tag = label.exec(lines[i])[0];
       for (const j of [i + 1, i - 1]) {
         if (layout.owns.has(j)) continue; // that value has a caption of its own
-        if (short(lines[j]) && !/lifetime/i.test(lines[j])) { const near = lineNumbers(lines[j], dollars); if (near.length) return { value: near[0], line: j }; }
+        if (!short(lines[j]) || /lifetime/i.test(lines[j])) continue;
+        if (/night|stay|flight/i.test(tag) && /\b(?:points|miles|avios|pts)\b/i.test(lines[j])) continue;
+        const near = lineNumbers(lines[j], dollars);
+        if (near.length && !scanOdd(near[0], tag)) return { value: near[0], line: j };
       }
     }
     return null;
@@ -5148,7 +5254,8 @@
   function parseAccountText(rawText, forceId) { // forceId: read it as this program (or '' for none) instead of guessing
     const text = cleanScanText(rawText);
     const lower = text.toLowerCase();
-    const lines = text.split(/\n/).map((l) => l.trim()).filter(Boolean);
+    // A line that is only a date range ("Mar 1, 2026 – Feb 28, 2027" under "Loyalty Points") is a caption's period.
+    const lines = text.split(/\n/).map((l) => l.trim()).filter((l) => l && !scanDateOnly(l));
     // Program: each sign is weighed by where it appears — the header (first lines) counts double and lines about
     // transferring or partners, or offers ("Apply for the Citi AAdvantage card", "Earn 70,000 bonus miles"), barely
     // count, so a Chase page listing "IHG, Hyatt, United…" stays Chase. Once a line (not an offer) names a co-brand
@@ -5256,19 +5363,19 @@
       if (/\b(?:confirmation|reservation|booking|itinerary|order|ticket)\b/.test(lower.slice(lineStart, m.index))) continue;
       if (/\d{5,}/.test(id) && id.length <= 16 && (id.match(/[a-z]/gi) || []).length <= 3) { member = id; memberText = m[2]; break; }
     }
+    const tiers = programId ? scanTiersFor(programId) : [];
+    const levels = tiers.flatMap((t) => t.aliases).sort((a, b) => b.length - a.length);
     // Counts for this year, in the program's units (and its second path), plus Delta MQDs.
     const layout = scanLayout(lines);
     const track = programId && TRACKS[programId];
     const claimed = new Set(); // "line:value" of each count, so it isn't mistaken for the balance
-    const count = (label, dollars) => { const hit = label && labeledNumber(lines, label, dollars, layout); if (hit) claimed.add(`${hit.line}:${hit.value}`); return hit ? hit.value : null; };
+    const count = (label, dollars) => { const hit = label && labeledNumber(lines, label, dollars, layout, levels); if (hit) claimed.add(`${hit.line}:${hit.value}`); return hit ? hit.value : null; };
     const mqd = programId === 'delta' || /mqd/i.test(text) ? count(SCAN_LABELS.MQD, true) : null;
     const progress = track ? count(SCAN_LABELS[track.unit], false) : null;
     const altProgress = track && track.alt ? count(SCAN_LABELS[track.alt.unit], false) : null;
     // Balance: the number that reads most like "your points/miles" — not a member number, year, count, target,
     // pending points, or a price or offer ("rooms from 5,000 Points", "Earn 500 points"). It's read by its own
     // caption: the words beside it, its tile's caption line, or a caption line above or below that no tile claims.
-    const tiers = programId ? scanTiersFor(programId) : [];
-    const levels = tiers.flatMap((t) => t.aliases).sort((a, b) => b.length - a.length);
     // A caption without the program's level names: "Gold Elite Points" and "Silver tier Avios" are the balance's
     // ("Silver Tier Points" is still a count's).
     const unleveled = (t) => levels.reduce((s, a) => s.replace(new RegExp(`(^| )${a}(?: (?:tier|status|member|level)(?! (?:qualifying|points?|miles?|credits?)\\b))?(?= |$)`, 'g'), ' '), normTier(t));
@@ -5385,6 +5492,8 @@
       const yours = takes && /\b(?:this year|so far|to date|ytd|you|your|current)\b/.test(takes[1]);
       const forLevel = new RegExp(`\\d[^\\n]* for ${alias}(?: |$)`).test(hay);
       if ((takes && !yours && SCAN_COUNTED.test(takes[1])) || forLevel) continue;
+      // "Lifetime Diamond Status" over "4 of 10 years" is progress toward a lifetime level, not the level held.
+      if (/lifetime/.test(ll) && /\b\d+ (?:of|\/) \d+\b/.test(`${ll} ${lines[lines.indexOf(line) + 1] || ''}`)) continue;
       const score = (/(member|status|elite|tier|medallion|you('| a)re)/.test(ll) ? 3 : 0) + (line.split(/\s+/).length <= 4 ? 2 : 0) - lines.indexOf(line) * 0.01;
       if (score > bestLine) { bestLine = score; tierIndex = distinct[0].i; }
     }
