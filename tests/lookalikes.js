@@ -169,7 +169,7 @@ export async function scan(page, variant = {}) {
   const e = page.expect;
   // A page with several statuses (a card's benefits page): every program named, each with its level.
   if (e.many) {
-    const ok = /^Found \d+ statuses|^These \d+ statuses/.test(title) && e.many.every((name) => rows.some((r) => r.includes(`| ${name} |`)));
+    const ok = /^Found \d+ statuses|^These \d+ statuses/.test(title) && e.many.every((name) => rows.some((r) => r.startsWith(`${name} |`) || r.includes(`| ${name} |`)));
     return { name: page.name, ok, silentlyWrong: !ok && !got.flagged, got: { ...got, rows } };
   }
   const ok = title.includes(e.program) && got.balance === e.balance && (e.tier === undefined || got.tier === e.tier)
