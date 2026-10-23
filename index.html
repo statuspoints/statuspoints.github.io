@@ -6230,6 +6230,7 @@
     }
     const p = own || programFromCatalog(CATALOG_BY_ID[cid]);
     const second = !own && choice && choice.startsWith('new:'); // another account in a program you already track
+    if (second) p.id = newProgramId(p.name); // not the first account's id: its member number mustn't stand in for this one's
     const vals = valsFrom(found, p);
     if (playing.balancePick != null && p.unit) vals.balance = playing.balancePick; // picked on the card
     // A screenshot taken in an earlier qualifying year (its file's date): its counts are that year's, so they're left out.
