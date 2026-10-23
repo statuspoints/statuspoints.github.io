@@ -5055,10 +5055,11 @@
   // A date after "through", "valid until", "valid till", "expires"… as YYYY-MM-DD ("Feb 2028" and "02/2028" mean the
   // month's last day). A date on a line about points or miles expiring is the balance's, not the status's — unless a
   // level's name comes right before it ("Gold through 03/31/2028 Points 52,000"). An offer's end date ("Double Elite
-  // Night Credits through Dec 31") and a free night's, certificate's, companion fare's or lounge membership's end are
-  // neither. A line that opens with its date is read with the heading above it ("Gold Medallion" over "Valid through
-  // Jan 31, 2027"). A merged line naming a level anywhere (not inside the program's name) reads its date as the
-  // status's too, unless points or miles are named just before the date ("… PQF 33 Valid through Jan 31, 2028").
+  // Night Credits through Dec 31") and a free night's, certificate's, companion fare's, lounge membership's, award's,
+  // upgrade's or coupon's end are neither. A line that opens with its date is read with the heading above it ("Gold
+  // Medallion" over "Valid through Jan 31, 2027"). A merged line naming a level anywhere (not inside the program's
+  // name) reads its date as the status's too, unless points or miles are named just before the date ("… PQF 33 Valid
+  // through Jan 31, 2028").
   // A line naming status or tier goes first, then one only saying elite or member.
   function scanDate(text, dayFirst, levels = [], names = []) {
     const lower = text.toLowerCase();
@@ -5081,6 +5082,19 @@
       const named = onLine || levels.some((a) => lead.endsWith(` ${a}`) || ` ${normTier(above)}`.endsWith(` ${a}`));
       const status = named || /status|tier|medallion|level/.test(about) ? 2 : /elite|member/.test(about) ? 1 : 0;
       if (!status && /\b(?:points?|miles?|avios|pts)\b/.test(line)) continue;
+      // An award's, upgrade's, reward's or coupon's own end date ("Suite Upgrade Award" over "Valid through…",
+      // "Go Free award night", "Confirmable Upgrade Reward expires…", even after the level on a merged line) isn't
+      // status. "Platinum Pro thru 01/31/2028 Award miles 45,210" still is: the award comes after its date (and award
+      // miles or reward points are a balance, not an award).
+      const prize = /\b(?:awards?|upgrades?|coupons?|reward)\b(?! (?:miles?|points?|pts)\b)/;
+      if ((!status && prize.test(about)) || /\b(?:awards?|upgrades?|coupons?|reward)(?: nights?)?\s*[:\-–]?\s*$/.test(clause)) continue;
+      // A tile's own date, read with the caption over its value ("Miles expiring" over "3,200" over "Expiry date…",
+      // "Avios" over "96,320" over "Expiry date…"), and a passport's or licence's expiry aren't status either. A card's
+      // "Valid thru 11/27" under "Miles 31,400" still is.
+      const caption = above && !/[a-z]/.test(above) ? lower.slice(0, start).split('\n').map((l) => l.trim()).filter(Boolean).slice(-2, -1)[0] || '' : '';
+      const tile = `${above}\n${caption}`;
+      if (!status && (/expir|passport|document|licen[cs]e/.test(tile) || /passport|document|licen[cs]e/.test(line)
+        || (/expir/.test(t[0]) && /\b(?:points?|miles?|avios|pts)\b/.test(tile)))) continue;
       const rest = lower.slice(t.index + t[0].length, t.index + t[0].length + 24);
       let y; let mo; let d;
       let m = /^([a-z]{3})[a-z]*\.?\s+(\d{1,2}),?\s+(\d{4})/.exec(rest);
@@ -5178,7 +5192,8 @@
     // A caption without the program's level names: "Gold Elite Points" and "Silver tier Avios" are the balance's
     // ("Silver Tier Points" is still a count's).
     const unleveled = (t) => levels.reduce((s, a) => s.replace(new RegExp(`(^| )${a}(?: (?:tier|status|member|level)(?! (?:qualifying|points?|miles?|credits?)\\b))?(?= |$)`, 'g'), ' '), normTier(t));
-    const unitBefore = /(points|miles|avios|balance|skymiles|rewards|available|redeemable)\b[^\n]{0,12}\s*[:\n]?\s*$/;
+    // "Total points available for redemption 120,345" (a card statement's rewards summary) counts too.
+    const unitBefore = /(points|miles|avios|balance|skymiles|rewards|available(?: for redemption)?|redeemable)\b[^\n]{0,12}\s*[:\n]?\s*$/;
     // A heading naming a level and no unit ("Lifetime Platinum Elite" over "82,416 Points") is a status, not a caption.
     const levelHeading = (c) => !!c && levels.some((a) => ` ${normTier(c)} `.includes(` ${a} `)) && !SCAN_UNIT.test(unleveled(c));
     const candidates = [];
@@ -5243,6 +5258,8 @@
         if (SCAN_TO_GO.test(after)) score -= 8;
         // Not spendable yet, or a price or offer: "4,250 Points pending", "rooms from 5,000 Points", "Earn 500 points".
         if (/pending|on hold|lifetime/.test(`${own}\n${above}\n${below}`)) score -= 8;
+        // Last statement's balance ("Previous points balance 118,000", "Opening balance", "Beginning Balance"), not today's.
+        if (/\b(?:previous|opening|beginning|starting|prior)(?: (?:points?|miles?|avios|rewards?))? balance\b/.test(`${own}\n${above}\n${below}`)) score -= 8;
         if (price) score -= 8;
         candidates.push({ value, score });
       }
@@ -5250,15 +5267,26 @@
     candidates.sort((a, b) => b.score - a.score);
     const balances = [...new Set(candidates.filter((c) => c.score > 0).map((c) => c.value))].slice(0, 4);
     // Status: the best line naming exactly one level ("Platinum Elite Member"), skipping ladders ("Silver Gold
-    // Platinum") and targets ("8 nights to Platinum", "Next: Diamond", "Tier points needed for Gold"). The program's own name doesn't name a level
+    // Platinum"), targets ("8 nights to Platinum", "Next: Diamond", "Tier points needed for Gold", "Gold status requires
+    // 50,000 Tier Miles") and the level you had before ("Previous status: Gold"). The program's own name doesn't name a level
     // even when it holds a level's word ("Accor Live Limitless", "Virgin Red"). A card names a co-brand card, not
     // status — unless the line is just the level and "Card" (Turkish shows "Elite Card").
     const nameSigns = (SCAN_SIGNS[programId] || []).map(normTier)
       .filter((s) => !levels.includes(s) && levels.some((a) => ` ${s} `.includes(` ${a} `)));
+    // An alliance's tier beside the level on a membership card ("Star Alliance Gold" for a United 1K, "SkyTeam Elite
+    // Plus", "oneworld Sapphire") is the alliance's, not one of the program's levels — also when its logo's name is
+    // read as a line of its own ("STAR ALLIANCE" over "GOLD"). Each alliance has its own tier words: "STAR ALLIANCE"
+    // over "ELITE" (Turkish) or over "Elite Gold" (KrisFlyer) is still the program's level.
+    const rank = '(?: (?:status|tier|member|level))?';
+    const alliances = `star alliance${rank} (?:gold|silver)|sky ?team${rank} (?:elite plus|elite)|one ?world${rank} (?:ruby|sapphire|emerald)`;
+    const alliance = new RegExp(` (?:${alliances})${rank}(?= )`, 'g');
     let tierIndex = -1;
     let bestLine = -Infinity;
-    for (const line of lines) {
-      const hay = nameSigns.reduce((h, s) => h.split(` ${s} `).join(' '), ` ${normTier(line)} `);
+    for (const [li, line] of lines.entries()) {
+      // The logo's name on the line above, and this line only the alliance's tier ("GOLD", "Gold member").
+      if (li > 0 && /^(?:star alliance|sky ?team|one ?world)$/.test(normTier(lines[li - 1]))
+        && !` ${normTier(lines[li - 1])} ${normTier(line)} `.replace(alliance, '').trim()) continue;
+      const hay = nameSigns.reduce((h, s) => h.split(` ${s} `).join(' '), ` ${normTier(line)} `).replace(alliance, '');
       const matched = tiers.map((t, i) => ({ i, alias: t.aliases.filter((a) => hay.includes(` ${a} `)).sort((x, y) => y.length - x.length)[0] }))
         .filter((m) => m.alias);
       const distinct = matched.filter((m) => !matched.some((o) => o !== m && o.alias.length > m.alias.length && o.alias.includes(m.alias)));
@@ -5266,7 +5294,17 @@
       const ll = line.toLowerCase();
       const undated = ll.replace(/\b(?:until|to|through|thru)\s*:?\s*(?:[a-z]{3,9}\.?\s+\d{1,2},?\s+\d{4}|\d{1,2}\s+[a-z]{3,9}\.?,?\s+\d{4}|\d{1,2}[/.]\d{1,2}[/.]\d{2,4}|[a-z]{3,9}\.?\s+\d{4})/g, ' ');
       const levelCard = hay.trim() === `${distinct[0].alias} card`;
-      if (/\b(to|next|reach|unlock|qualify for|away from|until|needed|required)\b|benefits|perks|american express|visa|mastercard/.test(undated) || (!levelCard && /\bcard\b/.test(undated))) continue;
+      if (/\b(to|next|reach|unlocks?|qualify for|away from|until|needed|required|requires?|previous|former|prior|retain|requalify)\b|benefits|perks|american express|visa|mastercard/.test(undated) || (!levelCard && /\bcard\b/.test(undated))) continue;
+      // What a level takes, in a row of a tier table or on a progress bar ("Platinum tier: 450 Qpoints", "Silver tier
+      // 25,000 Tier Miles", "Gold: 180 XP", "Collect 600 Tier Points for Silver status"), isn't the level you hold
+      // ("Gold 182 XP", "Silver Tier Points 420", "Diamond status: 42 nights this year" and "You qualified for Platinum
+      // Elite with 52 nights" still are: the count is yours, or comes after the level).
+      const { alias } = distinct[0];
+      const plain = undated.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[’`]/g, "'");
+      const takes = new RegExp(`(?:^|[^a-z0-9'])${alias.split(' ').join('[^a-z0-9]+')}(?:[^a-z0-9]+(?:tier|status|level)\\s*:?|\\s*:|\\s+(?:at|from))\\s*(?!(?:19|20)\\d\\d\\b)\\d[\\d,.]*(.*)`).exec(plain);
+      const yours = takes && /\b(?:this year|so far|to date|ytd|you|your|current)\b/.test(takes[1]);
+      const forLevel = new RegExp(`\\d[^\\n]* for ${alias}(?: |$)`).test(hay);
+      if ((takes && !yours && SCAN_COUNTED.test(takes[1])) || forLevel) continue;
       const score = (/(member|status|elite|tier|medallion|you('| a)re)/.test(ll) ? 3 : 0) + (line.split(/\s+/).length <= 4 ? 2 : 0) - lines.indexOf(line) * 0.01;
       if (score > bestLine) { bestLine = score; tierIndex = distinct[0].i; }
     }
