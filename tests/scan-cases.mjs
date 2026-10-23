@@ -1123,6 +1123,9 @@ export default [
   // Two accounts in one program are told apart by the greeting too; the name also labels a second account.
   { name: 'Greeting on its own line, name under it (LHW)', text: `Welcome Back\nDr. Cho\nLeaders Club Member\nMember ID 5523190\nMember Since 2025\n0 Points`,
     expect: { program: 'lhw', member: '5523190', name: 'Dr. Cho' } },
+  { name: 'Greeting over a blank line, as the reader writes blocks', text: `Welcome Back\n\nMs. Rivera\n\nLeaders Club Member\n\n262 Points`, expect: { program: 'lhw', name: 'Ms. Rivera' } },
+  { name: 'The name comes from whichever reading kept the greeting line', passes: ['Welcome Back\n\nLeaders Club Member\nMember Since 2026\n280 Points', 'Welcome Back\n\nMs. Rivera\n\nLeaders Club Member\n\nMember Since 2026\n\n280 Points'],
+    expect: { program: 'lhw', balance: 280, name: 'Ms. Rivera' } },
   { name: 'Greeting with a comma', text: `Hello Alex,\nPlatinum Elite Member\nIHG One Rewards\nYOUR POINTS\n26,948`, expect: { program: 'ihg', balance: 26948, name: 'Alex' } },
   { name: 'Greeting run into the next column ("Hi Chris Points")', text: `AIR CANADA Aeroplan\nHi Chris Points\n187,350\nAeroplan number 123456789`, expect: { program: 'aeroplan', balance: 187350, name: 'Chris' } },
   { name: 'Welcome, with a first and last name', text: `Welcome, Lina Park\nQatar Airways Privilege Club\nGold\nAvios 58,940`, expect: { program: 'qatar', name: 'Lina Park' } },
