@@ -4853,8 +4853,11 @@
   }
 
   // The levels a program uses, for recognizing status in a screenshot: BENEFITS where we have perks, else names.
+  // Lounge memberships a card's benefits page lists under "Airport lounges" (no ladder of levels).
+  const LOUNGE_TIERS = ['Priority Pass', 'Priority Pass Standard Plus', 'Priority Pass Select', 'Priority Pass Prestige'];
   function scanTiersFor(id) {
     if (BENEFITS[id]) return BENEFITS[id];
+    if (id === 'lounges') return LOUNGE_TIERS.map((name) => ({ name, aliases: [normTier(name)] }));
     // Matched by their full names: at some airlines "Elite" or "Plus" is a level of its own.
     return (STATUS_NAMES[id] || []).map((name) => ({ name, aliases: [normTier(name)] }));
   }
@@ -6296,13 +6299,15 @@
   // A screen listing several programs (a card's benefits page: "Marriott Bonvoy Gold Elite Status", "Hilton Honors
   // Gold Status", each with a member number): the text split where each program is named. A line naming two
   // programs (two columns read as one line) is split between them.
+  // Airport lounges count here too (a Priority Pass membership on the same page), never as a page's own program.
+  const MANY_SIGNS = { ...SCAN_SIGNS, lounges: ['priority pass', 'global lounge collection', 'airport lounges'] };
   function splitPrograms(text) {
     const signIn = (sign, ll) => new RegExp(`(^|[^a-z])${sign.replace(/[-+.]/g, (c) => `\\${c}`)}([^a-z]|$)`).exec(ll);
     const parts = [];
     for (const line of text.split('\n')) {
       const ll = line.toLowerCase();
       const named = []; // [at, id] where each program's longest sign starts on the line
-      for (const [id, signs] of Object.entries(SCAN_SIGNS)) {
+      for (const [id, signs] of Object.entries(MANY_SIGNS)) {
         const hit = signs.map((s) => signIn(s, ll)).filter(Boolean).sort((a, b) => b[0].length - a[0].length)[0];
         if (hit) named.push([hit.index + hit[1].length, id]);
       }
@@ -6330,7 +6335,8 @@
         const r = parseAccountText(part.text, part.id);
         if (r.tierIndex >= 0) found.push({ id: part.id, tierIndex: r.tierIndex, exp: r.exp, member: r.member });
       }
-      if (found.length >= 2 && (!best || found.length > best.length)) best = found;
+      // A lounge membership rides along with two or more programs; alone with one, it's that program's page.
+      if (found.filter((f) => f.id !== 'lounges').length >= 2 && (!best || found.length > best.length)) best = found;
     }
     return best;
   }

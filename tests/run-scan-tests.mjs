@@ -195,14 +195,16 @@ const bigChecks = [];
   bigChecks.push(['a light page has no bands', context.big.darkBands(gray(100, 300, () => 250), 100, 300), []]);
 }
 { // Several programs on one page (a card's benefits page): each read on its own; one program's page isn't split.
-  vm.runInContext(`${slice('  // A screen listing several programs', '  // The card for a page with several statuses')}\nglobalThis.many = (passes) => readMany({ passes: passes.map((text) => ({ text })) });`, context);
+  vm.runInContext('globalThis.many = (passes) => readMany({ passes: passes.map((text) => ({ text })) });', context);
   const amex = `Marriott Bonvoy® Gold Elite Status\nMarriott Bonvoy Number: - 4471\nHilton Honors™ Gold Status\nHilton Honors Number: 2045318860\nLeaders Club Sterling Status from The\nLeading Hotels of the World®\nLeaders Club Number: 5523190\nThe American Express Global Lounge\nCollection®\nEnrolled in Priority Pass Select Membership Number:\n3301742255`;
   const got = context.many([amex]);
-  bigChecks.push(['a card benefits page with three statuses: all three, with member numbers', got && got.map((f) => [f.id, f.tierIndex, f.member]),
-    [['marriott', 1, null], ['hilton', 1, '2045318860'], ['lhw', 0, '5523190']]]);
+  bigChecks.push(['a card benefits page with four statuses: all four, with member numbers', got && got.map((f) => [f.id, f.tierIndex, f.member]),
+    [['marriott', 1, null], ['hilton', 1, '2045318860'], ['lhw', 0, '5523190'], ['lounges', 2, '3301742255']]]);
+  bigChecks.push(['…the lounge membership reads as Priority Pass Select', context.read({ text: 'Enrolled in Priority Pass Select Membership Number:\n3301742255' }).program, null]);
   const merged = `Marriott Bonvoy® Gold Elite Status Hilton Honors™ Gold Status\nMarriott Bonvoy Number: - 4471 Hilton Honors Number: 2045318860\nLeaders Club Sterling Status from The The American Express Global Lounge\nLeading Hotels of the World® Collection®\nLeaders Club Number: 5523190 Enrolled in Priority Pass Select Membership Number:\n3301742255`;
-  bigChecks.push(['…read as one block (two columns on each line): still all three', (context.many([merged]) || []).map((f) => f.id), ['marriott', 'hilton', 'lhw']]);
-  bigChecks.push(['…the better of the two readings wins', (context.many([amex, 'Hilton Honors Gold Status\nMarriott Bonvoy Gold Elite']) || []).map((f) => f.id), ['marriott', 'hilton', 'lhw']]);
+  bigChecks.push(['…read as one block (two columns on each line): still all four', (context.many([merged]) || []).map((f) => f.id), ['marriott', 'hilton', 'lhw', 'lounges']]);
+  bigChecks.push(['…the better of the two readings wins', (context.many([amex, 'Hilton Honors Gold Status\nMarriott Bonvoy Gold Elite']) || []).map((f) => f.id), ['marriott', 'hilton', 'lhw', 'lounges']]);
+  bigChecks.push(['a lounge line alone never makes a page several programs', context.many(['Delta SkyMiles\nGold Medallion\nPriority Pass Select']), null]);
   bigChecks.push(['one program’s page naming a partner’s level isn’t split', context.many(['Delta SkyMiles\nGold Medallion\n84,250 miles\nVirgin Atlantic Flying Club Gold']), null]);
   bigChecks.push(['a transfer-partner list with no levels isn’t split', context.many(['Chase Ultimate Rewards\n84,210 points\nTransfer partners\nWorld of Hyatt\nMarriott Bonvoy\nUnited MileagePlus']), null]);
   bigChecks.push(['two programs, one without a level: not a many-status page', context.many(['Hilton Honors Gold Status\nMarriott Bonvoy']), null]);
