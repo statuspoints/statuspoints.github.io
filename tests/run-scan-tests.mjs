@@ -30,10 +30,14 @@ vm.runInContext(`${stubs}\n${head}\n${dates}\nconst state = { programs: [], bala
     // A reading is its text, or { text, words: [[word, confidence], …] } for how sure the reader was of each word.
     const pass = (x) => (typeof x === 'string' ? { text: x, lines: [] }
       : { text: x.text, disputed: x.disputed, lines: [{ text: '', words: (x.words || []).map(([text, confidence]) => ({ text, confidence })) }] });
+    // A case's own programs the catalog doesn't know (custom: ['Finnair Plus']) are on the list while it's read.
+    state.programs = (c.custom || []).map((name, i) => ({ id: 'custom-' + i, name, unit: 'Avios', status: [] }));
     const r = c.passes ? readingOf({ passes: c.passes.map(pass) }).found : parseAccountText(c.text);
+    const own = r.ownId ? state.programs.find((p) => p.id === r.ownId).name : null;
+    state.programs = [];
     const tiers = r.programId ? scanTiersFor(r.programId) : [];
     return { program: r.programId, balance: r.balances[0] ?? null, tier: r.tierIndex >= 0 ? tiers[r.tierIndex].name : null,
-      exp: r.exp, progress: r.progress, alt: r.altProgress, mqd: r.mqd, member: r.member, unsure: !!r.unsure };
+      exp: r.exp, progress: r.progress, alt: r.altProgress, mqd: r.mqd, member: r.member, unsure: !!r.unsure, weak: r.weak || null, own };
   };`, context);
 
 let failed = 0;
@@ -59,6 +63,10 @@ const guesses = [
   ['IHG and Marriott both have Platinum Elite: no guess', ['ihg', 'marriott'], unnamed, null],
   ['no listed program has the level: no guess', ['chase', 'delta'], unnamed, null],
   ['no level on screen: no guess', ['ihg'], 'YOUR POINTS\n26,948', null],
+  ['Avios on screen, only Aer Lingus counts in Avios on your list: Aer Lingus', ['aerlingus', 'delta'], 'Silver\nAvios 22,000\nTier Credits 1,240', 'aerlingus'],
+  ['Avios on screen, BA and Qatar both count in Avios: no guess', ['ba', 'qatar'], 'Silver\nAvios 22,000', null],
+  ['Avios on screen, no Avios program on your list: no guess', ['delta'], 'Silver\nAvios 22,000', null],
+  ['a level fits first: Gold Medallion with Delta and an Avios program listed', ['delta', 'ba'], 'Gold Medallion\n84,250 Avios', 'delta'],
 ];
 let guessed = 0;
 for (const [name, ids, text, want] of guesses) {

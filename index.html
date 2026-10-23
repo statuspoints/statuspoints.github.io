@@ -4742,15 +4742,15 @@
 
   // Words that identify each program in an account screen (longer, more specific phrases count for more).
   const SCAN_SIGNS = {
-    delta: ['skymiles', 'medallion', 'mqd', 'delta air lines', 'delta'], united: ['mileageplus', 'premier 1k', 'pqp', 'pqf', 'united'],
+    delta: ['skymiles', 'medallion', 'mqd', 'mqds', 'delta air lines', 'delta'], united: ['mileageplus', 'premier 1k', 'pqp', 'pqf', 'united'],
     american: ['aadvantage', 'american airlines', 'loyalty points'], southwest: ['rapid rewards', 'a-list', 'southwest', 'companion pass'],
     alaska: ['atmos rewards', 'atmos', 'alaska airlines'], jetblue: ['trueblue', 'jetblue', 'mosaic'], aeroplan: ['aeroplan', 'air canada'],
     flyingblue: ['flying blue', 'air france', 'klm'], ba: ['british airways', 'avios'], koreanair: ['skypass', 'korean air'],
     virgin: ['flying club', 'virgin atlantic', 'virgin points', 'virgin red'], hilton: ['hilton honors', 'hilton'], marriott: ['bonvoy', 'marriott'],
     ihg: ['ihg one rewards', 'one rewards', 'ihg'], hyatt: ['world of hyatt', 'hyatt', 'globalist', 'explorist', 'discoverist'],
     wyndham: ['wyndham rewards', 'wyndham'], choice: ['choice privileges', 'choice hotels'], accor: ['live limitless', 'accor'],
-    amex: ['membership rewards', 'american express'], chase: ['ultimate rewards', 'chase', 'sapphire reserve', 'sapphire preferred'], citi: ['thankyou', 'citi'],
-    capitalone: ['capital one', 'venture miles', 'venture x'], bilt: ['bilt'],
+    amex: ['membership rewards', 'american express'], chase: ['ultimate rewards', 'chase', 'sapphire reserve', 'sapphire preferred'],
+    citi: ['thankyou points', 'thankyou rewards', 'thankyou', 'citi'], capitalone: ['capital one', 'venture miles', 'venture x'], bilt: ['bilt rewards', 'bilt points', 'bilt'],
     emirates: ['emirates skywards', 'skywards', 'emirates'], singapore: ['krisflyer', 'singapore airlines'],
     qatar: ['privilege club', 'qatar airways', 'qpoints'], turkish: ['miles&smiles', 'miles & smiles', 'turkish airlines'],
     lufthansa: ['miles & more', 'miles and more', 'lufthansa'], cathay: ['asia miles', 'cathay'], qantas: ['qantas frequent flyer', 'qantas'],
@@ -4763,6 +4763,27 @@
     lhw: ['leaders club', 'leading hotels'], omni: ['select guest', 'omni hotels'], avis: ['avis preferred', 'avis'], hertz: ['gold plus rewards', 'hertz'],
     national: ['emerald club', 'national car'],
   };
+  // A level name only one program uses, two words or more ("Gold Medallion", "Mosaic 2", "Premier 1K"): on a short
+  // line of its own it names that program as surely as its logo — a partner's tile never shows your level in it.
+  let levelSigns = null;
+  function levelSignsFor(id) {
+    if (!levelSigns) {
+      const names = (pid) => [...new Set(scanTiersFor(pid).map((t) => t.name.toLowerCase()).filter((n) => /[ -]/.test(n)))];
+      const count = new Map();
+      for (const pid of Object.keys(SCAN_SIGNS)) for (const n of names(pid)) count.set(n, (count.get(n) || 0) + 1);
+      levelSigns = Object.fromEntries(Object.keys(SCAN_SIGNS).map((pid) => [pid, names(pid).filter((n) => count.get(n) === 1)]));
+    }
+    return levelSigns[id] || [];
+  }
+  // A line that is just a level ("Globalist", "Premier Gold Member", "Platinum Elite"): yours, never a partner's name.
+  // A lone word many programs share ("Gold") isn't one.
+  const LEVEL_PLAIN = /^(?:silver|gold|platinum|diamond|bronze|titanium|blue|red|green|classic|elite|member|plus|select)$/;
+  let levelNames = null;
+  function levelLine(ll) {
+    if (!levelNames) levelNames = new Set(Object.keys(SCAN_SIGNS).flatMap((pid) => scanTiersFor(pid).map((t) => t.name.toLowerCase())).filter((n) => !LEVEL_PLAIN.test(n)));
+    const bare = ll.replace(/\s+(?:member|status|tier)$/, '').trim();
+    return levelNames.has(ll.trim()) || levelNames.has(bare);
+  }
   // Status names for programs without perk details (lowest to highest), so screenshots can still be read.
   const STATUS_NAMES = {
     flyingblue: ['Explorer', 'Silver', 'Gold', 'Platinum', 'Ultimate'],
@@ -4856,6 +4877,11 @@
   // Card issuers' own names: once a screen names a co-brand card ("Delta SkyMiles Gold Card" in the Amex app), the
   // issuer is only who issues it.
   const SCAN_ISSUERS = new Set(['american express', 'chase', 'citi', 'capital one', 'wells fargo', 'u.s. bank', 'us bank', 'bank of america']);
+  // The issuers' own programs: a card named on one of their pages ("Venture X Card", "Sapphire Reserve Card") isn't a co-brand.
+  const SCAN_ISSUER_IDS = new Set(['amex', 'chase', 'citi', 'capitalone', 'bilt', 'wellsfargo', 'usbank', 'bofa']);
+  // A currency several programs share (Avios: British Airways, Qatar, Iberia, Aer Lingus, Finnair…): on its own it
+  // never names one of them.
+  const SCAN_CURRENCIES = new Set(['avios']);
 
   // One edit apart ("skymiies" vs "skymiles"), for OCR slips in program names.
   function nearWord(a, b) {
@@ -5132,32 +5158,83 @@
     const offer = (ll) => /\b(?:apply|earn|bonus|offer|sign up)\b|pre-?approved/.test(ll);
     const coBrand = lines.some((line) => {
       const ll = line.toLowerCase();
-      return !offer(ll) && /\bcard\b|\bvisa\b|mastercard/.test(ll) && Object.values(SCAN_SIGNS).some((signs) => signs.some((s) => !SCAN_ISSUERS.has(s) && signIn(s, ll)));
+      return !offer(ll) && /\bcard\b|\bvisa\b|mastercard/.test(ll) && Object.entries(SCAN_SIGNS).some(([id, signs]) => !SCAN_ISSUER_IDS.has(id) && signs.some((s) => signIn(s, ll)));
     });
+    // Lines naming where points go, not whose they are: a transfer, partner or offer line, a line with a transfer ratio
+    // ("Emirates Skywards 1:1" — "9:41" on a status bar is a clock), and the whole list under a "Transfer points",
+    // "Our partners" or "Convert points to miles" heading, down to the next amount, balance caption ("Your …
+    // points", "… available") or level line ("Premier Gold": a list never shows your level). A "From …" line names the source.
+    const ratio = (ll) => /\b\d+(?:[.,]\d+)?\s?:\s?\d+(?:[.,]\d+)?\b/.test(ll) && !/^\W*\d{1,2}:\d{2}\b/.test(ll);
+    const partnerHeading = (ll) => !/\d/.test(ll) && /\btransfer|\bpartners?\b|\bconvert\b.*\b(?:miles|points)\b|\bfly with\b|\bbook with\b|\bredeem with\b/.test(ll);
+    let listed = false;
+    const partner = lines.map((line) => {
+      const ll = line.toLowerCase();
+      if (listed && ((/\d{3}/.test(ll) && !ratio(ll)) || /\b(?:available|balance|you have)\b|^your\b/.test(ll) || levelLine(ll))) listed = false;
+      const demoted = (listed && !/^from\b/.test(ll)) || /transfer|partner|redeem with|book with|airline and hotel/.test(ll) || offer(ll) || ratio(ll);
+      if (partnerHeading(ll)) listed = true;
+      return demoted;
+    });
+    // The header: the first three lines, down to the first amount (the balance), not counting a phone's status bar
+    // ("9:41", "9:41 AM 5G 87%") — a partner named under the balance is body.
+    const amount = (ll) => /\d{1,3},\d{3}|\b\d+\s*(?:points|miles|avios|pts)\b/.test(ll);
+    const statusBar = (ll) => /^\W*\d{1,2}:\d{2}\b/.test(ll) && !/[a-z]{3,}/.test(ll.replace(/\b(?:am|pm|lte|wifi|5g|4g|3g)\b/g, ''));
+    const header = new Set();
+    for (let i = 0; i < lines.length && header.size < 3; i++) {
+      const ll = lines[i].toLowerCase();
+      if (statusBar(ll)) continue;
+      header.add(i);
+      if (amount(ll)) break;
+    }
     let programId = forceId === undefined ? null : forceId || null;
     let best = 0;
+    // A program named only on partner, offer or transfer lines (its own logo unread) is as good as unnamed: the card
+    // asks or guesses instead of saving to it. It's kept as `weak`, for when it's the program on your list.
+    let weak = null;
+    let bestWeak = 0;
     for (const [id, signs] of forceId === undefined ? Object.entries(SCAN_SIGNS) : []) {
       const hits = [];
+      let named = false; // on a line of its own, not a partner or offer line
       lines.forEach((line, i) => {
         const ll = line.toLowerCase();
         const lineWords = ll.split(/[^a-z0-9]+/);
-        // The line right under a "Transfer points" heading names where points go ("World of Hyatt"), not whose they are.
-        const destination = i > 0 && /\btransfer\b/i.test(lines[i - 1]) && !/\d/.test(lines[i - 1]) && !/^from\b/.test(ll);
-        const weight = (i < 3 ? 2 : 1) * (/transfer|partner|redeem with|book with|airline and hotel/.test(ll) || offer(ll) || destination ? 0.15 : 1);
+        const weight = (header.has(i) ? 2 : 1) * (partner[i] ? 0.15 : 1);
+        const before = hits.length;
         for (const sign of signs) {
-          const w = weight * (coBrand && SCAN_ISSUERS.has(sign) ? 0.15 : 1);
+          const currency = SCAN_CURRENCIES.has(sign);
+          const w = weight * (coBrand && SCAN_ISSUERS.has(sign) ? 0.15 : 1) * (currency ? 0.15 : 1);
+          const n = hits.length;
           if (signIn(sign, ll)) hits.push(sign.length * w);
           else if (!sign.includes(' ') && sign.length >= 6 && lineWords.some((x) => !SCAN_COMMON.has(x) && nearWord(x, sign))) hits.push(sign.length * w * 0.8);
           // A logo read as one word, the brand run into the word after it ("WYNDHAMRewarDS", "HiltonHonors"), that
-          // word maybe one letter off ("WYNDHAMRewaRrDS").
+          // word maybe one letter off ("WYNDHAMRewaRrDS") — or a two-word name run together ("FlyingBlue").
           else if (!sign.includes(' ') && sign.length >= 5 && lineWords.some((x) => x.startsWith(sign) && gluedTo(x.slice(sign.length)))) hits.push(sign.length * w * 0.9);
+          else if (sign.includes(' ') && signIn(sign.replace(/ /g, ''), ll)) hits.push(sign.length * w * 0.9);
+          if (hits.length > n && !currency && !partner[i]) named = true;
         }
+        if (lineWords.length <= 3) for (const name of levelSignsFor(id)) if (signIn(name, ll)) hits.push(name.length * weight);
+        if (!partner[i] && lineWords.length <= 3 && levelSignsFor(id).some((name) => signIn(name, ll))) named = true;
       });
       if (!hits.length) continue;
       const top = Math.max(...hits);
       let score = top + 0.25 * (hits.reduce((a, b) => a + b, 0) - top);
       if ((state.programs || []).some((p) => catalogFor(p) && catalogFor(p).id === id)) score += 0.5;
-      if (score > best) { best = score; programId = id; }
+      if (named && score > best) { best = score; programId = id; }
+      else if (!named && score > bestWeak) { bestWeak = score; weak = id; }
+    }
+    if (programId) weak = null;
+    // A program of your own the catalog doesn't know ("Finnair Plus"), named on a line of its own: the screen is its
+    // page when nothing in the catalog is named more surely — the card reads it as that program (ownId).
+    let ownId = null;
+    if (forceId === undefined) {
+      let bestOwn = 0;
+      for (const p of state.programs || []) {
+        const name = String(p.name || '').toLowerCase().trim();
+        if (catalogFor(p) || !/[a-z]{4}/.test(name) || SCAN_COMMON.has(name)) continue;
+        const at = new RegExp(`(^|[^a-z])${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}([^a-z]|$)`);
+        const score = Math.max(0, ...lines.map((line, i) => (!partner[i] && at.test(line.toLowerCase()) ? name.length * (header.has(i) ? 2 : 1) : 0)));
+        if (score && score >= best && score > bestOwn) { bestOwn = score; ownId = p.id; }
+      }
+      if (ownId) { programId = null; weak = null; }
     }
     // Member number: mostly digits after "Member", "#", "Account" — never "ending 1234" card digits.
     let member = null;
@@ -5172,8 +5249,11 @@
       memberAt.lastIndex = m.index + m[1].length;
       const id = m[2].replace(/\s+/g, '');
       // Not card digits ("ending", "Card #" on the label's own line) or a booking's number ("Confirmation # 845…").
-      const before = lower.slice(Math.max(lower.lastIndexOf('\n', m.index - 1) + 1, m.index - 12), m.index);
+      const lineStart = lower.lastIndexOf('\n', m.index - 1) + 1;
+      const before = lower.slice(Math.max(lineStart, m.index - 12), m.index);
       if (/ending|ends in|card|confirmation|reservation|booking|order|ticket|itinerary|phone/.test(before + m[0].toLowerCase())) continue;
+      // A booking word anywhere earlier on the label's line ("Confirmation number 4567…", "Reservation no. 8451…").
+      if (/\b(?:confirmation|reservation|booking|itinerary|order|ticket)\b/.test(lower.slice(lineStart, m.index))) continue;
       if (/\d{5,}/.test(id) && id.length <= 16 && (id.match(/[a-z]/gi) || []).length <= 3) { member = id; memberText = m[2]; break; }
     }
     // Counts for this year, in the program's units (and its second path), plus Delta MQDs.
@@ -5309,7 +5389,7 @@
       if (score > bestLine) { bestLine = score; tierIndex = distinct[0].i; }
     }
     // `score`: how surely the balance reads (a unit caption and thousands commas count most), for picking a reading.
-    return { programId, member, balances, score: candidates.length ? candidates[0].score : 0, tierIndex,
+    return { programId, weak, ownId, member, balances, score: candidates.length ? candidates[0].score : 0, tierIndex,
       exp: scanDate(text, DAY_FIRST.has(programId), levels, nameSigns), progress, altProgress, mqd };
   }
 
@@ -6240,6 +6320,8 @@
     Object.assign(playing, { read, pickArg: choice, text: reading.text, found, many: null });
     $('#play-shot').className = 'play-shot done';
     const later = batch ? ['Skip', false, skipPlay] : ['Try another', false, pickAnother];
+    // A program of your own the catalog doesn't know, named on the screen: read as that program.
+    if (!choice && found.ownId && programs.some((x) => x.id === found.ownId)) { showLoot(read, found.ownId); return; }
     if (!choice) {
       cid = found.programId;
       // Which of your accounts in this program: by the screen's member number when you have two, or the only one.
@@ -6263,6 +6345,10 @@
     if (!own && !cid) {
       const guess = guessProgram(read);
       if (guess) { playing.guessed = true; showLoot(read, guess); return; }
+      // Named only on a partner or offer line ("Earn Marriott Bonvoy points with Uber"): if it's on your list, likely
+      // its own page, so it's read as that program, with the card asking you to make sure. Otherwise you pick.
+      const dim = found.weak ? programs.find((x) => catalogFor(x) && catalogFor(x).id === found.weak) : null;
+      if (dim) { playing.guessed = true; showLoot(read, dim.id); return; }
       pickProgram(read, later);
       return;
     }
@@ -6353,12 +6439,16 @@
   // Platinum Elite) or none does, you pick.
   // Only a level's full name counts ("Platinum Elite", "Gold Medallion", "Explorist"), never a lone common word
   // ("Gold", "Platinum") that many programs share.
+  // Failing a level, a currency few programs use ("Avios") names the one program on your list that counts in it.
   const GUESS_COMMON = /^(?:silver|gold|platinum|diamond|bronze|titanium|blue|red|green|classic|elite|member|plus|select)$/;
   function guessProgram(read) {
     const hay = ` ${(read.passes || [read]).map((pass) => normTier(pass.text || '')).join(' ')} `;
     const fits = (state.programs || []).filter((p) => p.unit && catalogFor(p) && scanTiersFor(catalogFor(p).id)
       .some((t) => { const name = normTier(t.name); return !GUESS_COMMON.test(name) && hay.includes(` ${name} `); }));
-    return fits.length === 1 ? fits[0].id : null;
+    if (fits.length) return fits.length === 1 ? fits[0].id : null;
+    const currency = [...SCAN_CURRENCIES].find((c) => hay.includes(` ${c} `));
+    const counting = currency ? (state.programs || []).filter((p) => String(p.unit || '').toLowerCase() === currency) : [];
+    return counting.length === 1 ? counting[0].id : null;
   }
 
   // A screen listing several programs (a card's benefits page: "Marriott Bonvoy Gold Elite Status", "Hilton Honors

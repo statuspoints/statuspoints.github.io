@@ -1,6 +1,8 @@
 // Account-screen text as a phone's text reader returns it (line breaks, stray marks, the odd misread), with what
 // the screenshot reader should find. Run: node tests/run-scan-tests.mjs
 // Expected keys: program, balance, tier, exp, progress, alt, mqd, member (omit a key to not check it; null = must be empty).
+// `weak`: the program named only on partner or offer lines, when no program is named on a line of its own (program is then null).
+// `custom`: names of your own programs the catalog doesn't know, on the list while the case is read; `own` is the one the screen names.
 export default [
   // ---------- US airlines ----------
   { name: 'Delta app', text: `SkyMiles Member\nGold Medallion®\nStatus valid through Jan 31, 2028\n84,250\nmiles\nMQDs\n$11,240 of $15,000\nSkyMiles # 9012345678`,
@@ -777,4 +779,108 @@ export default [
     expect: { program: 'singapore', tier: 'Elite Gold', balance: 44200 } },
   { name: 'Turkish card: “STAR ALLIANCE” over “ELITE” is still Elite', text: `Miles&Smiles\nSTAR ALLIANCE\nELITE\nMiles 31,400`,
     expect: { program: 'turkish', tier: 'Elite', balance: 31400 } },
+  // ---------- detect fixes (2026-10-22) ----------
+  // A card issuer's points page listing transfer partners is the issuer's, even without a heading or with the header scrolled off.
+  { name: 'Citi ThankYou balance over a Qantas partner line', text: `ThankYou Points\n68,940\nQantas Frequent Flyer`, expect: { program: 'citi', balance: 68940 } },
+  { name: 'Bilt Rewards balance over a Hyatt partner line', text: `Bilt Rewards\n48,210 points\nWorld of Hyatt`, expect: { program: 'bilt', balance: 48210 } },
+  { name: 'Amex balance caption under a Transfer Points heading', text: `Transfer Points\nMembership Rewards Points available\n96,450\nHilton Honors`, expect: { program: 'amex', balance: 96450 } },
+  { name: 'Chase transfer page scrolled, partner with a 1:1 ratio', text: `Good afternoon, Alex\nTransfer points\nChoose a partner\nYour Ultimate Rewards points\n84,210\nEmirates Skywards 1:1`,
+    expect: { program: 'chase', balance: 84210 } },
+  { name: 'Capital One page naming its own Venture X card', text: `Capital One\nVenture X Card ...4417\nMiles balance 84,210\nQantas Frequent Flyer`, expect: { program: 'capitalone', balance: 84210 } },
+  { name: 'Capital One transfer list under a "Transfer miles" heading', text: `Capital One\nVenture X Card ...4417\nMiles balance 84,210\nTransfer miles\nAir Canada Aeroplan 1:1\nQantas Frequent Flyer 1:1\nEmirates Skywards 1:1`,
+    expect: { program: 'capitalone', balance: 84210 } },
+  // Near misses that keep reading as before.
+  { name: 'A co-brand card page is the airline’s, not the issuer’s', text: `Delta Air Lines\nMy Profile\nDelta SkyMiles Reserve American Express Card\nSilver Medallion Member\nMiles Available 132,018`,
+    expect: { program: 'delta', balance: 132018, tier: 'Silver Medallion' } },
+  { name: 'A Southwest page with a Chase 1:1 transfer line stays Southwest', text: `Rapid Rewards\nA-List\nAvailable points 45,980\nTransfer Chase Ultimate Rewards points 1:1`,
+    expect: { program: 'southwest', balance: 45980, tier: 'A-List' } },
+  { name: 'A Hyatt page with a Bilt tile stays Hyatt', text: `World of Hyatt\nGlobalist\n41,000 points\nBilt\nEarn Hyatt points on rent`, expect: { program: 'hyatt', balance: 41000, tier: 'Globalist' } },
+  { name: 'A Chase transfer page with a "From" source line stays Chase', text: `Transfer points\nFrom Chase Ultimate Rewards\nTo World of Hyatt\n10,000 points`, expect: { program: 'chase' } },
+  { name: 'A status-bar clock isn’t a transfer ratio', text: `9:41\nDelta SkyMiles\nGold Medallion\n84,250 miles`, expect: { program: 'delta', balance: 84250, tier: 'Gold Medallion' } },
+  { name: 'An Amex Hilton card page is Hilton’s', text: `American Express\nHilton Honors American Express Card\nHilton Honors points 96,450\nGold`, expect: { program: 'hilton', balance: 96450, tier: 'Gold' } },
+  // A screen whose own name didn't read, with a promo or partner line naming another program: no program is named — the
+  // promo's program is only `weak`, so the card guesses from the level, or asks, instead of saving to the partner.
+  { name: 'Unnamed Marriott screen with a United promo line isn’t United', text: `Hi Alex\nPlatinum Elite\n98,410 points\nEarn United miles on your stays`,
+    expect: { program: null, weak: 'united', balance: 98410 } },
+  { name: 'Unnamed Marriott screen with a Hertz offer tile', text: `Hi Alex\nPlatinum Elite\n98,410 points\nEarn 3X points on Hertz rentals`, expect: { program: null, weak: 'hertz', balance: 98410 } },
+  { name: 'Unnamed Choice screen with a Wyndham bonus line isn’t Wyndham', text: `Hi Alex\nPlatinum\n32,100 points\nBonus: earn like Wyndham Rewards members`, expect: { program: null, weak: 'wyndham' } },
+  { name: 'A screen named only in its own offer line is weak, not unknown', text: `Hi Jordan\nPlatinum Elite\n98,410 Points\nEarn Marriott Bonvoy points with Uber`,
+    expect: { program: null, weak: 'marriott', balance: 98410 } },
+  { name: 'Flying Blue logo read as one word, with a SkyTeam partner line', text: `FlyingBlue\nGold\n78,450 Miles\n182 XP\nSkyTeam partner: Delta Air Lines`,
+    expect: { program: 'flyingblue', balance: 78450, tier: 'Gold' } },
+  { name: 'Choice logo read as one word, with a Wyndham bonus line', text: `ChoicePrivileges\nPlatinum\n32,100 points\nBonus: earn like Wyndham Rewards members`,
+    expect: { program: 'choice', balance: 32100, tier: 'Platinum' } },
+  // Near misses: a program named on a line of its own still wins outright, offers and all.
+  { name: 'Marriott named in its header, with a United promo line', text: `Marriott Bonvoy\nPlatinum Elite\n98,410 points\nEarn United miles on your stays`,
+    expect: { program: 'marriott', weak: null, balance: 98410, tier: 'Platinum Elite' } },
+  { name: 'An unnamed screen with no partner line has no weak program either', text: `Hi Alex\nPlatinum Elite\n98,410 points`, expect: { program: null, weak: null, balance: 98410 } },
+  // A partner tile or activity row under the balance, with the phone's status bar above: the page's own level name
+  // ("Gold Medallion", "Mosaic 2") names the program; the partner doesn't.
+  { name: 'Delta app under a status bar, with a Virgin Atlantic tile', text: `9:41\nToday\nHi, Alex\nGold Medallion\n84,250 miles\nVirgin Atlantic`,
+    expect: { program: 'delta', balance: 84250, tier: 'Gold Medallion' } },
+  { name: 'Delta Platinum under a status bar, with an Air France KLM tile', text: `9:41\nToday\nHi, Alex\nPlatinum Medallion\n132,018 miles\nAir France KLM`,
+    expect: { program: 'delta', balance: 132018, tier: 'Platinum Medallion' } },
+  { name: 'Delta app with a status bar, MQDs, and a Virgin Atlantic activity row', text: `9:41\nProfile\nHi, Alex\nSkyMiles Member\nGold Medallion\nStatus valid through Jan 31, 2028\n84,250\nmiles\nMQDs\n$11,240 of $15,000\nRecent activity\nVirgin Atlantic\n+3,120 miles`,
+    expect: { program: 'delta', balance: 84250, tier: 'Gold Medallion', exp: '2028-01-31', mqd: 11240 } },
+  { name: 'JetBlue Mosaic 2 with an Emirates tile', text: `TrueBlue\nMosaic 2\n52,300 points\nEmirates Skywards\nEarn TrueBlue points on Emirates flights`,
+    expect: { program: 'jetblue', balance: 52300, tier: 'Mosaic 2' } },
+  { name: 'Marriott points-to-miles page listing airlines', text: `Marriott Bonvoy\nPoints Balance 98,410\nConvert points to miles\nAmerican Airlines AAdvantage\nEmirates Skywards\nUnited MileagePlus`,
+    expect: { program: 'marriott', balance: 98410 } },
+  { name: 'Delta MQDs line, plural', text: `Hi, Alex\nGold Medallion\n84,250 miles\nMQDs $11,240`, expect: { program: 'delta', balance: 84250, tier: 'Gold Medallion', mqd: 11240 } },
+  // The reverse, and near misses.
+  { name: 'A Virgin screen with a Delta activity row stays Virgin', text: `Virgin Atlantic\nFlying Club\nGold\n61,000 Virgin Points\nRecent activity\nDelta Air Lines\n+1,200 points`,
+    expect: { program: 'virgin', balance: 61000, tier: 'Gold' } },
+  { name: 'A Virgin header under a status bar', text: `9:41\nVirgin Atlantic Flying Club\nGold\n61,000 Virgin Points`, expect: { program: 'virgin', balance: 61000, tier: 'Gold' } },
+  { name: '“A list of your stays” isn’t Southwest’s A-List', text: `Hi Alex\nPlatinum Elite\n98,410 points\nA list of your stays`, expect: { program: null, weak: null, balance: 98410 } },
+  { name: 'A level name in a long sentence doesn’t name the program', text: `Hi Alex\nYou are 3 flights from Premier Gold this year\n12,300 points`, expect: { program: null, weak: null, balance: 12300 } },
+  // A stay's confirmation number is never the member number, whatever word follows "Confirmation".
+  { name: 'IHG stay with a "Confirmation number"', text: `IHG One Rewards\nPlatinum Elite\n61,250 points\nUpcoming stay\nConfirmation number 45678912`,
+    expect: { program: 'ihg', balance: 61250, tier: 'Platinum Elite', member: null } },
+  { name: 'Hilton stay confirmation above the real member number', text: `Hilton Honors\nDiamond\n245,100 Points\nUpcoming stay\nConfirmation Number: 3141592653\nHilton Honors # 1234567890`,
+    expect: { program: 'hilton', balance: 245100, tier: 'Diamond', member: '1234567890' } },
+  { name: 'Marriott stay with a "Confirmation no."', text: `Marriott Bonvoy\nGold Elite\n48,320 points\nYour stay\nConfirmation no. 84512345`, expect: { program: 'marriott', balance: 48320, member: null } },
+  { name: 'A "Confirmation Number" caption over its digits', text: `Hyatt\nExplorist\n41,000 points\nConfirmation Number\n84512345`, expect: { program: 'hyatt', balance: 41000, member: null } },
+  { name: 'A "Reservation number" line, then the member number', text: `Wyndham Rewards\nPlatinum\n38,750 points\nReservation number 7731982\nMember # 104837265`,
+    expect: { program: 'wyndham', balance: 38750, member: '104837265' } },
+  // Near misses: real member numbers keep reading.
+  { name: 'Membership number with digits spaced', text: `IHG One Rewards\nPlatinum Elite\nMembership 123 456 789\n61,250 points`, expect: { program: 'ihg', balance: 61250, member: '123456789' } },
+  { name: '“Recorder” and “border” aren’t booking words', text: `Hilton Honors\nGold\nBorder Inn, Recorder Street\nHilton Honors # 1234567890\n52,100 Points`, expect: { program: 'hilton', balance: 52100, member: '1234567890' } },
+  // Avios is the currency of several programs: alone it doesn't name British Airways. A program of your own the catalog
+  // doesn't know (Finnair Plus) is read as that program when its name is on the screen.
+  { name: 'Finnair Plus page isn’t British Airways', text: `Finnair Plus\nGold\n48,200 Avios\nTier points 120`, expect: { program: null, weak: 'ba', balance: 48200, own: null } },
+  { name: 'Finnair Plus page, with your own Finnair Plus program', text: `Finnair Plus\nGold\n48,200 Avios\nTier points 120`, custom: ['Finnair Plus'],
+    expect: { program: null, weak: null, own: 'Finnair Plus', balance: 48200 } },
+  { name: 'Vueling Club page isn’t British Airways', text: `Vueling Club\nSilver\n12,400 Avios`, expect: { program: null, weak: 'ba', balance: 12400 } },
+  { name: 'Your own program named only in a transfer line doesn’t take the page', text: `British Airways Club\nSilver\nAvios 96,320\nTransfer Avios to Finnair Plus`, custom: ['Finnair Plus'],
+    expect: { program: 'ba', own: null, balance: 96320, tier: 'Silver' } },
+  // Near misses: British Airways named keeps reading, Avios still captions the balance everywhere.
+  { name: 'BA page with Avios caption and tier points', text: `British Airways Club\nSilver\nAvios\n96,320\nTier Points\n1,840`, expect: { program: 'ba', weak: null, balance: 96320, tier: 'Silver' } },
+  { name: 'BA logo read as one word', text: `BritishAirways\nThe Club\nGold\nAvios balance 96,320`, expect: { program: 'ba', balance: 96320, tier: 'Gold' } },
+  { name: 'A custom program with a common-word name never matches', text: `Hilton Honors\nGold\nPoints 52,100`, custom: ['Points'], expect: { program: 'hilton', own: null, balance: 52100 } },
+  // Vertical transfer-partner lists under a bank's balance: every partner in the list is where points go, not whose they are.
+  { name: 'Citi ThankYou transfer page with an Emirates partner line', text: `Citi ThankYou Rewards\nAvailable points 45,210\nTransfer points\nAvianca LifeMiles\nEmirates Skywards`,
+    expect: { program: 'citi', balance: 45210 } },
+  { name: 'Bilt transfer page with a long partner list', text: `Bilt Rewards\nPoints\n32,000\nTransfer to partners\nAir Canada Aeroplan\nAir France KLM Flying Blue\nAlaska Airlines\nCathay Pacific Asia Miles\nEmirates Skywards\nHawaiian Airlines\nTurkish Airlines Miles&Smiles\nUnited MileagePlus\nVirgin Atlantic Flying Club\nWorld of Hyatt\nIHG One Rewards\nMarriott Bonvoy`,
+    expect: { program: 'bilt', balance: 32000, tier: null } },
+  { name: 'Capital One app without its name, Venture X and a transfer list', text: `Hi Alex\nVenture X Rewards\n...1234\nRewards balance\n142,880 miles\nTransfer miles\nAeromexico Rewards\nAvianca LifeMiles\nEmirates Skywards\nEtihad Guest\nFlying Blue`,
+    expect: { program: 'capitalone', balance: 142880 } },
+  { name: 'Amex transfer list with ratios', text: `Membership Rewards\nAvailable points 96,450\nTransfer points to a partner\nDelta SkyMiles 1:1\nHilton Honors 1:2\nMarriott Bonvoy 1:1`, expect: { program: 'amex', balance: 96450 } },
+  // Near miss: a partner list ends at the next amount, so a balance below a list still reads.
+  { name: 'A partner list, then the balance below it', text: `Chase Ultimate Rewards\nTransfer partners\nWorld of Hyatt\nUnited MileagePlus\nYour points\n84,210`, expect: { program: 'chase', balance: 84210 } },
+  // An Avios screen without its program's name: Qpoints names Qatar; otherwise no program, and the card guesses from
+  // your list (the one program counting in Avios) or asks — never British Airways on the currency alone.
+  { name: 'Unnamed Qatar screen with Qpoints', text: `Hello Alex\nGold\nAvios\n64,210\nQpoints\n215\nMembership number 123456789`,
+    expect: { program: 'qatar', balance: 64210, tier: 'Gold', member: '123456789' } },
+  { name: 'Unnamed Aer Lingus screen (Avios, Tier Credits)', text: `Silver\nAvios 22,000\nTier Credits 1,240`, expect: { program: null, weak: 'ba', balance: 22000 } },
+  { name: 'Unnamed Iberia screen (Avios, Elite Points)', text: `Hola, Alex\nPlata\n12 500 Avios\nElite Points 1 250`, expect: { program: null, weak: 'ba', balance: 12500 } },
+  // Near misses: each Avios program named keeps reading as itself.
+  { name: 'Qatar named, Avios and Qpoints', text: `Privilege Club\nGold\nAvios 64,210\nQpoints 215`, expect: { program: 'qatar', balance: 64210, tier: 'Gold' } },
+  { name: 'Aer Lingus named', text: `AerClub\nSilver\nAvios 22,000\nTier Credits 1,240`, expect: { program: 'aerlingus', balance: 22000, tier: 'Silver' } },
+  { name: 'BA named only as "British Airways" over an Avios balance', text: `British Airways\nBronze\nAvios 96 320`, expect: { program: 'ba', weak: null, balance: 96320, tier: 'Bronze' } },
+  // Regression hunt: a partner section scrolled to the top of the screen ends where the page's own level line starts.
+  { name: 'A partner list above the page’s own level and balance', text: `Partners\nHertz\nAvis\nUnited MileagePlus\nPremier Gold\nMiles 64,018`, expect: { program: 'united', balance: 64018, tier: 'Premier Gold' } },
+  { name: 'A partner list with a partner’s own level isn’t ended by it', text: `Marriott Bonvoy\nGold Elite\n48,320 points\nPartners\nUnited MileagePlus\nPremier Gold status match\nEmirates Skywards`,
+    expect: { program: 'marriott', balance: 48320, tier: 'Gold Elite' } },
+  { name: 'A transfer line scrolled above the page’s own one-word level', text: `Transfer points from Chase\nGlobalist\n96,500 points\nQualifying nights 61`,
+    expect: { program: 'hyatt', balance: 96500, tier: 'Globalist', progress: 61 } },
 ];
