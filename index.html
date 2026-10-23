@@ -1940,7 +1940,7 @@
     </div>
   </div>
 </dialog>
-<input type="file" id="scan-file" class="file-input" accept="image/*" multiple tabindex="-1" aria-hidden="true">
+<input type="file" id="scan-file" class="file-input" accept="image/png,image/jpeg,image/webp,image/gif,image/bmp,.png,.jpg,.jpeg,.webp,.gif,.bmp" multiple tabindex="-1" aria-hidden="true">
 <dialog class="play" id="play" aria-labelledby="play-title">
   <div class="play-card">
     <button class="icon-btn play-close" id="play-close" type="button" aria-label="Close"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M2.5 2.5l9 9M11.5 2.5l-9 9"/></svg></button>
@@ -5406,6 +5406,8 @@
     const best = tried.reduce((a, b) => (b.worth > a.worth ? b : a));
     const f = best.found;
     let from = best.pass; // the reading the balance comes from
+    const src = {}; // the reading each count and the end date come from
+    for (const k of ['progress', 'altProgress', 'mqd', 'exp']) if (f[k] != null) src[k] = best.pass;
     // How sure the reader was of a number: its best read in that reading (0 when it isn't there), where a number read
     // as side-by-side words on one line ("26", "948") is as sure as its least sure word.
     const sureOf = (pass, value) => Math.max(0, ...(pass.lines || []).flatMap(({ words = [] }) => words.flatMap((_, i) => {
@@ -5420,12 +5422,35 @@
       }
       return [];
     })));
+    // How sure the reader was of an end date: its surest word holding the year — "2028" on its own or a dated word
+    // ("03/31/2028", "31.03.2028"), not a member number that happens to contain those digits.
+    const sureOfYear = (pass, iso) => Math.max(0, ...(pass.lines || []).flatMap(({ words = [] }) => words.filter((w) => {
+      const digits = cleanScanText(w.text).replace(/\D/g, '');
+      const year = String(iso).slice(0, 4);
+      return digits === year || (/[/.-]/.test(w.text) && digits.includes(year));
+    }).map((w) => w.confidence || 0)));
+    const ask = (k) => { if (!(f.unsureCounts || (f.unsureCounts = [])).includes(k)) f.unsureCounts.push(k); };
     for (const { pass, found: o, worth } of tried) {
       if (o === f || o.programId !== f.programId) continue;
+      // The layout settles a disagreement when one reading found clearly more (the IHG page's caption over its balance).
+      const settled = best.worth - worth >= 3;
       f.balances = [...new Set([...f.balances, ...o.balances])].slice(0, 4);
-      if (f.tierIndex < 0 && o.tierIndex >= 0) [f.tierIndex, f.exp] = [o.tierIndex, o.exp];
-      else if (!f.exp && o.exp && o.tierIndex === f.tierIndex) f.exp = o.exp;
-      for (const k of ['member', 'progress', 'altProgress', 'mqd']) if (f[k] == null) f[k] = o[k];
+      if (f.tierIndex < 0 && o.tierIndex >= 0) { [f.tierIndex, f.exp] = [o.tierIndex, o.exp]; src.exp = pass; }
+      else if (!f.exp && o.exp && o.tierIndex === f.tierIndex) { f.exp = o.exp; src.exp = pass; }
+      // Both readings found a count or the end date, differently ("Nights this year 38" at 71% against 36 at 97%, a
+      // year read 2029 against 2028): the other's wins only when it's confident (90%+) and clearly surer, ours isn't
+      // confident, and the layout doesn't settle it. Otherwise the kept one stands, and unless it's confidently the
+      // surer, the card asks about that field (found.unsureCounts): two confident reads that disagree ask rather than
+      // switch, since a wrong count saved quietly is worse than a question.
+      for (const k of ['member', 'progress', 'altProgress', 'mqd', 'exp']) {
+        if (f[k] == null) { if (k !== 'exp' && o[k] != null) { f[k] = o[k]; src[k] = pass; } continue; }
+        if (k === 'member' || o[k] == null || o[k] === f[k] || (k === 'exp' && o.tierIndex !== f.tierIndex)) continue;
+        const sure = k === 'exp' ? sureOfYear : sureOf;
+        const [sureMine, sureTheirs] = [sure(src[k], f[k]), sure(pass, o[k])];
+        const surer = sureTheirs >= 90 && sureTheirs > sureMine + 5;
+        if (!settled && surer && sureMine < 90) { f[k] = o[k]; src[k] = pass; }
+        else if (settled ? surer : !(sureMine >= 90 && sureMine > sureTheirs + 5)) ask(k);
+      }
       // The same balance with its first digits missing ("1 1 2,450" read as 2,450 where the other reading has
       // 112,450): narrow digits split off big numbers, so the longer one is the balance.
       const [mine, theirs] = [String(f.balances[0] ?? ''), String(o.balances[0] ?? '')];
@@ -5438,14 +5463,14 @@
         // surer read from the other only makes the card ask, and only when it's confident (90%+) and clearly surer.
         // Otherwise the confident read decides ("97,900" at 82% against "57,900" at 97%), and when neither is
         // confident ("37,900" at 87% against "97,900" at 76%, for 57,900) the card says so and waits for you.
-        const settled = best.worth - worth >= 3;
         if (!settled && sureTheirs > sureMine + 5) { f.balances = [o.balances[0], ...f.balances.filter((v) => v !== o.balances[0])]; from = pass; }
         const confident = Math.max(sureMine, sureTheirs) >= 90 && Math.abs(sureMine - sureTheirs) > 5;
         if (settled ? sureTheirs >= 90 && sureTheirs > sureMine + 5 : !confident) f.unsure = true;
       }
     }
-    // The reader read the balance two ways in its own reading (see useReread).
+    // The reader read the balance, or a big count, two ways in its own reading (see useReread).
     if ((from.disputed || []).includes(f.balances[0])) f.unsure = true;
+    for (const k of ['progress', 'altProgress', 'mqd']) if (f[k] != null && (src[k].disputed || []).includes(f[k])) ask(k);
     return { ...read, text: best.pass.text, lines: best.pass.lines, found: f };
   }
 
@@ -5496,7 +5521,10 @@
 
   // Screenshots read best large, gray, and dark-on-light: scale up small ones and flip dark-mode screens.
   async function prepareImage(file) {
-    const bitmap = await createImageBitmap(file);
+    let bitmap;
+    // A picture this browser can't open (an iPhone's HEIC photo in Chrome or Edge): a decode failure, told apart from a
+    // reader that fails (see playScan).
+    try { bitmap = await createImageBitmap(file); } catch (err) { const e = err instanceof Object ? err : new Error(String(err)); e.decode = true; throw e; }
     // Small screenshots read better enlarged; huge ones (tall scrolling captures) shrink to stay under ~16 MP.
     const scale = Math.min(3, Math.max(1, 1600 / bitmap.width), Math.sqrt(16e6 / (bitmap.width * bitmap.height)));
     const canvas = document.createElement('canvas');
@@ -5555,8 +5583,8 @@
   // readingOf() keeps the better one.
   const OCR_LAYOUTS = ['3', '6']; // Tesseract page layouts: automatic, then a single block
   async function ocrImage(file) {
+    const canvas = await prepareImage(file); // first: a picture that can't be opened fails before the reader downloads
     const worker = await loadOCR();
-    const canvas = await prepareImage(file);
     const passes = [];
     for (const [at, layout] of OCR_LAYOUTS.entries()) {
       ocrPass = { at, of: OCR_LAYOUTS.length };
@@ -5680,13 +5708,18 @@
     const now = text.trim();
     const was = group.words.map((w) => w.text).join(' ');
     if (!/^(?:\d{1,3}(?:,\d{3})+|\d{1,7})$/.test(now) || confidence < 85 || now === was) return false;
-    // Never fewer digits ("128" for "128,400"), and a whole number read as one word only gives way to a surer read.
-    if (now.replace(/\D/g, '').length < was.replace(/\D/g, '').length) return false;
-    const whole = group.words.length === 1 && /^(?:\d{1,3}(?:,\d{3})+|\d+)$/.test(was);
+    const [digitsNow, digitsWas] = [now, was].map((s) => s.replace(/\D/g, ''));
+    // Never fewer digits ("128" for "128,400").
+    if (digitsNow.length < digitsWas.length) return false;
+    // A whole number — one word, its thousands split by a comma or a mark read for one ("57,900", "57.900", "57’900"),
+    // or words of 1–3 then 3 digits ("78 450") — only gives way to a surer read; split junk ("1 52,31 0") takes any
+    // confident one. The same digits regrouped ("12.500" to 12,500) always go in: only the marks changed.
+    const whole = /^(?:\d{1,3}(?:[,.»«’'‚;]\d{3})+|\d+)[,.;]?$/.test(was) || /^\d{1,3}(?: \d{3})+$/.test(was);
+    const least = Math.min(...group.words.map((w) => w.confidence || 0)); // a split number is as sure as its least sure piece
     // A whole number the re-read reads differently without being clearly surer (10 points): it stays, and the reader
     // has read it two ways, so the card asks you to check it.
-    if (whole && confidence <= (group.words[0].confidence || 0) + 10) {
-      (pass.disputed || (pass.disputed = [])).push(Number(was.replace(/\D/g, '')));
+    if (whole && digitsNow !== digitsWas && confidence <= least + 10) {
+      (pass.disputed || (pass.disputed = [])).push(Number(digitsWas));
       return false;
     }
     const mark = /[,.;]$/.test(was) && !/[,.;]$/.test(now) ? was.slice(-1) : ''; // "16," stays punctuated as "18,"
@@ -6061,8 +6094,11 @@
     } catch (err) {
       if (run !== playRun) return;
       $('#play-shot').className = 'play-shot';
-      $('#play-title').textContent = navigator.onLine === false
-        ? 'The scanner needs an internet connection the first time.'
+      // A picture the browser can't open (HEIC in Chrome or Edge) isn't a blurry one: say what to use instead.
+      const heic = /hei[cf]/i.test(file.type || '') || /\.hei[cf]$/i.test(file.name || '');
+      $('#play-title').textContent = err && err.decode
+        ? (heic ? 'This browser can’t open HEIC photos. Use a screenshot (PNG) or export the photo as a JPG.' : 'This browser can’t open that picture. Use a PNG or JPG screenshot.')
+        : navigator.onLine === false ? 'The scanner needs an internet connection the first time.'
         : 'Couldn’t read that image. Try a sharper screenshot.';
       announce($('#play-title').textContent);
       setActions([['Paste text instead', false, () => { closePlay(); openScan(); $('.scan-paste').open = true; }], ['Try another', true, pickAnother]]);
@@ -6314,7 +6350,7 @@
       if (localStorage.getItem('status-tracker-debug-scan')) {
         console.debug('scan', JSON.stringify({ passes: (read.passes || [read]).map((pass) => ({ text: pass.text, disputed: pass.disputed || [],
           numbers: (pass.lines || []).flatMap((l) => l.words || []).filter((w) => /\d/.test(w.text)).map((w) => `${w.text}@${Math.round(w.confidence || 0)}`) })),
-        balances: found.balances, unsure: !!found.unsure, programId: found.programId, bands: read.bands || '' }));
+        balances: found.balances, unsure: !!found.unsure, unsureCounts: found.unsureCounts || [], programId: found.programId, bands: read.bands || '' }));
       }
     } catch { /* storage blocked: no debug */ }
     Object.assign(playing, { read, pickArg: choice, text: reading.text, found, many: null });
@@ -6365,6 +6401,14 @@
     const doubts = own ? doubtsAbout(p, vals) : [];
     if (playing.guessed && choice) doubts.push('the screenshot doesn’t name the program, so make sure it’s this one');
     if (found.unsure && vals.balance !== undefined && playing.balancePick == null) doubts.push('the balance was hard to read, so check it');
+    // A count or the end date the readings disagreed on (see readingOf): the card asks before it updates.
+    const track = trackFor(p);
+    for (const k of found.unsureCounts || []) {
+      if (k === 'progress' && vals.progress !== undefined && track) doubts.push(`the ${track.unit} this year were hard to read, so check them`);
+      else if (k === 'altProgress' && vals.alt !== undefined && track && track.alt) doubts.push(`the ${track.alt.unit} this year were hard to read, so check them`);
+      else if (k === 'mqd' && vals.mqd !== undefined) doubts.push('the MQDs were hard to read, so check them');
+      else if (k === 'exp' && vals.exp) doubts.push('the status end date was hard to read, so check it');
+    }
     let changes = ['balance', 'mqd', 'progress', 'alt', 'member'].filter((k) => vals[k] !== undefined).length;
     // Judged as Update will, with a new program already on your list (Delta's Medallion then counts from MQDs).
     const outcome = vals.tierIndex >= 0 ? asListed(p, own, () => statusOutcome(p, vals.tierIndex, vals.exp, vals.mqd ?? state.mqd)) : null;

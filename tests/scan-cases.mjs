@@ -883,4 +883,90 @@ export default [
     expect: { program: 'marriott', balance: 48320, tier: 'Gold Elite' } },
   { name: 'A transfer line scrolled above the page’s own one-word level', text: `Transfer points from Chase\nGlobalist\n96,500 points\nQualifying nights 61`,
     expect: { program: 'hyatt', balance: 96500, tier: 'Globalist', progress: 61 } },
+  // ---------- choice fixes (2026-10-22) ----------
+  // The two readings disagree on a count: the confidently surer read (90%+, more than 5 points surer) wins when the
+  // layout doesn't settle it; when neither is, the card asks (`ask` lists the fields to check) and the balance stays as is.
+  { name: 'Two readings: nights 38 at 71% against 36 at 97%: the surer count wins', passes: [
+    { text: `Marriott Bonvoy\nPlatinum Elite\nPoints\n98,410\nNights this year 38`, words: [['98,410', 96], ['38', 71]] },
+    { text: `Marriott Bonvoy\nPlatinum Elite\nPoints\n98,410\nNights this year 36`, words: [['98,410', 96], ['36', 97]] }],
+    expect: { program: 'marriott', balance: 98410, progress: 36, ask: null, unsure: false } },
+  { name: 'Two readings: MQDs $11,840 at 68% against $11,240 at 97%: the surer wins', passes: [
+    { text: `Delta SkyMiles\nGold Medallion\n84,250\nmiles\nMQDs\n$11,840 of $15,000`, words: [['$11,840', 68]] },
+    { text: `Delta SkyMiles\nGold Medallion\n84,250\nmiles\nMQDs\n$11,240 of $15,000`, words: [['$11,240', 97]] }],
+    expect: { program: 'delta', balance: 84250, mqd: 11240, ask: null } },
+  // The winning reading has the member number (a point more worth, not enough to settle it); its PQP is the misread.
+  { name: 'Two readings: PQP 12,950 at 61% in the winner against 12,450 at 97%: the surer wins', passes: [
+    { text: `MileagePlus\nPremier Gold\nMileagePlus # AB123456\nMiles\n64,018\nPQP 12,950 / 18,000\nPQF 31 / 45`, words: [['12,950', 61], ['31', 95]] },
+    { text: `MileagePlus\nPremier Gold\nMiles\n64,018\nPQP 12,450 / 18,000\nPQF 31 / 45`, words: [['12,450', 97], ['31', 95]] }],
+    expect: { program: 'united', balance: 64018, progress: 12450, alt: 31, member: 'AB123456', ask: null } },
+  { name: 'Two readings: nights 38 at 88% against 36 at 85%: a close call, so the card asks', passes: [
+    { text: `Marriott Bonvoy\nPlatinum Elite\nPoints\n98,410\nNights this year 38`, words: [['98,410', 96], ['38', 88]] },
+    { text: `Marriott Bonvoy\nPlatinum Elite\nPoints\n98,410\nNights this year 36`, words: [['98,410', 96], ['36', 85]] }],
+    expect: { program: 'marriott', balance: 98410, progress: 38, ask: 'progress', unsure: false } },
+  { name: 'Two readings: nights 38 at 97% against 36 at 93%: both confident but within 5 points, the first stays and the card asks', passes: [
+    { text: `Marriott Bonvoy\nPlatinum Elite\nPoints\n98,410\nNights this year 38`, words: [['38', 97]] },
+    { text: `Marriott Bonvoy\nPlatinum Elite\nPoints\n98,410\nNights this year 36`, words: [['36', 93]] }],
+    expect: { program: 'marriott', progress: 38, ask: 'progress' } },
+  // Two confident reads that disagree (90% against 96%): neither is a misread on its face, so the first stays and the
+  // card asks rather than switching quietly.
+  { name: 'Two readings: base points 25,000 at 90% against 26,000 at 96%: both confident, kept and the card asks', passes: [
+    { text: `World of Hyatt\nExplorist\nPoints\n48,320\nBase points 25,000\nQualifying nights 30`, words: [['25,000', 90], ['30', 95]] },
+    { text: `World of Hyatt\nExplorist\nPoints\n48,320\nBase points 26,000\nQualifying nights 30`, words: [['26,000', 96], ['30', 95]] }],
+    expect: { program: 'hyatt', progress: 30, alt: 25000, ask: 'altProgress', unsure: false } },
+  { name: 'Two readings: base points 25,000 at 89% against 26,000 at 96%: ours isn’t confident, the surer wins', passes: [
+    { text: `World of Hyatt\nExplorist\nPoints\n48,320\nBase points 25,000\nQualifying nights 30`, words: [['25,000', 89]] },
+    { text: `World of Hyatt\nExplorist\nPoints\n48,320\nBase points 26,000\nQualifying nights 30`, words: [['26,000', 96]] }],
+    expect: { program: 'hyatt', alt: 26000, ask: null } },
+  { name: 'Two readings: a count the winner read surely (95%) against an unsure one (60%): kept, no question', passes: [
+    { text: `Marriott Bonvoy\nPlatinum Elite\nPoints\n98,410\nNights this year 36`, words: [['36', 95]] },
+    { text: `Marriott Bonvoy\nPlatinum Elite\nPoints\n98,410\nNights this year 38`, words: [['38', 60]] }],
+    expect: { program: 'marriott', progress: 36, ask: null } },
+  // The layout settles it (the winner found the status and member number): a surer count elsewhere only makes the card
+  // ask, and only when it's confident.
+  { name: 'Two readings: a layout-settled count stands against a 86% read, no question', passes: [
+    { text: `Marriott Bonvoy\nPlatinum Elite\nMember number 123456789\nPoints\n98,410\nNights this year 38`, words: [['38', 80]] },
+    { text: `Marriott Bonvoy\nPoints\n98,410\nNights this year 36`, words: [['36', 86]] }],
+    expect: { program: 'marriott', tier: 'Platinum Elite', progress: 38, ask: null } },
+  { name: 'Two readings: a layout-settled count against a 97% read: kept, but the card asks', passes: [
+    { text: `Marriott Bonvoy\nPlatinum Elite\nMember number 123456789\nPoints\n98,410\nNights this year 38`, words: [['38', 80]] },
+    { text: `Marriott Bonvoy\nPoints\n98,410\nNights this year 36`, words: [['36', 97]] }],
+    expect: { program: 'marriott', tier: 'Platinum Elite', progress: 38, ask: 'progress', unsure: false } },
+  { name: 'Two readings: the same count in both: no question', passes: [
+    { text: `Marriott Bonvoy\nPlatinum Elite\nPoints\n98,410\nNights this year 36`, words: [['36', 71]] },
+    { text: `Marriott Bonvoy\nPoints\n98,410\nNights this year 36`, words: [['36', 97]] }],
+    expect: { program: 'marriott', progress: 36, ask: null } },
+  { name: 'Two readings: a count only one reading found is filled in, no question', passes: [
+    { text: `Marriott Bonvoy\nPlatinum Elite\nPoints\n98,410`, words: [['98,410', 96]] },
+    { text: `Marriott Bonvoy\nPoints\n98,410\nNights this year 36`, words: [['36', 71]] }],
+    expect: { program: 'marriott', progress: 36, ask: null } },
+  // A big count the re-read disputed (see useReread) asks too, as a disputed balance does.
+  { name: 'A count read two ways within one reading: the card asks', passes: [
+    { text: `Marriott Bonvoy\nPlatinum Elite\nPoints 98,410\nNights\n36`, words: [['36', 90]], disputed: [36] }],
+    expect: { program: 'marriott', balance: 98410, progress: 36, ask: 'progress', unsure: false } },
+  { name: 'A disputed number that isn’t the count read: no question', passes: [
+    { text: `Marriott Bonvoy\nPlatinum Elite\nPoints 98,410\nNights\n36`, words: [['36', 90]], disputed: [38] }],
+    expect: { program: 'marriott', progress: 36, ask: null } },
+  // The status end date: the same status with another year ("03/31/2029" at 62% against "03/31/2028" at 97%).
+  { name: 'Two readings: an end date’s year read 2029 at 62% against 2028 at 97%: the surer wins', passes: [
+    { text: `Hilton Honors\nDiamond\n120,000 Points\nNights 85\nStatus through 03/31/2029`, words: [['03/31/2029', 62]] },
+    { text: `Hilton Honors\nDiamond\n120,000 Points\nNights 85\nStatus through 03/31/2028`, words: [['03/31/2028', 97]] }],
+    expect: { program: 'hilton', tier: 'Diamond', exp: '2028-03-31', ask: null } },
+  // A member number holding the year's digits ("#1020281234") isn't the date: the date word's own 70% counts, so the 97% read wins.
+  { name: 'Two readings: a member number containing “2028” doesn’t make a 70% date look sure', passes: [
+    { text: `Hilton Honors\nDiamond\nMember #1020281234\n120,000 Points\nStatus through 03/31/2028`, words: [['#1020281234', 95], ['03/31/2028', 70]] },
+    { text: `Hilton Honors\nDiamond\n120,000 Points\nStatus through 03/31/2029`, words: [['03/31/2029', 97]] }],
+    expect: { program: 'hilton', exp: '2029-03-31', member: '1020281234', ask: null } },
+  { name: 'Two readings: end dates 03/31 against 08/31, about as sure: the first stays and the card asks', passes: [
+    { text: `Hilton Honors\nDiamond\n120,000 Points\nStatus through 03/31/2028`, words: [['03/31/2028', 84]] },
+    { text: `Hilton Honors\nDiamond\n120,000 Points\nStatus through 08/31/2028`, words: [['08/31/2028', 86]] }],
+    expect: { program: 'hilton', exp: '2028-03-31', ask: 'exp' } },
+  { name: 'Two readings: the same end date in both: no question', passes: [
+    { text: `Hilton Honors\nDiamond\n120,000 Points\nStatus through 03/31/2028`, words: [['03/31/2028', 84]] },
+    { text: `Hilton Honors\nDiamond\n120,000 Points\nStatus through 03/31/2028`, words: [['03/31/2028', 86]] }],
+    expect: { program: 'hilton', exp: '2028-03-31', ask: null } },
+  { name: 'Two readings: an end date only one reading found is filled in, no question', passes: [
+    { text: `Hilton Honors\nDiamond\n120,000 Points`, words: [['120,000', 96]] },
+    { text: `Hilton Honors\nDiamond\nStatus through 03/31/2028`, words: [['03/31/2028', 70]] }],
+    expect: { program: 'hilton', exp: '2028-03-31', ask: null } },
+
 ];

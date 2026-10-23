@@ -37,7 +37,8 @@ vm.runInContext(`${stubs}\n${head}\n${dates}\nconst state = { programs: [], bala
     state.programs = [];
     const tiers = r.programId ? scanTiersFor(r.programId) : [];
     return { program: r.programId, balance: r.balances[0] ?? null, tier: r.tierIndex >= 0 ? tiers[r.tierIndex].name : null,
-      exp: r.exp, progress: r.progress, alt: r.altProgress, mqd: r.mqd, member: r.member, unsure: !!r.unsure, weak: r.weak || null, own };
+      exp: r.exp, progress: r.progress, alt: r.altProgress, mqd: r.mqd, member: r.member, unsure: !!r.unsure, weak: r.weak || null, own,
+      ask: (r.unsureCounts || []).join(',') || null }; // the counts or end date the card asks about
   };`, context);
 
 let failed = 0;
@@ -117,6 +118,41 @@ const bigChecks = [];
   t = one('57,900', 82);
   bigChecks.push(['“57,900” at 82% read again as “37,900” at 86%: kept, and noted as read two ways',
     [context.big.useReread(t.pass, t.group, '37,900', 86), t.pass.text, t.pass.disputed], [false, 'Points\n57,900\n', [57900]]]);
+}
+{ // A big number not written "57,900" (its comma read as "." or "’", or printed with a space, "78 450"): a re-read with
+  // other digits still has to be clearly surer, and one with the same digits only fixes the grouping.
+  const grouped = (texts, confidence) => {
+    const ws = texts.map((t, i) => word(t, 100 + i * 200, 250 + i * 200, 100, 200, confidence));
+    const pass = { text: `Points\n${texts.join(' ')}\n`, lines: [{ text: texts.join(' '), words: ws }] };
+    return { pass, group: { line: pass.lines[0], words: ws } };
+  };
+  let t = grouped(['57.900'], 97);
+  bigChecks.push(['“57.900” at 97% read again as “37,900” at 86%: kept, and noted as read two ways',
+    [context.big.useReread(t.pass, t.group, '37,900', 86), t.pass.text, t.pass.disputed], [false, 'Points\n57.900\n', [57900]]]);
+  t = grouped(['57’900'], 97);
+  bigChecks.push(['“57’900” at 97% read again as “37,900” at 86%: kept and noted', [context.big.useReread(t.pass, t.group, '37,900', 86), t.pass.disputed], [false, [57900]]]);
+  t = grouped(['12.500'], 97);
+  bigChecks.push(['“12.500” at 97% read again as “12,600” at 86%: kept and noted', [context.big.useReread(t.pass, t.group, '12,600', 86), t.pass.disputed], [false, [12500]]]);
+  t = grouped(['78', '450'], 97);
+  bigChecks.push(['“78 450” at 97% read again as “76,450” at 86%: kept and noted',
+    [context.big.useReread(t.pass, t.group, '76,450', 86), t.pass.text, t.pass.disputed], [false, 'Points\n78 450\n', [78450]]]);
+  t = grouped(['34.500'], 97);
+  bigChecks.push(['“34.500” at 97% read again as “134,500” at 88%: kept and noted', [context.big.useReread(t.pass, t.group, '134,500', 88), t.pass.disputed], [false, [34500]]]);
+  // Near misses that keep working as before.
+  t = grouped(['12.500'], 97);
+  bigChecks.push(['“12.500” read again as “12,500”: the same digits, so the grouping is fixed without a note',
+    [context.big.useReread(t.pass, t.group, '12,500', 86), t.pass.text, t.pass.disputed], [true, 'Points\n12,500\n', null]]);
+  t = grouped(['78', '450'], 97);
+  bigChecks.push(['“78 450” read again as “78,450”: joined without a note', [context.big.useReread(t.pass, t.group, '78,450', 90), t.pass.text, t.pass.disputed], [true, 'Points\n78,450\n', null]]);
+  t = grouped(['57.900'], 70);
+  bigChecks.push(['“57.900” at 70% gives way to a clearly surer re-read (“37,900” at 90%)', [context.big.useReread(t.pass, t.group, '37,900', 90), t.pass.text], [true, 'Points\n37,900\n']]);
+  t = grouped(['78', '450'], 97);
+  t.group.words[1].confidence = 60;
+  bigChecks.push(['a split number is as sure as its least sure word: “78 450” at 97/60 gives way to “76,450” at 86%',
+    [context.big.useReread(t.pass, t.group, '76,450', 86), t.pass.text], [true, 'Points\n76,450\n']]);
+  const junk = hilton();
+  const [g] = context.big.bigNumbers(junk.lines);
+  bigChecks.push(['ill-formed pieces (“1 52,31 0” at 97/96/94) still give way to a re-read at 90%', [context.big.useReread(junk, g, '152,310', 90), junk.text.split('\n')[1]], [true, 'Gold Member 152,310']]);
 }
 { // The re-read replaces the number where it stands, not the same digits inside an earlier number.
   const w = word('16', 100, 200, 300, 400, 70);
@@ -218,6 +254,21 @@ const bigChecks = [];
   bigChecks.push(['two programs, one without a level: not a many-status page', context.many(['Hilton Honors Gold Status\nMarriott Bonvoy']), null]);
   const trips = cases.filter((c) => !c.passes && context.many([c.text])).map((c) => c.name);
   bigChecks.push(['no single-program case reads as several programs', trips, []]);
+}
+{ // A picture the browser can't open (an iPhone's HEIC photo in Chrome or Edge): told apart before the text reader is
+  // downloaded, and said so, instead of "Try a sharper screenshot" after a 6 MB download.
+  vm.runInContext(`${slice('  async function prepareImage', '  const scanSheet')}\nglobalThis.big.prepareImage = prepareImage;`, context);
+  context.createImageBitmap = () => Promise.reject(Object.assign(new Error('The source image could not be decoded.'), { name: 'InvalidStateError' }));
+  const failed = await context.big.prepareImage({ type: 'image/heic' }).then(() => null, (e) => e);
+  bigChecks.push(['a picture the browser can’t decode fails as a decode error', failed && [failed.name, failed.decode], ['InvalidStateError', true]]);
+  const ocr = slice('  async function ocrImage', '  // Rows of a gray screenshot');
+  bigChecks.push(['the picture is decoded before the text reader loads (no download for a photo that can’t be opened)', ocr.indexOf('await prepareImage(file)') < ocr.indexOf('await loadOCR()'), true]);
+  const scan = slice('  async function playScan', '  // The screenshot as large as fits');
+  bigChecks.push(['a decode failure is told apart from a blurry picture, naming HEIC; the other messages stay',
+    [/err\.decode/.test(scan), /HEIC/.test(scan), /sharper screenshot/.test(scan), /internet connection/.test(scan)], [true, true, true, true]]);
+  const accept = (/id="scan-file"[^>]*accept="([^"]*)"/.exec(html) || [])[1] || '';
+  bigChecks.push(['the file picker offers picture types every browser opens (PNG, JPG), not any image (which invites HEIC)',
+    [/image\/\*/.test(accept), /image\/png/.test(accept), /image\/jpeg/.test(accept)], [false, true, true]]);
 }
 for (const [name, got, want] of bigChecks) {
   const ok = JSON.stringify(got) === JSON.stringify(want);
