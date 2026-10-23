@@ -2854,7 +2854,16 @@
       ['rideshare', 'Rideshare', 5, 'month', 'calendar', 'register each year'],
       ['instacart', 'Instacart', 10, 'month', 'calendar', 'with Instacart+'],
     ],
-    'ihg-premier': [['united-half', 'United TravelBank credit', 25, 'half', 'calendar', 'register once in your IHG One Rewards account; each $25 expires Jul 15 / Jan 15']],
+    // IHG cards from Chase's Oct 1, 2026 refresh: the airline credits run through 12/31/27 (CREDIT_LAST_DAY).
+    'ihg-premier-select': [['airline', 'Airline credit', 200, 'year', 'calendar', 'one $250+ flight bought directly from the airline; through 12/31/27']],
+    'ihg-premier': [
+      ['airline', 'Airline credit', 100, 'year', 'calendar', 'one $250+ flight bought directly from the airline; through 12/31/27'],
+      ['united-half', 'United TravelBank credit', 25, 'half', 'calendar', 'register once in your IHG One Rewards account; each $25 expires Jul 15 / Jan 15'],
+    ],
+    'ihg-premier-business': [
+      ['airline', 'Airline credit', 100, 'year', 'calendar', 'one $250+ flight bought directly from the airline; through 12/31/27'],
+      ['expensify', 'Expensify', 100, 'year', 'calendar', 'bought directly from Expensify'],
+    ],
     'chase-aeroplan': [
       ['aircanada', 'Air Canada credit', 50, 'half', 'calendar', 'Air Canada purchases'],
       ['doordash', 'DoorDash', 10, 'month', 'calendar', 'one non-restaurant order with Chase DashPass; quarterly if DashPass was activated before Sep 2026'],
@@ -2871,6 +2880,7 @@
       ['vacations', 'American Airlines Vacations', 250, 'half', 'calendar', ''],
       ['avis', 'Avis / Budget', 120, 'year', 'calendar', 'prepaid on avis.com or budget.com'],
       ['lyft', 'Lyft', 15, 'month', 'calendar', 'after 3 rides that month'],
+      ['grubhub', 'Grubhub', 10, 'month', 'calendar', 'eligible Grubhub orders; accounts opened before Aug 23, 2026 keep it through Aug 31, 2027'],
       ['inflight', 'Inflight / Admirals Club', 100, 'year', 'calendar', 'AA domestic inflight and Admirals Club food & drink; not day passes'],
     ],
     'bilt-palladium': [
@@ -2999,9 +3009,9 @@
         ['emirates', 2, 1.5], ['EVA', 2, 1.5], ['jal', 2, 1.5], ['iprefer', 1, 2]],
     },
     bilt: {
-      partners: [['united', 1, 1], ['southwest', 1, 1], ['alaska', 1, 1], ['aeroplan', 1, 1], ['flyingblue', 1, 1], ['ba', 1, 1],
-        ['virgin', 1, 1, 'also to Virgin Red 1:1'], ['hyatt', 1, 1], ['marriott', 1, 1, '+5,000 bonus points for every 20,000 transferred at once'],
-        ['ihg', 1, 1], ['hilton', 1, 1], ['wyndham', 1, 1], ['accor', 3, 2],
+      partners: [['united', 1, 1], ['southwest', 1, 1], ['alaska', 1, 1], ['jetblue', 1, 1], ['aeroplan', 1, 1], ['flyingblue', 1, 1],
+        ['ba', 1, 1], ['virgin', 1, 1, 'also to Virgin Red 1:1'], ['hyatt', 1, 1, '4:3 from Jan 1, 2027, for every Bilt card and status'],
+        ['marriott', 1, 1, '+5,000 bonus points for every 20,000 transferred at once'], ['ihg', 1, 1], ['hilton', 1, 1], ['wyndham', 1, 1], ['accor', 3, 2],
         ['aerlingus', 1, 1], ['avianca', 1, 1], ['cathay', 1, 1], ['emirates', 1, 1], ['etihad', 1, 1], ['iberia', 1, 1],
         ['jal', 1, 1], ['qatar', 1, 1], ['TAP', 1, 1], ['turkish', 1, 1], ['iprefer', 1, 2], ['Amtrak Guest Rewards', 2, 1]],
     },
@@ -7721,6 +7731,9 @@
   // can transfer there. With no card listed that earns the bank's points, the table's ratio, as the table assumes.
   // A third item is a caveat: the table's ratio isn't what your cards get, and the notes don't say what is.
   function cardRatio(bankId, partnerId, a, b) {
+    // Bilt to Hyatt is 1:1 through 2026, then 4:3 for every member, card or not — so the rows and goal advice
+    // switch at midnight on Jan 1 without an app update.
+    if (bankId === 'bilt' && partnerId === 'hyatt' && new Date() >= new Date(2027, 0, 1)) return [4, 3];
     const earning = state.cards.filter((id) => bonusProgramFor(id) === bankId);
     if (!earning.length) return [a, b];
     const has = (ids) => earning.some((id) => ids.includes(id));
@@ -9956,10 +9969,13 @@
   }
 
   // Every credit on the cards you hold: presets plus ones you've added, with where each stands this period.
-  // Credits offered for a limited time (select hotels in 2026; Peloton and Google Workspace through 2027), by card
-  // and credit id: the last year each counts.
-  const CREDIT_LAST_YEAR = { 'sapphire-reserve:select-hotels': 2026, 'sapphire-reserve-business:select-hotels': 2026,
-    'sapphire-reserve:peloton': 2027, 'sapphire-reserve-business:google': 2027 };
+  // Credits offered for a limited time (select hotels in 2026; Peloton, Google Workspace and the IHG cards' airline
+  // credits through 2027; AAdvantage Executive's Grubhub through Aug 31, 2027), by card and credit id: the last day
+  // each counts.
+  const CREDIT_LAST_DAY = { 'sapphire-reserve:select-hotels': '2026-12-31', 'sapphire-reserve-business:select-hotels': '2026-12-31',
+    'sapphire-reserve:peloton': '2027-12-31', 'sapphire-reserve-business:google': '2027-12-31',
+    'ihg-premier-select:airline': '2027-12-31', 'ihg-premier:airline': '2027-12-31', 'ihg-premier-business:airline': '2027-12-31',
+    'aadvantage-executive:grubhub': '2027-08-31' };
   function heldCredits() {
     return state.cards.flatMap((cardId) => {
       const card = CARD_BY_ID[cardId];
@@ -9967,7 +9983,7 @@
       const preset = (CREDITS[cardId] || []).map(([id, name, amount, period, resets, note, dec]) =>
         ({ id, name, amount: december && dec ? dec : amount, period, resets, note, december: Boolean(december && dec) }));
       const custom = (state.customCredits[cardId] || []).map(([id, name, amount, period]) => ({ id, name, amount, period, resets: 'calendar', custom: true }));
-      return [...preset, ...custom].filter((credit) => !(new Date().getFullYear() > CREDIT_LAST_YEAR[`${cardId}:${credit.id}`])).map((credit) => {
+      return [...preset, ...custom].filter((credit) => !(isoOf(new Date()) > CREDIT_LAST_DAY[`${cardId}:${credit.id}`])).map((credit) => {
         const key = creditId(cardId, credit.id);
         const period = creditPeriod(cardId, credit.period, credit.resets);
         // A card-year credit without your fee date has no known reset, so it never counts as "soon".

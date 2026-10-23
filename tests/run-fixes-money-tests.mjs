@@ -147,6 +147,46 @@ setup({ cards: ['freedom-unlimited'], balances: { chase: 10000 } });
 check('Chase page, Freedom only: Also says your cards can’t transfer there', transfers(chase).includes('Also: Example Air 1:1 (your cards can’t transfer here).'), true);
 app.TRANSFERS.chase.partners.pop();
 
+// Bilt → JetBlue TrueBlue, 1:1 since Oct 20, 2026, on every Bilt card
+const bilt = prog('bilt', 'Bilt Rewards');
+const jetblue = prog('jetblue', 'JetBlue TrueBlue');
+app.setState(app.normalize({ programs: [jetblue, bilt], cards: ['bilt-palladium'], balances: { jetblue: 10000, bilt: 80000 } }));
+check('JetBlue page: Bilt under Top up with card points at 1:1, first since it’s on your list',
+  transfers(jetblue).startsWith('Top up with card pointsBBilt Rewards1:1MRAmex Membership Rewards5:4'), true);
+check('…and Amex, Chase, Citi and Capital One still at 5:4, 1:1, 1:1 and 5:3',
+  ['Amex Membership Rewards5:4', 'Chase Ultimate Rewards1:1', 'Citi ThankYou Points1:1', 'Capital One Miles5:3'].map((x) => transfers(jetblue).includes(x)), [true, true, true, true]);
+check('…and a JetBlue goal says Bilt points cover it', cover(jetblue, 30000), 'Your Bilt Rewards points cover it: transfer 30,000 (1:1).');
+check('Bilt page: JetBlue listed at 1:1, first since it’s on your list', transfers(bilt).startsWith('Transfer partnersB6JetBlue TrueBlue1:1UA'), true);
+app.setState(app.normalize({ programs: [jetblue, bilt], cards: ['bilt-blue'], balances: { bilt: 20000 } }));
+check('…the same on Bilt Blue', cover(jetblue, 30000), 'Transferring all your Bilt Rewards points would add 20,000, leaving 10,000 to earn.');
+
+// Bilt → Hyatt: 1:1 through Dec 31, 2026, then 4:3 for every Bilt member (Bilt's own Hyatt transfer page). The rows
+// say so now, and the ratio, the "→" figures and goal advice switch on Jan 1 without an app update.
+const biltHyatt = '4:3 from Jan 1, 2027, for every Bilt card and status';
+const withBilt = (cards, points) => app.setState(app.normalize({ programs: [hyatt, bilt, chase], cards, balances: { bilt: points } }));
+withBilt(['bilt-palladium'], 35000);
+check('2026: Hyatt page, Bilt row at 1:1 with the coming change', transfers(hyatt).includes(`Bilt Rewards1:1 · ${biltHyatt}`), true);
+check('…Bilt page, Hyatt row the same', transfers(bilt).includes(`World of Hyatt1:1 · ${biltHyatt}`), true);
+check('…and 35,000 Bilt still covers 30,000 Hyatt at 1:1', cover(hyatt, 30000), 'Your Bilt Rewards points cover it: transfer 30,000 (1:1).');
+now = new Date(2026, 11, 31, 23, 30);
+check('Dec 31, 2026, 11:30 pm: still 1:1', cover(hyatt, 30000), 'Your Bilt Rewards points cover it: transfer 30,000 (1:1).');
+now = new Date(2027, 0, 1, 0, 30);
+check('Jan 1, 2027: 35,000 Bilt at 4:3 no longer covers 30,000 Hyatt', cover(hyatt, 30000), 'Transferring all your Bilt Rewards points would add 26,250, leaving 3,750 to earn.');
+check('…Hyatt page, Bilt row at 4:3 with what 35,000 becomes', transfers(hyatt).includes(`Bilt Rewards4:3 · 35,000 → 26,250 points · ${biltHyatt}`), true);
+check('…Bilt page, Hyatt row the same', transfers(bilt).includes(`World of Hyatt4:3 · 35,000 → 26,250 points · ${biltHyatt}`), true);
+withBilt(['bilt-palladium'], 45000);
+check('…45,000 do: transfer 40,000 (4:3)', cover(hyatt, 30000), 'Your Bilt Rewards points cover it: transfer 40,000 (4:3).');
+withBilt([], 35000);
+check('…the same with no Bilt card listed', cover(hyatt, 30000), 'Transferring all your Bilt Rewards points would add 26,250, leaving 3,750 to earn.');
+withBilt(['bilt-palladium'], 35000);
+check('…Bilt’s other partners unchanged (Marriott, IHG 1:1; Accor 3:2)',
+  ['Marriott Bonvoy1:1 · +5,000', 'IHG One Rewards1:1', 'ALL Accor3:2 · 35,000 → 23,333 points'].map((x) => transfers(bilt).includes(x)), [true, true, true]);
+app.setState(app.normalize({ programs: [hyatt, chase], cards: ['sapphire-reserve'], balances: { chase: 35000 } }));
+check('…Chase → Hyatt with a Sapphire Reserve still 1:1', cover(hyatt, 30000), 'Your Chase Ultimate Rewards points cover it: transfer 30,000 (1:1).');
+app.setState(app.normalize({ programs: [hyatt, chase], cards: ['sapphire-preferred'], balances: { chase: 45000 } }));
+check('…and with a Sapphire Preferred still 4:3', cover(hyatt, 30000), 'Your Chase Ultimate Rewards points cover it: transfer 40,000 (4:3).');
+now = new Date(2026, 9, 8, 12);
+
 // 2. A card-year credit marked used stays used when the annual-fee date is added or corrected
 const changeFeeDate = (cardId, value) => app.elements['#cards-renewals'].listeners.change({ target: { closest: () => ({ dataset: { renewal: cardId }, value }) } });
 const hotel = () => app.heldCredits().find((x) => x.key === 'sapphire-preferred:hotel');
@@ -287,6 +327,48 @@ setup({ cards: ['sapphire-reserve', 'sapphire-reserve-business'] });
 check('2026: Peloton and Google Workspace credits listed', [has('sapphire-reserve', 'peloton'), has('sapphire-reserve-business', 'google')], [true, true]);
 now = new Date(2028, 0, 2, 12);
 check('2028: Peloton and Google Workspace credits gone', [has('sapphire-reserve', 'peloton'), has('sapphire-reserve-business', 'google')], [false, false]);
+now = new Date(2026, 9, 8, 12);
+
+// Chase's Oct 1, 2026 IHG refresh: an airline credit on all three IHG cards (each calendar year through 2027) and
+// Expensify on the Business card, listed instead of “No statement credits listed for this card”
+setup({ cards: ['ihg-premier-select', 'ihg-premier', 'ihg-premier-business'] });
+check('IHG Premier Select: $200 airline credit a year', rate('ihg-premier-select', 'airline'), '$200 a year');
+check('IHG Business: $100 airline credit and $100 Expensify a year', [rate('ihg-premier-business', 'airline'), rate('ihg-premier-business', 'expensify')], ['$100 a year', '$100 a year']);
+check('IHG Premier: $100 airline credit a year, and its United TravelBank credit still listed',
+  [rate('ihg-premier', 'airline'), rate('ihg-premier', 'united-half')], ['$100 a year', '$25 every 6 months']);
+const ihgCredits = () => app.heldCredits().filter((x) => x.card.id.startsWith('ihg-'));
+check('…all unused, counted for 2026, and dated (so they can come up before Dec 31)',
+  ihgCredits().map((x) => [x.key, x.used, x.period.key, x.dated]).filter(([key]) => !key.endsWith('united-half')),
+  [['ihg-premier-select:airline', false, '2026', true], ['ihg-premier:airline', false, '2026', true],
+    ['ihg-premier-business:airline', false, '2026', true], ['ihg-premier-business:expensify', false, '2026', true]]);
+check('…so $525 is unused right now ($200 + $100 + $100 + $100, plus Premier’s $25 TravelBank)', ihgCredits().filter((x) => !x.used).reduce((sum, x) => sum + x.credit.amount, 0), 525);
+now = new Date(2027, 11, 15, 12);
+check('December 2027: the airline credits still listed', ['ihg-premier-select', 'ihg-premier', 'ihg-premier-business'].map((id) => has(id, 'airline')), [true, true, true]);
+now = new Date(2028, 0, 2, 12);
+check('2028: the airline credits gone (Chase’s terms end them 12/31/27)', ['ihg-premier-select', 'ihg-premier', 'ihg-premier-business'].map((id) => has(id, 'airline')), [false, false, false]);
+check('…Expensify and United TravelBank stay', [has('ihg-premier-business', 'expensify'), has('ihg-premier', 'united-half')], [true, true]);
+now = new Date(2026, 9, 8, 12);
+
+// AAdvantage Executive: accounts opened before Aug 23, 2026 keep the $10 monthly Grubhub credit through Aug 31, 2027,
+// so it's listed, says who gets it, and is gone from Sep 1, 2027 (not left showing $10 unused until December)
+setup({ cards: ['aadvantage-executive'] });
+const grubhub = () => app.heldCredits().find((x) => x.key === 'aadvantage-executive:grubhub');
+check('AAdvantage Executive: Grubhub $10 a month', rate('aadvantage-executive', 'grubhub'), '$10 a month');
+check('…saying which accounts keep it, and until when', grubhub().credit.note, 'eligible Grubhub orders; accounts opened before Aug 23, 2026 keep it through Aug 31, 2027');
+check('…its other credits unchanged', ['vacations', 'avis', 'lyft', 'inflight'].map((id) => has('aadvantage-executive', id)), [true, true, true, true]);
+now = new Date(2027, 7, 31, 23, 30);
+check('Aug 31, 2027: Grubhub still listed', has('aadvantage-executive', 'grubhub'), true);
+now = new Date(2027, 8, 1, 0, 30);
+check('Sep 1, 2027: Grubhub gone', has('aadvantage-executive', 'grubhub'), false);
+check('…the other credits stay', ['vacations', 'avis', 'lyft', 'inflight'].map((id) => has('aadvantage-executive', id)), [true, true, true, true]);
+// …and the credits that end with a year still end on Dec 31
+setup({ cards: ['sapphire-reserve', 'sapphire-reserve-business'] });
+now = new Date(2026, 11, 31, 23, 30);
+check('Dec 31, 2026: the 2026 select hotels credits still listed', [has('sapphire-reserve', 'select-hotels'), has('sapphire-reserve-business', 'select-hotels')], [true, true]);
+now = new Date(2027, 0, 1, 0, 30);
+check('Jan 1, 2027: gone', [has('sapphire-reserve', 'select-hotels'), has('sapphire-reserve-business', 'select-hotels')], [false, false]);
+now = new Date(2027, 11, 31, 23, 30);
+check('Dec 31, 2027: Peloton and Google Workspace still listed', [has('sapphire-reserve', 'peloton'), has('sapphire-reserve-business', 'google')], [true, true]);
 now = new Date(2026, 9, 8, 12);
 
 // 5. Imported numbers above the most you can type are capped, like typed ones

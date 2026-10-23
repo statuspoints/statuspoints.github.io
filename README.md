@@ -59,7 +59,7 @@ Each balance shows an estimated dollar value ("points · ≈ $480"), and **≈ $
 
 ### Transfer partners
 
-Open Amex Membership Rewards, Chase Ultimate Rewards, Citi ThankYou, Capital One, or Bilt to see every airline and hotel their points transfer to, with ratios (as of September 2026). Programs on your list come first, with what your balance would become ("120,000 → 240,000 points" to Hilton), and tapping one opens it. Each airline and hotel shows **Top up with card points**: which banks feed it and how much you have. Notes cover the fine print, like Chase transfers needing a Sapphire or Ink Preferred, Chase-to-Hyatt dropping to 4:3 on the Sapphire Preferred and Ink Preferred from Oct 1, 2026, and Citi's lower ratios on no-fee cards.
+Open Amex Membership Rewards, Chase Ultimate Rewards, Citi ThankYou, Capital One, or Bilt to see every airline and hotel their points transfer to, with ratios (as of October 2026). Programs on your list come first, with what your balance would become ("120,000 → 240,000 points" to Hilton), and tapping one opens it. Each airline and hotel shows **Top up with card points**: which banks feed it and how much you have. Notes cover the fine print, like Chase transfers needing a Sapphire or Ink Preferred, Chase-to-Hyatt dropping to 4:3 on the Sapphire Preferred and Ink Preferred from Oct 1, 2026, Bilt-to-Hyatt dropping to 4:3 for everyone on Jan 1, 2027 (the ratios and goal advice switch on that day), and Citi's lower ratios on no-fee cards.
 
 ### Points that expire
 
