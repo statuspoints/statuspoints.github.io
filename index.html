@@ -4915,6 +4915,24 @@
   // Everyday words on account screens: never treated as a misspelled program name ("points" is not "Qpoints").
   const SCAN_COMMON = new Set(['points', 'miles', 'member', 'members', 'rewards', 'status', 'account', 'balance', 'elite', 'platinum',
     'diamond', 'silver', 'nights', 'stays', 'number', 'travel', 'hotels', 'flights', 'select', 'premier', 'redeem', 'offers', 'profile']);
+  // The member's name in a greeting ("Welcome Back Dr. Cho", "Hello Alex,", "Hi Chris" — on the greeting's line or the
+  // next one): up to three capitalized words, stopping at the screen's own words ("Hi Chris Points" is Chris). Tells
+  // two accounts in one program apart, and names a second account.
+  const GREETING_STOP = /^(?:points?|miles|avios|member|members|membership|account|balance|status|your|you|to|the|rewards|club|honors|bonvoy|skymiles|mileageplus|aadvantage|elite|number|id|no|since|my|profile|level|tier|back)$/i;
+  function greetingName(text) {
+    const g = /(?:^|\n)[ \t]*(?:welcome(?: back)?|hello|hi|hey|good (?:morning|afternoon|evening))[,!]?[ \t]*(?:\n[ \t]*)?/i.exec(text);
+    const m = g && /^((?:[A-Z][A-Za-z'’.-]*[ \t]*){1,3})/.exec(text.slice(g.index + g[0].length));
+    if (!m) return null;
+    const signWords = new Set(Object.values(SCAN_SIGNS).flat().flatMap((sign) => sign.split(' '))); // "Hilton", "Honors"
+    const words = [];
+    for (const raw of m[1].trim().split(/\s+/)) {
+      const word = /^[A-Z][a-z]{0,3}\.$/.test(raw) ? raw : raw.replace(/[,!.:]+$/, ''); // "Dr." keeps its period
+      const plain = word.replace(/\.$/, '').toLowerCase();
+      if (!word || GREETING_STOP.test(plain) || signWords.has(plain)) break;
+      words.push(word);
+    }
+    return words.length ? words.join(' ') : null;
+  }
   // Words a brand's logo runs into when read as one word ("wyndhamrewards", "hiltonhonors", "marriottbonvoy").
   const SCAN_GLUED = new Set(['rewards', 'honors', 'bonvoy', 'club', 'one', 'onerewards', 'plus', 'pass', 'miles', 'skymiles', 'privileges']);
   const gluedTo = (rest) => SCAN_GLUED.has(rest) || (rest.length >= 5 && [...SCAN_GLUED].some((g) => g.length >= 6 && nearWord(rest, g)));
@@ -5499,7 +5517,7 @@
     }
     // `score`: how surely the balance reads (a unit caption and thousands commas count most), for picking a reading.
     return { programId, weak, ownId, member, balances, score: candidates.length ? candidates[0].score : 0, tierIndex,
-      exp: scanDate(text, DAY_FIRST.has(programId), levels, nameSigns), progress, altProgress, mqd };
+      exp: scanDate(text, DAY_FIRST.has(programId), levels, nameSigns), progress, altProgress, mqd, name: greetingName(text) };
   }
 
   // The better of a screenshot's readings (see ocrImage): the one whose balance reads most surely, plus what else it
@@ -6470,9 +6488,9 @@
     if (!choice) {
       cid = found.programId;
       // Which of your accounts in this program: by the screen's member number when you have two, or the only one.
-      const account = cid ? accountFor(cid, found.member) : { own: null, ask: false };
+      const account = cid ? accountFor(cid, found.member, found.name) : { own: null, ask: false };
       own = account.own;
-      if (account.ask) { pickAccount(read, cid, found.member, later); return; }
+      if (account.ask) { pickAccount(read, cid, found.member, found.name, later); return; }
     }
     // Several programs on one page (a card's benefits page), unless you picked one program to read it as.
     const many = choice ? null : readMany(read);
@@ -6501,6 +6519,7 @@
     const second = !own && choice && choice.startsWith('new:'); // another account in a program you already track
     if (second) p.id = newProgramId(p.name); // not the first account's id: its member number mustn't stand in for this one's
     const vals = valsFrom(found, p);
+    if (second && found.name) vals.who = found.name; // the greeting names the second account ("Ms. Lee")
     if (playing.balancePick != null && p.unit) vals.balance = playing.balancePick; // picked on the card
     // A screenshot taken in an earlier qualifying year (its file's date): its counts are that year's, so they're left out.
     const taken = parseISODate(playing.taken);
@@ -6526,7 +6545,7 @@
     const confirmOnly = !!own && !real;
     markFound(reading, found, vals, p);
     const rows = lootRows(p, own, vals, outcome);
-    if (second) rows[0].querySelector('small').textContent = 'Adding a second account — name it in Edit';
+    if (second) rows[0].querySelector('small').textContent = vals.who ? `Adding a second account for ${vals.who}` : 'Adding a second account — name it in Edit';
     if (doubts.length) rows.splice(1, 0, doubtRow(doubts, found, vals));
     $('#play-loot').replaceChildren(...rows.map((li, i) => { li.style.setProperty('--i', i); return li; }));
     if (own && !changes) {
@@ -6653,7 +6672,7 @@
   function showManyLoot(read, many) {
     const programs = state.programs || [];
     const items = many.map((f) => {
-      const own = accountFor(f.id, f.member).own || accountsIn(f.id)[0] || null; // yours by member number, else the first
+      const own = accountFor(f.id, f.member, null).own || accountsIn(f.id)[0] || null; // yours by member number, else the first
       const p = own || programFromCatalog(CATALOG_BY_ID[f.id]);
       const vals = { tierIndex: f.tierIndex, exp: f.exp || '' };
       if (f.member && !state.members[p.id]) vals.member = f.member;
@@ -6696,30 +6715,43 @@
   // Which account a screen is: the one whose saved member number the screen shows; the only one, when the screen
   // shows no number or that account has none saved yet. Two accounts the screen can't be matched to, or a number
   // that isn't the one saved, means asking (it may be someone else's account).
-  function accountFor(cid, member) {
+  function accountFor(cid, member, name) {
     const rows = accountsIn(cid);
     if (!rows.length) return { own: null, ask: false };
+    // The screen's greeting names an account you labeled ("Ms. Lee"): that one, unless its saved number says otherwise.
+    const named = name ? rows.filter((x) => x.who && sameWho(x.who, name)) : [];
+    const byName = named.length === 1 && (!member || !state.members[named[0].id] || state.members[named[0].id] === member) ? named[0] : null;
     if (member) {
       const match = rows.find((x) => state.members[x.id] === member);
       if (match) return { own: match, ask: false };
+      if (byName) return { own: byName, ask: false };
       if (rows.length === 1 && !state.members[rows[0].id]) return { own: rows[0], ask: false };
       return { own: null, ask: true };
     }
+    if (byName) return { own: byName, ask: false };
     return rows.length === 1 ? { own: rows[0], ask: false } : { own: null, ask: true };
   }
+  // "Ms. Lee" and "Ms Lee", "Dr. Cho" and "Cho", "Alex" and "Alex Kim": the same person as far as a greeting goes.
+  function sameWho(who, name) {
+    const words = (s) => s.toLowerCase().replace(/[.,]/g, '').split(/\s+/).filter((w) => w && !/^(?:mr|mrs|ms|mx|dr|prof)$/.test(w));
+    const a = words(who);
+    const b = words(name);
+    return a.length > 0 && b.length > 0 && (a.every((w) => b.includes(w)) || b.every((w) => a.includes(w)));
+  }
   // The card asks which account a screen is, or whether it's a new one in that program.
-  function pickAccount(read, cid, member, later) {
+  function pickAccount(read, cid, member, who, later) {
     const rows = accountsIn(cid);
     const name = CATALOG_BY_ID[cid].name;
     $('#play-title').textContent = `Which ${name} account is this?`;
     const label = (x) => `${nameOf(x)}${state.members[x.id] ? ` · •••• ${state.members[x.id].slice(-4)}` : ''}`;
+    const newLabel = ['New account', [who, member && `•••• ${member.slice(-4)}`].filter(Boolean).join(' · ')].filter(Boolean).join(' — ');
     const select = h('select', { id: 'play-program', 'aria-label': 'Account' },
-      rows.map((x) => h('option', { value: x.id }, label(x))),
-      h('option', { value: `new:${cid}` }, member ? `New account (•••• ${member.slice(-4)})` : 'New account'));
+      rows.map((x) => h('option', { value: x.id }, label(x))), h('option', { value: `new:${cid}` }, newLabel));
     if (member && rows.every((x) => state.members[x.id])) select.value = `new:${cid}`; // every saved number differs
+    const says = who ? ` The screen says “${who}”.` : '';
     $('#play-loot').replaceChildren(
       h('li', { class: 'loot-warn' }, lootIcon('warn', '#B45309'), h('div', { class: 'loot-main' }, h('b', null, 'Check this first'),
-        h('small', null, member ? `the member number on this screen (•••• ${member.slice(-4)}) isn’t one you’ve saved for ${name}.` : `you track ${rows.length} ${name} accounts, and this screen doesn’t show a member number.`))),
+        h('small', null, (member ? `the member number on this screen (•••• ${member.slice(-4)}) isn’t one you’ve saved for ${name}.` : `you track ${rows.length} ${name} accounts, and this screen doesn’t show a member number.`) + says))),
       h('li', { class: 'play-pick' }, select));
     setActions([later, ['Read it', true, () => showLoot(read, select.value)]]);
     select.focus();
@@ -6960,7 +6992,7 @@
     if (firstRun) state.programs = [];
     const added = choice.startsWith('add:') || choice.startsWith('new:'); // "new:": another account in a program you track
     const p = added ? programFromCatalog(CATALOG_BY_ID[choice.slice(4)]) : state.programs.find((x) => x.id === choice);
-    if (added) { p.id = newProgramId(p.name); state.programs.push(p); }
+    if (added) { p.id = newProgramId(p.name); if (vals.who) p.who = vals.who.slice(0, 30); state.programs.push(p); }
     const before = { balance: state.balances[p.id] ?? null };
     const track = trackFor(p);
     const real = realChanges(p, added ? null : p, vals, vals.tierIndex >= 0 ? statusOutcome(p, vals.tierIndex, vals.exp, vals.mqd ?? state.mqd) : null);

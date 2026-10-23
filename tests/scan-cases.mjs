@@ -1119,4 +1119,14 @@ export default [
     expect: { program: 'hilton', balance: 302118, tier: 'Diamond', progress: 61, alt: 24 } },
   // Regression hunt round 4: a spaced value under a caption that names its year is joined too.
   { name: 'United: “PQP (2026)” over “12 450” is 12,450', text: `MileagePlus\nPremier Gold\nMiles\n64 018\nPQP (2026)\n12 450\nPQF (2026)\n31`, expect: { program: 'united', balance: 64018, progress: 12450, alt: 31 } },
+  // ---------- the member's name in a greeting (2026-10-23) ----------
+  // Two accounts in one program are told apart by the greeting too; the name also labels a second account.
+  { name: 'Greeting on its own line, name under it (LHW)', text: `Welcome Back\nDr. Cho\nLeaders Club Member\nMember ID 5523190\nMember Since 2025\n0 Points`,
+    expect: { program: 'lhw', member: '5523190', name: 'Dr. Cho' } },
+  { name: 'Greeting with a comma', text: `Hello Alex,\nPlatinum Elite Member\nIHG One Rewards\nYOUR POINTS\n26,948`, expect: { program: 'ihg', balance: 26948, name: 'Alex' } },
+  { name: 'Greeting run into the next column ("Hi Chris Points")', text: `AIR CANADA Aeroplan\nHi Chris Points\n187,350\nAeroplan number 123456789`, expect: { program: 'aeroplan', balance: 187350, name: 'Chris' } },
+  { name: 'Welcome, with a first and last name', text: `Welcome, Lina Park\nQatar Airways Privilege Club\nGold\nAvios 58,940`, expect: { program: 'qatar', name: 'Lina Park' } },
+  { name: 'A greeting without a name', text: `Welcome back\nHilton Honors\nPoints 152,310`, expect: { program: 'hilton', balance: 152310, name: null } },
+  { name: '"Welcome to Marriott Bonvoy" isn’t a name', text: `Welcome to Marriott Bonvoy\nGold Elite\nPoints 88,000`, expect: { program: 'marriott', balance: 88000, name: null } },
+  { name: 'No greeting: no name', text: `Hilton Honors\nDiamond\nPoints 245,100\nMember # 1234567890`, expect: { program: 'hilton', name: null } },
 ];

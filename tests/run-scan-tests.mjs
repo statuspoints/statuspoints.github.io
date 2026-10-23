@@ -37,7 +37,7 @@ vm.runInContext(`${stubs}\n${head}\n${dates}\nconst state = { programs: [], bala
     state.programs = [];
     const tiers = r.programId ? scanTiersFor(r.programId) : [];
     return { program: r.programId, balance: r.balances[0] ?? null, tier: r.tierIndex >= 0 ? tiers[r.tierIndex].name : null,
-      exp: r.exp, progress: r.progress, alt: r.altProgress, mqd: r.mqd, member: r.member, unsure: !!r.unsure, weak: r.weak || null, own,
+      exp: r.exp, progress: r.progress, alt: r.altProgress, mqd: r.mqd, member: r.member, unsure: !!r.unsure, weak: r.weak || null, own, name: r.name || null,
       ask: (r.unsureCounts || []).join(',') || null }; // the counts or end date the card asks about
   };`, context);
 

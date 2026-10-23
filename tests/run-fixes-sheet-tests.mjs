@@ -131,6 +131,7 @@ vm.runInContext(`${base}${quietDom}\n${head}\n${piece('  function parseISODate',
   ${piece('  function applyRead', '  async function celebrate')}
   ${piece('  function newProgramId', '\n\n')}
   ${piece('  // Your accounts in a program', '  // The card asks which account')}
+  ${piece('  // "Ms. Lee" and "Ms Lee"', '\n\n')}
   globalThis.api = { collect, normalize, programFromCatalog, CATALOG_BY_ID, shown, accountFor, get state() { return state; }, set state(s) { state = s; }, setBatch(b) { batch = b; } };`, upd);
 const { api } = upd;
 const update = (choice, now) => {
@@ -173,6 +174,23 @@ check('“Add Hilton” not on the list: added as usual', update('add:hilton', [
   delete api.state.members.lhw;
   check('one account with no number saved: that one, whatever the screen shows', [who('9000001'), who(null)], [['lhw', false], ['lhw', false]]);
   check('no account in that program: nothing to ask', api.accountFor('hilton', '123456789'), { own: null, ask: false });
+  // The greeting's name picks the account you labeled.
+  api.state.programs.push(api.programFromCatalog(api.CATALOG_BY_ID.lhw));
+  const [a, b] = api.state.programs.filter((p) => p.name.startsWith('Leading'));
+  b.id = 'lhw-2'; b.who = 'Ms. Lee'; api.state.members.lhw = '5523190';
+  const whoN = (member, name) => { const r = api.accountFor('lhw', member, name); return [r.own ? r.own.id : null, r.ask]; };
+  check('no number on the screen, the greeting says Ms. Lee: her account', whoN(null, 'Ms. Lee'), ['lhw-2', false]);
+  check('…"Ms Lee" and "Lee" count as her too', [whoN(null, 'Ms Lee'), whoN(null, 'Lee')], [['lhw-2', false], ['lhw-2', false]]);
+  check('a new number with her name, and no number saved for her yet: her account', whoN('7781204', 'Ms. Lee'), ['lhw-2', false]);
+  api.state.members['lhw-2'] = '7781204';
+  check('her saved number matches: her account', whoN('7781204', 'Ms. Lee'), ['lhw-2', false]);
+  check('her name but a third number: ask', whoN('9000001', 'Ms. Lee'), [null, true]);
+  check('a name nobody is labeled with, no number: ask', whoN(null, 'Jordan'), [null, true]);
+  check('the first account’s number with her name: the number wins', whoN('5523190', 'Ms. Lee'), ['lhw', false]);
+  // A second account added with the greeting's name is labeled with it.
+  api.setBatch(null);
+  api.collect('new:lhw', { balance: 10, member: '9000001', who: 'Jordan Kim' }, null, null);
+  check('a new account takes the greeting as its label', api.state.programs.filter((p) => p.name.startsWith('Leading')).map((p) => p.who || ''), ['', 'Ms. Lee', 'Jordan Kim']);
 }
 
 console.log(`\n${total - failed}/${total} passed`);
