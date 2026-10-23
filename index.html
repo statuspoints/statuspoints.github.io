@@ -410,6 +410,7 @@
   .sline.expired .pill { background: var(--chip-bg); color: var(--muted); text-decoration: line-through; }
   .via .nw { white-space: nowrap; } /* keep "Sapphire Reserve", "thru 12/31/27" whole; wrap between them */
   .no-status { margin-top: 3px; font-size: 13px; color: var(--muted); }
+  .acct { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px; background: var(--chip-bg); color: var(--muted); font-size: 11.5px; font-weight: 650; vertical-align: 1px; white-space: nowrap; }
   .bal { flex: 0 1 auto; min-width: 0; max-width: 46%; text-align: right; }
   .bal .unit { overflow-wrap: anywhere; }
   .unit { margin-top: 2px; font-size: 11.5px; color: var(--muted); }
@@ -1871,6 +1872,10 @@
       <label for="p-member">Member number (optional)</label>
       <input id="p-member" maxlength="40" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="e.g. 123456789">
     </div>
+    <div class="field">
+      <label for="p-who">Whose account (optional)</label>
+      <input id="p-who" maxlength="30" autocomplete="off" placeholder="e.g. Ms. Lee — for a second account in the same program">
+    </div>
     <label class="check" id="p-medallion-wrap"><input type="checkbox" id="p-medallion"> Show Delta Medallion progress (MQDs)</label>
     <fieldset class="field status-edit">
       <legend>Status</legend>
@@ -2208,6 +2213,8 @@
   const byId = (list) => Object.assign(Object.create(null), Object.fromEntries(list.map((c) => [c.id, c])));
   const CATALOG_BY_ID = byId(CATALOG_ITEMS);
   const catalogByName = (name) => CATALOG_ITEMS.find((c) => c.name.toLowerCase() === name.trim().toLowerCase());
+  // A program's name with whose account it is, when that's set: "Leading Hotels of the World (Ms. Lee)".
+  const nameOf = (p) => (p.who ? `${p.name} (${p.who})` : p.name);
 
   // Filter chip categories; programs added by hand that aren't in the catalog fall under "Other".
   const CATEGORIES = ['Airlines', 'Hotels', 'Points', 'Cars & lounges', 'Other'];
@@ -3532,6 +3539,8 @@
           .filter((line) => (line.card ? cardKept++ < CARD_LINES_MAX : typedKept++ < 20)),
       };
       if (p.medallion === true) program.medallion = true;
+      const who = str(p.who, 30); // whose account, when you track two in one program ("Ms. Lee")
+      if (who) program.who = who;
       if (typeof p.addedBy === 'string' && CARD_BY_ID[p.addedBy]) program.addedBy = p.addedBy; // created by a card preset
       out.push(program);
     }
@@ -4553,6 +4562,8 @@
       ` · ${days < 365 ? `${Math.floor(days / 30.4)} mo` : `${Math.floor(days / 365)} yr`} old`);
   }
 
+  // Whose account, beside the name, when you track two accounts in one program.
+  const whoTag = (p) => (p.who ? h('span', { class: 'acct' }, p.who) : null);
   function programRow(p, index, withMedallion) {
     if (editMode) {
       const last = index === state.programs.length - 1;
@@ -4560,7 +4571,7 @@
         h('div', { class: p.status.length ? 'row-main' : 'row-main solo' },
           avatar(p),
           h('button', { type: 'button', class: 'who-btn', 'data-edit': p.id },
-            h('div', { class: 'name' }, p.name, svgIcon(ICON.pencil)),
+            h('div', { class: 'name' }, p.name, whoTag(p), svgIcon(ICON.pencil)),
             statusBlock(p, false) || h('div', { class: 'no-status' }, 'No status yet — tap to add')),
           h('div', { class: 'reorder' },
             h('button', { type: 'button', class: 'icon-btn', 'data-move': '-1', 'data-id': p.id, 'aria-label': `Move ${p.name} up`, disabled: index === 0 ? '' : null }, svgIcon(ICON.up)),
@@ -4570,7 +4581,7 @@
       const simple = simpleStatus(p);
       const main = h('div', { class: simple ? 'row-main' : 'row-main solo' },
         h('button', { type: 'button', class: 'who-open', 'data-open': p.id },
-          avatar(p), h('div', { class: 'who' }, h('div', { class: 'name' }, p.name), simple, goalMini(p))));
+          avatar(p), h('div', { class: 'who' }, h('div', { class: 'name' }, p.name, whoTag(p)), simple, goalMini(p))));
       if (p.unit) main.append(h('div', { class: 'bal' }, numButton(`bal:${p.id}`, `${p.name} balance`), h('div', { class: 'unit' }, ...unitLine(p))));
       return h('li', { class: 'row' }, main);
     }
@@ -4578,7 +4589,7 @@
     const main = h('div', { class: status ? 'row-main' : 'row-main solo' },
       h('button', { type: 'button', class: 'who-open', 'data-open': p.id },
         avatar(p),
-        h('div', { class: 'who' }, h('div', { class: 'name' }, p.name), status, perkLine(p, withMedallion), progressMini(p), goalMini(p))));
+        h('div', { class: 'who' }, h('div', { class: 'name' }, p.name, whoTag(p)), status, perkLine(p, withMedallion), progressMini(p), goalMini(p))));
     if (p.unit) {
       main.append(h('div', { class: 'bal' },
         numButton(`bal:${p.id}`, `${p.name} balance`),
@@ -6079,7 +6090,7 @@
     const track = cid && TRACKS[cid];
     const goal = goalWith(p, vals);
     const was = (store, key) => (own && store[key] != null ? store[key] : null);
-    const rows = [h('li', null, avatar(p), lootText(p.name, own ? 'On your list' : 'Adding it to your list'), lootTag(own ? 'Found' : 'New', own ? '' : 'new'))];
+    const rows = [h('li', null, avatar(p), lootText(nameOf(p), own ? 'On your list' : 'Adding it to your list'), lootTag(own ? 'Found' : 'New', own ? '' : 'new'))];
     if (vals.balance !== undefined) {
       rows.push(h('li', { class: 'loot-bal' }, lootIcon('balance', MARK_COLORS.balance), lootText(`${fmt(vals.balance)} ${p.unit}`, 'Balance'),
         deltaTag(was(state.balances, p.id), vals.balance)));
@@ -6188,13 +6199,16 @@
         balances: found.balances, unsure: !!found.unsure, programId: found.programId, bands: read.bands || '' }));
       }
     } catch { /* storage blocked: no debug */ }
-    if (!choice) {
-      cid = found.programId;
-      own = cid ? programs.find((x) => catalogFor(x) && catalogFor(x).id === cid) || null : null;
-    }
     Object.assign(playing, { read, pickArg: choice, text: reading.text, found, many: null });
     $('#play-shot').className = 'play-shot done';
     const later = batch ? ['Skip', false, skipPlay] : ['Try another', false, pickAnother];
+    if (!choice) {
+      cid = found.programId;
+      // Which of your accounts in this program: by the screen's member number when you have two, or the only one.
+      const account = cid ? accountFor(cid, found.member) : { own: null, ask: false };
+      own = account.own;
+      if (account.ask) { pickAccount(read, cid, found.member, later); return; }
+    }
     // Several programs on one page (a card's benefits page), unless you picked one program to read it as.
     const many = choice ? null : readMany(read);
     if (many) { showManyLoot(read, many); return; }
@@ -6215,13 +6229,14 @@
       return;
     }
     const p = own || programFromCatalog(CATALOG_BY_ID[cid]);
+    const second = !own && choice && choice.startsWith('new:'); // another account in a program you already track
     const vals = valsFrom(found, p);
     if (playing.balancePick != null && p.unit) vals.balance = playing.balancePick; // picked on the card
     // A screenshot taken in an earlier qualifying year (its file's date): its counts are that year's, so they're left out.
     const taken = parseISODate(playing.taken);
     const years = readYears(trackFor(p), taken && taken < new Date() ? taken : undefined);
     for (const key of staleCounts(own ? own.id : `add:${p.id}`, vals, years)) delete vals[key];
-    Object.assign(playing, { choice: own ? own.id : `add:${p.id}`, vals, years });
+    Object.assign(playing, { choice: own ? own.id : second ? choice : `add:${p.id}`, vals, years });
     const doubts = own ? doubtsAbout(p, vals) : [];
     if (playing.guessed && choice) doubts.push('the screenshot doesn’t name the program, so make sure it’s this one');
     if (found.unsure && vals.balance !== undefined && playing.balancePick == null) doubts.push('the balance was hard to read, so check it');
@@ -6233,6 +6248,7 @@
     const confirmOnly = !!own && !real;
     markFound(reading, found, vals, p);
     const rows = lootRows(p, own, vals, outcome);
+    if (second) rows[0].querySelector('small').textContent = 'Adding a second account — name it in Edit';
     if (doubts.length) rows.splice(1, 0, doubtRow(doubts, found, vals));
     $('#play-loot').replaceChildren(...rows.map((li, i) => { li.style.setProperty('--i', i); return li; }));
     if (own && !changes) {
@@ -6240,8 +6256,8 @@
       setActions([later, ['Check it', true, fixPlay]]);
       return;
     }
-    $('#play-title').textContent = playing.guessed && choice ? `This looks like your ${p.name}`
-      : confirmOnly ? `Your ${p.name} is up to date` : own ? `Found your ${p.name}` : `New program: ${p.name}`;
+    $('#play-title').textContent = playing.guessed && choice ? `This looks like your ${nameOf(p)}`
+      : confirmOnly ? `Your ${nameOf(p)} is up to date` : own ? `Found your ${nameOf(p)}` : second ? `New ${p.name} account` : `New program: ${p.name}`;
     $('#play-xp').hidden = true; // plain card: what was found and what changes, no XP or combo
     setActions([['Fix something', false, fixPlay],
       [[h('span', { class: 'fill', 'aria-hidden': 'true' }), confirmOnly ? 'Confirm' : 'Update', h('span', { class: 'cd', 'aria-hidden': 'true' })], true, collectNow, 'play-collect']]);
@@ -6355,7 +6371,7 @@
   function showManyLoot(read, many) {
     const programs = state.programs || [];
     const items = many.map((f) => {
-      const own = programs.find((x) => catalogFor(x) && catalogFor(x).id === f.id) || null;
+      const own = accountFor(f.id, f.member).own || accountsIn(f.id)[0] || null; // yours by member number, else the first
       const p = own || programFromCatalog(CATALOG_BY_ID[f.id]);
       const vals = { tierIndex: f.tierIndex, exp: f.exp || '' };
       if (f.member && !state.members[p.id]) vals.member = f.member;
@@ -6391,6 +6407,40 @@
     batch.many = true;
     const years = readYears(null);
     for (const { choice, vals } of items) collect(choice, vals, from, years);
+  }
+
+  // Your accounts in a program (two "Leading Hotels of the World" rows: yours and Ms. Lee's), in list order.
+  const accountsIn = (cid) => (state.programs || []).filter((x) => catalogFor(x) && catalogFor(x).id === cid);
+  // Which account a screen is: the one whose saved member number the screen shows; the only one, when the screen
+  // shows no number or that account has none saved yet. Two accounts the screen can't be matched to, or a number
+  // that isn't the one saved, means asking (it may be someone else's account).
+  function accountFor(cid, member) {
+    const rows = accountsIn(cid);
+    if (!rows.length) return { own: null, ask: false };
+    if (member) {
+      const match = rows.find((x) => state.members[x.id] === member);
+      if (match) return { own: match, ask: false };
+      if (rows.length === 1 && !state.members[rows[0].id]) return { own: rows[0], ask: false };
+      return { own: null, ask: true };
+    }
+    return rows.length === 1 ? { own: rows[0], ask: false } : { own: null, ask: true };
+  }
+  // The card asks which account a screen is, or whether it's a new one in that program.
+  function pickAccount(read, cid, member, later) {
+    const rows = accountsIn(cid);
+    const name = CATALOG_BY_ID[cid].name;
+    $('#play-title').textContent = `Which ${name} account is this?`;
+    const label = (x) => `${nameOf(x)}${state.members[x.id] ? ` · •••• ${state.members[x.id].slice(-4)}` : ''}`;
+    const select = h('select', { id: 'play-program', 'aria-label': 'Account' },
+      rows.map((x) => h('option', { value: x.id }, label(x))),
+      h('option', { value: `new:${cid}` }, member ? `New account (•••• ${member.slice(-4)})` : 'New account'));
+    if (member && rows.every((x) => state.members[x.id])) select.value = `new:${cid}`; // every saved number differs
+    $('#play-loot').replaceChildren(
+      h('li', { class: 'loot-warn' }, lootIcon('warn', '#B45309'), h('div', { class: 'loot-main' }, h('b', null, 'Check this first'),
+        h('small', null, member ? `the member number on this screen (•••• ${member.slice(-4)}) isn’t one you’ve saved for ${name}.` : `you track ${rows.length} ${name} accounts, and this screen doesn’t show a member number.`))),
+      h('li', { class: 'play-pick' }, select));
+    setActions([later, ['Read it', true, () => showLoot(read, select.value)]]);
+    select.focus();
   }
 
   // A screen that doesn't name its program: pick it on the card, and it's read again as that program.
@@ -6511,7 +6561,7 @@
     const options = [];
     if (!detectedId) options.push(h('option', { value: '' }, 'Choose a program'));
     if (detectedId && !own(detectedId)) options.push(h('option', { value: `add:${detectedId}` }, `Add ${CATALOG_BY_ID[detectedId].name}`));
-    if (programs.length) options.push(h('optgroup', { label: 'Your programs' }, programs.map((p) => h('option', { value: p.id }, p.name))));
+    if (programs.length) options.push(h('optgroup', { label: 'Your programs' }, programs.map((p) => h('option', { value: p.id }, nameOf(p)))));
     for (const g of CATALOG) {
       const more = g.items.filter((c) => c.id !== detectedId && !own(c.id));
       if (more.length) options.push(h('optgroup', { label: `Add: ${g.group}` }, more.map((c) => h('option', { value: `add:${c.id}` }, c.name))));
@@ -6626,9 +6676,9 @@
   function applyRead(choice, vals) {
     const firstRun = !state.programs; // started from a screenshot instead of picking programs
     if (firstRun) state.programs = [];
-    const added = choice.startsWith('add:');
+    const added = choice.startsWith('add:') || choice.startsWith('new:'); // "new:": another account in a program you track
     const p = added ? programFromCatalog(CATALOG_BY_ID[choice.slice(4)]) : state.programs.find((x) => x.id === choice);
-    if (added) state.programs.push(p);
+    if (added) { p.id = newProgramId(p.name); state.programs.push(p); }
     const before = { balance: state.balances[p.id] ?? null };
     const track = trackFor(p);
     const real = realChanges(p, added ? null : p, vals, vals.tierIndex >= 0 ? statusOutcome(p, vals.tierIndex, vals.exp, vals.mqd ?? state.mqd) : null);
@@ -6708,7 +6758,7 @@
     if (choice.startsWith('add:')) {
       const have = (state.programs || []).find((x) => catalogFor(x) && catalogFor(x).id === choice.slice(4));
       if (have) choice = have.id;
-    } else if (!(state.programs || []).some((x) => x.id === choice)) {
+    } else if (!choice.startsWith('new:') && !(state.programs || []).some((x) => x.id === choice)) { // "new:": a second account, added as asked
       showToast('That program was removed in another window, so nothing was updated');
       if (batch) { finishOne(false); setTimeout(nextInQueue); }
       return;
@@ -6742,7 +6792,7 @@
     if (batch) finishOne(true, reward.xp); // one toast, with one Undo, when the batch ends
     else {
       const undo = Object.assign(() => undoTo(previous, who), { snapshot: true }); // puts the whole tracker back
-      showToast(!result.real && !added ? `${p.name} is up to date` : `${added ? 'Added' : 'Updated'} ${p.name}`, undo);
+      showToast(!result.real && !added ? `${nameOf(p)} is up to date` : `${added ? 'Added' : 'Updated'} ${nameOf(p)}`, undo);
     }
     offerBonusLanding(previous.balances);
   }
@@ -6979,7 +7029,7 @@
     for (const p of state.programs) {
       if (!p.unit) continue;
       const value = state.balances[p.id];
-      rows.push(quickRow(p, `bal:${p.id}`, p.name, p.unit, value, state.updated[p.id]));
+      rows.push(quickRow(p, `bal:${p.id}`, nameOf(p), p.unit, value, state.updated[p.id]));
       if (p === medallion) rows.push(quickRow(p, 'mqd', `MQDs ${mqdYear()}`, 'MQDs', state.mqd, state.updated.mqd));
     }
     if (medallion && !medallion.unit) rows.push(quickRow(medallion, 'mqd', `MQDs ${mqdYear()}`, 'MQDs', state.mqd, state.updated.mqd));
@@ -7393,6 +7443,7 @@
     $('#p-name').value = p.name;
     $('#p-unit').value = p.unit;
     $('#p-member').value = (id && state.members[id]) || '';
+    $('#p-who').value = p.who || '';
     $('#p-medallion').checked = !!p.medallion;
     const lines = p.status.length ? p.status : [{ tier: '', via: '' }];
     $('#p-status').replaceChildren(...lines.map(statusEditorRow));
@@ -7467,6 +7518,9 @@
     const member = $('#p-member').value.trim().slice(0, 40);
     if (member) state.members[program.id] = member;
     else delete state.members[program.id];
+    const who = $('#p-who').value.trim().slice(0, 30);
+    if (who) program.who = who;
+    else delete program.who;
 
     scheduleSave();
     sheet.close();
@@ -7552,7 +7606,7 @@
     memberShown = false;
     expEditing = null;
     $('#d-av').replaceChildren(avatar(p));
-    $('#d-name').textContent = p.name;
+    $('#d-name').textContent = nameOf(p);
     const site = SITES[(catalogFor(p) || {}).id];
     $('#d-site').hidden = !site;
     if (site) {

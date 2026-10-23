@@ -129,7 +129,9 @@ vm.runInContext(`${base}${quietDom}\n${head}\n${piece('  function parseISODate',
   ${piece('  function medallionFor', '  function updateMedallion')}
   ${piece('  function realChanges', '  const lootText')}
   ${piece('  function applyRead', '  async function celebrate')}
-  globalThis.api = { collect, normalize, programFromCatalog, CATALOG_BY_ID, shown, get state() { return state; }, set state(s) { state = s; }, setBatch(b) { batch = b; } };`, upd);
+  ${piece('  function newProgramId', '\n\n')}
+  ${piece('  // Your accounts in a program', '  // The card asks which account')}
+  globalThis.api = { collect, normalize, programFromCatalog, CATALOG_BY_ID, shown, accountFor, get state() { return state; }, set state(s) { state = s; }, setBatch(b) { batch = b; } };`, upd);
 const { api } = upd;
 const update = (choice, now) => {
   api.state = api.normalize({ programs: now.map((id) => api.programFromCatalog(api.CATALOG_BY_ID[id])), cards: [] });
@@ -146,6 +148,32 @@ check('“Add Hilton” when another window already added it: that Hilton is upd
   { threw: null, toasts: [], finished: 1, programs: ['hilton', 'ihg'], hilton: 152310 });
 check('Hilton still on the list: updated as usual', update('hilton', ['hilton', 'ihg']).hilton, 152310);
 check('“Add Hilton” not on the list: added as usual', update('add:hilton', ['ihg']).programs, ['ihg', 'hilton']);
+
+/* ---------- Two accounts in one program ---------- */
+
+// "New account" from the card: a second row for the program, with its own id, balance and member number.
+{
+  api.state = api.normalize({ programs: [api.programFromCatalog(api.CATALOG_BY_ID.lhw)], cards: [] });
+  api.state.members.lhw = '5523190';
+  api.state.balances.lhw = 0;
+  api.setBatch(null);
+  api.collect('new:lhw', { balance: 262, member: '7781204' }, null, null);
+  const [first, second] = api.state.programs;
+  check('a second account is added beside the first, not in its place', [api.state.programs.length, first.id, second.name, second.id !== 'lhw'], [2, 'lhw', 'Leading Hotels of the World', true]);
+  check('…with its own balance and member number; the first keeps its own', [api.state.balances[second.id], api.state.members[second.id], api.state.balances.lhw, api.state.members.lhw], [262, '7781204', 0, '5523190']);
+  check('…and the toast says Added', api.shown.toasts.pop(), 'Added Leading Hotels of the World');
+  // Which account a screen is, by its member number.
+  const who = (member) => { const a = api.accountFor('lhw', member); return [a.own ? a.own.id : null, a.ask]; };
+  check('the screen shows the first account’s number: the first', who('5523190'), ['lhw', false]);
+  check('the screen shows the second account’s number: the second', who('7781204'), [second.id, false]);
+  check('a number saved for neither: ask (it may be a third account)', who('9000001'), [null, true]);
+  check('no number on the screen, two accounts: ask', who(null), [null, true]);
+  api.state.programs.pop();
+  check('one account with a number saved, a different number on the screen: ask', who('9000001'), [null, true]);
+  delete api.state.members.lhw;
+  check('one account with no number saved: that one, whatever the screen shows', [who('9000001'), who(null)], [['lhw', false], ['lhw', false]]);
+  check('no account in that program: nothing to ask', api.accountFor('hilton', '123456789'), { own: null, ask: false });
+}
 
 console.log(`\n${total - failed}/${total} passed`);
 if (failed) process.exit(1);
