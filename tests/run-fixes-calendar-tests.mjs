@@ -223,5 +223,16 @@ check('an expired status: no perks listed under it', after(summaryOf([{ tier: 'D
 check('a current status: perks listed', after(summaryOf([{ tier: 'Gold', via: 'from your account', exp: dayFrom(100) }]), '  Gold (from your account) — valid through').length > 0, true);
 check('a status with no end date: perks listed', after(summaryOf([{ tier: 'Gold', via: 'Amex Platinum' }]), '  Gold (Amex Platinum)').length > 0, true);
 
+// Two accounts in one program: the text export and the calendar say whose each is
+{
+  const exp = dayFrom(40);
+  api.setState(tracker({ programs: [program('hilton', { status: [{ tier: 'Gold', via: 'from your account', exp }] }), program('hilton', { id: 'hilton-2', who: 'Ms. Lee', status: [{ tier: 'Diamond', via: 'from your account', exp }] })],
+    balances: { hilton: 1200, 'hilton-2': 300 } }));
+  const out = api.summaryText().split('\n');
+  check('text export: each account’s line says whose it is', out.filter((l) => /^Hilton Honors/.test(l)).map((l) => l.replace(/ \(≈.*$/, '')), ['Hilton Honors — 1,200 points', 'Hilton Honors (Ms. Lee) — 300 points']);
+  check('text export: Coming up names the account whose status ends', out.filter((l) => /^- (Gold|Diamond) \(/.test(l)).map((l) => l.slice(0, l.indexOf(') ') + 1)), ['- Gold (Hilton Honors)', '- Diamond (Hilton Honors (Ms. Lee))']);
+  check('calendar: each account’s event says whose it is', summaries(api.buildICS(api.upcomingItems({ future: true }))), ['Hilton Honors Gold expires', 'Hilton Honors (Ms. Lee) Diamond expires']);
+}
+
 console.log(`\n${total - failed}/${total} passed`);
 process.exit(failed ? 1 : 0);

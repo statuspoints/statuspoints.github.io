@@ -4574,15 +4574,15 @@
             h('div', { class: 'name' }, p.name, whoTag(p), svgIcon(ICON.pencil)),
             statusBlock(p, false) || h('div', { class: 'no-status' }, 'No status yet — tap to add')),
           h('div', { class: 'reorder' },
-            h('button', { type: 'button', class: 'icon-btn', 'data-move': '-1', 'data-id': p.id, 'aria-label': `Move ${p.name} up`, disabled: index === 0 ? '' : null }, svgIcon(ICON.up)),
-            h('button', { type: 'button', class: 'icon-btn', 'data-move': '1', 'data-id': p.id, 'aria-label': `Move ${p.name} down`, disabled: last ? '' : null }, svgIcon(ICON.down)))));
+            h('button', { type: 'button', class: 'icon-btn', 'data-move': '-1', 'data-id': p.id, 'aria-label': `Move ${nameOf(p)} up`, disabled: index === 0 ? '' : null }, svgIcon(ICON.up)),
+            h('button', { type: 'button', class: 'icon-btn', 'data-move': '1', 'data-id': p.id, 'aria-label': `Move ${nameOf(p)} down`, disabled: last ? '' : null }, svgIcon(ICON.down)))));
     }
     if (state.view === 'simple') {
       const simple = simpleStatus(p);
       const main = h('div', { class: simple ? 'row-main' : 'row-main solo' },
         h('button', { type: 'button', class: 'who-open', 'data-open': p.id },
           avatar(p), h('div', { class: 'who' }, h('div', { class: 'name' }, p.name, whoTag(p)), simple, goalMini(p))));
-      if (p.unit) main.append(h('div', { class: 'bal' }, numButton(`bal:${p.id}`, `${p.name} balance`), h('div', { class: 'unit' }, ...unitLine(p))));
+      if (p.unit) main.append(h('div', { class: 'bal' }, numButton(`bal:${p.id}`, `${nameOf(p)} balance`), h('div', { class: 'unit' }, ...unitLine(p))));
       return h('li', { class: 'row' }, main);
     }
     const status = statusBlock(p, withMedallion);
@@ -4592,7 +4592,7 @@
         h('div', { class: 'who' }, h('div', { class: 'name' }, p.name, whoTag(p)), status, perkLine(p, withMedallion), progressMini(p), goalMini(p))));
     if (p.unit) {
       main.append(h('div', { class: 'bal' },
-        numButton(`bal:${p.id}`, `${p.name} balance`),
+        numButton(`bal:${p.id}`, `${nameOf(p)} balance`),
         h('div', { class: 'unit' }, ...unitLine(p))));
     }
     return h('li', { class: 'row' }, main, withMedallion ? medallionPanel() : null);
@@ -6113,7 +6113,7 @@
     $('#game-stale-wrap').hidden = !fresh.stale.length;
     $('#game-stale-all').textContent = fresh.stale.length > 1 ? `Screenshot all ${fresh.stale.length}` : 'Screenshot it';
     $('#game-stale').replaceChildren(...fresh.stale.slice(0, 10).map((p) => h('li', null,
-      h('button', { type: 'button', class: 'stale-btn', 'data-stale': p.id, 'aria-label': `Update ${p.name} from a screenshot` }, avatar(p), h('span', null, p.name),
+      h('button', { type: 'button', class: 'stale-btn', 'data-stale': p.id, 'aria-label': `Update ${nameOf(p)} from a screenshot` }, avatar(p), h('span', null, nameOf(p)),
         h('small', null, state.updated[p.id] ? `updated ${relativeDay(state.updated[p.id])}` : state.balances[p.id] != null ? 'not updated lately' : 'no balance yet')))));
     $('#game-log-wrap').hidden = !g.log.length;
     $('#game-log').replaceChildren(...g.log.slice(0, 8).map((e) => h('li', null,
@@ -6332,8 +6332,18 @@
   // One row per thing found, each with what it changes: "+2,400", "New status", "No change".
   // Reads that look wrong or out of date, said plainly: a balance cut by more than 40% or multiplied by 3+ (often a
   // dropped or extra digit), this year's counts going down, or a screenshot older than the last update.
-  function doubtsAbout(p, vals) {
+  function doubtsAbout(p, vals, found = {}) {
     const out = [];
+    // The screen's member number isn't this account's, or it (or the greeting) is another of your accounts in this
+    // program: read as this one on purpose (the chooser, the review sheet), it still mustn't be saved here unseen.
+    const cid = (catalogFor(p) || {}).id;
+    const others = cid ? accountsIn(cid).filter((x) => x !== p) : [];
+    const saved = state.members[p.id];
+    const theirs = found.member ? others.find((x) => state.members[x.id] === found.member) : null;
+    if (theirs) out.push(`the member number on this screen (•••• ${found.member.slice(-4)}) is saved for your ${nameOf(theirs)} account`);
+    else if (found.member && saved && saved !== found.member) out.push(`the member number on this screen (•••• ${found.member.slice(-4)}) isn’t the one saved for this account (•••• ${saved.slice(-4)})`);
+    const named = found.name && !(p.who && sameWho(p.who, found.name)) ? others.filter((x) => x.who && sameWho(x.who, found.name)) : [];
+    if (named.length === 1 && named[0] !== theirs) out.push(`the screen greets “${found.name}”, your ${nameOf(named[0])} account’s label`);
     const bal = state.balances[p.id];
     if (vals.balance !== undefined && bal && playing.balancePick == null && (vals.balance < bal * 0.6 || vals.balance > bal * 3)) {
       out.push(`${p.unit} would go from ${fmt(bal)} to ${fmt(vals.balance)}`);
@@ -6503,7 +6513,14 @@
       // Which of your accounts in this program: by the screen's member number when you have two, or the only one.
       const account = cid ? accountFor(cid, found.member, found.name) : { own: null, ask: false };
       own = account.own;
-      if (account.ask) { pickAccount(read, cid, found.member, found.name, later); return; }
+      if (account.ask) {
+        // "Update" tapped on one of these accounts says which, when the screen shows no number or that account has
+        // none saved yet (a number saved for it that differs may be a third account's: ask).
+        const hinted = playing.hint && accountsIn(cid).find((x) => x.id === playing.hint);
+        if (hinted && (!found.member || !state.members[hinted.id])) { showLoot(read, hinted.id); return; }
+        pickAccount(read, cid, found.member, found.name, later);
+        return;
+      }
     }
     // The program named only in a dark header bar, read on its own (ocrImage): read as that program — not one in a
     // dark offer or transfer banner ("Earn Marriott Bonvoy points").
@@ -6514,9 +6531,17 @@
       showLoot(read, mine ? mine.id : `add:${banded}`);
       return;
     }
-    if (!own && !cid && playing.hint && (state.programs || []).some((x) => x.id === playing.hint)) { showLoot(read, playing.hint); return; }
+    if (!own && !cid && playing.hint && programs.some((x) => x.id === playing.hint)) {
+      // The row you tapped Update on — unless the screen's member number or greeting is another of your accounts in
+      // that program (you tapped yours while holding Ms. Lee's screenshot).
+      const hcid = (catalogFor(programs.find((x) => x.id === playing.hint)) || {}).id;
+      const account = hcid ? accountFor(hcid, found.member, found.name) : { own: null };
+      showLoot(read, account.own ? account.own.id : playing.hint);
+      return;
+    }
     if (!own && !cid) {
-      const guess = guessProgram(read);
+      const guess = guessProgram(read, found);
+      if (guess && guess.startsWith('ask:')) { playing.guessed = true; pickAccount(read, guess.slice(4), found.member, found.name, later); return; }
       if (guess) { playing.guessed = true; showLoot(read, guess); return; }
       // Named only on a partner or offer line ("Earn Marriott Bonvoy points with Uber"): if it's on your list, likely
       // its own page, so it's read as that program, with the card asking you to make sure. Otherwise you pick.
@@ -6534,9 +6559,9 @@
     // A screenshot taken in an earlier qualifying year (its file's date): its counts are that year's, so they're left out.
     const taken = parseISODate(playing.taken);
     const years = readYears(trackFor(p), taken && taken < new Date() ? taken : undefined);
-    for (const key of staleCounts(own ? own.id : `add:${p.id}`, vals, years)) delete vals[key];
+    for (const key of staleCounts(own ? own.id : `add:${cid}`, vals, years)) delete vals[key];
     Object.assign(playing, { choice: own ? own.id : second ? choice : `add:${p.id}`, vals, years });
-    const doubts = own ? doubtsAbout(p, vals) : [];
+    const doubts = own ? doubtsAbout(p, vals, found) : [];
     if (playing.guessed && choice) doubts.push('the screenshot doesn’t name the program, so make sure it’s this one');
     // A card's benefits page ("Your card benefits … IHG Platinum Elite status") read as one program's account page,
     // showing a lower level than your account does: a card's level never lowers one, so it waits for you.
@@ -6562,7 +6587,7 @@
     if (doubts.length) rows.splice(1, 0, doubtRow(doubts, found, vals));
     $('#play-loot').replaceChildren(...rows.map((li, i) => { li.style.setProperty('--i', i); return li; }));
     if (own && !changes) {
-      $('#play-title').textContent = `Found your ${p.name}, but no points or status to update`;
+      $('#play-title').textContent = `Found your ${nameOf(p)}, but no points or status to update`;
       setActions([later, ['Check it', true, fixPlay]]);
       return;
     }
@@ -6626,14 +6651,24 @@
   // ("Gold", "Platinum") that many programs share.
   // Failing a level, a currency few programs use ("Avios") names the one program on your list that counts in it.
   const GUESS_COMMON = /^(?:silver|gold|platinum|diamond|bronze|titanium|blue|red|green|classic|elite|member|plus|select)$/;
-  function guessProgram(read) {
+  // Two accounts in the one program that fits: the one the screen's member number or greeting (`found`) says, or
+  // "ask:<id>" for the account chooser.
+  function guessProgram(read, found = {}) {
     const hay = ` ${(read.passes || [read]).map((pass) => normTier(pass.text || '')).join(' ')} `;
+    const among = (rows) => {
+      if (rows.length === 1) return rows[0].id;
+      const cids = new Set(rows.map((p) => (catalogFor(p) || {}).id));
+      const [cid] = [...cids];
+      if (cids.size !== 1 || !cid) return null;
+      const account = accountFor(cid, found.member, found.name);
+      return account.own ? account.own.id : `ask:${cid}`;
+    };
     const fits = (state.programs || []).filter((p) => p.unit && catalogFor(p) && scanTiersFor(catalogFor(p).id)
       .some((t) => { const name = normTier(t.name); return !GUESS_COMMON.test(name) && hay.includes(` ${name} `); }));
-    if (fits.length) return fits.length === 1 ? fits[0].id : null;
+    if (fits.length) return among(fits);
     const currency = [...SCAN_CURRENCIES].find((c) => hay.includes(` ${c} `));
     const counting = currency ? (state.programs || []).filter((p) => String(p.unit || '').toLowerCase() === currency) : [];
-    return counting.length === 1 ? counting[0].id : null;
+    return counting.length ? among(counting) : null;
   }
 
   // A screen listing several programs (a card's benefits page: "Marriott Bonvoy Gold Elite Status", "Hilton Honors
@@ -6705,7 +6740,7 @@
     $('#play-shot').className = 'play-shot done';
     const later = batch ? ['Skip', false, skipPlay] : ['Try another', false, pickAnother];
     const rows = items.map(({ p, own, vals, outcome, skip, level }) => {
-      const sub = [level, vals.member ? `number •••• ${vals.member.slice(-4)}` : null, own ? null : 'adding it to your list'].filter(Boolean).join(' · ');
+      const sub = [level, vals.member ? `number •••• ${vals.member.slice(-4)}` : null, own || skip ? null : 'adding it to your list'].filter(Boolean).join(' · ');
       return h('li', null, avatar(p), lootText(nameOf(p), sub),
         skip ? lootTag(skip) : outcome.kind === 'new' ? lootTag(own ? 'New status' : 'New', 'new') : lootTag(outcome.kind === 'same' ? 'Confirmed' : outcome.why));
     });
@@ -6751,7 +6786,9 @@
     if (!rows.length) return { own: null, ask: false };
     // The screen's greeting names an account you labeled ("Ms. Lee"): that one, unless its saved number says otherwise.
     const named = name ? rows.filter((x) => x.who && sameWho(x.who, name)) : [];
-    const byName = named.length === 1 && (!member || !state.members[named[0].id] || state.members[named[0].id] === member) ? named[0] : null;
+    // …unless another account's label shares a name with the greeting ("Lee Kim" with "Lee" and "Lee Park" labeled).
+    const alike = name ? rows.filter((x) => x.who && sharesWho(x.who, name)) : [];
+    const byName = named.length === 1 && alike.length === 1 && (!member || !state.members[named[0].id] || state.members[named[0].id] === member) ? named[0] : null;
     if (member) {
       const match = rows.find((x) => state.members[x.id] === member);
       if (match) return { own: match, ask: false };
@@ -6763,12 +6800,14 @@
     return rows.length === 1 ? { own: rows[0], ask: false } : { own: null, ask: true };
   }
   // "Ms. Lee" and "Ms Lee", "Dr. Cho" and "Cho", "Alex" and "Alex Kim": the same person as far as a greeting goes.
+  const whoWords = (s) => s.toLowerCase().replace(/[.,]/g, '').split(/\s+/).filter((w) => w && !/^(?:mr|mrs|ms|mx|dr|prof)$/.test(w));
   function sameWho(who, name) {
-    const words = (s) => s.toLowerCase().replace(/[.,]/g, '').split(/\s+/).filter((w) => w && !/^(?:mr|mrs|ms|mx|dr|prof)$/.test(w));
-    const a = words(who);
-    const b = words(name);
+    const a = whoWords(who);
+    const b = whoWords(name);
     return a.length > 0 && b.length > 0 && (a.every((w) => b.includes(w)) || b.every((w) => a.includes(w)));
   }
+  // Any name in common ("Lee" and "Lee Park"): close enough that a greeting fitting one may be the other.
+  const sharesWho = (who, name) => whoWords(who).some((w) => whoWords(name).includes(w));
   // The card asks which account a screen is, or whether it's a new one in that program.
   function pickAccount(read, cid, member, who, later) {
     const rows = accountsIn(cid);
@@ -6900,13 +6939,19 @@
   }
 
   // Your programs, then every other program in the app (by type), so any screen can be matched to a program.
-  function programOptions(detectedId) {
+  // `choice` "new:<id>" (another account in a program you track, from the card) is offered first; so is a new account
+  // when the text can't be matched to one of yours (`ask`), with "Which account?" chosen until you pick.
+  function programOptions(detectedId, choice = null, ask = false) {
     const programs = state.programs || [];
     const own = (id) => programs.find((p) => catalogFor(p) && catalogFor(p).id === id);
+    // Two accounts in one program, neither labeled: told apart by their member numbers.
+    const label = (p) => (state.members[p.id] && programs.some((x) => x !== p && nameOf(x) === nameOf(p)) ? `${nameOf(p)} · •••• ${state.members[p.id].slice(-4)}` : nameOf(p));
     const options = [];
-    if (!detectedId) options.push(h('option', { value: '' }, 'Choose a program'));
+    if ((!detectedId && !choice) || ask) options.push(h('option', { value: '' }, ask ? 'Which account?' : 'Choose a program'));
+    const second = choice && choice.startsWith('new:') ? choice : ask && detectedId ? `new:${detectedId}` : null;
+    if (second) options.push(h('option', { value: second }, `New ${CATALOG_BY_ID[second.slice(4)].name} account`));
     if (detectedId && !own(detectedId)) options.push(h('option', { value: `add:${detectedId}` }, `Add ${CATALOG_BY_ID[detectedId].name}`));
-    if (programs.length) options.push(h('optgroup', { label: 'Your programs' }, programs.map((p) => h('option', { value: p.id }, nameOf(p)))));
+    if (programs.length) options.push(h('optgroup', { label: 'Your programs' }, programs.map((p) => h('option', { value: p.id }, label(p)))));
     for (const g of CATALOG) {
       const more = g.items.filter((c) => c.id !== detectedId && !own(c.id));
       if (more.length) options.push(h('optgroup', { label: `Add: ${g.group}` }, more.map((c) => h('option', { value: `add:${c.id}` }, c.name))));
@@ -6921,17 +6966,24 @@
     const mine = choice ? programs.find((p) => p.id === choice) : null;
     const found = forced || parseAccountText(text || '');
     const own = (id) => programs.find((p) => catalogFor(p) && catalogFor(p).id === id);
-    const target = mine || (found.programId && own(found.programId));
+    // Which of your accounts in the program the text is, by its member number or greeting. Two it can't be matched to
+    // (or a number that isn't the one saved): you pick, so it isn't saved to the first one by default.
+    const second = !!choice && choice.startsWith('new:'); // another account in a program you track
+    const account = !mine && !second && found.programId ? accountFor(found.programId, found.member, found.name) : { own: null, ask: false };
+    const target = mine || account.own || (found.programId && !account.ask && own(found.programId));
     scanned = { text, found };
     $('#scan-start').hidden = true;
     $('#scan-again').hidden = false;
-    if (!found.programId && !mine) {
+    if (!found.programId && !mine && !second) {
       $('#scan-status').textContent = 'Couldn’t tell which program this is. Pick it below, or try a screenshot that shows the program’s name.';
+    } else if (account.ask) {
+      $('#scan-status').textContent = `Looks like ${CATALOG_BY_ID[found.programId].name}, but which account? Pick it below, then check what was read.`;
     } else {
-      $('#scan-status').textContent = `Looks like ${(target || CATALOG_BY_ID[found.programId]).name}. Check what was read, then Update.`;
+      $('#scan-status').textContent = second ? `Looks like a new ${CATALOG_BY_ID[choice.slice(4)].name} account. Check what was read, then Update.`
+        : `Looks like ${(target ? nameOf(target) : CATALOG_BY_ID[found.programId].name)}. Check what was read, then Update.`;
     }
-    const programSelect = h('select', { id: 'scan-program', 'aria-label': 'Program' }, programOptions(found.programId));
-    programSelect.value = choice || (target ? target.id : found.programId ? `add:${found.programId}` : '');
+    const programSelect = h('select', { id: 'scan-program', 'aria-label': 'Program' }, programOptions(found.programId, choice, account.ask));
+    programSelect.value = choice || (target ? target.id : account.ask ? '' : found.programId ? `add:${found.programId}` : '');
     $('#scan-result').replaceChildren(
       h('div', { class: 'scan-field' }, h('span'), h('label', { for: 'scan-program' }, 'Program'), h('div', { class: 'scan-control' }, programSelect)));
     $('#scan-result').hidden = false;
@@ -6950,8 +7002,9 @@
   function scanFields(detected) {
     const choice = $('#scan-program').value;
     const mine = (state.programs || []).find((x) => x.id === choice);
-    const cid = choice.startsWith('add:') ? choice.slice(4) : (mine && catalogFor(mine) ? catalogFor(mine).id : null);
+    const cid = /^(?:add|new):/.test(choice) ? choice.slice(4) : (mine && catalogFor(mine) ? catalogFor(mine).id : null);
     const p = mine || (cid ? programFromCatalog(CATALOG_BY_ID[cid]) : null);
+    if (p && choice.startsWith('new:')) p.id = newProgramId(p.name); // another account: not the first one's balance, number or counts
     const again = cid === detected.programId ? null
       : cid && scanned && scanned.text ? parseAccountText(scanned.text, cid) : { tierIndex: -1, exp: null, progress: null, altProgress: null, mqd: null };
     const found = again ? { ...detected, tierIndex: again.tierIndex, exp: again.exp, progress: again.progress, altProgress: again.altProgress, mqd: again.mqd } : detected;
@@ -7010,6 +7063,7 @@
     const choice = $('#scan-program').value;
     if (!choice) { $('#scan-program').focus(); return; }
     const vals = formVals();
+    if (choice.startsWith('new:') && scanned && scanned.found.name) vals.who = scanned.found.name; // the greeting names the second account
     const years = scanned && scanned.years;
     const from = $('#scan-apply').getBoundingClientRect();
     quietClose = true;
@@ -7087,7 +7141,7 @@
   // The counts in `vals` whose qualifying year has ended since they were read (`years`, from readYears).
   function staleCounts(choice, vals, years) {
     const own = (state.programs || []).find((x) => x.id === choice);
-    const track = own ? trackFor(own) : TRACKS[choice.replace(/^add:/, '')];
+    const track = own ? trackFor(own) : TRACKS[choice.replace(/^(?:add|new):/, '')];
     return ['mqd', 'progress', 'alt'].filter((key) => vals[key] !== undefined
       && (key === 'mqd' ? years.mqd !== mqdYear() : !!track && years.prog !== qualYear(track)));
   }
@@ -7123,7 +7177,7 @@
     const reward = award(result);
     const g = game();
     if (result.real || result.added || reward.xp) { // a repeat check with nothing new isn't news
-      g.log.unshift({ d: todayISO(), id: result.p.id, name: result.p.name, xp: reward.xp,
+      g.log.unshift({ d: todayISO(), id: result.p.id, name: nameOf(result.p), xp: reward.xp,
         text: result.added ? ['added', ...result.notes].join(' · ') : result.notes.join(' · ') || 'confirmed, no change' });
       g.log.length = Math.min(g.log.length, LOG_MAX);
     }
@@ -7450,9 +7504,9 @@
     $('#worth-total').textContent = `≈ ${money(total)}`;
     renderWorthHousehold();
     $('#worth-list').replaceChildren(...valued.sort((a, b) => valueOf(b) - valueOf(a)).map((p) => h('li', null, avatar(p),
-      h('span', { class: 'w-body' }, h('span', null, p.name), h('small', null, `${fmt(state.balances[p.id])} ${p.unit} × ${cppFor(p)}¢${state.cpp[p.id] ? ' (yours)' : ''}`)),
+      h('span', { class: 'w-body' }, h('span', null, nameOf(p)), h('small', null, `${fmt(state.balances[p.id])} ${p.unit} × ${cppFor(p)}¢${state.cpp[p.id] ? ' (yours)' : ''}`)),
       h('span', { class: 'w-amt' }, money(valueOf(p))))));
-    const unvalued = (state.programs || []).filter((p) => p.unit && state.balances[p.id] && !cppFor(p)).map((p) => p.name);
+    const unvalued = (state.programs || []).filter((p) => p.unit && state.balances[p.id] && !cppFor(p)).map(nameOf);
     $('#worth-fine').textContent = `Estimates of what points are typically worth when redeemed well, from ${VALUES_SOURCE}; cash-back value is usually lower. Set your own value in a program’s details.`
       + (unvalued.length ? ` Not included (no value yet): ${unvalued.join(', ')}.` : '');
   }
@@ -7509,7 +7563,7 @@
     const keep = (p, index, tier, via, thru) => {
       const exp = isoOf(thru);
       if (!coveredThrough(p, index, exp)) p.status.unshift({ tier, via, exp });
-      kept.push(p === delta ? tier : `${p.name} ${tier}`);
+      kept.push(p === delta ? tier : `${nameOf(p)} ${tier}`);
     };
     const delta = medallionProgram();
     for (const p of state.programs) {
@@ -8163,7 +8217,7 @@
       const goal = p.unit && state.goals[p.id];
       return goal && (before[p.id] || 0) < goal.target && (state.balances[p.id] || 0) >= goal.target;
     });
-    if (reached.length) queueAchievements({ unlocked: reached.map((p) => ({ name: state.goals[p.id].label || `${p.name} goal`, color: '#15803D', kind: 'Goal reached' })) });
+    if (reached.length) queueAchievements({ unlocked: reached.map((p) => ({ name: state.goals[p.id].label || `${nameOf(p)} goal`, color: '#15803D', kind: 'Goal reached' })) });
   }
 
   // One person's row in a household list: their name (cut short if it must be, full name on hover), a tag that
@@ -8197,7 +8251,7 @@
     if (box.hidden) return;
     const c = catalogFor(p);
     const typical = c && VALUES[c.id];
-    const input = h('input', { type: 'text', class: 'exp-input', id: 'd-cpp', inputmode: 'decimal', autocomplete: 'off', placeholder: typical ? String(typical) : '¢', 'aria-label': `Your value for ${p.name} ${p.unit}, in cents each` });
+    const input = h('input', { type: 'text', class: 'exp-input', id: 'd-cpp', inputmode: 'decimal', autocomplete: 'off', placeholder: typical ? String(typical) : '¢', 'aria-label': `Your value for ${nameOf(p)} ${p.unit}, in cents each` });
     input.value = state.cpp[p.id] ? String(state.cpp[p.id]) : '';
     box.replaceChildren(h('h3', { class: 'd-label' }, 'What it’s worth'), worthLine(p),
       h('div', { class: 'cpp-row' }, h('label', { for: 'd-cpp' }, 'Your value (¢ each)'), input),
@@ -8304,7 +8358,7 @@
     // Second path: its own count plus a legend of what each level needs that way.
     const altRow = alt ? [
       h('div', { class: 'mqd-head alt-head' },
-        h('div', { class: 'mqd-count' }, h('span', { class: 'or' }, 'or'), numButton(`prog:${altKey(p.id)}`, `${p.name} ${alt.unit} this year`, 'sm'), h('span', { class: 'of' }, alt.unit))),
+        h('div', { class: 'mqd-count' }, h('span', { class: 'or' }, 'or'), numButton(`prog:${altKey(p.id)}`, `${nameOf(p)} ${alt.unit} this year`, 'sm'), h('span', { class: 'of' }, alt.unit))),
       h('p', { class: 'prog-legend' }, alt.steps.flatMap((step, i) => (step == null ? [] : [h('span', { class: reachesLevel(track, n, a, i) ? 'hit' : null },
         `${tierLabel(tiers[i].name)} ${fmt(step)}${alt.with ? ` + ${fmt(alt.with[i])} ${track.unit}` : ''}`)])).flatMap((el, i) => [i ? '\u00a0· ' : null, el])),
     ] : null;
@@ -8315,7 +8369,7 @@
       h('h3', { class: 'd-label' }, `${qualLabel(track, qualYear(track))} progress`),
       h('div', { class: 'delta prog-box' },
         h('div', { class: 'mqd-head' },
-          h('div', { class: 'mqd-count' }, numButton(`prog:${p.id}`, `${p.name} ${track.unit} this year`, 'sm'), h('span', { class: 'of' }, track.unit)),
+          h('div', { class: 'mqd-count' }, numButton(`prog:${p.id}`, `${nameOf(p)} ${track.unit} this year`, 'sm'), h('span', { class: 'of' }, track.unit)),
           h('div', { class: 'next' }, !info.entered ? 'Tap the number to add yours' : next ? nextText(next, track) : 'Top level reached')),
         bar,
         h('p', { class: 'prog-legend' }, track.steps.flatMap((step, i) => [i ? '\u00a0· ' : null,
@@ -8339,7 +8393,7 @@
         spellcheck: 'false',
         enterkeyhint: 'done',
         placeholder: 'Add your member number',
-        'aria-label': `${p.name} member number`,
+        'aria-label': `${nameOf(p)} member number`,
       });
       input.value = number;
       $('#d-member').replaceChildren(label, h('div', { class: 'member-edit' },
@@ -8542,7 +8596,7 @@
         renderWorth();
       };
       back(Number(restore.dataset.restore), restored);
-      showToast(`${p.name} back to ${fmt(state.balances[p.id])} ${p.unit}`, () => back(was, activity));
+      showToast(`${nameOf(p)} back to ${fmt(state.balances[p.id])} ${p.unit}`, () => back(was, activity));
       return;
     }
     const btn = e.target.closest('button');
@@ -8871,14 +8925,14 @@
           avatar(item.p),
           h('div', { class: 'up-body' },
             h('div', { class: 'up-name' }, `Keep ${item.name}`),
-            h('div', { class: 'up-sub' }, `${item.p.name} · ${item.text} by ${dateFmt.format(item.date)}`)),
+            h('div', { class: 'up-sub' }, `${nameOf(item.p)} · ${item.text} by ${dateFmt.format(item.date)}`)),
           h('span', { class: 'tag warn' }, item.days === 0 ? 'Today' : plural(item.days, 'day'))));
       }
       if (item.kind === 'points') {
         return h('li', null, h('button', { type: 'button', class: 'up-item', 'data-open': item.p.id },
           avatar(item.p),
           h('div', { class: 'up-body' },
-            h('div', { class: 'up-name' }, `${item.p.name} ${item.p.unit}`),
+            h('div', { class: 'up-name' }, `${nameOf(item.p)} ${item.p.unit}`),
             h('div', { class: 'up-sub' }, `${item.days < 0 ? 'Expired' : 'Expire'} ${dateFmt.format(item.date)} · ${item.rule.earnOnly ? 'earn' : 'earn or redeem'} any amount to reset`)),
           when));
       }
@@ -8906,7 +8960,7 @@
           avatar(item.p),
           h('div', { class: 'up-body' },
             h('div', { class: 'up-name' }, splitParts(item.group.tier).join(' · ')),
-            h('div', { class: 'up-sub' }, `${item.p.name} · ${verb} ${dateFmt.format(item.date)}`)),
+            h('div', { class: 'up-sub' }, `${nameOf(item.p)} · ${verb} ${dateFmt.format(item.date)}`)),
           when));
       }
       return h('li', null, h('button', { type: 'button', class: 'up-item', 'data-voucher': '' },
@@ -8959,7 +9013,7 @@
         const tier = splitParts(item.group.tier).join(' · ');
         const info = tier ? perksFor(item.p, splitParts(item.group.tier)[0]) : null; // "·" alone names no level
         uid = `status-${uidPart(item.p.id)}-${uidPart(tier)}`;
-        subject = tier ? `${item.p.name} ${tier}` : item.p.name;
+        subject = tier ? `${nameOf(item.p)} ${tier}` : nameOf(item.p);
         description = [
           item.group.via && (/^earned\b/i.test(item.group.via) ? `Earned ${item.group.via.slice(7)}.` : `From ${splitParts(item.group.via).join(' · ')}.`),
           info && info.earn && `To requalify: ${info.earn}.`,
@@ -8967,9 +9021,9 @@
         ].filter(Boolean).join('\n');
       } else if (item.kind === 'points') {
         uid = `points-${uidPart(item.p.id)}`;
-        subject = `${item.p.name} ${item.p.unit}`;
+        subject = `${nameOf(item.p)} ${item.p.unit}`;
         description = [
-          `${item.p.name} ${item.p.unit} expire after ${item.rule.months} months with no activity.`,
+          `${nameOf(item.p)} ${item.p.unit} expire after ${item.rule.months} months with no activity.`,
           `${item.rule.earnOnly ? 'Earn' : 'Earn or redeem'} any amount before this date to reset the clock.`,
           'Reminder from Points & Status Tracker.',
         ].join('\n');
@@ -9760,16 +9814,16 @@
   function comingUpLine(item) {
     const date = dateFmt.format(item.date);
     const when = item.days < 0 ? `${plural(-item.days, 'day')} ago` : item.days === 0 ? 'today' : `in ${plural(item.days, 'day')}`;
-    if (item.kind === 'status') return `- ${splitParts(item.group.tier).join(' · ')} (${item.p.name}) ${item.days < 0 ? 'expired' : 'expires'} ${date}, ${when}`;
+    if (item.kind === 'status') return `- ${splitParts(item.group.tier).join(' · ')} (${nameOf(item.p)}) ${item.days < 0 ? 'expired' : 'expires'} ${date}, ${when}`;
     if (item.kind === 'voucher') return `- Voucher: ${item.v.name} ${item.days < 0 ? 'expired' : 'expires'} ${date}, ${when}`;
     if (item.kind === 'card') return `- ${item.card.name} annual fee renews ${date}, ${when}`;
     if (item.kind === 'credit') return `- Use your ${creditMoney(item.x.credit.amount)} ${item.x.credit.name} (${item.x.card.name}) by ${date}`;
-    if (item.kind === 'points') return `- ${item.p.name} ${item.p.unit} ${item.days < 0 ? 'expired' : 'expire'} ${date} without activity, ${when}`;
+    if (item.kind === 'points') return `- ${nameOf(item.p)} ${item.p.unit} ${item.days < 0 ? 'expired' : 'expire'} ${date} without activity, ${when}`;
     if (item.kind === 'bonus') {
       if (item.days >= 0) return `- ${item.card.name} bonus: ${bonusDueText(item.b, item.days)} by ${date}, ${when}`;
       return `- ${item.card.name} bonus: ${bonusLeft(item.b) == null ? '' : `${bonusDueText(item.b, item.days)}, `}spend deadline was ${date}, ${when}`;
     }
-    if (item.kind === 'keep') return `- Keep ${item.name} (${item.p.name}): ${item.text} by ${date}`;
+    if (item.kind === 'keep') return `- Keep ${item.name} (${nameOf(item.p)}): ${item.text} by ${date}`;
     return `- Due ${date}, ${when}`;
   }
 
@@ -9796,8 +9850,8 @@
     for (const p of state.programs) {
       const balance = state.balances[p.id];
       const updated = balance != null && state.updated[p.id] ? ` (updated ${dateFmt.format(parseISODate(state.updated[p.id]))})` : '';
-      if (!p.unit) out.push(p.name);
-      else out.push(`${p.name} — ${balance == null ? 'no balance entered' : `${fmt(balance)} ${p.unit}${!state.hideValues && valueOf(p) ? ` (≈ ${money(valueOf(p))})` : ''}${updated}`}`);
+      if (!p.unit) out.push(nameOf(p));
+      else out.push(`${nameOf(p)} — ${balance == null ? 'no balance entered' : `${fmt(balance)} ${p.unit}${!state.hideValues && valueOf(p) ? ` (≈ ${money(valueOf(p))})` : ''}${updated}`}`);
       if (state.members[p.id]) out.push(`  Member #: ${state.members[p.id]}`);
       if (state.memos[p.id]) out.push(...state.memos[p.id].trim().split('\n').map((line) => `  Note: ${line}`));
       const expiry = pointsExpiry(p);

@@ -68,6 +68,8 @@ vm.runInContext(`${base}${fakeDom}\n${head}\n${piece('  function parseISODate', 
   ${piece('  function parseEntry', '  function paintNum')}
   let scanned = null;
   ${piece('  const scanField =', '  // The review sheet: the how-to')}
+  ${piece('  // Your accounts in a program', '  // The card asks which account')}
+  const newProgramId = (name) => 'p' + name.length; // a fresh id for a second account
   ${piece('  function programOptions', '  function applyScan')}
   ${piece('  // Typing a value or choosing a level means using it', '\n\n')}
   globalThis.app = { state, showScanResult, formVals, $, programFromCatalog, CATALOG_BY_ID, scanTiersFor };`, sheet);
@@ -131,7 +133,6 @@ vm.runInContext(`${base}${quietDom}\n${head}\n${piece('  function parseISODate',
   ${piece('  function applyRead', '  async function celebrate')}
   ${piece('  function newProgramId', '\n\n')}
   ${piece('  // Your accounts in a program', '  // The card asks which account')}
-  ${piece('  // "Ms. Lee" and "Ms Lee"', '\n\n')}
   ${piece('  const daysLeft', '\n')}
   ${piece('  // A level your account already shows above this one', '  // A card\'s benefits page:')}
   globalThis.api = { collect, normalize, programFromCatalog, CATALOG_BY_ID, shown, accountFor, heldAbove, get state() { return state; }, set state(s) { state = s; }, setBatch(b) { batch = b; } };`, upd);
