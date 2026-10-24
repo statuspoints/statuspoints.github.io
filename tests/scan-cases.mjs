@@ -1132,4 +1132,10 @@ export default [
   { name: 'A greeting without a name', text: `Welcome back\nHilton Honors\nPoints 152,310`, expect: { program: 'hilton', balance: 152310, name: null } },
   { name: '"Welcome to Marriott Bonvoy" isn’t a name', text: `Welcome to Marriott Bonvoy\nGold Elite\nPoints 88,000`, expect: { program: 'marriott', balance: 88000, name: null } },
   { name: 'No greeting: no name', text: `Hilton Honors\nDiamond\nPoints 245,100\nMember # 1234567890`, expect: { program: 'hilton', name: null } },
+  // ---------- live review fixes (2026-10-23) ----------
+  { name: '"Hilton" above the greeting isn’t "Hi": the name is still read', text: `Hilton Honors\n\nWelcome back, Jordan\n\nGold\n\nPoints\n\n88,210\n\nNights this year 18`, expect: { program: 'hilton', balance: 88210, tier: 'Gold', progress: 18, name: 'Jordan' } },
+  { name: '"Highlights" above "Hello Alex" isn’t "Hi" either', text: `Highlights\nHello Alex\nMarriott Bonvoy\nPoints 88,000`, expect: { program: 'marriott', name: 'Alex' } },
+  { name: '"Welcome back" alone, the level under it: no name', text: `Hilton Honors\nWelcome back\nDiamond Member\n175,250\nPoints`, expect: { program: 'hilton', balance: 175250, tier: 'Diamond', name: null } },
+  { name: 'Another program’s number on a card’s benefits page isn’t the issuer’s member number', text: `Capital One Venture X\n\nTravel benefits\n\nHertz President's Circle status\nHertz Gold Plus Rewards number: 71482936\n\n$300 annual travel credit`,
+    expect: { program: 'capitalone', member: null } },
 ];

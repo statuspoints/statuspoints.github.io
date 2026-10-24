@@ -132,7 +132,9 @@ vm.runInContext(`${base}${quietDom}\n${head}\n${piece('  function parseISODate',
   ${piece('  function newProgramId', '\n\n')}
   ${piece('  // Your accounts in a program', '  // The card asks which account')}
   ${piece('  // "Ms. Lee" and "Ms Lee"', '\n\n')}
-  globalThis.api = { collect, normalize, programFromCatalog, CATALOG_BY_ID, shown, accountFor, get state() { return state; }, set state(s) { state = s; }, setBatch(b) { batch = b; } };`, upd);
+  ${piece('  const daysLeft', '\n')}
+  ${piece('  // A level your account already shows above this one', '  // A card\'s benefits page:')}
+  globalThis.api = { collect, normalize, programFromCatalog, CATALOG_BY_ID, shown, accountFor, heldAbove, get state() { return state; }, set state(s) { state = s; }, setBatch(b) { batch = b; } };`, upd);
 const { api } = upd;
 const update = (choice, now) => {
   api.state = api.normalize({ programs: now.map((id) => api.programFromCatalog(api.CATALOG_BY_ID[id])), cards: [] });
@@ -190,6 +192,11 @@ check('“Add Hilton” not on the list: added as usual', update('add:hilton', [
   // A second account added with the greeting's name is labeled with it.
   api.setBatch(null);
   api.collect('new:lhw', { balance: 10, member: '9000001', who: 'Jordan Kim' }, null, null);
+  // A card's benefits page can't lower a level your account shows.
+  const mar = api.programFromCatalog(api.CATALOG_BY_ID.marriott); mar.status = [{ tier: 'Titanium Elite', via: 'from your account' }];
+  check('Titanium Elite held: Gold Elite from a card page is below it', [api.heldAbove(mar, 1), api.heldAbove(mar, 4)], [true, false]);
+  mar.status = [{ tier: 'Gold Elite', via: 'from your account', exp: '2025-02-28' }];
+  check('an expired higher line doesn’t count', api.heldAbove(mar, 0), false);
   check('a new account takes the greeting as its label', api.state.programs.filter((p) => p.name.startsWith('Leading')).map((p) => p.who || ''), ['', 'Ms. Lee', 'Jordan Kim']);
 }
 

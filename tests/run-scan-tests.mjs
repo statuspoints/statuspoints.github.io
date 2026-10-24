@@ -249,6 +249,12 @@ const bigChecks = [];
   bigChecks.push(['…read as one block (two columns on each line): still all four', (context.many([merged]) || []).map((f) => f.id), ['marriott', 'hilton', 'lhw', 'lounges']]);
   bigChecks.push(['…the better of the two readings wins', (context.many([amex, 'Hilton Honors Gold Status\nMarriott Bonvoy Gold Elite']) || []).map((f) => f.id), ['marriott', 'hilton', 'lhw', 'lounges']]);
   bigChecks.push(['a lounge line alone never makes a page several programs', context.many(['Delta SkyMiles\nGold Medallion\nPriority Pass Select']), null]);
+  bigChecks.push(['one program plus a lounge membership with its own number (a card’s benefits page): both', (context.many(['CHASE Sapphire Reserve\nYour card benefits\nIHG One Rewards Platinum Elite status\nIHG One Rewards number: 209876543\nPriority Pass Select membership\nMembership number: 7781234560']) || []).map((f) => [f.id, f.member]),
+    [['ihg', '209876543'], ['lounges', '7781234560']]]);
+  bigChecks.push(['a lounge-only benefits page: the lounge membership, not Delta from a "Delta Sky Club" line', (context.many(['AMERICAN EXPRESS\nAirport lounge access\nThe Centurion Lounge\nPriority Pass Select\nMembership number: 3301742255\nDelta Sky Club (when flying Delta)\nEscape Lounges']) || []).map((f) => [f.id, f.tierIndex, f.member]),
+    [['lounges', 2, '3301742255']]]);
+  bigChecks.push(['Venture X benefits: Hertz and the lounge membership', (context.many(['Capital One Venture X\nTravel benefits\nHertz President\'s Circle status\nHertz Gold Plus Rewards number: 71482936\nPriority Pass\nMembership number: 1122334455\n$300 annual travel credit']) || []).map((f) => [f.id, f.member]),
+    [['hertz', '71482936'], ['lounges', '1122334455']]]);
   bigChecks.push(['one program’s page naming a partner’s level isn’t split', context.many(['Delta SkyMiles\nGold Medallion\n84,250 miles\nVirgin Atlantic Flying Club Gold']), null]);
   bigChecks.push(['a transfer-partner list with no levels isn’t split', context.many(['Chase Ultimate Rewards\n84,210 points\nTransfer partners\nWorld of Hyatt\nMarriott Bonvoy\nUnited MileagePlus']), null]);
   bigChecks.push(['two programs, one without a level: not a many-status page', context.many(['Hilton Honors Gold Status\nMarriott Bonvoy']), null]);

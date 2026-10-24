@@ -4920,10 +4920,13 @@
   // two accounts in one program apart, and names a second account.
   const GREETING_STOP = /^(?:points?|miles|avios|member|members|membership|account|balance|status|your|you|to|the|rewards|club|honors|bonvoy|skymiles|mileageplus|aadvantage|elite|number|id|no|since|my|profile|level|tier|back)$/i;
   function greetingName(text) {
-    const g = /(?:^|\n)[ \t]*(?:welcome(?: back)?|hello|hi|hey|good (?:morning|afternoon|evening))[,!]?[ \t]*(?:\n[ \t]*){0,2}/i.exec(text); // the name may sit under a blank line
+    // A whole word: "Hilton" and "Highlights" aren't "Hi". The name may sit under a blank line.
+    const g = /(?:^|\n)[ \t]*(?:welcome(?: back)?|hello|hi|hey|good (?:morning|afternoon|evening))\b[,!]?[ \t]*(?:\n[ \t]*){0,2}/i.exec(text);
     const m = g && /^((?:[A-Z][A-Za-z'’.-]*[ \t]*){1,3})/.exec(text.slice(g.index + g[0].length));
     if (!m) return null;
-    const signWords = new Set(Object.values(SCAN_SIGNS).flat().flatMap((sign) => sign.split(' '))); // "Hilton", "Honors"
+    // "Hilton", "Honors"; and every level's words ("Diamond Member" under a bare "Welcome back" is the level, not a name).
+    const signWords = new Set([...Object.values(SCAN_SIGNS).flat(), ...Object.values(BENEFITS).flat().map((t) => t.name), ...Object.values(STATUS_NAMES).flat(), ...LOUNGE_TIERS]
+      .flatMap((s) => normTier(s).split(' ')));
     const words = [];
     for (const raw of m[1].trim().split(/\s+/)) {
       const word = /^[A-Z][a-z]{0,3}\.$/.test(raw) ? raw : raw.replace(/[,!.:]+$/, ''); // "Dr." keeps its period
@@ -5379,6 +5382,11 @@
       if (/ending|ends in|card|confirmation|reservation|booking|order|ticket|itinerary|phone/.test(before + m[0].toLowerCase())) continue;
       // A booking word anywhere earlier on the label's line ("Confirmation number 4567…", "Reservation no. 8451…").
       if (/\b(?:confirmation|reservation|booking|itinerary|order|ticket)\b/.test(lower.slice(lineStart, m.index))) continue;
+      // Another program's number on a card's benefits page ("Hertz Gold Plus Rewards number: …" under "Capital One"):
+      // the label's line names that program and not this one.
+      const labelLine = lower.slice(lineStart, m.index + m[0].length);
+      const names = (id) => (SCAN_SIGNS[id] || []).some((s) => s.length >= 4 && !SCAN_ISSUERS.has(s) && signIn(s, labelLine));
+      if (programId && !names(programId) && Object.keys(SCAN_SIGNS).some((id) => id !== programId && names(id))) continue;
       if (/\d{5,}/.test(id) && id.length <= 16 && (id.match(/[a-z]/gi) || []).length <= 3) { member = id; memberText = m[2]; break; }
     }
     const tiers = programId ? scanTiersFor(programId) : [];
@@ -6486,6 +6494,10 @@
     const later = batch ? ['Skip', false, skipPlay] : ['Try another', false, pickAnother];
     // A program of your own the catalog doesn't know, named on the screen: read as that program.
     if (!choice && found.ownId && programs.some((x) => x.id === found.ownId)) { showLoot(read, found.ownId); return; }
+    // Several programs on one page (a card's benefits page), unless you picked one program to read it as — before
+    // asking which account, since such a page isn't one account's screen.
+    const many = choice ? null : readMany(read);
+    if (many) { showManyLoot(read, many); return; }
     if (!choice) {
       cid = found.programId;
       // Which of your accounts in this program: by the screen's member number when you have two, or the only one.
@@ -6493,9 +6505,6 @@
       own = account.own;
       if (account.ask) { pickAccount(read, cid, found.member, found.name, later); return; }
     }
-    // Several programs on one page (a card's benefits page), unless you picked one program to read it as.
-    const many = choice ? null : readMany(read);
-    if (many) { showManyLoot(read, many); return; }
     // The program named only in a dark header bar, read on its own (ocrImage): read as that program — not one in a
     // dark offer or transfer banner ("Earn Marriott Bonvoy points").
     const bandText = (read.bands || '').split('\n').filter((l) => !/\b(?:apply|earn|bonus|offers?|sign up|transfers?|partners?|book with|redeem)\b|pre-?approved/i.test(l)).join('\n');
@@ -6529,6 +6538,9 @@
     Object.assign(playing, { choice: own ? own.id : second ? choice : `add:${p.id}`, vals, years });
     const doubts = own ? doubtsAbout(p, vals) : [];
     if (playing.guessed && choice) doubts.push('the screenshot doesn’t name the program, so make sure it’s this one');
+    // A card's benefits page ("Your card benefits … IHG Platinum Elite status") read as one program's account page,
+    // showing a lower level than your account does: a card's level never lowers one, so it waits for you.
+    if (own && vals.tierIndex >= 0 && heldAbove(p, vals.tierIndex) && benefitsPage(reading.text, found)) doubts.push(`this looks like a card’s benefits page, and your account shows a higher level than ${scanTiersFor(cid)[vals.tierIndex].name}`);
     if (found.unsure && vals.balance !== undefined && playing.balancePick == null) doubts.push('the balance was hard to read, so check it');
     // A count or the end date the readings disagreed on (see readingOf): the card asks before it updates.
     const track = trackFor(p);
@@ -6663,53 +6675,71 @@
         const r = parseAccountText(part.text, part.id);
         if (r.tierIndex >= 0) found.push({ id: part.id, tierIndex: r.tierIndex, exp: r.exp, member: r.member });
       }
-      // A lounge membership rides along with two or more programs; alone with one, it's that program's page.
-      if (found.filter((f) => f.id !== 'lounges').length >= 2 && (!best || found.length > best.length)) best = found;
+      // A lounge membership rides along with two or more programs. With one program, or alone, it counts only when
+      // it has a membership number of its own: a benefits page ("Priority Pass Select / Membership number: …"), not
+      // a "Priority Pass" perk line on that program's own account page.
+      const lounge = found.find((f) => f.id === 'lounges');
+      const many = found.filter((f) => f.id !== 'lounges').length >= 2 || (lounge && lounge.member);
+      if (many && (!best || found.length > best.length)) best = found;
     }
     return best;
   }
 
   // The card for a page with several statuses: each program, its level and member number, and Update for all.
   function showManyLoot(read, many) {
-    const programs = state.programs || [];
     const items = many.map((f) => {
-      const own = accountFor(f.id, f.member, null).own || accountsIn(f.id)[0] || null; // yours by member number, else the first
+      const account = accountFor(f.id, f.member, null);
+      const rows = accountsIn(f.id);
+      const own = account.own || (rows.length === 1 ? rows[0] : null);
       const p = own || programFromCatalog(CATALOG_BY_ID[f.id]);
       const vals = { tierIndex: f.tierIndex, exp: f.exp || '' };
       if (f.member && !state.members[p.id]) vals.member = f.member;
-      const outcome = asListed(p, own, () => statusOutcome(p, vals.tierIndex, vals.exp));
-      return { p, own, choice: own ? own.id : `add:${f.id}`, vals, outcome };
+      // Two accounts and no way to tell which: left alone. A level below the one your account shows: a card's
+      // benefit never lowers it, so the level stays (the number is still saved).
+      const skip = !own && rows.length >= 2 ? 'Which of your accounts? Not updated' : own && heldAbove(p, vals.tierIndex) ? 'Your account shows higher' : null;
+      if (skip && own) delete vals.tierIndex;
+      const outcome = skip ? null : asListed(p, own, () => statusOutcome(p, vals.tierIndex, vals.exp));
+      return { p, own, choice: own ? own.id : `add:${f.id}`, vals, outcome, skip, level: scanTiersFor(f.id)[f.tierIndex].name };
     });
     Object.assign(playing, { many: items, choice: null, found: null });
     $('#play-shot').className = 'play-shot done';
     const later = batch ? ['Skip', false, skipPlay] : ['Try another', false, pickAnother];
-    const rows = items.map(({ p, own, vals, outcome }) => {
-      const name = scanTiersFor(catalogFor(p).id)[vals.tierIndex].name;
-      const sub = [name, vals.member ? `number •••• ${vals.member.slice(-4)}` : null, own ? null : 'adding it to your list'].filter(Boolean).join(' · ');
-      return h('li', null, avatar(p), lootText(p.name, sub),
-        outcome.kind === 'new' ? lootTag(own ? 'New status' : 'New', 'new') : lootTag(outcome.kind === 'same' ? 'Confirmed' : outcome.why));
+    const rows = items.map(({ p, own, vals, outcome, skip, level }) => {
+      const sub = [level, vals.member ? `number •••• ${vals.member.slice(-4)}` : null, own ? null : 'adding it to your list'].filter(Boolean).join(' · ');
+      return h('li', null, avatar(p), lootText(nameOf(p), sub),
+        skip ? lootTag(skip) : outcome.kind === 'new' ? lootTag(own ? 'New status' : 'New', 'new') : lootTag(outcome.kind === 'same' ? 'Confirmed' : outcome.why));
     });
     $('#play-loot').replaceChildren(...rows.map((li, i) => { li.style.setProperty('--i', i); return li; }));
-    const changed = items.filter(({ own, vals, outcome }) => !own || vals.member || (outcome.kind === 'new'));
+    const changed = items.filter(({ own, vals, outcome }) => !own || vals.member || (outcome && outcome.kind === 'new'));
     $('#play-title').textContent = changed.length ? `Found ${plural(items.length, 'status', 'statuses')} on this page` : `These ${items.length} statuses are up to date`;
     $('#play-xp').hidden = true;
     setActions([['Fix something', false, () => { playing.many = null; pickProgram(read, later); }],
       [[h('span', { class: 'fill', 'aria-hidden': 'true' }), changed.length ? 'Update all' : 'Confirm', h('span', { class: 'cd', 'aria-hidden': 'true' })], true, collectNow, 'play-collect']]);
-    announce(`${$('#play-title').textContent} ${items.map(({ p, vals }) => `${p.name}: ${scanTiersFor(catalogFor(p).id)[vals.tierIndex].name}`).join('. ')}.${autoCollect ? ` Updating in ${COLLECT_SECONDS} seconds; press Tab to look first.` : ''}`);
+    announce(`${$('#play-title').textContent} ${items.map(({ p, level }) => `${nameOf(p)}: ${level}`).join('. ')}.${autoCollect ? ` Updating in ${COLLECT_SECONDS} seconds; press Tab to look first.` : ''}`);
     if (autoCollect) startCountdown();
   }
-  // Update for every program on the page: one batch, so there's one toast and one Undo.
+  // Update for every program on the page: one batch (one screenshot of it), so there's one toast and one Undo.
   function collectMany() {
-    const items = playing.many;
+    const items = playing.many.filter(({ own, skip, vals }) => !skip || (own && Object.keys(vals).length)); // a number alone still saves
     stopCountdown();
     const from = ($('#play-loot li') || $('#play-shot')).getBoundingClientRect();
     closePlay();
-    if (batch) batch.total += items.length - 1;
-    else batch = newBatch(items.length);
+    if (!batch) batch = newBatch(1);
     batch.many = true;
+    batch.hold = true; // the programs count as one screenshot
     const years = readYears(null);
-    for (const { choice, vals } of items) collect(choice, vals, from, years);
+    try { for (const { choice, vals } of items) collect(choice, vals, from, years); } finally { batch.hold = false; }
+    finishOne(true);
+    batch.programs = (batch.programs || 0) + items.length;
   }
+  // A level your account already shows above this one (a typed, read or card-given line still in force).
+  function heldAbove(p, tierIndex) {
+    const tiers = scanTiersFor((catalogFor(p) || {}).id);
+    return p.status.some((line) => line.tier && !lineExpired(line) && splitParts(line.tier).some((part) => findTier(tiers, part) > tierIndex));
+  }
+  // A card's benefits page: a card or issuer named with "benefits" or "perks", and no balance on it.
+  const benefitsPage = (text, found) => !found.balances.length && /\bbenefits?\b|\bperks\b/i.test(text)
+    && (/\bcard\b/i.test(text) || [...SCAN_ISSUERS].some((s) => text.toLowerCase().includes(s)));
 
   // Your accounts in a program (two "Leading Hotels of the World" rows: yours and Ms. Lee's), in list order.
   const accountsIn = (cid) => (state.programs || []).filter((x) => catalogFor(x) && catalogFor(x).id === cid);
@@ -6818,7 +6848,7 @@
     if (many) $('#play-count').textContent = `Screenshot ${Math.min(batch.done + 1, batch.total)} of ${batch.total}`;
   }
   function finishOne(collected, xp = 0) {
-    if (!batch) return;
+    if (!batch || batch.hold) return; // held: the programs of one page count once, when collectMany finishes
     batch.done++;
     if (collected) { batch.collected++; batch.xp += xp; }
   }
@@ -6854,7 +6884,7 @@
     const b = batch;
     batch = null;
     if (b && b.collected && b.person === people.active) {
-      showToast(b.many ? `Updated ${plural(b.collected, 'program')}` : `Updated from ${plural(b.collected, 'screenshot')}`, Object.assign(() => undoTo(b.before, b.person), { snapshot: true }));
+      showToast(b.many ? `Updated ${plural(b.programs || b.collected, 'program')}` : `Updated from ${plural(b.collected, 'screenshot')}`, Object.assign(() => undoTo(b.before, b.person), { snapshot: true }));
       offerBonusLanding(b.before.balances);
     }
   }
