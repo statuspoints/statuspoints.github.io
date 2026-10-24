@@ -4880,8 +4880,18 @@
       // Also when the reader ran the line into the column beside it ("YOUR POINTS" over "Hello Alex, 26 948"), and
       // when the caption names its year ("PQP (2026)", "Tier Points 2026/27").
       .replace(/((?:^|\n)[^\n\d]*\b(?:miles|points|avios|pts|sqc|pqp|mqds?|xp|qpoints|credits)\b[^\n\d]*(?:\(?(?:19|20)\d\d(?:[/\-\u2013]\d{2,4})?\)?[^\n\d]*)?\n[^\n\d]*?)(\d{1,3}(?:[ \u00a0\u202f]\d{3})+)[ \t]*(?=\n|$)/gi, (all, pre, n) => `${pre}${n.replace(/\D+/g, ',')}`)
+      // \u2026or the caption is on the line under the run-in ("Hi Sam Rivera, 26 948" over "YOUR POINTS").
+      .replace(/(^|[^\d,.\n])(\d{1,3}(?:[ \u00a0\u202f]\d{3})+)[ \t]*(?=\n[^\n\d]{0,40}\b(?:miles|points|avios|pts|sqc|pqp|mqds?|xp|qpoints|credits)\b[^\n\d]{0,40}(?:\n|$))/gi, (all, pre, n) => `${pre}${n.replace(/\D+/g, ',')}`)
       // Inside a comma-grouped number every place is a digit, so S and B are 5 and 8 too ("1S2,400", "4B,320").
       .replace(/\b[\dOolISB]{1,3}(?:[,.][\dOolISB]{3})+\b/g, (n) => (/\d/.test(n) ? n.replace(/[Oo]/g, '0').replace(/[lI]/g, '1').replace(/S/g, '5').replace(/B/g, '8') : n))
+      // A comma in the wrong place ("15,2310", "1,52,310") is a misread mark: the digits are the number. Not a day and
+      // year that lost their space ("Oct 12,2026"), nor the end of a date ("12/31,2027").
+      .replace(/(^|[^\d,.$€£/])(\d+(?:,\d+)+)(?![\d,.])/g, (all, pre, n, at, text) => {
+        const groups = n.split(',');
+        if (groups[0].length <= 3 && groups.slice(1).every((g) => g.length === 3)) return all;
+        if ((groups.length === 2 && /^(?:19|20)\d\d$/.test(groups[1])) || new RegExp(`(?:${SCAN_MONTH})\\.?[ \\t]*$`, 'i').test(text.slice(0, at + pre.length))) return all;
+        return `${pre}${groups.join('')}`;
+      })
       .replace(/(^|[^$\d.,])(\d{1,3}(?:\.\d{3})+)(?![\d.,])/g, (all, pre, n) => `${pre}${n.replace(/\./g, ',')}`)
       // A dollar amount's thousands comma read as a period or a space ("$11.240", "$11 240"): three digits can't be cents.
       .replace(/\$([1-9]\d{0,2})[. \u00a0\u202f](\d{3})(?![\d.,])/g, (all, a, b) => `$${a},${b}`)
@@ -4916,22 +4926,25 @@
   const SCAN_COMMON = new Set(['points', 'miles', 'member', 'members', 'rewards', 'status', 'account', 'balance', 'elite', 'platinum',
     'diamond', 'silver', 'nights', 'stays', 'number', 'travel', 'hotels', 'flights', 'select', 'premier', 'redeem', 'offers', 'profile']);
   // The member's name in a greeting ("Welcome Back Dr. Cho", "Hello Alex,", "Hi Chris" — on the greeting's line or the
-  // next one): up to three capitalized words, stopping at the screen's own words ("Hi Chris Points" is Chris). Tells
-  // two accounts in one program apart, and names a second account.
+  // next one): up to three capitalized words (accents and all: "Léa", "José"), stopping at the screen's own words
+  // ("Hi Chris Points" is Chris) and at a level's ("Hi Jordan Platinum Elite" is Jordan; "Welcome Diamond Member" is
+  // no one) — the program's own levels when the screen names it, else any program's. Tells two accounts in one
+  // program apart, and names a second account.
   const GREETING_STOP = /^(?:points?|miles|avios|member|members|membership|account|balance|status|your|you|to|the|rewards|club|honors|bonvoy|skymiles|mileageplus|aadvantage|elite|number|id|no|since|my|profile|level|tier|back)$/i;
-  function greetingName(text) {
+  let allLevelWords = null;
+  function greetingName(text, levels = []) {
     // A whole word: "Hilton" and "Highlights" aren't "Hi". The name may sit under a blank line.
     const g = /(?:^|\n)[ \t]*(?:welcome(?: back)?|hello|hi|hey|good (?:morning|afternoon|evening))\b[,!]?[ \t]*(?:\n[ \t]*){0,2}/i.exec(text);
-    const m = g && /^((?:[A-Z][A-Za-z'’.-]*[ \t]*){1,3})/.exec(text.slice(g.index + g[0].length));
+    const m = g && /^((?:\p{Lu}[\p{L}'’.-]*[ \t]*){1,3})/u.exec(text.slice(g.index + g[0].length));
     if (!m) return null;
-    // "Hilton", "Honors"; and every level's words ("Diamond Member" under a bare "Welcome back" is the level, not a name).
-    const signWords = new Set([...Object.values(SCAN_SIGNS).flat(), ...Object.values(BENEFITS).flat().map((t) => t.name), ...Object.values(STATUS_NAMES).flat(), ...LOUNGE_TIERS]
-      .flatMap((s) => normTier(s).split(' ')));
+    const signWords = new Set(Object.values(SCAN_SIGNS).flat().flatMap((sign) => sign.split(' '))); // "Hilton", "Honors"
+    if (!allLevelWords) allLevelWords = new Set(Object.keys(SCAN_SIGNS).flatMap((pid) => scanTiersFor(pid).flatMap((t) => t.aliases)).flatMap((a) => a.split(' ')));
+    const levelWords = levels.length ? new Set(levels.flatMap((a) => a.split(' '))) : allLevelWords;
     const words = [];
     for (const raw of m[1].trim().split(/\s+/)) {
-      const word = /^[A-Z][a-z]{0,3}\.$/.test(raw) ? raw : raw.replace(/[,!.:]+$/, ''); // "Dr." keeps its period
+      const word = /^\p{Lu}\p{Ll}{0,3}\.$/u.test(raw) ? raw : raw.replace(/[,!.:]+$/, ''); // "Dr." keeps its period
       const plain = word.replace(/\.$/, '').toLowerCase();
-      if (!word || GREETING_STOP.test(plain) || signWords.has(plain)) break;
+      if (!word || GREETING_STOP.test(plain) || signWords.has(plain) || levelWords.has(normTier(plain))) break;
       words.push(word);
     }
     return words.length ? words.join(' ') : null;
@@ -5101,14 +5114,20 @@
       const hay = ` ${normTier(l)} `;
       return levels.some((a) => hay.includes(` ${a} `)) && !levels.reduce((h, a) => h.split(` ${a} `).join(' '), hay).replace(/\b(?:lifetime|status|elite|member)\b/g, '').trim();
     };
+    // The same label again under a later "This year" or year heading: what's under a lifetime progress heading before
+    // it ("Lifetime Status Progress" over "Nights 412", then "This year" over "Nights 61") is lifetime's.
+    const laterYear = (i) => {
+      const k = lines.findIndex((l, j) => j > i && (/this year|year to date|\bytd\b|current year|calendar year/i.test(l) || /^\W*(?:19|20)\d\d\W*$/.test(l)));
+      return k > 0 && lines.slice(k + 1).some((l) => label.test(l));
+    };
     const underLifetime = (i) => {
       if (/this year|year to date|\bytd\b|current year|calendar year/i.test(lines[i])) return false; // its own heading
       for (let j = i - 1; j >= 0; j--) {
         const t = scanDateless(lines[j]);
         if (/\d/.test(t)) continue; // a value or a count row
         // A tile's own caption ("Lifetime Tier Points") heads nothing; a progress heading ("Lifetime Globalist
-        // progress") covers only its "412,000 of 1,000,000" rows.
-        if (/lifetime/i.test(t)) return !heldLevel(t) && !layout.owner.has(j) && (!/progress/i.test(t) || /\b(?:of|\/)\s*\$?\d/.test(lines[i]));
+        // progress") covers only its "412,000 of 1,000,000" rows — and its tiles, when this year's come later.
+        if (/lifetime/i.test(t)) return !heldLevel(t) && !layout.owner.has(j) && (!/progress/i.test(t) || /\b(?:of|\/)\s*\$?\d/.test(lines[i]) || laterYear(i));
         if (t && SCAN_UNIT.test(t) && !/year|ytd|to date|current/i.test(t)) continue; // the section's own captions ("Nights", "Stays")
         return false; // another heading ("This Year", "2026", "Your status")
       }
@@ -5270,10 +5289,24 @@
     return (found.find((f) => f.status === 2) || found.find((f) => f.status) || found[0] || { iso: null }).iso;
   }
 
+  // OCR slips inside a level's name, mended only to match the level: a capital I for an l ("SiIver", "PIatinum",
+  // "GIobalist"), a lone l or I for a 1 ("Mosaic l"), an O for a 0 beside a digit ("5OK").
+  const levelSlips = (s) => s.replace(/([A-Za-z])I(?=[a-z])/g, '$1l').replace(/(^|\s)[lI](?=\s|$)/g, '$11').replace(/\b([\dO]*\d[\dO]*)(?=K\b)/gi, (n) => n.replace(/O/gi, '0'));
+
   // Pulls program, balance, status, end date, this year's counts, MQDs, and member number out of an account
   // screen's text. Built to tolerate OCR: labels above or below values, stray marks, near-miss spellings.
   function parseAccountText(rawText, forceId) { // forceId: read it as this program (or '' for none) instead of guessing
-    const text = cleanScanText(rawText);
+    // A bare line of a digit or two, then a comma-grouped number ("1 54,250" under "Miles", "1 1 2,450"): the big
+    // number's first digits split off, so the whole is read — unless the captions beside it name two values
+    // ("Nights Points" over "12 54,250"). The card asks, since the pieces could still be two values.
+    let splitWhole = null;
+    const text = cleanScanText(rawText).replace(/(^|\n)[ \t]*((?:\d{1,2}[ \t]+)+\d{1,3},\d{3})[ \t]*(?=\n|$)/g, (all, pre, row, at, whole) => {
+      const beside = [whole.slice(at + all.length + 1).split('\n')[0] || '', pre ? whole.slice(0, at).split('\n').pop() : ''];
+      if (beside.some((c) => !/\d/.test(c) && c.split(/\s+/).filter((w) => SCAN_UNIT.test(w)).length >= 2)) return all;
+      const digits = row.replace(/\D/g, '');
+      splitWhole = Number(digits);
+      return `${pre}${digits.replace(/\B(?=(?:\d{3})+$)/g, ',')}`;
+    });
     const lower = text.toLowerCase();
     // A line that is only a date range ("Mar 1, 2026 – Feb 28, 2027" under "Loyalty Points") is a caption's period.
     const lines = text.split(/\n/).map((l) => l.trim()).filter((l) => l && !scanDateOnly(l));
@@ -5425,10 +5458,15 @@
         const memberAtLine = memberHit ? memberHit.index + memberHit[1].length : -1;
         if (memberAtLine >= 0 && m.index + m[0].indexOf(m[2]) >= memberAtLine && m.index < memberAtLine + memberText.length) continue;
         if (/^0\d/.test(m[2])) continue; // "048": the end of a number split by a space, or an id — never a balance
+        // The tail of a number split by a space that no caption joined ("Hi Sam, 26 948"): a piece, never a balance.
+        if (!m[2].includes(',') && /\b\d{1,3} $/.test(ll.slice(0, m.index + m[0].indexOf(m[2])))) continue;
         if (!m[2].includes(',') && value >= 1990 && value <= 2100) continue; // a year
         const end = m.index + m[0].length;
         const before = ll.slice(0, m.index);
         const after = ll.slice(end);
+        // A room, gate, seat, terminal or flight number ("Room 1204", "Gate 112", "DL 1532"), not points.
+        if (!m[2].includes(',') && (/\b(?:room|gate|seat|terminal|flight|zone|group|pnr|locator|suite)\s*(?:#|no\.?|number)?\s*:?\s*$/.test(before)
+          || (m[2].length <= 4 && /(?:^|[^a-z0-9])[a-z][a-z0-9]\s?$/.test(before)))) continue;
         // After "Member #" or "ending" it's an id — unless it has thousands commas, which ids never do.
         if ((!m[2].includes(',') && /(member|account|number|no\.|#|ending|ends in)\s*[:#]?\s*$/.test(`${(lines[li - 1] || '').toLowerCase()}\n${before}`)) || /(of|\/)\s*$/.test(before.slice(-6))) continue;
         const k = amounts.findIndex((a) => a.end === end);
@@ -5461,6 +5499,10 @@
         let score = 1 + (m[2].includes(',') ? 2 : 0);
         // A rate ("2,000 points = €40 off", "10,000 pts for $135") gets no unit bonus either.
         const rate = /^\s*(?:[a-z]+\s+){0,2}?(?:points|miles|avios|pts)\s*(?:=|for)\s*[$€£]/.test(after);
+        // Points being moved to another program ("50,000 Ultimate Rewards points to World of Hyatt" on a transfer
+        // confirmation) aren't the balance; "points to use on flights" still is.
+        const toWhere = /^\s*(?:[a-z]+\s+){0,2}?(?:points|miles|avios|pts)\s+(?:to|into)\s+/.exec(after);
+        const moved = !!toWhere && Object.values(SCAN_SIGNS).flat().some((s) => signIn(s, after.slice(toWhere[0].length)));
         if (!counted && !price && !rate && (unitBefore.test(before) || (above && unitBefore.test(`${above}\n`)))) score += 5;
         if (!counted && !price && !rate && (/^\s*(?:[a-z]+\s+){0,2}?(points|miles|avios|pts|skymiles|mi)\b/.test(after) || /\b(points|miles|avios|pts|skymiles)\b/.test(below))) score += 5;
         if (counted) score -= 5;
@@ -5473,7 +5515,7 @@
         if (/pending|on hold|lifetime/.test(`${own}\n${above}\n${below}`)) score -= 8;
         // Last statement's balance ("Previous points balance 118,000", "Opening balance", "Beginning Balance"), not today's.
         if (/\b(?:previous|opening|beginning|starting|prior)(?: (?:points?|miles?|avios|rewards?))? balance\b/.test(`${own}\n${above}\n${below}`)) score -= 8;
-        if (price) score -= 8;
+        if (price || moved) score -= 8;
         candidates.push({ value, score });
       }
     });
@@ -5499,7 +5541,7 @@
       // The logo's name on the line above, and this line only the alliance's tier ("GOLD", "Gold member").
       if (li > 0 && /^(?:star alliance|sky ?team|one ?world)$/.test(normTier(lines[li - 1]))
         && !` ${normTier(lines[li - 1])} ${normTier(line)} `.replace(alliance, '').trim()) continue;
-      const hay = nameSigns.reduce((h, s) => h.split(` ${s} `).join(' '), ` ${normTier(line)} `).replace(alliance, '');
+      const hay = nameSigns.reduce((h, s) => h.split(` ${s} `).join(' '), ` ${normTier(levelSlips(line))} `).replace(alliance, '');
       const matched = tiers.map((t, i) => ({ i, alias: t.aliases.filter((a) => hay.includes(` ${a} `)).sort((x, y) => y.length - x.length)[0] }))
         .filter((m) => m.alias);
       const distinct = matched.filter((m) => !matched.some((o) => o !== m && o.alias.length > m.alias.length && o.alias.includes(m.alias)));
@@ -5524,8 +5566,9 @@
       if (score > bestLine) { bestLine = score; tierIndex = distinct[0].i; }
     }
     // `score`: how surely the balance reads (a unit caption and thousands commas count most), for picking a reading.
-    return { programId, weak, ownId, member, balances, score: candidates.length ? candidates[0].score : 0, tierIndex,
-      exp: scanDate(text, DAY_FIRST.has(programId), levels, nameSigns), progress, altProgress, mqd, name: greetingName(text) };
+    // `unsure`: the balance was read from split-off pieces, so the card asks (readingOf clears it when another reading read it whole).
+    return { programId, weak, ownId, member, balances, score: candidates.length ? candidates[0].score : 0, tierIndex, unsure: splitWhole != null && balances[0] === splitWhole,
+      exp: scanDate(text, DAY_FIRST.has(programId), levels, nameSigns), progress, altProgress, mqd, name: greetingName(text, levels) };
   }
 
   // The better of a screenshot's readings (see ocrImage): the one whose balance reads most surely, plus what else it
@@ -5540,6 +5583,7 @@
     });
     const best = tried.reduce((a, b) => (b.worth > a.worth ? b : a));
     const f = best.found;
+    const splitDoubt = !!f.unsure; // its balance was read from split-off pieces ("1 54,250", see parseAccountText)
     let from = best.pass; // the reading the balance comes from
     const src = {}; // the reading each count and the end date come from
     for (const k of ['progress', 'altProgress', 'mqd', 'exp']) if (f[k] != null) src[k] = best.pass;
@@ -5603,6 +5647,8 @@
         const confident = Math.max(sureMine, sureTheirs) >= 90 && Math.abs(sureMine - sureTheirs) > 5;
         if (settled ? sureTheirs >= 90 && sureTheirs > sureMine + 5 : !confident) f.unsure = true;
       }
+      // The same balance read whole by the other reading settles the split-off pieces: no doubt left.
+      else if (mine && mine === theirs && splitDoubt && !o.unsure) f.unsure = false;
     }
     // The reader read the balance, or a big count, two ways in its own reading (see useReread).
     if ((from.disputed || []).includes(f.balances[0])) f.unsure = true;
@@ -6679,6 +6725,9 @@
   function splitPrograms(text) {
     const signIn = (sign, ll) => new RegExp(`(^|[^a-z])${sign.replace(/[-+.]/g, (c) => `\\${c}`)}([^a-z]|$)`).exec(ll);
     const parts = [];
+    // A date or a long number on a line: the values an unnamed line holds, one per program named on the line above.
+    const valueAt = new RegExp(`\\d{1,2}[/.]\\d{1,2}[/.]\\d{2,4}|(?:${SCAN_MONTH})\\.?\\s+\\d{1,2},?\\s+\\d{4}|\\d{1,2}\\s+(?:${SCAN_MONTH})\\.?,?\\s+\\d{4}|\\d{4,}(?:\\s\\d{3,4})*`, 'gi');
+    let columns = 0; // how many programs the last named line was split between, in the order of the last parts
     for (const line of text.split('\n')) {
       const ll = line.toLowerCase();
       const named = []; // [at, id] where each program's longest sign starts on the line
@@ -6687,13 +6736,27 @@
         if (hit) named.push([hit.index + hit[1].length, id]);
       }
       named.sort((a, b) => a[0] - b[0]);
-      if (!named.length) { if (parts.length) parts[parts.length - 1].text += `\n${line}`; continue; }
+      if (!named.length) {
+        // Under a line split between programs (two columns read as one line), a line of as many end dates or numbers
+        // ("Valid through 12/31/2027 Valid through 02/01/2028") is split the same way, one piece to each in turn.
+        const values = columns > 1 ? [...line.matchAll(valueAt)] : [];
+        if (values.length === columns) {
+          let from = 0;
+          values.forEach((v, i) => {
+            const to = i + 1 < values.length ? v.index + v[0].length : line.length;
+            parts[parts.length - columns + i].text += `\n${line.slice(from, to)}`;
+            from = to;
+          });
+        } else if (parts.length) parts[parts.length - 1].text += `\n${line}`;
+        continue;
+      }
       named.forEach(([at, id], i) => {
         const piece = line.slice(i ? at : 0, i + 1 < named.length ? named[i + 1][0] : line.length);
         const last = parts[parts.length - 1];
         if (last && last.id === id) last.text += `\n${piece}`; // "Hilton Honors Number: …" under "Hilton Honors Gold"
         else parts.push({ id, text: piece });
       });
+      columns = parts.slice(-named.length).every((p, i) => p.id === named[i][1]) ? named.length : 0;
     }
     return parts;
   }

@@ -44,7 +44,7 @@ vm.runInContext(`${stubs}\n${head}\n${dates}\nconst state = { programs: [], bala
 let failed = 0;
 for (const c of cases) {
   const got = context.read(c);
-  const wrong = Object.entries(c.expect).filter(([k, v]) => (got[k] ?? null) !== v);
+  const wrong = Object.entries(c.expect).filter(([k, v]) => k !== 'many' && (got[k] ?? null) !== v); // `many` is checked below
   if (wrong.length) {
     failed++;
     console.log(`✗ ${c.name}: ${wrong.map(([k, v]) => `${k} expected ${JSON.stringify(v)}, got ${JSON.stringify(got[k] ?? null)}`).join('; ')}`);
@@ -258,7 +258,11 @@ const bigChecks = [];
   bigChecks.push(['one program’s page naming a partner’s level isn’t split', context.many(['Delta SkyMiles\nGold Medallion\n84,250 miles\nVirgin Atlantic Flying Club Gold']), null]);
   bigChecks.push(['a transfer-partner list with no levels isn’t split', context.many(['Chase Ultimate Rewards\n84,210 points\nTransfer partners\nWorld of Hyatt\nMarriott Bonvoy\nUnited MileagePlus']), null]);
   bigChecks.push(['two programs, one without a level: not a many-status page', context.many(['Hilton Honors Gold Status\nMarriott Bonvoy']), null]);
-  const trips = cases.filter((c) => !c.passes && context.many([c.text])).map((c) => c.name);
+  // A case may expect `many`: each program found, its level, member number (#) and end date (@), in page order.
+  vm.runInContext(`globalThis.manyOf = (text) => (readMany({ passes: [{ text }] }) || [])
+    .map((f) => f.id + ':' + scanTiersFor(f.id)[f.tierIndex].name + (f.member ? '#' + f.member : '') + (f.exp ? '@' + f.exp : '')).join(' | ') || null;`, context);
+  for (const c of cases.filter((c) => c.expect && 'many' in c.expect)) bigChecks.push([c.name, context.manyOf(c.text), c.expect.many]);
+  const trips = cases.filter((c) => !c.passes && !(c.expect && 'many' in c.expect) && context.many([c.text])).map((c) => c.name);
   bigChecks.push(['no single-program case reads as several programs', trips, []]);
 }
 { // A picture the browser can't open (an iPhone's HEIC photo in Chrome or Edge): told apart before the text reader is

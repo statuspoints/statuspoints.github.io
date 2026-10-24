@@ -1138,4 +1138,67 @@ export default [
   { name: '"Welcome back" alone, the level under it: no name', text: `Hilton Honors\nWelcome back\nDiamond Member\n175,250\nPoints`, expect: { program: 'hilton', balance: 175250, tier: 'Diamond', name: null } },
   { name: 'Another program’s number on a card’s benefits page isn’t the issuer’s member number', text: `Capital One Venture X\n\nTravel benefits\n\nHertz President's Circle status\nHertz Gold Plus Rewards number: 71482936\n\n$300 annual travel credit`,
     expect: { program: 'capitalone', member: null } },
+  // ---------- review fixes (2026-10-23) ----------
+  // The greeting's name keeps its accents, and stops at a level's word.
+  { name: 'An accented name ("Hi Léa") is read whole', text: `Flying Blue\nHi Léa\nPlatinum\nMiles 184,220\nXP 342`, expect: { program: 'flyingblue', balance: 184220, tier: 'Platinum', name: 'Léa' } },
+  { name: 'Two accented names ("Welcome back, José Núñez")', text: `Welcome back, José Núñez\nIberia Club\nOro\nAvios 58,200`, expect: { program: 'iberia', balance: 58200, tier: 'Oro', name: 'José Núñez' } },
+  { name: 'A diaeresis ("Hello Zoë,")', text: `Hello Zoë,\nHilton Honors\nGold\nPoints 120,000`, expect: { program: 'hilton', name: 'Zoë' } },
+  { name: 'A Nordic letter ("Hi Søren")', text: `Hi Søren\nMiles & More\nSenator\nAward miles 210,000`, expect: { program: 'lufthansa', tier: 'Senator', name: 'Søren' } },
+  { name: 'The name comes from the reading that kept the greeting, accents and all', passes: [`Flying Blue\nPlatinum\nMiles 184,220\nXP 342`, `Flying Blue\nHi Léa\nPlatinum\nMiles 184,220\nXP 342`],
+    expect: { program: 'flyingblue', balance: 184220, name: 'Léa' } },
+  { name: 'A level after the name ("Hi Jordan Platinum Elite") isn’t part of it', text: `Hi Jordan Platinum Elite\nIHG One Rewards\n26,948 points\nQualifying nights 22`,
+    expect: { program: 'ihg', balance: 26948, tier: 'Platinum Elite', progress: 22, name: 'Jordan' } },
+  { name: '"Welcome Diamond Member" names no one', text: `Welcome Diamond Member\nHilton Honors\nPoints 302,118\nNights 48`, expect: { program: 'hilton', balance: 302118, tier: 'Diamond', progress: 48, name: null } },
+  { name: '"Hi Gold Medallion Member" names no one', text: `Hi Gold Medallion Member\nSkyMiles\n84,250 miles\nMQDs $11,240`, expect: { program: 'delta', tier: 'Gold Medallion', name: null } },
+  { name: '"Welcome Premier 1K" names no one', text: `Welcome Premier 1K\nMileagePlus\nMiles 410,500\nPQP 28,400`, expect: { program: 'united', tier: 'Premier 1K', name: null } },
+  { name: 'Near miss: a hyphenated name ("Good afternoon, Mary-Kate")', text: `Good afternoon, Mary-Kate\nQantas Frequent Flyer\nGold\nQantas Points 84,200`, expect: { program: 'qantas', name: 'Mary-Kate' } },
+  { name: 'Near miss: an apostrophe ("Hi O’Neil")', text: `Hi O’Neil\nAer Lingus AerClub\nSilver\nAvios 12,400`, expect: { program: 'aerlingus', name: 'O’Neil' } },
+  { name: 'Near miss: a name that holds a level’s word ("Hi Goldie")', text: `Hi Goldie\nHilton Honors\nGold\nPoints 120,000`, expect: { program: 'hilton', tier: 'Gold', name: 'Goldie' } },
+  // Spaced thousands: the tail of a split number is never a balance by itself; a caption on the next line joins it.
+  { name: 'A spaced balance run into the greeting, its caption under it ("Hi Sam Rivera, 26 948" over "YOUR POINTS")', text: `Hi Sam Rivera, 26 948\nYOUR POINTS\nIHG One Rewards\nPlatinum Elite`,
+    expect: { program: 'ihg', balance: 26948, tier: 'Platinum Elite', name: 'Sam Rivera' } },
+  { name: 'The tail of a spaced number alone ("26 948", no caption) is no balance', text: `Hi Sam Rivera, 26 948\nIHG One Rewards\nPlatinum Elite\nRedeem\nBook`, expect: { program: 'ihg', balance: null, name: 'Sam Rivera' } },
+  { name: 'Near miss: a plain number with no unit anywhere still reads ("Points" tile without its caption)', text: `IHG One Rewards\nPlatinum Elite\n26,948\nRedeem`, expect: { program: 'ihg', balance: 26948 } },
+  // A stray digit or two before a comma-grouped balance on a bare line ("1 54,250") is its first digits split off:
+  // the whole number is read, and the card asks since the pieces could also be two values.
+  { name: 'A big digit split off the balance ("1 54,250" under "Miles") reads whole, and asks', text: `SkyMiles\nGold Medallion\nMiles\n1 54,250\nMQDs $9,210`, expect: { program: 'delta', balance: 154250, unsure: true, mqd: 9210 } },
+  { name: '…also two digits ("15 4,250" over "miles")', text: `SkyMiles\nGold Medallion\n15 4,250\nmiles`, expect: { program: 'delta', balance: 154250, unsure: true } },
+  { name: '…and with an S for 5 in the big number ("1 S4,250")', text: `SkyMiIes\nGold MedaIlion\n1 S4,250\nmiles\nMQDs $9,2I0`, expect: { program: 'delta', balance: 154250, unsure: true, mqd: 9210 } },
+  { name: 'Near miss: a row of two values under a two-caption row ("Nights Points" over "12 54,250") is two values', text: `Marriott Bonvoy\nGold Elite\nNights Points\n12 54,250`, expect: { program: 'marriott', balance: 54250, progress: 12, unsure: false } },
+  { name: 'Near miss: a whole balance on its own line asks nothing', text: `SkyMiles\nGold Medallion\nMiles\n154,250\nMQDs $9,210`, expect: { program: 'delta', balance: 154250, unsure: false } },
+  // A comma in the wrong place ("15,2310", "1,52,310") is a misread mark: the digits are the number.
+  { name: 'A shifted comma ("15,2310 Points") is 152,310', text: `Hilton Honors\nGold\n15,2310 Points\nNights 31`, expect: { program: 'hilton', balance: 152310, tier: 'Gold', progress: 31 } },
+  { name: 'A comma every two digits ("1,52,310 Points") is 152,310', text: `Hilton Honors\nGold\n1,52,310 Points\nNights 31`, expect: { program: 'hilton', balance: 152310 } },
+  { name: 'Near miss: a well-formed member number keeps its digits ("Member # 1234567890")', text: `Hilton Honors\nGold\nPoints 88,400\nMember # 1234567890`, expect: { program: 'hilton', balance: 88400, member: '1234567890' } },
+  // A room, gate, seat or flight number, or an amount being moved to another program, isn't the balance.
+  { name: 'A room number isn’t the balance (a digital key page)', text: `Hilton Honors\nDiamond\nYour stay\nRoom 1204\nCheck-out Oct 24, 2026\nDigital Key`, expect: { program: 'hilton', balance: null, tier: 'Diamond' } },
+  { name: 'A gate number isn’t the balance', text: `Delta SkyMiles\nGold Medallion\nDL 1532 ATL-JFK\nGate 112\nBoarding 6:40 PM`, expect: { program: 'delta', balance: null, tier: 'Gold Medallion' } },
+  { name: 'A flight number isn’t a balance ("DL 1532 ATL-JFK +2,140 miles" in recent activity)', text: `SkyMiles\nGold Medallion\nRecent activity\nOct 12, 2026 DL 1532 ATL-JFK +2,140 miles\nSep 30, 2026 Amex +4,000 miles`, expect: { program: 'delta', balance: null } },
+  { name: 'A transfer confirmation: the points moved aren’t the balance, the remaining are', text: `Transfer complete\n50,000 Ultimate Rewards points to World of Hyatt\nConfirmation # 845123\nRemaining points 134,210`,
+    expect: { program: 'chase', balance: 134210 } },
+  { name: 'Near miss: "points to use on flights" is still the balance', text: `Chase Ultimate Rewards\n120,345 points to use on flights and hotels`, expect: { program: 'chase', balance: 120345 } },
+  { name: 'Near miss: a "Room" tab beside the points', text: `Hilton Honors\nGold\nPoints 34,500 Room\nNights 18`, expect: { program: 'hilton', balance: 34500, progress: 18 } },
+  // Two columns read as one line on a page with several statuses: a line of end dates or numbers under it, one per
+  // program, goes to each program in turn.
+  { name: 'Many statuses, two columns merged: each program keeps its own end date', text: `Hotel status\nHilton Honors Gold Marriott Bonvoy Gold Elite\nValid through 12/31/2027 Valid through 02/01/2028`,
+    expect: { many: 'hilton:Gold@2027-12-31 | marriott:Gold Elite@2028-02-01' } },
+  { name: 'Many statuses, two columns merged: each program keeps its own member number', text: `Hilton Honors Gold Status Marriott Bonvoy Gold Elite Status\nHonors number 1234567890 Member number 123456789`,
+    expect: { many: 'hilton:Gold#1234567890 | marriott:Gold Elite#123456789' } },
+  { name: 'Near miss: one line under two programs with a single date goes to the last named, as before', text: `Hilton Honors Gold Marriott Bonvoy Gold Elite\nValid through 02/01/2028`,
+    expect: { many: 'hilton:Gold | marriott:Gold Elite@2028-02-01' } },
+  // A capital I for an l, an l for a 1 or an O for a 0 inside a level's name still names the level.
+  { name: '“SiIver” (a capital I for the l) is Silver', text: `Emirates Skywards\nSiIver\nSkywards Miles 40,120\nTier Miles 28,000`, expect: { program: 'emirates', balance: 40120, tier: 'Silver' } },
+  { name: '“PIatinum Elite” is Platinum Elite', text: `Marriott Bonvoy\nPIatinum Elite\n98,410 Points\nNights 52`, expect: { program: 'marriott', balance: 98410, tier: 'Platinum Elite', progress: 52 } },
+  { name: '“Mosaic l” is Mosaic 1', text: `TrueBlue\nMosaic l\nPoints 14,400\nTiles 55`, expect: { program: 'jetblue', balance: 14400, tier: 'Mosaic 1' } },
+  { name: '“Aeroplan 5OK” is 50K', text: `Aeroplan\nAeroplan 5OK\nPoints 211,400\nSQC 72,100`, expect: { program: 'aeroplan', balance: 211400, tier: '50K', progress: 72100 } },
+  { name: '“GIobalist” is Globalist', text: `World of Hyatt\nGIobalist\n182,445 points\nQualifying night credits 64`, expect: { program: 'hyatt', balance: 182445, tier: 'Globalist', progress: 64 } },
+  { name: 'Near miss: a name with a capital I inside ("Hi McIntyre") keeps it', text: `Hi McIntyre\nHilton Honors\nGold\nPoints 120,000`, expect: { program: 'hilton', tier: 'Gold', name: 'McIntyre' } },
+  // The greeting is a whole word: the program's name above it ("Hilton", "Highlights") isn't "Hi".
+  { name: 'Near miss: "Hilton Honors" over "Welcome back, Morgan" still names Morgan', text: `Hilton Honors\nWelcome back, Morgan\nDiamond\n302,118 Points\nNights 48`, expect: { program: 'hilton', balance: 302118, tier: 'Diamond', progress: 48, name: 'Morgan' } },
+  // A lifetime progress heading's tiles are lifetime totals when this year's come under a later heading.
+  { name: 'Hilton: "Lifetime Status Progress" tiles, then "This year" tiles: this year’s nights', text: `Hilton Honors\nDiamond\n302,118\nPoints\nLifetime Status Progress\nNights\n412\nThis year\nNights\n61`,
+    expect: { program: 'hilton', balance: 302118, tier: 'Diamond', progress: 61 } },
+  { name: '…and with stays in both sections', text: `Hilton Honors\nDiamond\nPoints 302,118\nLifetime Status Progress\nNights 412\nStays 190\n2026\nNights 61\nStays 24`, expect: { program: 'hilton', balance: 302118, progress: 61, alt: 24 } },
+  { name: 'Near miss: a count after a lifetime progress "of" row, with no later heading, is still this year’s', text: `World of Hyatt\nGlobalist\n182,445 points\nLifetime Globalist progress\nBase points 412,000 of 1,000,000\nQualifying night credits 64`,
+    expect: { program: 'hyatt', balance: 182445, progress: 64, alt: null } },
 ];
