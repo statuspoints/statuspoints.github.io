@@ -5729,7 +5729,23 @@
     // may be cut off (see clippedLeft).
     if ((from.disputed || []).includes(f.balances[0]) || (f.balances.length && clippedLeft(from, f.balances[0]))) f.unsure = true;
     for (const k of ['progress', 'altProgress', 'mqd']) if (f[k] != null && (src[k].disputed || []).includes(f[k])) ask(k);
-    return { ...read, text: best.pass.text, lines: best.pass.lines, found: f };
+    // No reading read a level: one only the darkened reading has (see readFaint), with its line for the box.
+    const faint = f.tierIndex < 0 && f.programId && read.faint ? faintLevel(read.faint, tried.map((t) => t.pass.text), f.programId) : null;
+    if (faint) f.tierIndex = faint.tierIndex;
+    return { ...read, text: best.pass.text, lines: faint ? [...(best.pass.lines || []), faint.line] : best.pass.lines, found: f };
+  }
+  // A level from the darkened reading's lines (see readFaint): only lines none of the other readings has (light type
+  // they missed), and only when those name exactly one of the program's levels as a level held — each line on its own
+  // and all of them together, by the parser's own rules ("8 nights to Platinum" isn't held; three pale steps of a
+  // ladder name three). As { tierIndex, line }, or null.
+  function faintLevel(lines, texts, id) {
+    const flat = (t) => ` ${normTier(levelSlips(t || ''))} `;
+    const seen = texts.flatMap((t) => t.split('\n')).map(flat);
+    const fresh = (lines || []).filter((l) => l && typeof l.text === 'string' && flat(l.text).trim() && !seen.some((s) => s.includes(flat(l.text))));
+    const held = fresh.map((l) => parseAccountText(l.text, id).tierIndex).filter((i) => i >= 0);
+    if (!held.length || held.some((i) => i !== held[0])) return null;
+    if (parseAccountText(fresh.map((l) => l.text.trim()).join('\n'), id).tierIndex !== held[0]) return null;
+    return { tierIndex: held[0], line: fresh.find((l) => parseAccountText(l.text, id).tierIndex === held[0]) };
   }
 
   // Loads the open-source text reader (Tesseract) on first use; it runs entirely in this browser.
@@ -5778,7 +5794,8 @@
   }
 
   // Screenshots read best large, gray, and dark-on-light: scale up small ones and flip dark-mode screens.
-  async function prepareImage(file) {
+  // `faint`: the same picture with light shades darkened instead (see readFaint), or null for a dark-mode screen.
+  async function prepareImage(file, faint = false) {
     let bitmap;
     // A picture this browser can't open (an iPhone's HEIC photo in Chrome or Edge): a decode failure, told apart from a
     // reader that fails (see playScan).
@@ -5795,10 +5812,101 @@
     const px = img.data;
     let sum = 0;
     for (let i = 0; i < px.length; i += 4) { const g = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2]; px[i] = px[i + 1] = px[i + 2] = g; sum += g; }
-    if (sum / (px.length / 4) < 110) for (let i = 0; i < px.length; i += 4) px[i] = px[i + 1] = px[i + 2] = 255 - px[i];
+    const dark = sum / (px.length / 4) < 110;
+    if (faint) {
+      if (dark) return null;
+      for (const card of lightCards(px, canvas.width, canvas.height)) whitenCard(px, canvas.width, card);
+      darkenFaint(px);
+      for (const box of badges(px, canvas.width, canvas.height)) flipBox(px, canvas.width, box);
+    } else if (dark) for (let i = 0; i < px.length; i += 4) px[i] = px[i + 1] = px[i + 2] = 255 - px[i];
     ctx.putImageData(img, 0, 0);
     return canvas;
   }
+  // Light or colored type on a light screen (a gold "Gold", a pale gray "Platinum") is too light in gray for the
+  // reader, which drops it. Every shade from 170 to 240 is spread from black to white: only white stays white.
+  // By brightness, not by color (a color's darkest part would turn a yellow card black, and its black type with it).
+  function darkenFaint(px) {
+    for (let i = 0; i < px.length; i += 4) px[i] = px[i + 1] = px[i + 2] = ((px[i] - 170) * 255) / 70;
+  }
+  // Patches of a gray picture's 8px cells (side by side or one above another) that pass `test(shade, lo, hi)` — a
+  // cell's average, darkest and lightest (of every other pixel) — as boxes { x0, y0, x1, y1, shade, n, cells }
+  // in pixels, with the patch's first cell's shade, its cell count, and which cells are in it (`cells(x, y)`).
+  // `same`: a cell joins only within that much of the first cell's shade.
+  function patches(px, width, height, test, same = 255) {
+    const cell = 8;
+    const [gw, gh] = [Math.floor(width / cell), Math.floor(height / cell)];
+    const shade = new Float32Array(gw * gh);
+    const pass = new Uint8Array(gw * gh);
+    for (let k = 0; k < gw * gh; k++) {
+      const [cx, cy] = [k % gw, Math.floor(k / gw)];
+      let [sum, lo, hi, n] = [0, 255, 0, 0];
+      for (let y = cy * cell; y < (cy + 1) * cell; y += 2) {
+        for (let x = cx * cell; x < (cx + 1) * cell; x += 2) { const v = px[(y * width + x) * 4]; sum += v; lo = Math.min(lo, v); hi = Math.max(hi, v); n++; }
+      }
+      shade[k] = sum / n;
+      pass[k] = test(shade[k], lo, hi) ? 1 : 0;
+    }
+    const label = new Int32Array(gw * gh).fill(-1);
+    const out = [];
+    for (let start = 0; start < gw * gh; start++) {
+      if (!pass[start] || label[start] >= 0) continue;
+      const stack = [start];
+      label[start] = out.length;
+      let [x0, y0, x1, y1, n] = [gw, gh, 0, 0, 0];
+      while (stack.length) {
+        const k = stack.pop();
+        const [cx, cy] = [k % gw, Math.floor(k / gw)];
+        n++;
+        [x0, y0, x1, y1] = [Math.min(x0, cx), Math.min(y0, cy), Math.max(x1, cx), Math.max(y1, cy)];
+        for (const j of [cx > 0 ? k - 1 : -1, cx < gw - 1 ? k + 1 : -1, cy > 0 ? k - gw : -1, cy < gh - 1 ? k + gw : -1]) {
+          if (j >= 0 && pass[j] && label[j] < 0 && Math.abs(shade[j] - shade[start]) <= same) { label[j] = out.length; stack.push(j); }
+        }
+      }
+      const id = out.length;
+      out.push({ x0: x0 * cell, y0: y0 * cell, x1: (x1 + 1) * cell, y1: (y1 + 1) * cell, shade: shade[start], n,
+        cells: (x, y) => label[y * gw + x] === id });
+    }
+    return out;
+  }
+  // Of the pixels in a box (every other one), the share passing a test of their shade.
+  const shareIn = (px, width, box, test) => {
+    let [yes, n] = [0, 0];
+    for (let y = box.y0; y < box.y1; y += 2) for (let x = box.x0; x < box.x1; x += 2) { if (test(px[(y * width + x) * 4])) yes++; n++; }
+    return n ? yes / n : 0;
+  };
+  // Light colored cards on a gray picture, before darkening (a yellow card: black type on gray 200, which darkening
+  // alone would lose): even patches of one shade from 150 to 235, 64px or more across and 48px down, half or more
+  // filled, with type darker than the card inside (a badge's is lighter: see badges). As { x0, y0, x1, y1, shade }.
+  function lightCards(px, width, height) {
+    return patches(px, width, height, (shade, lo, hi) => shade >= 150 && shade <= 235 && hi - lo <= 16, 12)
+      .filter((p) => p.x1 - p.x0 >= 64 && p.y1 - p.y0 >= 48 && p.n * 64 >= 0.5 * (p.x1 - p.x0) * (p.y1 - p.y0))
+      .filter((p) => shareIn(px, width, p, (v) => v < p.shade - 40) > shareIn(px, width, p, (v) => v > p.shade + 40))
+      .slice(0, 6).map(({ x0, y0, x1, y1, shade }) => ({ x0, y0, x1, y1, shade }));
+  }
+  // A light card brightened to white, its type with it.
+  const whitenCard = (px, width, box) => {
+    for (let y = box.y0; y < box.y1; y++) for (let x = box.x0; x < box.x1; x++) { const i = (y * width + x) * 4; px[i] = px[i + 1] = px[i + 2] = (px[i] * 255) / box.shade; }
+  };
+  // Badges on a darkened gray picture: filled dark boxes with light text inside (white "Gold" on a gold badge), as
+  // { x0, y0, x1, y1 }. A patch of all-dark cells 32px or taller, at least 1.5 times as wide as tall, under half the
+  // picture across and a sixth of it down, half or more filled, dark along its top and bottom (the badge's edges),
+  // and 5–50% light inside (its text). The first six.
+  function badges(px, width, height) {
+    const boxes = [];
+    for (const p of patches(px, width, height, (shade, lo, hi) => hi < 128)) {
+      const [w, h] = [(p.x1 - p.x0) / 8, (p.y1 - p.y0) / 8];
+      if (h < 4 || w < 1.5 * h || p.x1 - p.x0 > width / 2 || p.y1 - p.y0 > height / 6 || p.n < 0.5 * w * h) continue;
+      const edge = (y) => Array.from({ length: w }, (_, i) => p.cells(p.x0 / 8 + i, y)).filter(Boolean).length >= 0.6 * w;
+      if (!edge(p.y0 / 8) || !edge(p.y1 / 8 - 1)) continue;
+      const light = shareIn(px, width, p, (v) => v > 200);
+      if (light >= 0.05 && light <= 0.5) boxes.push({ x0: p.x0, y0: p.y0, x1: p.x1, y1: p.y1 });
+      if (boxes.length === 6) break;
+    }
+    return boxes;
+  }
+  const flipBox = (px, width, box) => {
+    for (let y = box.y0; y < box.y1; y++) for (let x = box.x0; x < box.x1; x++) { const i = (y * width + x) * 4; px[i] = px[i + 1] = px[i + 2] = 255 - px[i]; }
+  };
 
   const scanSheet = $('#scan-sheet');
   let scanned = null; // what was read, while the review form is open
@@ -5855,7 +5963,8 @@
     }
     // Neither reading names the program: its logo may be light text in a dark header bar, read again on its own.
     const bands = passes.some((pass) => parseAccountText(pass.text).programId) ? '' : await readDarkBands(worker, canvas);
-    return { ...passes[0], passes, bands, width: canvas.width, height: canvas.height };
+    const faint = await readFaint(worker, file, passes, bands);
+    return { ...passes[0], passes, bands, faint, width: canvas.width, height: canvas.height };
   }
 
   // Rows of a gray screenshot that are mostly dark across (a header bar, a dark card; its light text never covers
@@ -5904,6 +6013,24 @@
       ocrPass.quiet = false;
     }
     return texts.join('\n');
+  }
+
+  // A program with levels named, but no level read: it may be in light or colored type the gray picture lost (a gold
+  // "Gold" on white, white on a gold badge). The screenshot is read once more, darkened (see prepareImage), as its
+  // lines; readingOf takes a level from them only from lines the other readings didn't have (see faintLevel).
+  async function readFaint(worker, file, passes, bands) {
+    const id = (passes.map((pass) => parseAccountText(pass.text)).find((f) => f.programId) || parseAccountText(bands)).programId;
+    if (!id || !scanTiersFor(id).length || passes.some((pass) => parseAccountText(pass.text, id).tierIndex >= 0)) return null;
+    ocrPass.quiet = true;
+    try {
+      const canvas = await prepareImage(file, true);
+      if (!canvas) return null; // a dark-mode screen: its light type is already the readable kind
+      await worker.setParameters({ tessedit_pageseg_mode: '11', tessedit_char_whitelist: '' });
+      const { data } = await worker.recognize(canvas, {}, { text: true, blocks: true });
+      return data.lines || (data.blocks || []).flatMap((b) => (b.paragraphs || []).flatMap((para) => para.lines || []));
+    } catch { return null; /* no second look: the card shows no level, as before */ } finally {
+      ocrPass.quiet = false;
+    }
   }
 
   // Numbers in big type (a balance) can come out wrong when the reader runs them into smaller text on the same line
@@ -6618,7 +6745,7 @@
       if (localStorage.getItem('status-tracker-debug-scan')) {
         console.debug('scan', JSON.stringify({ passes: (read.passes || [read]).map((pass) => ({ text: pass.text, disputed: pass.disputed || [],
           numbers: (pass.lines || []).flatMap((l) => l.words || []).filter((w) => /\d/.test(w.text)).map((w) => `${w.text}@${Math.round(w.confidence || 0)}`) })),
-        balances: found.balances, unsure: !!found.unsure, unsureCounts: found.unsureCounts || [], programId: found.programId, bands: read.bands || '' }));
+        balances: found.balances, unsure: !!found.unsure, unsureCounts: found.unsureCounts || [], programId: found.programId, bands: read.bands || '', faint: (read.faint || []).map((l) => l.text) }));
       }
     } catch { /* storage blocked: no debug */ }
     Object.assign(playing, { read, pickArg: choice, text: reading.text, found, many: null });

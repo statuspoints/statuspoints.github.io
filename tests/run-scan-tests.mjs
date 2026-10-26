@@ -241,6 +241,70 @@ const bigChecks = [];
   bigChecks.push(['a page dark all over (a third or more) has no bands', context.big.darkBands(gray(100, 300, () => 30), 100, 300), []]);
   bigChecks.push(['a light page has no bands', context.big.darkBands(gray(100, 300, () => 250), 100, 300), []]);
 }
+{ // Light or colored type a gray screenshot loses (a gold "Gold" on white, white on a gold badge): when a program with
+  // levels is named but no level read, the picture is darkened and read once more, and only a level on lines the
+  // other readings didn't have counts.
+  vm.runInContext(`Object.assign(globalThis.big, (function () {\n${slice('  function darkenFaint', '  const scanSheet')}\nreturn { darkenFaint, lightCards, badges };\n})());`, context);
+  const gray = (w, h, shade) => {
+    const px = new Uint8ClampedArray(w * h * 4).fill(255);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const v = shade(x, y); px.fill(v, (y * w + x) * 4, (y * w + x) * 4 + 3); }
+    return px;
+  };
+  const shades = new Uint8ClampedArray([0, 0, 0, 255, 170, 170, 170, 255, 205, 205, 205, 255, 240, 240, 240, 255, 255, 255, 255, 255]);
+  context.big.darkenFaint(shades);
+  bigChecks.push(['darkening: 170 and darker go black, 240 and lighter stay white, between spread out', [0, 4, 8, 12, 16].map((i) => shades[i]), [0, 0, 128, 255, 255]]);
+  const inside = (x, y, [x0, y0, x1, y1]) => x >= x0 && x < x1 && y >= y0 && y < y1;
+  const stripes = (x, y, box) => inside(x, y, box) && x % 12 < 4; // a word's strokes, roughly
+  // A darkened page: a dark header across it, a badge with light text, a tall dark stroke (a big digit), a dark
+  // block with nothing light inside.
+  const dark = gray(600, 1200, (x, y) => (y < 80 ? 40 : inside(x, y, [40, 200, 280, 296]) ? (stripes(x, y, [80, 230, 240, 266]) ? 255 : 60)
+    : inside(x, y, [400, 400, 424, 560]) ? 20 : inside(x, y, [40, 600, 280, 696]) ? 30 : 255));
+  bigChecks.push(['a badge with light text is a badge; a header across the page, a tall stroke and a dark block without text aren’t',
+    context.big.badges(dark, 600, 1200), [{ x0: 40, y0: 200, x1: 280, y1: 296 }]]);
+  bigChecks.push(['a white page has no badges', context.big.badges(gray(200, 200, () => 255), 200, 200), []]);
+  // Before darkening: a yellow card (gray 199) with black type, a gold badge (gray 160) with white type, a pale
+  // stroke (gray 192, a light letter), a light panel with nothing on it.
+  const light = gray(600, 1200, (x, y) => (inside(x, y, [40, 104, 560, 304]) ? (stripes(x, y, [80, 150, 400, 190]) ? 20 : 199)
+    : inside(x, y, [40, 400, 280, 496]) ? (stripes(x, y, [80, 430, 240, 466]) ? 255 : 160)
+      : inside(x, y, [400, 400, 416, 560]) ? 192 : inside(x, y, [40, 600, 560, 704]) ? 224 : 255));
+  bigChecks.push(['a light card with dark type is whitened; a badge with light type, a pale letter and an empty panel aren’t',
+    context.big.lightCards(light, 600, 1200), [{ x0: 40, y0: 104, x1: 560, y1: 304, shade: 199 }]]);
+  vm.runInContext(`globalThis.faintOf = (lines, texts, id) => {
+    const got = faintLevel(lines.map((text) => ({ text, words: [] })), texts, id);
+    return got ? [scanTiersFor(id)[got.tierIndex].name, got.line.text] : null;
+  };
+  globalThis.readWithFaint = (texts, faint, forceId) => {
+    const r = readingOf({ passes: texts.map((text) => ({ text, lines: [] })), faint: faint && faint.map((text) => ({ text, words: [] })) }, forceId);
+    return [r.found.tierIndex >= 0 ? scanTiersFor(r.found.programId)[r.found.tierIndex].name : null, r.lines.map((l) => l.text)];
+  };`, context);
+  bigChecks.push(['a level only the darkened reading has is the level', context.faintOf(['Hilton Honors', 'Hi, Morgan', 'Diamond', '245,100'], ['Hilton Honors\nHi, Morgan\n245,100'], 'hilton'), ['Diamond', 'Diamond']]);
+  bigChecks.push(['…not when the other readings had that line (however it’s written)', context.faintOf(['Diamond'], ['Hilton Honors\nDIAMOND\n245,100'], 'hilton'), null]);
+  bigChecks.push(['…not a pale ladder of levels (three levels named)', context.faintOf(['World of Hyatt', 'Member', 'Discoverist', 'Explorist', 'Globalist'], ['World of Hyatt\nMember'], 'hyatt'), null]);
+  bigChecks.push(['…not a pale next level or a card offer', context.faintOf(['12 nights to Silver Elite', 'Earn Gold Elite with the IHG card'], ['IHG One Rewards\nClub Member'], 'ihg'), null]);
+  bigChecks.push(['…the level held, beside a pale next level', context.faintOf(['Gold', '8 nights to Diamond'], ['Hilton Honors'], 'hilton'), ['Gold', 'Gold']]);
+  bigChecks.push(['…not another program’s level', context.faintOf(['Gold'], ['World of Hyatt'], 'hyatt'), null]);
+  bigChecks.push(['…not a level’s word in the program’s own name', context.faintOf(['Gold Plus Rewards®'], ['Hertz'], 'hertz'), null]);
+  bigChecks.push(['the scan takes it when no reading read a level, with its line for the box',
+    context.readWithFaint(['Hilton Honors\n245,100\nPoints', 'Hilton Honors\n245,100 Points'], ['Hilton Honors', 'Diamond', '245,100', 'Points']), ['Diamond', ['Diamond']]]);
+  bigChecks.push(['…not when a reading read one', context.readWithFaint(['Hilton Honors\nGold\n245,100'], ['Hilton Honors', 'Diamond']), ['Gold', []]]);
+  bigChecks.push(['…as the program it’s read as (a header bar names it, or you picked it)', context.readWithFaint(['Points\n41,200'], ['Platinum Elite'], 'ihg'), ['Platinum Elite', ['Platinum Elite']]]);
+  bigChecks.push(['…and never without a program', context.readWithFaint(['Points\n41,200'], ['Platinum Elite']), [null, []]]);
+  // When it reads again: only with a program with levels named (by the text or a header bar) and no level read.
+  const looks = [];
+  vm.runInContext(`globalThis.faintRead = (function () {
+    let ocrPass = {};
+    const prepareImage = async () => ({});
+    ${slice('  async function readFaint', '  // Numbers in big type')}
+    return readFaint;
+  })();`, context);
+  const worker = { setParameters: async () => {}, recognize: async () => { looks.push(1); return { data: { blocks: [{ paragraphs: [{ lines: [{ text: 'Diamond', words: [] }] }] }] } }; } };
+  const reads = async (texts, bands = '') => { looks.length = 0; const got = await context.faintRead(worker, {}, texts.map((text) => ({ text })), bands); return [looks.length, got && got.map((l) => l.text)]; };
+  bigChecks.push(['read once more when a program with levels is named and no level read', await reads(['Hilton Honors\n245,100']), [1, ['Diamond']]]);
+  bigChecks.push(['…not when a level was read', await reads(['Hilton Honors\nGold\n245,100', 'Hilton Honors\n245,100']), [0, null]]);
+  bigChecks.push(['…not for a program without levels', await reads(['Chase Ultimate Rewards\n98,765']), [0, null]]);
+  bigChecks.push(['…when only a dark header bar names the program', await reads(['245,100\nPoints'], 'Hilton Honors'), [1, ['Diamond']]]);
+  bigChecks.push(['…not when nothing names a program', await reads(['245,100\nPoints']), [0, null]]);
+}
 { // Several programs on one page (a card's benefits page): each read on its own; one program's page isn't split.
   vm.runInContext('globalThis.many = (passes) => readMany({ passes: passes.map((text) => ({ text })) });', context);
   const amex = `Marriott Bonvoy® Gold Elite Status\nMarriott Bonvoy Number: - 4471\nHilton Honors™ Gold Status\nHilton Honors Number: 2045318860\nLeaders Club Sterling Status from The\nLeading Hotels of the World®\nLeaders Club Number: 5523190\nThe American Express Global Lounge\nCollection®\nEnrolled in Priority Pass Select Membership Number:\n3301742255`;
