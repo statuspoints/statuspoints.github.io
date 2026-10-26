@@ -216,7 +216,7 @@ export const pages = [
   { name: 'Hertz app, yellow card with black Five Star, pale goal', w: 1170, h: 1400, rects: [[40, 240, 1090, 300, '#ffd200']],
     text: [t('Hertz', 60, 130, 60, 700), t('Gold Plus Rewards®', 80, 320, 44, 700), t('Five Star', 80, 420, 56, 700),
       t('9 of 15 rentals to President’s Circle', 60, 640, 34, 400, '#c8c8c8')],
-    expect: { program: 'Hertz', tier: 'Five Star' } },
+    expect: { program: 'Hertz', balance: null, tier: 'Five Star' } },
 ];
 
 export function draw(page, variant = {}) {
