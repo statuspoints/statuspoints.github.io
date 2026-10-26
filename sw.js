@@ -51,6 +51,9 @@ self.addEventListener('fetch', (event) => {
   }
   if (url.origin !== self.location.origin) return;
   const isNavigation = request.mode === 'navigate';
+  // The page asking, when you come back to it, whether a newer version is out (an installed app is often resumed,
+  // not reopened, so it never navigates): compared like a navigation, so a newer copy gets the Reload bar.
+  const isCheck = request.headers.get('X-Update-Check') === '1';
 
   // One cache entry per file: query strings (?utm=…, cache-busters) are dropped from the key, so an old entry
   // saved under some query can't shadow the fresh copy.
@@ -61,7 +64,7 @@ self.addEventListener('fetch', (event) => {
     const cache = await caches.open(CACHE);
     const cached = (await cache.match(key.href))
       || (isNavigation ? await cache.match('./index.html') : undefined);
-    const shown = isNavigation && cached ? cached.clone() : null; // to compare with what the server has now
+    const shown = (isNavigation || isCheck) && cached ? cached.clone() : null; // to compare with what the server has now
 
     // Revalidate with the server (a cheap 304 when nothing changed) rather than trusting the browser's HTTP
     // cache, which GitHub Pages sets to 10 minutes and would otherwise delay updates.
@@ -87,6 +90,7 @@ self.addEventListener('fetch', (event) => {
       })
       .catch(() => undefined);
 
+    if (isCheck) return (await refresh) || new Response('', { status: 204 }); // the check waits for its answer
     if (cached) {
       event.waitUntil(refresh);
       return cached;

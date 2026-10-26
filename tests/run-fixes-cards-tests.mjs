@@ -374,6 +374,18 @@ check('…and the next one', lounges(), given);
 prog('lounges').status.push(...Array.from({ length: 25 }, (_, i) => ({ tier: `Pass ${i + 1}`, via: 'typed' })));
 app.reload();
 check('…plus 25 typed lines: the first 20 typed are kept, and every card line', [lounges(), prog('lounges').status.filter((l) => !l.card).length], [given + 20, 20]);
+// A line you typed before picking the card that gives it stays yours when the card comes off (or stops giving it).
+{
+  start([], [{ id: 'hilton', name: 'Hilton Honors', unit: 'points', status: [{ tier: 'Gold', via: 'Amex Platinum' }] }]);
+  app.applyCard(app.state, 'amex-platinum');
+  const linked = prog('hilton').status.filter((l) => l.tier === 'Gold');
+  check('a typed line the card also gives is linked to it, not doubled', [linked.length, linked[0].card, linked[0].typed], [1, 'amex-platinum', true]);
+  app.reload();
+  check('…and stays marked as yours after a reload', prog('hilton').status.find((l) => l.tier === 'Gold').typed, true);
+  app.removeCard(app.state, 'amex-platinum');
+  check('taking the card off keeps the line you typed, no longer tied to the card', prog('hilton').status.map((l) => [l.tier, l.via, l.card || null, l.typed || null]), [['Gold', 'Amex Platinum', null, null]]);
+  check('…while lines only the card added go (Marriott Gold Elite)', tiers('marriott'), null);
+}
 const flood = app.normalize({ programs: [{ id: 'lounges', name: 'Lounges', status: Array.from({ length: 500 }, () => ({ tier: 'x', via: 'y', card: 'amex-platinum' })) }], cards: [] });
 check('…while a file flooding one program with card lines is still capped', flood.programs[0].status.length <= given, true);
 

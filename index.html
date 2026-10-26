@@ -2703,9 +2703,9 @@
     ihg: { unit: 'nights', steps: [10, 20, 40, 70], alt: { unit: 'qualifying points', steps: [null, 40000, 60000, 120000] }, thru: endOf(1, 12), note: 'Qualifying nights (nights past the Gold, Platinum, or Diamond mark roll over to next year), or qualifying points from Gold up.' },
     hyatt: { unit: 'nights', steps: [10, 30, 60], alt: { unit: 'base points', steps: [25000, 50000, 100000] }, thru: endOf(2, 2), note: 'Qualifying nights, or base points.' },
     wyndham: { unit: 'nights', steps: [5, 15, 40], thru: endOf(1, 12), note: 'Qualifying nights. Nights beyond your level roll over and don’t expire, so add any banked rollover nights to this year’s count.' },
-    united: { unit: 'PQP', steps: [6000, 12000, 18000, 28000], alt: { unit: 'flights', steps: [15, 30, 45, 60], with: [5000, 10000, 15000, 22000] }, thru: endOf(2, 1), note: 'PQP alone, or fewer PQP plus Premier qualifying flights (15/30/45/60 flights with 5,000/10,000/15,000/22,000 PQP). Either way, you need at least 4 paid flights on United or United Express that year.' },
+    united: { unit: 'PQP', steps: [6000, 12000, 18000, 28000], alt: { unit: 'flights', steps: [15, 30, 45, 60], with: [5000, 10000, 15000, 22000] }, thru: endOf(2, 1), note: 'PQP alone, or fewer PQP plus Premier qualifying flights (15/30/45/60 flights with 5,000/10,000/15,000/22,000 PQP). Either way, you need at least 4 paid flights on United or United Express that year. Announced for 2027 (status for 2028): PQP only — flights no longer count — and Premier 1K needs 32,000 PQP.' },
     american: { unit: 'Loyalty Points', steps: [40000, 75000, 125000, 200000], starts: 3, thru: endOf(2, 3), note: 'American’s qualifying year runs March 1 through the end of February.' },
-    southwest: { unit: 'tier points', steps: [35000, 70000], alt: { unit: 'flights', steps: [20, 40] }, thru: endOf(1, 12), note: 'Tier qualifying points, or qualifying one-way flights.' },
+    southwest: { unit: 'tier points', steps: [35000, 70000], alt: { unit: 'flights', steps: [20, 40] }, thru: endOf(1, 12), note: 'Tier qualifying points, or qualifying one-way flights. Announced for Jan 1, 2027: A-List becomes Silver and A-List Preferred becomes Gold, with a new Platinum level above them.' },
     alaska: { unit: 'status points', steps: [20000, 40000, 80000, 135000], thru: endOf(2, 1), note: 'Status points this calendar year.' },
     aeroplan: { unit: 'SQC', steps: [25000, 35000, 50000, 75000, 125000], thru: endOf(2, 1), note: 'Status Qualifying Credits this calendar year. Everyday-partner points (100,000 for 25K) and Chase Aeroplan card spend ($75,000 for 35K) count too, not tracked here.' },
   };
@@ -2862,14 +2862,20 @@
       ['instacart', 'Instacart', 10, 'month', 'calendar', 'with Instacart+'],
     ],
     // IHG cards from Chase's Oct 1, 2026 refresh: the airline credits run through 12/31/27 (CREDIT_LAST_DAY).
-    'ihg-premier-select': [['airline', 'Airline credit', 200, 'year', 'calendar', 'one $250+ flight bought directly from the airline; through 12/31/27']],
+    'ihg-premier-select': [
+      ['airline', 'Airline credit', 200, 'year', 'calendar', 'one $250+ flight bought directly from the airline; through 12/31/27'],
+      ['fnb', 'IHG Food & Beverage reward', 75, 'quarter', 'calendar', 'one voucher for food and drink charged to your room on a stay at a participating IHG hotel; the unused part is lost at quarter end'],
+      ['united-half', 'United TravelBank credit', 25, 'half', 'calendar', 'register once in your IHG One Rewards account; each $25 expires Jul 15 / Jan 15'],
+    ],
     'ihg-premier': [
       ['airline', 'Airline credit', 100, 'year', 'calendar', 'one $250+ flight bought directly from the airline; through 12/31/27'],
       ['united-half', 'United TravelBank credit', 25, 'half', 'calendar', 'register once in your IHG One Rewards account; each $25 expires Jul 15 / Jan 15'],
+      ['fnb', 'IHG Food & Beverage reward', 25, 'quarter', 'calendar', 'one voucher for food and drink charged to your room on a stay at a participating IHG hotel; the unused part is lost at quarter end'],
     ],
     'ihg-premier-business': [
       ['airline', 'Airline credit', 100, 'year', 'calendar', 'one $250+ flight bought directly from the airline; through 12/31/27'],
       ['expensify', 'Expensify', 100, 'year', 'calendar', 'bought directly from Expensify'],
+      ['fnb', 'IHG Food & Beverage reward', 25, 'quarter', 'calendar', 'one voucher for food and drink charged to your room on a stay at a participating IHG hotel; the unused part is lost at quarter end'],
     ],
     'chase-aeroplan': [
       ['aircanada', 'Air Canada credit', 50, 'half', 'calendar', 'Air Canada purchases'],
@@ -3529,6 +3535,7 @@
           .map((line) => {
             const clean = { tier: str(line && line.tier, 120), via: str(line && line.via, 120) }; // room for the longest card status
             if (line && typeof line.card === 'string' && CARD_BY_ID[line.card]) clean.card = line.card; // added by a card preset
+            if (clean.card && line.typed === true) clean.typed = true; // you typed it before the card linked to it
             const exp = line && typeof line.exp === 'string' && parseISODate(line.exp) ? line.exp : thruDate(clean.via);
             if (exp) clean.exp = line.exp === '' ? '' : exp; // status expiration (YYYY-MM-DD); '' = you cleared the "thru" date
             return clean;
@@ -3562,7 +3569,8 @@
     return program;
   }
 
-  const catalogRank = (p) => (CATALOG_BY_ID[p.id] ? CATALOG_ITEMS.indexOf(CATALOG_BY_ID[p.id]) : Infinity);
+  // A program's place in the catalog, by what it is (a second account or a renamed row ranks with its program).
+  const catalogRank = (p) => { const c = catalogFor(p); return c ? CATALOG_ITEMS.indexOf(c) : Infinity; };
 
   function findProgram(s, programId) {
     const catalogName = CATALOG_BY_ID[programId].name.toLowerCase();
@@ -3597,13 +3605,14 @@
       if (!program) {
         program = { ...programFromCatalog(CATALOG_BY_ID[programId]), addedBy: cardId };
         // Slot it in with its kind (hotels with hotels, etc.) rather than at the very end.
-        const at = s.programs.findIndex((p) => catalogRank(p) > catalogRank(program));
+        const at = s.programs.findIndex((p) => catalogRank(p) !== Infinity && catalogRank(p) > catalogRank(program));
         if (at < 0) s.programs.push(program);
         else s.programs.splice(at, 0, program);
       }
       const existing = program.status.find((line) => sameText(line.tier, tier) && sameText(line.via, via));
       if (existing) {
         existing.card = cardId; // the person already typed this one; link it to the card
+        existing.typed = true; // …and it stays theirs if the card comes off
         if (exp && !existing.exp) existing.exp = exp;
       } else {
         program.status.push(exp ? { tier, via, card: cardId, exp } : { tier, via, card: cardId });
@@ -3626,10 +3635,11 @@
   // Brings each card you hold in line with today's CARDS: statuses it no longer gives come off, new ones go on,
   // and lines that still match (including any end date you added) stay as they are. Statuses you deleted (or
   // whose program you deleted) stay off. Runs on every load.
+  const untyped = ({ card, typed, ...line }) => line; // a status line you typed, no longer tied to a card
   function syncCards(s) {
     for (const cardId of [...s.cards]) {
       if (!CARD_BY_ID[cardId]) continue;
-      for (const p of s.programs) p.status = p.status.filter((line) => line.card !== cardId || cardGives(cardId, line));
+      for (const p of s.programs) p.status = p.status.flatMap((line) => (line.card !== cardId || cardGives(cardId, line) ? [line] : line.typed ? [untyped(line)] : []));
       s.cards = s.cards.filter((id) => id !== cardId);
       applyCard(s, cardId, true); // back on the list, adding only what the card has started giving since
     }
@@ -3641,7 +3651,8 @@
     s.cards = s.cards.filter((id) => id !== cardId);
     if (s.bonuses) delete s.bonuses[cardId];
     if (s.cardSeen) delete s.cardSeen[cardId]; // picked again later, it puts everything back
-    for (const p of s.programs) p.status = p.status.filter((line) => line.card !== cardId);
+    // A line you typed before the card linked to it stays, unlinked; only lines the card added go.
+    for (const p of s.programs) p.status = p.status.flatMap((line) => (line.card !== cardId ? [line] : line.typed ? [untyped(line)] : []));
     const yours = (id) => [s.balances, s.members, s.memos, s.goals, s.cpp].some((map) => (map || {})[id] != null)
       || [id, altKey(id)].some((key) => (s.progress || {})[key] != null) || ((s.history || {})[id] || []).length > 0;
     s.programs = s.programs.filter((p) => !(p.addedBy && !s.cards.includes(p.addedBy) && !p.status.length && !yours(p.id)));
@@ -4077,6 +4088,8 @@
 
   // Another tab or window saved this tracker: take its copy, rather than overwrite it on this tab's next save.
   addEventListener('storage', (e) => {
+    // Light or Dark picked in another window: this one follows (Auto removes the key).
+    if (e.key === 'status-tracker-theme') { theme = e.newValue === 'light' || e.newValue === 'dark' ? e.newValue : 'auto'; applyTheme(theme); return; } // THEME_KEY
     // The people list changed there (someone added, renamed, or removed): take it, so this window's next save of
     // the list doesn't drop them. This window keeps showing whoever it's showing.
     if (e.key === PEOPLE_KEY) {
@@ -4113,22 +4126,43 @@
 
   // Flush a pending save if the app is backgrounded or closed inside the debounce window.
   addEventListener('pagehide', () => { if (saveTimer) saveNow(); });
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') {
-      if (saveTimer) saveNow();
-      return;
-    }
-    // A new qualifying year may have started while backgrounded. If rolling it over fails partway, the half-changed
-    // copy is never saved: what's saved is set aside, as when the page can't be shown.
+  // Back on the page, or a new day while it stays open: a new qualifying year may have started (if rolling it over
+  // fails partway, the half-changed copy is never saved: what's saved is set aside, as when the page can't be shown),
+  // and on a new day every countdown is drawn again ("Expires today" on the rows, Coming up, credits, vouchers).
+  let drawnDay = todayISO();
+  function refreshDay() {
     let rolled = false;
     try { rolled = rollOver(); } catch (err) { openFresh(err); return; }
-    if (rolled) {
+    if (rolled || todayISO() !== drawnDay) {
+      drawnDay = todayISO();
       renderSafely();
+      if (detail.open) renderDetail(); // the program sheet's countdowns too
     } else {
       renderToday();
       renderCredits(); // a month or quarter may have turned over
       renderVouchers(); // days-left may have rolled over while backgrounded
     }
+  }
+  // Just after each midnight, for a page left open on screen.
+  (function atMidnight() {
+    const now = new Date();
+    setTimeout(() => { refreshDay(); atMidnight(); }, new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 5) - now);
+  })();
+  // An installed app is usually resumed, not reopened, so it would never see a new version: coming back asks (at
+  // most hourly) whether one is out; the service worker compares it and offers Reload.
+  let checkedAt = Date.now();
+  const checkForUpdate = () => {
+    if (!('serviceWorker' in navigator) || !navigator.serviceWorker.controller || Date.now() - checkedAt < 3600e3) return;
+    checkedAt = Date.now();
+    fetch('./', { cache: 'no-cache', headers: { 'X-Update-Check': '1' } }).catch(() => {});
+  };
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') {
+      if (saveTimer) saveNow();
+      return;
+    }
+    refreshDay();
+    checkForUpdate();
   });
 
   /* ---------- Editable numbers ---------- */

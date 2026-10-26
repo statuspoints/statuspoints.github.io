@@ -339,9 +339,11 @@ check('IHG Premier: $100 airline credit a year, and its United TravelBank credit
 const ihgCredits = () => app.heldCredits().filter((x) => x.card.id.startsWith('ihg-'));
 check('…all unused, counted for 2026, and dated (so they can come up before Dec 31)',
   ihgCredits().map((x) => [x.key, x.used, x.period.key, x.dated]).filter(([key]) => !key.endsWith('united-half')),
-  [['ihg-premier-select:airline', false, '2026', true], ['ihg-premier:airline', false, '2026', true],
-    ['ihg-premier-business:airline', false, '2026', true], ['ihg-premier-business:expensify', false, '2026', true]]);
-check('…so $525 is unused right now ($200 + $100 + $100 + $100, plus Premier’s $25 TravelBank)', ihgCredits().filter((x) => !x.used).reduce((sum, x) => sum + x.credit.amount, 0), 525);
+  [['ihg-premier-select:airline', false, '2026', true], ['ihg-premier-select:fnb', false, '2026-Q4', true], ['ihg-premier:airline', false, '2026', true],
+    ['ihg-premier:fnb', false, '2026-Q4', true], ['ihg-premier-business:airline', false, '2026', true], ['ihg-premier-business:expensify', false, '2026', true],
+    ['ihg-premier-business:fnb', false, '2026-Q4', true]]);
+check('…so $675 is unused right now ($200 + $100 + $100 + $100 a year, $75 + $25 + $25 food & beverage this quarter, plus two $25 TravelBank)',
+  ihgCredits().filter((x) => !x.used).reduce((sum, x) => sum + x.credit.amount, 0), 675);
 now = new Date(2027, 11, 15, 12);
 check('December 2027: the airline credits still listed', ['ihg-premier-select', 'ihg-premier', 'ihg-premier-business'].map((id) => has(id, 'airline')), [true, true, true]);
 now = new Date(2028, 0, 2, 12);
