@@ -1294,4 +1294,14 @@ export default [
   { name: 'Near miss: …also with an Amex offer on the page ("Earn miles with your Amex")', text: `Turkish Airlines\nMiles&Smiles\nClassic Card\nMiles 14,200\nEarn miles with your Amex`, expect: { program: 'turkish', tier: 'Classic' } },
   { name: 'Hilton: "Reward stays 2" isn’t this year’s stays', text: `Hilton Honors\nGold\n52,300 Points\nReward stays 2\nNights 18\nStays 7`, expect: { program: 'hilton', progress: 18, alt: 7 } },
   { name: 'Near miss: a "Nights Stays" caption row over "18 7" still reads both', text: `Hilton Honors\nGold\n52,300 Points\nNights Stays\n18 7`, expect: { program: 'hilton', progress: 18, alt: 7 } },
+  // ---------- live look-alike flags (2026-10-26) ----------
+  // Readings of two clean look-alike pages that made the card ask for nothing.
+  { name: 'A tile row under two captions across a blank line isn’t one joined number (Hyatt)', text: `WORLD OF HYATT\n\nAlex Smith Current Points\n\nExplorist 41,200\nJ\n\nMember #123456789A\n\nTier-qualifying nights Base points\n\n23 18,450\n`,
+    expect: { program: 'hyatt', balance: 41200, tier: 'Explorist', progress: 23, alt: 18450 } },
+  { name: 'Both Hyatt readings agree, so the card doesn’t ask', passes: [`WORLD OF HYATT\n\nAlex Smith Current Points\n\nExplorist 41,200\nJ\n\nMember #123456789A\n\nTier-qualifying nights Base points\n\n23 18,450\n`, `WORLD OF HYATT\nAlex Smith Current Points\nExplorist\np 41,200\nMember #123456789A\nTier-qualifying nights Base points\n23 18,450\n`],
+    expect: { program: 'hyatt', balance: 41200, progress: 23, alt: 18450, ask: null, unsure: false } },
+  { name: 'A number cut off mid-group ("187,35") is no balance, and doesn’t make the card ask (Aeroplan)', passes: [`AIR CANADA Aeropl\n\nHi Chris Points\n\nSOK 187,350\n\nAeroplan number 123456789\n\nStatus Qualifying Credits (SQC)\n\n41,200 of 50,000\n\neUpgrade credits: 20\n`, `AIR CANADA Aeroplan\nHi Chris Points\n50K 8 3 0\n187,35\nAeroplan number 123456789\nStatus Qualifying Credits (SQC)\n41,200 of 50,000\neUpgrade credits: 20\n`],
+    expect: { program: 'aeroplan', balance: 187350, tier: '50K', progress: 41200, unsure: false } },
+  { name: 'Near miss: a shifted comma with a full last group still reads whole ("15,2310")', text: `Hilton Honors\n15,2310 Points`, expect: { program: 'hilton', balance: 152310 } },
+  { name: 'Near miss: "1 54,250" alone under "Miles" still joins (and asks)', text: `Delta SkyMiles\nMiles\n1 54,250`, expect: { program: 'delta', balance: 154250, unsure: true } },
 ];

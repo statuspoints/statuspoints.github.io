@@ -4889,6 +4889,9 @@
       .replace(/(^|[^\d,.$€£/])(\d+(?:,\d+)+)(?![\d,.])/g, (all, pre, n, at, text) => {
         const groups = n.split(',');
         if (groups[0].length <= 3 && groups.slice(1).every((g) => g.length === 3)) return all;
+        // A last group short of three digits lost its end ("187,35" for 187,350): a cut-off number, not a shifted
+        // comma, so it's left as read (never a balance; the other reading or the card has it).
+        if (groups[groups.length - 1].length < 3) return all;
         if ((groups.length === 2 && /^(?:19|20)\d\d$/.test(groups[1])) || new RegExp(`(?:${SCAN_MONTH})\\.?[ \\t]*$`, 'i').test(text.slice(0, at + pre.length))) return all;
         return `${pre}${groups.join('')}`;
       })
@@ -5313,7 +5316,8 @@
     // ("Nights Points" over "12 54,250"). The card asks, since the pieces could still be two values.
     let splitWhole = null;
     const text = cleanScanText(rawText).replace(/(^|\n)[ \t]*((?:\d{1,2}[ \t]+)+\d{1,3},\d{3})[ \t]*(?=\n|$)/g, (all, pre, row, at, whole) => {
-      const beside = [whole.slice(at + all.length + 1).split('\n')[0] || '', pre ? whole.slice(0, at).split('\n').pop() : ''];
+      // The nearest lines with words above and below, past the blank lines a reader writes between blocks.
+      const beside = [whole.slice(at + all.length + 1).split('\n').find((l) => l.trim()) || '', pre ? whole.slice(0, at).split('\n').reverse().find((l) => l.trim()) || '' : ''];
       if (beside.some((c) => !/\d/.test(c) && c.split(/\s+/).filter((w) => SCAN_UNIT.test(w)).length >= 2)) return all;
       const digits = row.replace(/\D/g, '');
       splitWhole = Number(digits);
@@ -5484,6 +5488,7 @@
         const memberAtLine = memberHit ? memberHit.index + memberHit[1].length : -1;
         if (memberAtLine >= 0 && m.index + m[0].indexOf(m[2]) >= memberAtLine && m.index < memberAtLine + memberText.length) continue;
         if (/^0\d/.test(m[2])) continue; // "048": the end of a number split by a space, or an id — never a balance
+        if (/^,\d{1,2}(?!\d)/.test(line.slice(m.index + m[0].length))) continue; // "187,35": cut off mid-number
         // The tail of a number split by a space that no caption joined ("Hi Sam, 26 948"): a piece, never a balance.
         if (!m[2].includes(',') && /\b\d{1,3} $/.test(ll.slice(0, m.index + m[0].indexOf(m[2])))) continue;
         if (!m[2].includes(',') && value >= 1990 && value <= 2100) continue; // a year
