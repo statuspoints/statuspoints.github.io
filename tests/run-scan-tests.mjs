@@ -28,7 +28,10 @@ vm.runInContext(`${stubs}\n${head}\n${dates}\nconst state = { programs: [], bala
   // A case's text, or each of its readings (passes) with the better one kept, as the app does with a screenshot.
   globalThis.read = (c) => {
     // A reading is its text, or { text, words: [[word, confidence], …] } for how sure the reader was of each word.
+    // Or { text, lines: [[[word, confidence, [x0, y0, x1, y1]], …], …] }: each line's words with where they sit.
+    const boxed = ([text, confidence, [x0, y0, x1, y1]]) => ({ text, confidence, bbox: { x0, y0, x1, y1 } });
     const pass = (x) => (typeof x === 'string' ? { text: x, lines: [] }
+      : x.lines ? { text: x.text, disputed: x.disputed, lines: x.lines.map((ws) => ({ text: ws.map((w) => w[0]).join(' '), words: ws.map(boxed) })) }
       : { text: x.text, disputed: x.disputed, lines: [{ text: '', words: (x.words || []).map(([text, confidence]) => ({ text, confidence })) }] });
     // A case's own programs the catalog doesn't know (custom: ['Finnair Plus']) are on the list while it's read.
     state.programs = (c.custom || []).map((name, i) => ({ id: 'custom-' + i, name, unit: 'Avios', status: [] }));
