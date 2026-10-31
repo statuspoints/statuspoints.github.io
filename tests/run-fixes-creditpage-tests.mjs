@@ -428,6 +428,7 @@ check('…left open across a redraw', page.querySelector('.cp-soon-more').getAtt
 setup({ cards: ['sapphire-reserve'], renewals: { 'sapphire-reserve': '2026-03-15' } });
 app.renderCredits();
 check('the card year’s line starts with a capital: “The card year to Mar 14, 2027: …”', page.querySelector('[data-cp-row="sapphire-reserve:travel"] .cp-now').text.startsWith('The card year to Mar 14, 2027'), true);
+check('StubHub: its end date once (“through Dec 31, 2027”), not again in the note', (() => { const t = page.querySelector('[data-cp-row="sapphire-reserve:stubhub"]').text; return [t.includes('through Dec 31, 2027'), t.includes('12/31/27'), t.includes('activate first')]; })(), [true, false, true]);
 
 // 14. Repair round 1
 const cents2 = (n) => Math.round(n * 100) / 100;

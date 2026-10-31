@@ -1804,6 +1804,7 @@
     <div class="install-body">
       <strong>New in your tracker</strong>
       <ul class="news-list">
+        <li><b>Credits checklist</b>: tap <b>Credits</b> at the top for a box for every month, quarter or half-year of your card credits — tick each one once you’ve used it.</li>
         <li><b>Made for big screens too</b>: on a laptop or desktop, your programs spread across the page, with what’s coming up, vouchers, and card credits beside them.</li>
         <li><b>Update from a screenshot</b>: drop or choose screenshots of your account pages (several at once works) and your points and status update. Small and compressed screenshots read better now.</li>
         <li><b>Welcome bonuses</b>: add a new card’s bonus under <b>Your cards</b> and see how much is left to spend, with reminders before the deadline.</li>
@@ -11426,7 +11427,8 @@
       const { credit, current } = row;
       const rate = [`${creditMoney(credit.amount)} ${CREDIT_PERIODS[credit.period]}`, credit.dec ? `${creditMoney(credit.dec)} in December` : null,
         row.last ? `through ${dateFmt.format(parseISODate(row.last))}` : null].filter(Boolean).join(' · ');
-      const note = (credit.note || '').replace(/^\$[\d.]+ in December(; )?/, ''); // already in the rate
+      const note = (credit.note || '').replace(/^\$[\d.]+ in December(; )?/, '') // already in the rate
+        .replace(row.last ? /(?:^|;\s*)through \d{1,2}\/\d{1,2}\/\d{2,4}(?=;|$)/ : /$^/, '').replace(/^;\s*/, '');
       let now = null;
       if (current) {
         now = current.full ? `✓ Used for ${current.long}`
@@ -11664,7 +11666,7 @@
 
   // A one-time card listing new features for people who already use the app; new setups skip it.
   const NEWS_KEY = 'status-tracker-news';
-  const NEWS_ID = '2026-10u';
+  const NEWS_ID = '2026-10c';
   const newsSeen = () => { try { return localStorage.getItem(NEWS_KEY) === NEWS_ID; } catch (e) { return true; } };
   const markNewsSeen = () => { try { localStorage.setItem(NEWS_KEY, NEWS_ID); } catch (e) { /* private mode */ } };
   // The card is one for the whole device: a new setup skips it only when no one else here already uses the app
