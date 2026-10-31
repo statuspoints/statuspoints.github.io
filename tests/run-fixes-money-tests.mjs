@@ -386,14 +386,14 @@ check('Jan 1, 2028: StubHub gone', has('sapphire-reserve', 'stubhub'), false);
 now = new Date(2026, 9, 8, 12);
 
 // Amex Platinum's Oct 22, 2026 update: the hotel credit is now a lodging credit (same id, so what you marked used
-// stays) and a $250 Airbnb Experiences credit is added; Delta Gold's 6-month Uber One promo ends with 2026
+// stays) and a $250 Airbnb Experiences credit is added
 setup({ cards: ['amex-platinum', 'delta-gold'] });
 const platinum = () => app.heldCredits().find((x) => x.key === 'amex-platinum:hotel');
 check('Platinum: “Lodging credit”, $300 every 6 months', [platinum().credit.name, rate('amex-platinum', 'hotel')], ['Lodging credit', '$300 every 6 months']);
 check('Platinum: Airbnb Experiences $250 a year', rate('amex-platinum', 'airbnb-experiences'), '$250 a year');
-check('Delta Gold: Uber One $9.99 a month', rate('delta-gold', 'uber-one'), '$9.99 a month');
+check('Delta Gold: no Uber One promo (an enrol-by-6/25/26 offer, not a card credit)', has('delta-gold', 'uber-one'), false);
 now = new Date(2027, 0, 1, 0, 30);
-check('Jan 1, 2027: Delta Gold’s Uber One gone, its other credits stay', ['uber-one', 'stays', 'rideshare'].map((id) => has('delta-gold', id)), [false, true, true]);
+check('Jan 1, 2027: Delta Gold keeps its credits', ['stays', 'rideshare'].map((id) => has('delta-gold', id)), [true, true]);
 now = new Date(2026, 9, 8, 12);
 
 // 5. Imported numbers above the most you can type are capped, like typed ones

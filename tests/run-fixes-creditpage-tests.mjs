@@ -415,6 +415,20 @@ const row = page.querySelector('[data-cp-row="amex-gold:uber"]');
 check('tapping Uber Cash under Expiring soon scrolls to its row and highlights it', [shown.scrolled.includes(row), row.classList.contains('cp-flash')], [true, true]);
 check('…the summary says when it ends', page.querySelector('[data-cp-jump="amex-gold:uber"]').text.includes('last day today'), true);
 
+// A long Expiring soon list (all five cards on the last day of a month): five shown, the rest behind "N more"
+setup({ cards: ['sapphire-reserve', 'amex-platinum', 'amex-gold', 'delta-gold', 'bilt-palladium'] });
+app.renderCredits();
+const soonAll = app.creditsPageModel({}).soon.length;
+const more = page.querySelector('.cp-soon-more');
+check('Expiring soon: five shown up top', page.querySelector('.cp-soon').children.find((k) => k.tagName === 'UL').children.length, 5);
+check('…the rest in “N more”, each still a jump button', [soonAll > 5, more.querySelector('summary').text, more.querySelectorAll('[data-cp-jump]').length], [true, `${soonAll - 5} more`, soonAll - 5]);
+more.setAttribute('open', '');
+app.renderCredits();
+check('…left open across a redraw', page.querySelector('.cp-soon-more').getAttribute('open') !== null, true);
+setup({ cards: ['sapphire-reserve'], renewals: { 'sapphire-reserve': '2026-03-15' } });
+app.renderCredits();
+check('the card year’s line starts with a capital: “The card year to Mar 14, 2027: …”', page.querySelector('[data-cp-row="sapphire-reserve:travel"] .cp-now').text.startsWith('The card year to Mar 14, 2027'), true);
+
 // 14. Repair round 1
 const cents2 = (n) => Math.round(n * 100) / 100;
 const call = (f, ...args) => { try { return f(...args); } catch (e) { return `threw: ${e.message}`; } };
@@ -530,10 +544,10 @@ page.querySelector('[data-cp-year="now"]').dispatch('click');
 page.querySelector('[data-cp-filter="all"]').dispatch('click');
 
 // Every credit on a card hidden: no dollars or bar
-setup({ cards: ['delta-gold'], creditsSkipped: { 'delta-gold:stays': true, 'delta-gold:rideshare': true, 'delta-gold:uber-one': true } });
+setup({ cards: ['delta-gold'], creditsSkipped: { 'delta-gold:stays': true, 'delta-gold:rideshare': true } });
 app.renderCredits();
 const dg = page.querySelector('[data-cp-card="delta-gold"]');
-check('all hidden: no “$0 used of $0” and no bar', [!!dg.querySelector('.cp-card-sum'), !!dg.querySelector('.cp-bar'), dg.text.includes('Not tracking (3)')], [false, false, true]);
+check('all hidden: no “$0 used of $0” and no bar', [!!dg.querySelector('.cp-card-sum'), !!dg.querySelector('.cp-bar'), dg.text.includes('Not tracking (2)')], [false, false, true]);
 
 // Add your cards: tap each of the five in turn
 setup({ cards: [] });

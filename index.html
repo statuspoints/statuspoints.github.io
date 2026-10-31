@@ -627,6 +627,9 @@
   .cp-soon li:first-child button { border-top: 0; }
   .cp-soon button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
   .cp-soon-name { font-weight: 600; }
+  .cp-soon-more summary { padding: 8px 0 2px; border-top: 1px solid var(--line); font-size: 13px; font-weight: 600; color: var(--accent); cursor: pointer; }
+  .cp-soon-more summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+  .cp-soon-more[open] summary { color: var(--muted); }
   .cp-soon-when { color: var(--muted); font-variant-numeric: tabular-nums; }
   .cp-soon-when.warn { color: var(--warn); font-weight: 600; }
   .cp-panel { margin-bottom: 14px; padding: 14px 16px; }
@@ -2938,7 +2941,6 @@
     'delta-gold': [
       ['stays', 'Delta Stays', 100, 'year', 'calendar', 'prepaid hotels or vacation rentals on delta.com'],
       ['rideshare', 'Rideshare', 10, 'month', 'calendar', 'Uber, Lyft, Curb, Alto; starts at your first card renewal (right away once you’ve had the card a year); enroll'],
-      ['uber-one', 'Uber One', 9.99, 'month', 'calendar', 'monthly membership paid with the card; up to 6 months in a row for memberships started by 6/25/26'],
     ],
     'delta-reserve-business': [
       ['stays', 'Delta Stays', 250, 'year', 'calendar', 'prepaid hotels on delta.com'],
@@ -10978,7 +10980,6 @@
   // Sep 30, 2027; StubHub, Peloton, Google Workspace and the IHG cards' airline credits through 2027; AAdvantage
   // Executive's Grubhub through Aug 31, 2027), by card and credit id: the last day each counts.
   const CREDIT_LAST_DAY = { 'sapphire-reserve:select-hotels': '2026-12-31', 'sapphire-reserve-business:select-hotels': '2026-12-31',
-    'delta-gold:uber-one': '2026-12-31',
     'sapphire-reserve:lyft': '2027-09-30', 'sapphire-reserve:stubhub': '2027-12-31',
     'sapphire-reserve:peloton': '2027-12-31', 'sapphire-reserve-business:google': '2027-12-31',
     'ihg-premier-select:airline': '2027-12-31', 'ihg-premier:airline': '2027-12-31', 'ihg-premier-business:airline': '2027-12-31',
@@ -11393,6 +11394,11 @@
     const top = topBar(m.cards.length > 0);
     // "Not tracking" lists you had open stay open after the redraw (e.g. after Track again).
     const openSkipped = new Set([...creditsPage.querySelectorAll('[data-cp-card] details[open]')].map((el) => el.closest('[data-cp-card]').dataset.cpCard));
+    const SOON_SHOWN = 5;
+    const soonOpen = !!creditsPage.querySelector('.cp-soon-more[open]');
+    const soonItem = (s) => h('li', null, h('button', { type: 'button', 'data-cp-jump': s.key },
+      h('span', { class: 'cp-soon-name' }, `${s.card.name} · ${s.name}`),
+      h('span', { class: `cp-soon-when${s.days <= 3 ? ' warn' : ''}` }, `${creditMoney(s.amount)} · ${endsText(s.end, s.days)}`)));
     const tile = (value, label, sub, cls = '') => h('div', { class: `cp-tile ${cls}` }, h('span', { class: 'cp-tile-v' }, value), h('span', { class: 'cp-tile-l' }, label), sub ? h('small', null, sub) : null);
     const summary = h('div', { class: 'cp-summary' },
       // Last year: just what's ticked (much of it was never recorded here, so nothing reads as missed).
@@ -11401,10 +11407,10 @@
       m.past ? null : tile(money(m.available), 'still available now'),
       m.past ? null : h('div', { class: 'cp-tile cp-soon' },
         h('span', { class: 'cp-tile-l' }, 'Expiring soon'),
-        m.soon.length ? h('ul', null, m.soon.map((s) => h('li', null, h('button', { type: 'button', 'data-cp-jump': s.key },
-          h('span', { class: 'cp-soon-name' }, `${s.card.name} · ${s.name}`),
-          h('span', { class: `cp-soon-when${s.days <= 3 ? ' warn' : ''}` }, `${creditMoney(s.amount)} · ${endsText(s.end, s.days)}`)))))
-          : h('small', null, 'Nothing ends in the next two weeks')));
+        m.soon.length ? h('ul', null, m.soon.slice(0, SOON_SHOWN).map(soonItem)) : h('small', null, 'Nothing ends in the next two weeks'),
+        // A long list (every monthly credit near the end of a month) keeps the rest one tap away
+        m.soon.length > SOON_SHOWN ? h('details', { class: 'cp-soon-more', open: soonOpen ? '' : null },
+          h('summary', null, `${m.soon.length - SOON_SHOWN} more`), h('ul', null, m.soon.slice(SOON_SHOWN).map(soonItem))) : null));
     const add = m.suggest.length ? h('div', { class: 'card cp-panel cp-add' },
       h('h2', null, 'Add your cards'),
       h('p', { class: 'fine' }, 'Tap the cards you have to see their credits. Each goes on Your cards with its statuses, as if you picked it there.'),
@@ -11425,7 +11431,7 @@
       if (current) {
         now = current.full ? `✓ Used for ${current.long}`
           : current.used ? `${creditMoney(current.amount - current.used)} left for ${current.long} · ${daysLeftText(current.days)}`
-            : `${current.long}: ${daysLeftText(current.days)}`;
+            : `${current.long.charAt(0).toUpperCase()}${current.long.slice(1)}: ${daysLeftText(current.days)}`;
       }
       const partial = current && current.editable && (credit.period === 'year' || credit.period === 'half') && credit.amount >= 50;
       let amountInput = null;
