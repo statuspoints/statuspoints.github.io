@@ -171,6 +171,7 @@ function toastApp() {
     let renaming = null;
     let saveTimer = 0;
     const saveNow = () => {}; const stopScanning = () => {}; const rollOver = () => {}; const scrollTo = () => {};
+    const forgetCreditParts = () => {}; // the Credits page's memory of a part-used amount
     const state = {};
     const load = () => ({ programs: [] });
     const renderSafely = () => !app.renderFails;
@@ -374,6 +375,7 @@ function filterApp() {
     const medallionFor = () => ({ current: null });
     const lineExpired = () => false;
     const stopScanning = () => {}; const rollOver = () => {}; const saveNow = () => {};
+    const forgetCreditParts = () => {}; // the Credits page's memory of a part-used amount
     const renderPrograms = () => {};
     const showToast = (message, action) => app.shown.push({ message, action });
     const renderAll = () => renderFilters();
@@ -464,6 +466,7 @@ function storageApp() {
     // Showing a tracker throws while app.breaks is set and there is one (as an older cached version might).
     const renderAll = () => { app.rendered++; if (app.breaks && state.programs) throw new Error('can’t show this'); };
     const stopScanning = () => { app.stopped = true; };
+    const forgetCreditParts = () => {}; // the Credits page's memory of a part-used amount
     const hideTrackerToast = () => { app.toastHidden = true; };
     const showNote = (message) => { app.note = message; };
     const console = { error() {} };

@@ -373,6 +373,29 @@ now = new Date(2027, 11, 31, 23, 30);
 check('Dec 31, 2027: Peloton and Google Workspace still listed', [has('sapphire-reserve', 'peloton'), has('sapphire-reserve-business', 'google')], [true, true]);
 now = new Date(2026, 9, 8, 12);
 
+// Sapphire Reserve's Lyft credit runs through Sep 30, 2027 and StubHub through 2027 (Chase's terms), so neither
+// sits there unused after it's gone
+setup({ cards: ['sapphire-reserve'] });
+check('October 2026: Lyft and StubHub listed', [has('sapphire-reserve', 'lyft'), has('sapphire-reserve', 'stubhub')], [true, true]);
+now = new Date(2027, 8, 30, 23, 30);
+check('Sep 30, 2027: Lyft still listed', has('sapphire-reserve', 'lyft'), true);
+now = new Date(2027, 9, 1, 0, 30);
+check('Oct 1, 2027: Lyft gone, StubHub stays', [has('sapphire-reserve', 'lyft'), has('sapphire-reserve', 'stubhub')], [false, true]);
+now = new Date(2028, 0, 1, 0, 30);
+check('Jan 1, 2028: StubHub gone', has('sapphire-reserve', 'stubhub'), false);
+now = new Date(2026, 9, 8, 12);
+
+// Amex Platinum's Oct 22, 2026 update: the hotel credit is now a lodging credit (same id, so what you marked used
+// stays) and a $250 Airbnb Experiences credit is added; Delta Gold's 6-month Uber One promo ends with 2026
+setup({ cards: ['amex-platinum', 'delta-gold'] });
+const platinum = () => app.heldCredits().find((x) => x.key === 'amex-platinum:hotel');
+check('Platinum: “Lodging credit”, $300 every 6 months', [platinum().credit.name, rate('amex-platinum', 'hotel')], ['Lodging credit', '$300 every 6 months']);
+check('Platinum: Airbnb Experiences $250 a year', rate('amex-platinum', 'airbnb-experiences'), '$250 a year');
+check('Delta Gold: Uber One $9.99 a month', rate('delta-gold', 'uber-one'), '$9.99 a month');
+now = new Date(2027, 0, 1, 0, 30);
+check('Jan 1, 2027: Delta Gold’s Uber One gone, its other credits stay', ['uber-one', 'stays', 'rideshare'].map((id) => has('delta-gold', id)), [false, true, true]);
+now = new Date(2026, 9, 8, 12);
+
 // 5. Imported numbers above the most you can type are capped, like typed ones
 const big = app.normalize({ programs: [prog('hilton', 'Hilton Honors'), prog('delta', 'Delta SkyMiles', 'miles')], cards: [], balances: { hilton: 5e12, delta: 1000 }, progress: { hilton: 2e12 }, mqd: 3e12,
   history: { hilton: [['2026-09-01', 4e12, 't'], ['2026-10-01', 5e12]] } });

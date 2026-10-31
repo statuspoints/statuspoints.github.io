@@ -77,6 +77,7 @@ function app(store, globals = {}) {
   ${piece('  // Something in the tracker changed: dated for the backup nudge', '  function scheduleSave')}
   const saveNow = () => { if (state.programs) localStorage.setItem(storageKey(), JSON.stringify(state)); else localStorage.removeItem(storageKey()); };
   const stopScanning = () => {};
+  const forgetCreditParts = () => {}; // the Credits page's memory of a part-used amount
   const hideToast = () => {}; const hideTrackerToast = () => {};
   const scrollTo = () => {};
   const rollOver = () => (globalThis.rollOverHook ? globalThis.rollOverHook(state) : false);

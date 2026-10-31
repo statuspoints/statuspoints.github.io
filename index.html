@@ -564,6 +564,8 @@
   }
   #programs-section, #vouchers-section, #credits-section { scroll-margin-top: 12px; }
   #credits-section { margin-top: 26px; }
+  #credits-section .sec-row { flex-wrap: wrap; row-gap: 6px; } /* "Open checklist" moves under the title in a narrow column */
+  #credits-section .sec { white-space: nowrap; }
   .credits-card { padding: 4px 14px; }
   .credit-group + .credit-group { border-top: 1px solid var(--line); }
   .credit-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 0; cursor: pointer; list-style: none; }
@@ -592,6 +594,126 @@
   .credit-add input[name="name"] { flex: 1 1 160px; }
   .credit-add input[name="amount"] { flex: 0 1 90px; }
   .credits-fine { margin-top: 8px; }
+
+  /* Credits page (#credits): a box per month, quarter, half or year of each credit, in place of the tracker */
+  .hero-link {
+    flex: none;
+    min-height: 36px;
+    margin-left: auto;
+    padding: 0 14px;
+    border: 1px solid rgba(255, 255, 255, .22);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .12);
+    color: #F4F7FB;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .hero-link:hover { background: rgba(255, 255, 255, .18); }
+  .hero-link:focus-visible { outline: 2px solid #FFFFFF; outline-offset: 2px; }
+  .hero-link:not([hidden]) + .person-chip { margin-left: 8px; }
+  .cp-top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; margin: 8px 0 16px; }
+  .cp-top h1 { flex: 1; min-width: 0; font-size: 24px; outline: none; }
+  .cp-back { height: 36px; }
+  .cp-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 10px; margin-bottom: 14px; }
+  .cp-tile { display: grid; align-content: start; gap: 2px; min-width: 0; padding: 12px 14px; border: 1px solid var(--line); border-radius: 16px; background: var(--card); box-shadow: var(--shadow); }
+  .cp-tile-v { font-family: var(--num-font); font-size: 22px; font-weight: 750; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .cp-tile-l { font-size: 12.5px; font-weight: 600; color: var(--muted); }
+  .cp-tile small { font-size: 12.5px; color: var(--muted); }
+  .cp-soon, .cp-tile-solo { grid-column: 1 / -1; }
+  .cp-soon ul { display: grid; margin: 4px 0 0; padding: 0; list-style: none; }
+  .cp-soon button { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 10px; width: 100%; padding: 8px 0; border: 0; border-top: 1px solid var(--line); background: none; color: var(--text); font: inherit; font-size: 13.5px; text-align: left; cursor: pointer; }
+  .cp-soon li:first-child button { border-top: 0; }
+  .cp-soon button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+  .cp-soon-name { font-weight: 600; }
+  .cp-soon-when { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .cp-soon-when.warn { color: var(--warn); font-weight: 600; }
+  .cp-panel { margin-bottom: 14px; padding: 14px 16px; }
+  .cp-panel h2 { margin: 0 0 4px; font-size: 16px; }
+  .cp-panel p { margin: 0 0 6px; }
+  .cp-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 14px; }
+  .cp-chips .cp-added { opacity: .7; cursor: default; }
+  .cp-cards { display: grid; gap: 14px; align-items: start; }
+  .cp-card { padding: 14px 16px 4px; container-type: inline-size; }
+  .cp-card-head { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+  .cp-card-head h2 { flex: 1; min-width: 0; margin: 0; font-size: 16.5px; font-weight: 720; letter-spacing: -0.01em; }
+  .cp-swatch { flex: none; width: 26px; height: 18px; border-radius: 4px; background: linear-gradient(135deg, var(--c1), var(--c2)); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .14); }
+  .cp-card-sum { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .cp-bar { height: 4px; margin: 10px 0 4px; overflow: hidden; border-radius: 999px; background: var(--track); }
+  .cp-bar i { display: block; height: 100%; border-radius: inherit; background: var(--good); }
+  .cp-fee { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 14px; font-weight: 600; }
+  .cp-fee small { display: block; font-size: 12px; font-weight: 400; color: var(--muted); }
+  .cp-fee .exp-input { flex: none; width: auto; }
+  .cp-rows { margin: 0; padding: 0; list-style: none; }
+  .cp-row { padding: 12px 0; border-top: 1px solid var(--line); outline: none; }
+  .cp-row:first-child { border-top: 0; }
+  .cp-row-head { display: flex; align-items: flex-start; gap: 8px; }
+  .cp-row-text { display: grid; flex: 1; min-width: 0; gap: 1px; }
+  .cp-name { font-weight: 650; }
+  .cp-row-text small { font-size: 12.5px; color: var(--muted); }
+  .cp-row-text .cp-now { font-weight: 600; color: var(--text); }
+  .cp-row-text .cp-now.warn { color: var(--warn); }
+  .cp-row-text .cp-now.done { color: var(--good); }
+  .cp-skip { width: 32px; height: 32px; margin: -4px -6px 0 0; }
+  .cp-boxes { display: grid; gap: 6px; margin-top: 10px; }
+  .cp-month { grid-template-columns: repeat(6, minmax(0, 1fr)); } /* two rows of six on a phone */
+  .cp-quarter { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .cp-half { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cp-year, .cp-cardyear { grid-template-columns: minmax(0, 1fr); }
+  @container (min-width: 560px) { .cp-month { grid-template-columns: repeat(12, minmax(0, 1fr)); } }
+  .cp-box {
+    position: relative;
+    display: grid;
+    place-items: center;
+    align-content: center;
+    min-width: 0;
+    min-height: 44px;
+    padding: 4px 2px;
+    border: 1px solid var(--field-line);
+    border-radius: 10px;
+    background: var(--card);
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.15;
+    text-align: center;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    transition: background .15s ease, border-color .15s ease;
+  }
+  .cp-check { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: inherit; }
+  .cp-box:has(.cp-check:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .cp-box-d { font-size: 10.5px; font-weight: 700; color: var(--accent); }
+  .cp-box-y { font-size: 11px; font-weight: 500; color: var(--muted); }
+  .cp-box.cp-current { border: 2px solid var(--accent); background: var(--accent-soft); }
+  .cp-box.on { border-color: transparent; background: var(--good-soft); color: var(--good); }
+  .cp-box.on.cp-current { border-color: var(--good); }
+  .cp-box.on .cp-box-l::before { content: "✓ "; }
+  .cp-box.part { border-style: dashed; border-color: var(--good); }
+  .cp-box.cp-missed { border-style: dashed; background: var(--inset); color: var(--faint); font-weight: 500; }
+  .cp-box.cp-missed .cp-box-l { text-decoration: line-through; text-decoration-thickness: 1px; }
+  .cp-box.cp-future { opacity: .5; cursor: default; }
+  .cp-box.cp-locked { cursor: default; } /* last year's, view-only */
+  @media (hover: hover) {
+    .cp-box:not(.cp-future):not(.cp-locked):hover { border-color: var(--accent); }
+  }
+  .cp-past-note { margin: -8px 0 12px; }
+  .cp-amt { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-top: 8px; font-size: 13px; color: var(--muted); }
+  .cp-amt-input { width: 76px; height: 32px; padding: 0 8px; border: 1px solid var(--field-border); border-radius: 8px; background: var(--field); color: var(--text); font: inherit; font-size: 16px; font-variant-numeric: tabular-nums; }
+  .cp-amt-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .cp-none { margin: 8px 0 12px; font-size: 13.5px; color: var(--muted); }
+  .cp-skipped { margin: 2px 0 10px; font-size: 13px; color: var(--muted); }
+  .cp-skipped summary { padding: 6px 0; font-weight: 600; cursor: pointer; }
+  .cp-skipped ul { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
+  .cp-skipped li { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 4px 0; }
+  .cp-fine { margin-top: 16px; }
+  .cp-flash { animation: cp-flash 1.8s ease-out; }
+  @keyframes cp-flash { 0%, 35% { background: var(--accent-soft); } 100% { background: transparent; } }
+  @media (prefers-reduced-motion: reduce) {
+    .cp-flash { background: var(--accent-soft); } /* no fade: it stays marked until the page redraws */
+  }
   /* A card's welcome bonus at the top of its credits */
   .bonus-progress { display: grid; gap: 5px; margin: 0 0 10px; padding: 10px 12px; border-radius: 12px; background: var(--callout); }
   .bonus-progress-name { font-size: 14px; font-weight: 650; }
@@ -1497,7 +1619,9 @@
   @media (max-width: 480px) { /* the switcher sits under the date instead of squeezing the title */
     .hero-top { flex-wrap: wrap; row-gap: 10px; }
     .hero-top > div { flex: 1 1 200px; min-width: 0; }
-    .person-chip { order: 3; max-width: calc(100% - 52px); margin-left: 52px; }
+    .person-chip, .hero-link:not([hidden]) + .person-chip { order: 3; max-width: calc(100% - 52px); margin-left: 52px; }
+    .hero-link { order: 3; margin-left: 52px; } /* Credits under the date too, the switcher beside it */
+    .hero-link:not([hidden]) + .person-chip { max-width: calc(100% - 160px); margin-left: 8px; }
   }
   .add.sm, .btn-secondary.sm { flex: none; padding: 0 16px; }
   .perk-block { padding: 12px 14px; border-radius: 14px; background: var(--inset); }
@@ -1624,6 +1748,15 @@
     .programs:not(.editing) > .row:nth-child(odd) { border-right: 1px solid var(--line); }
     .programs:not(.editing) > .empty-row { grid-column: 1 / -1; }
   }
+  /* The Credits page on wide screens: totals across the top, cards two or three across. */
+  @media (min-width: 1000px) {
+    main.cpage { display: block; max-width: 1400px; }
+    .cp-summary { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 2fr); }
+    .cp-soon { grid-column: auto; }
+    /* Columns rather than grid rows, so a short card doesn't leave a gap under it beside a long one */
+    .cp-cards { display: block; columns: 420px 3; column-gap: 14px; }
+    .cp-card { break-inside: avoid; margin-bottom: 14px; }
+  }
 
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { transition: none !important; animation: none !important; }
@@ -1644,6 +1777,7 @@
         <h1>Points &amp; Status Tracker</h1>
         <p class="sub" id="today"></p>
       </div>
+      <button class="hero-link" id="credits-btn" type="button" hidden>Credits</button>
       <button class="person-chip" id="person-chip" type="button" hidden></button>
     </div>
     <div class="stats" id="stats" hidden>
@@ -1800,7 +1934,10 @@
   <section id="credits-section" aria-labelledby="h-credits" hidden>
     <div class="sec-row">
       <h2 class="sec" id="h-credits">Card credits</h2>
-      <span class="sec-meta" id="c-meta"></span>
+      <span class="sec-actions">
+        <span class="sec-meta" id="c-meta"></span>
+        <button class="pill-btn sm" id="credits-open" type="button">Open checklist</button>
+      </span>
     </div>
     <div class="card credits-card" id="credits-list"></div>
     <p class="fine credits-fine" id="credits-fine"></p>
@@ -1850,6 +1987,8 @@
     <input type="file" id="import-file" accept="application/json,.json" hidden>
   </footer>
 </main>
+<!-- The Credits page (#credits): drawn by renderCreditsPageNow, in place of the tracker while it's open. -->
+<main class="cpage" id="credits-page" aria-labelledby="cp-title" hidden></main>
 
 <dialog class="sheet" id="sheet" aria-labelledby="sheet-title">
   <form id="sheet-form" method="dialog" autocomplete="off">
@@ -2748,7 +2887,8 @@
   const FHR = 'prepaid Fine Hotels + Resorts or The Hotel Collection via Amex Travel';
   const CREDITS = {
     'amex-platinum': [
-      ['hotel', 'Hotel credit', 300, 'half', 'calendar', FHR],
+      ['hotel', 'Lodging credit', 300, 'half', 'calendar', 'prepaid Fine Hotels + Resorts, The Hotel Collection or Airbnb Luxe via Amex Travel; 2+ nights from Jan 2027'],
+      ['airbnb-experiences', 'Airbnb Experiences', 250, 'year', 'calendar', 'bought directly on Airbnb; unlocked each year by a prepaid Airbnb Luxe stay booked via Amex Travel'],
       ['airline', 'Airline fee credit', 200, 'year', 'calendar', 'incidental fees on the airline you pick'],
       ['resy', 'Resy / Tock dining', 100, 'quarter', 'calendar', 'U.S. Resy or Tock restaurants; enroll'],
       ['lululemon', 'lululemon', 75, 'quarter', 'calendar', 'U.S. stores (not outlets) and lululemon.com; enroll'],
@@ -2796,8 +2936,9 @@
       ['rideshare', 'Rideshare', 10, 'month', 'calendar', 'Uber, Lyft, Curb, Alto; enroll'],
     ],
     'delta-gold': [
-      ['stays', 'Delta Stays', 100, 'year', 'calendar', 'prepaid hotels on delta.com'],
-      ['rideshare', 'Rideshare', 10, 'month', 'calendar', 'Uber, Lyft, Curb, Alto; available 12 months after account opening (right away if you switched from Platinum/Reserve); enroll'],
+      ['stays', 'Delta Stays', 100, 'year', 'calendar', 'prepaid hotels or vacation rentals on delta.com'],
+      ['rideshare', 'Rideshare', 10, 'month', 'calendar', 'Uber, Lyft, Curb, Alto; starts at your first card renewal (right away once you’ve had the card a year); enroll'],
+      ['uber-one', 'Uber One', 9.99, 'month', 'calendar', 'monthly membership paid with the card; up to 6 months in a row for memberships started by 6/25/26'],
     ],
     'delta-reserve-business': [
       ['stays', 'Delta Stays', 250, 'year', 'calendar', 'prepaid hotels on delta.com'],
@@ -2818,10 +2959,10 @@
       ['edit', 'The Edit hotel credit', 500, 'year', 'calendar', 'two $250 prepaid 2+ night stays'],
       ['select-hotels', 'Select hotels credit (2026)', 250, 'year', 'calendar', 'IHG, Montage, Pendry, Omni and more via Chase Travel'],
       ['dining', 'Exclusive Tables dining', 150, 'half', 'calendar', 'Sapphire Reserve Exclusive Tables restaurants'],
-      ['stubhub', 'StubHub / viagogo', 150, 'half', 'calendar', 'activate first'],
-      ['doordash', 'DoorDash', 15, 'month', 'calendar', 'any order from Oct 2026 ($5 before)'],
+      ['stubhub', 'StubHub / viagogo', 150, 'half', 'calendar', 'activate first; through 12/31/27'],
+      ['doordash', 'DoorDash', 15, 'month', 'calendar', 'any order with DashPass, taken off at checkout ($5 restaurant-only before Oct 2026)'],
       ['doordash-grocery', 'DoorDash groceries & retail', 20, 'month', 'calendar', 'two $10 promos on non-restaurant orders'],
-      ['lyft', 'Lyft', 10, 'month', 'calendar', 'in the Lyft app'],
+      ['lyft', 'Lyft', 10, 'month', 'calendar', 'in the Lyft app; through 9/30/27'],
       ['peloton', 'Peloton', 10, 'month', 'calendar', 'Peloton memberships through 2027; activate first'],
     ],
     'sapphire-reserve-business': [
@@ -2897,8 +3038,10 @@
       ['inflight', 'Inflight / Admirals Club', 100, 'year', 'calendar', 'AA domestic inflight and Admirals Club food & drink; not day passes'],
     ],
     'bilt-palladium': [
-      ['hotel', 'Bilt Travel hotel credit', 200, 'half', 'calendar', '2+ nights through Bilt Travel'],
-      ['bilt-cash', 'Bilt Cash', 200, 'year', 'calendar', 'posts Jan 1'],
+      // Bilt's 2027 changes: at your first card anniversary in 2027 (unless you keep 4% Bilt Cash) both credits become
+      // one $600 Bilt Cash credit posted after each anniversary; it differs per person, so the notes say so.
+      ['hotel', 'Bilt Travel hotel credit', 200, 'half', 'calendar', '2+ nights through Bilt Travel or the Bilt app; becomes Bilt Cash at your first card anniversary in 2027 unless you keep 4% Bilt Cash'],
+      ['bilt-cash', 'Bilt Cash', 200, 'year', 'calendar', 'posts Jan 1; from your first card anniversary in 2027, $600 posts after each anniversary instead'],
     ],
     'premium-rewards-elite': [
       ['airline', 'Airline incidentals', 300, 'year', 'calendar', 'bags, seats, lounge day passes'],
@@ -3807,11 +3950,51 @@
     return days < 0 ? `${money(left)} short` : `${money(left)} left to spend`;
   }
 
+  // The Credits page's record (creditsLog): "card:credit" → period key → true (used) or the dollars used so far.
+  // Period keys are creditPeriod's: "2026-10", "2026-Q4", "2026-H2", "2026", or "A2026-03-15" for a card year.
+  // Cleaned like everything else imported: cards the app knows, at most 60 credits a card and 40 periods a credit,
+  // and only this year and last (a card year that ran into last year stays). Marks saved before the page existed
+  // (creditsUsed: the one period each credit was last marked used in) are ticked there too.
+  const CREDIT_KEY_RE = /^[a-z0-9-]{1,40}:[A-Za-z0-9-]{1,40}$/;
+  const PERIOD_KEY_RE = /^(\d{4})(-([1-9]|1[0-2]|Q[1-4]|H[12]))?$|^A(\d{4})-\d{2}-\d{2}$/;
+  function cleanCreditsLog(rawLog, used) {
+    const oldest = new Date().getFullYear() - 1;
+    const keepPeriod = (p) => {
+      const m = typeof p === 'string' && PERIOD_KEY_RE.exec(p);
+      if (!m) return false;
+      if (m[4]) return parseISODate(p.slice(1)) && Number(m[4]) + 1 >= oldest; // a card year ends the year after it starts
+      return Number(m[1]) >= oldest;
+    };
+    const keepValue = (v) => v === true || (typeof v === 'number' && Number.isFinite(v) && v > 0 && v <= 100000);
+    const log = {};
+    const perCard = {};
+    const add = (key, period, v) => {
+      const cardId = key.split(':')[0];
+      if (!CREDIT_KEY_RE.test(key) || !CARD_BY_ID[cardId] || !keepPeriod(period) || !keepValue(v)) return;
+      if (!log[key]) {
+        if ((perCard[cardId] || 0) >= 60) return;
+        perCard[cardId] = (perCard[cardId] || 0) + 1;
+        log[key] = {};
+      }
+      if (period in log[key] || Object.keys(log[key]).length >= 40) return;
+      log[key][period] = v === true ? true : Math.round(v * 100) / 100;
+    };
+    if (rawLog && typeof rawLog === 'object' && !Array.isArray(rawLog)) {
+      for (const [key, periods] of ownEntries(rawLog)) {
+        if (!periods || typeof periods !== 'object' || Array.isArray(periods)) continue;
+        for (const [period, v] of ownEntries(periods)) add(key, period, v);
+      }
+    }
+    for (const [key, period] of ownEntries(used)) add(key, period, true);
+    for (const key of Object.keys(log)) if (!Object.keys(log[key]).length) delete log[key];
+    return log;
+  }
+
   // Clean state from stored or imported JSON, or null if it isn't tracker data.
   function normalize(raw) {
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
     if (!['programs', 'balances', 'vouchers', 'mqd'].some((k) => k in raw)) return null;
-    const s = { programs: null, view: 'detailed', cards: [], cardSeen: {}, renewals: {}, creditsUsed: {}, creditsUsedOn: {}, creditsSkipped: {}, customCredits: {}, bonuses: {}, notes: '', memos: {}, balances: {}, history: {}, cpp: {}, hideValues: false, activity: {}, mqd: 0, progress: {}, members: {}, updated: {}, backedUp: '', since: '', changed: '', game: { xp: 0, scans: 0, best: 0, weeks: [], badges: {}, confirmed: {}, log: [] }, goals: {}, vouchers: [] };
+    const s = { programs: null, view: 'detailed', cards: [], cardSeen: {}, renewals: {}, creditsUsed: {}, creditsUsedOn: {}, creditsLog: {}, creditsPartOn: {}, creditsSkipped: {}, customCredits: {}, bonuses: {}, notes: '', memos: {}, balances: {}, history: {}, cpp: {}, hideValues: false, activity: {}, mqd: 0, progress: {}, members: {}, updated: {}, backedUp: '', since: '', changed: '', game: { xp: 0, scans: 0, best: 0, weeks: [], badges: {}, confirmed: {}, log: [] }, goals: {}, vouchers: [] };
     if (raw.balances && typeof raw.balances === 'object') {
       for (const [id, v] of ownEntries(raw.balances)) if (isCount(v)) s.balances[id] = Math.min(Math.floor(v), MAX_VALUE); // no more than you can type
     }
@@ -3833,6 +4016,12 @@
     }
     if (raw.creditsUsedOn && typeof raw.creditsUsedOn === 'object') { // "card:credit" → the day it was marked used
       for (const [k, v] of ownEntries(raw.creditsUsedOn)) if (typeof v === 'string' && parseISODate(v)) s.creditsUsedOn[k] = v;
+    }
+    s.creditsLog = cleanCreditsLog(raw.creditsLog, s.creditsUsed); // the Credits page's ticks
+    if (raw.creditsPartOn && typeof raw.creditsPartOn === 'object') { // "card:credit" → the day a part-used amount was first typed
+      for (const [k, v] of ownEntries(raw.creditsPartOn)) {
+        if (typeof v === 'string' && parseISODate(v) && Object.values(s.creditsLog[k] || {}).some((n) => typeof n === 'number')) s.creditsPartOn[k] = v;
+      }
     }
     if (raw.creditsSkipped && typeof raw.creditsSkipped === 'object') { // credits you've chosen not to track
       for (const [k, v] of ownEntries(raw.creditsSkipped)) if (v === true) s.creditsSkipped[k] = true;
@@ -4055,7 +4244,7 @@
     return blankState(); // null programs → first-run setup
   }
   function blankState() {
-    return { programs: null, view: 'detailed', cards: [], cardSeen: {}, renewals: {}, creditsUsed: {}, creditsUsedOn: {}, creditsSkipped: {}, customCredits: {}, bonuses: {}, notes: '', memos: {}, balances: {}, history: {}, cpp: {}, hideValues: false, activity: {}, mqd: 0, progress: {}, members: {}, updated: {}, backedUp: '', since: '', changed: '', game: { xp: 0, scans: 0, best: 0, weeks: [], badges: {}, confirmed: {}, log: [] }, goals: {}, vouchers: [] };
+    return { programs: null, view: 'detailed', cards: [], cardSeen: {}, renewals: {}, creditsUsed: {}, creditsUsedOn: {}, creditsLog: {}, creditsPartOn: {}, creditsSkipped: {}, customCredits: {}, bonuses: {}, notes: '', memos: {}, balances: {}, history: {}, cpp: {}, hideValues: false, activity: {}, mqd: 0, progress: {}, members: {}, updated: {}, backedUp: '', since: '', changed: '', game: { xp: 0, scans: 0, best: 0, weeks: [], badges: {}, confirmed: {}, log: [] }, goals: {}, vouchers: [] };
   }
 
   const state = load();
@@ -4113,6 +4302,7 @@
     const next = load();
     for (const key of Object.keys(state)) delete state[key];
     Object.assign(state, next);
+    forgetCreditParts();
     editMode = false;
     // The whole tracker started over there: nothing open here belongs to it any more, as when switching person.
     if (!state.programs) leaveTracker();
@@ -9216,7 +9406,7 @@
         return h('li', null, h('button', { type: 'button', class: 'up-item', 'data-credits': '' },
           h('span', { class: 'v-ico', 'aria-hidden': 'true' }, svgIcon(ICON.card)),
           h('div', { class: 'up-body' },
-            h('div', { class: 'up-name' }, `Use your ${creditMoney(item.x.credit.amount)} ${item.x.credit.name}`),
+            h('div', { class: 'up-name' }, creditUseText(item.x)),
             h('div', { class: 'up-sub' }, `${item.x.card.name} · use by ${dateFmt.format(item.date)}`)),
           h('span', { class: 'tag warn' }, item.days === 0 ? 'Today' : plural(item.days, 'day'))));
       }
@@ -9437,10 +9627,11 @@
     return `${extras.join(extras.length > 2 ? ', ' : ' and ').replace(/, ([^,]*)$/, ', and $1')} ${statuses > 1 || extras.length > 1 ? 'depend' : 'depends'} on it`;
   }
 
-  // The next time a card's yearly date comes around (today counts); Feb 29 falls on Feb 28 in other years.
-  function nextRenewal(iso) {
+  // The next time a card's yearly date comes around (today counts, or `from` when given); Feb 29 falls on Feb 28 in
+  // other years.
+  function nextRenewal(iso, from = new Date()) {
     const d = parseISODate(iso);
-    const now = new Date();
+    const now = from;
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     let year = today.getFullYear();
     let date;
@@ -9641,27 +9832,73 @@
     const input = e.target.closest('[data-renewal]');
     if (!input) return;
     const id = input.dataset.renewal;
-    // A card-year credit marked used is used when it was used in the card year the new date gives: its mark moves
-    // to that period, even one the old date put in an earlier period. Used before that card year began, it's
-    // unused. A mark saved without the day it was made moves only when the new card year began no later than its
-    // period (so the use is inside it), and keeps that period's start as the earliest it can have been used, so
-    // undoing the change (or clearing the date) brings it back.
-    const marked = heldCredits().filter((x) => x.card.id === id && state.creditsUsed[x.key] && x.credit.resets === 'card' && x.credit.period === 'year');
-    if (parseISODate(input.value)) state.renewals[id] = input.value;
+    setRenewal(id, input.value);
+    $(`#cards-renewals [data-next="${CSS.escape(id)}"]`).textContent = renewalText(id); // input untouched while typing
+  });
+
+  // Where each card-year tick started, while the app is open: trying a few fee dates (or a date field changing as
+  // you type it) moves every tick from where it was first, not from where the last date put it, so going back to
+  // the first date puts each one back. Forgotten once the ticks change some other way, or another tracker comes in.
+  const cardYearTicks = new Map(); // "card:credit" → [{ v, mark, on, start, last, middle, at }]
+  const middleDay = (a, b) => new Date(a.getFullYear(), a.getMonth(), a.getDate() + Math.floor(Math.max(0, Math.round((b - a) / 864e5)) / 2));
+  const mergeTick = (a, b) => (a === true || b === true ? true : Math.max(a || 0, b));
+
+  // A card's annual-fee date typed or cleared (here or on the Credits page).
+  function setRenewal(id, value) {
+    // Card-year credits follow the new date. Each tick or part-used amount goes to the card year (or calendar year,
+    // once the date is cleared) holding the day it was used: the day kept with this period's mark or amount (the
+    // Credits page keeps its best guess, see setCreditBox), else the middle of an earlier period, else (a mark saved
+    // before days were kept) the period's start, so it's never claimed for a card year it may predate. Two landing
+    // in one card year: the later one takes the other card year its period overlaps, if that's free.
+    const credits = cardCreditDefs(id).filter((c) => c.resets === 'card' && c.period === 'year');
+    const oldNow = creditPeriod(id, 'year', 'card').key;
+    const today = todayISO();
+    const startOf = (key) => parseISODate(key.startsWith('A') ? key.slice(1) : `${key}-01-01`); // "A2025-11-15" or "2026"
+    const sameLog = (a, b) => JSON.stringify(Object.entries(a).sort()) === JSON.stringify(Object.entries(b).sort());
+    const windows = new Map();
+    for (const credit of credits) { // when each tick could have been used, from the old date's periods
+      const key = creditId(id, credit.id);
+      const log = { ...state.creditsLog[key] };
+      const mark = state.creditsUsed[key];
+      if (mark && startOf(mark) && log[mark] == null) log[mark] = true;
+      const kept = cardYearTicks.get(key);
+      const landed = {};
+      for (const t of kept || []) landed[t.at] = mergeTick(landed[t.at], t.v);
+      const keptMark = kept && (kept.find((t) => t.mark) || {});
+      if (kept && sameLog(landed, log) && keptMark.at === mark && keptMark.on === state.creditsUsedOn[key]) continue;
+      windows.set(key, Object.entries(log).map(([from, v]) => {
+        const start = startOf(from);
+        if (!start) return null;
+        const end = isoOf(from.startsWith('A') ? new Date(start.getFullYear() + 1, start.getMonth(), start.getDate() - 1) : new Date(start.getFullYear(), 11, 31));
+        const known = from === mark ? state.creditsUsedOn[key] : typeof v === 'number' && from === oldNow ? state.creditsPartOn[key] : null;
+        const last = parseISODate([end, today].sort()[0]);
+        const day = known && known >= isoOf(start) && known <= isoOf(last) ? parseISODate(known)
+          : from === mark ? start : middleDay(start, last);
+        return { v, mark: from === mark, on: from === mark ? state.creditsUsedOn[key] : undefined, start, last, middle: day };
+      }).filter(Boolean));
+    }
+    if (parseISODate(value)) state.renewals[id] = value;
     else delete state.renewals[id];
-    const startOf = (key) => (key.startsWith('A') ? key.slice(1) : `${key}-01-01`); // "A2025-11-15" or "2026"
-    for (const x of marked) {
-      const period = creditPeriod(id, x.credit.period, x.credit.resets);
-      const since = state.creditsUsedOn[x.key] || startOf(state.creditsUsed[x.key]);
-      if (!parseISODate(since) || since < startOf(period.key)) continue; // not a period this credit has
-      state.creditsUsed[x.key] = period.key;
-      state.creditsUsedOn[x.key] = since;
+    const yearAt = (date) => creditPeriod(id, 'year', 'card', date).key;
+    for (const credit of credits) {
+      const key = creditId(id, credit.id);
+      const ticks = (windows.get(key) || cardYearTicks.get(key) || []).sort((x, y) => x.middle - y.middle);
+      const moved = {};
+      for (const t of ticks) {
+        const ends = [yearAt(t.middle), yearAt(t.start), yearAt(t.last)];
+        t.at = ends.find((k) => moved[k] == null) || ends[0];
+        moved[t.at] = mergeTick(moved[t.at], t.v);
+        if (t.mark) state.creditsUsed[key] = t.at; // the main page's mark, on the card year on now or not
+      }
+      if (ticks.length) cardYearTicks.set(key, ticks);
+      else cardYearTicks.delete(key);
+      if (Object.keys(moved).length) state.creditsLog[key] = moved;
+      else delete state.creditsLog[key];
     }
     scheduleSave();
-    $(`#cards-renewals [data-next="${CSS.escape(id)}"]`).textContent = renewalText(id); // input untouched while typing
     renderUpcoming();
     renderCredits(); // card-year credits follow the fee date
-  });
+  }
 
   /* ---------- Welcome bonuses: editing, Card credits, marking earned, and "did it post?" ---------- */
 
@@ -9918,6 +10155,16 @@
     offer();
   }
 
+  // Puts a card on your list with the statuses it gives (and so its credits), as tapping it in Your cards does
+  // (also the Credits page's "Add your cards" chips). Returns what to tell you.
+  function addHeldCard(cardId) {
+    const card = CARD_BY_ID[cardId];
+    const added = applyCard(state, card.id);
+    if (!card.grants.length) return `Added ${card.name} — it doesn’t come with elite status`;
+    if (added) return `Added ${plural(added, 'status', 'statuses')} from ${card.name}`;
+    return `${card.name}’s statuses were already on your list`;
+  }
+
   $('#cards-picker').addEventListener('click', (e) => {
     const tile = e.target.closest('[data-card]');
     if (!tile) return;
@@ -9947,10 +10194,7 @@
         });
       }
     } else {
-      const added = applyCard(state, card.id);
-      if (!card.grants.length) message = `Added ${card.name} — it doesn’t come with elite status`;
-      else if (added) message = `Added ${plural(added, 'status', 'statuses')} from ${card.name}`;
-      else message = `${card.name}’s statuses were already on your list`;
+      message = addHeldCard(card.id);
     }
     tile.setAttribute('aria-pressed', String(state.cards.includes(card.id)));
     $('#cards-status').textContent = message;
@@ -10117,7 +10361,7 @@
     if (item.kind === 'status') return `- ${splitParts(item.group.tier).join(' · ')} (${nameOf(item.p)}) ${item.days < 0 ? 'expired' : 'expires'} ${date}, ${when}`;
     if (item.kind === 'voucher') return `- Voucher: ${item.v.name} ${item.days < 0 ? 'expired' : 'expires'} ${date}, ${when}`;
     if (item.kind === 'card') return `- ${item.card.name} annual fee renews ${date}, ${when}`;
-    if (item.kind === 'credit') return `- Use your ${creditMoney(item.x.credit.amount)} ${item.x.credit.name} (${item.x.card.name}) by ${date}`;
+    if (item.kind === 'credit') return `- ${creditUseText(item.x)} (${item.x.card.name}) by ${date}`;
     if (item.kind === 'points') return `- ${nameOf(item.p)} ${item.p.unit} ${item.days < 0 ? 'expired' : 'expire'} ${date} without activity, ${when}`;
     if (item.kind === 'bonus') {
       if (item.days >= 0) return `- ${item.card.name} bonus: ${bonusDueText(item.b, item.days)} by ${date}, ${when}`;
@@ -10205,7 +10449,7 @@
         const b = bonuses()[id] && cleanBonus(id, bonuses()[id]);
         return [`${CARD_BY_ID[id].name}${iso ? ` — annual fee around ${dateFmt.format(nextRenewal(iso))}` : ''}`,
           ...(b ? [`  - Welcome bonus: ${b.points ? `${fmt(b.points)} ${bonusUnit(b)}` : 'size not entered'}${b.spend ? ` for ${money(b.spend)} spend` : ''}${b.by ? ` by ${dateFmt.format(parseISODate(b.by))}` : ''} — ${bonusText(b)}`] : []),
-          ...credits.filter((x) => x.card.id === id).map((x) => `  - ${x.credit.name}: ${creditRate(x.credit)} — ${x.used ? 'used' : 'not used yet'} (${x.period.label})`)];
+          ...credits.filter((x) => x.card.id === id).map((x) => `  - ${x.credit.name}: ${creditRate(x.credit)} — ${creditStatusText(x)} (${x.period.label})`)];
       }), '');
     }
     if (state.notes.trim()) out.push('', 'NOTE', '', state.notes.trim(), '');
@@ -10271,6 +10515,7 @@
     const previous = clone(state);
     stopScanning();
     Object.assign(state, next);
+    forgetCreditParts();
     editMode = false;
     filter = 'all'; // a different tracker starts from All, as when switching person
     rollOver();
@@ -10289,6 +10534,7 @@
     saveNow();
     showToast(message, () => {
       Object.assign(state, previous);
+      forgetCreditParts();
       saveNow();
       renderAll();
     });
@@ -10597,6 +10843,7 @@
     const next = load();
     for (const key of Object.keys(state)) delete state[key];
     Object.assign(state, next);
+    forgetCreditParts();
     for (const open of document.querySelectorAll('dialog[open]')) open.close();
     editMode = false;
     filter = 'all';
@@ -10697,8 +10944,10 @@
   const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   const creditId = (cardId, id) => `${cardId}:${id}`;
   const creditMoney = (n) => (Number.isInteger(n) ? money(n) : `$${n.toFixed(2)}`); // $12.95 stays exact
+  const cents = (n) => Math.round(n * 100) / 100;
 
-  // The period a credit is in today: a key that changes when it resets, a label, and its last day.
+  // The period a credit is in on `date` (today unless given): a key that changes when it resets, a label, and its
+  // first and last days.
   function creditPeriod(cardId, period, resets, date = new Date()) {
     const y = date.getFullYear();
     const m = date.getMonth();
@@ -10706,42 +10955,57 @@
       // The card year runs from one fee date to the day before the next; the fee date itself starts a new one.
       const fee = parseISODate(state.renewals[cardId]);
       const onYear = (year) => new Date(year, fee.getMonth(), Math.min(fee.getDate(), new Date(year, fee.getMonth() + 1, 0).getDate()));
-      let next = nextRenewal(state.renewals[cardId]);
-      if (daysUntil(next) === 0) next = onYear(next.getFullYear() + 1);
+      let next = nextRenewal(state.renewals[cardId], date);
+      if (isoOf(next) === isoOf(date)) next = onYear(next.getFullYear() + 1);
       const start = onYear(next.getFullYear() - 1);
       const end = new Date(next.getFullYear(), next.getMonth(), next.getDate() - 1);
-      return { key: `A${isoOf(start)}`, label: `card year to ${dateFmt.format(end)}`, end };
+      return { key: `A${isoOf(start)}`, label: `card year to ${dateFmt.format(end)}`, start, end };
     }
-    if (period === 'month') return { key: `${y}-${m + 1}`, label: MONTH_NAMES[m], end: new Date(y, m + 1, 0) };
+    if (period === 'month') return { key: `${y}-${m + 1}`, label: MONTH_NAMES[m], start: new Date(y, m, 1), end: new Date(y, m + 1, 0) };
     if (period === 'quarter') {
       const q = Math.floor(m / 3);
-      return { key: `${y}-Q${q + 1}`, label: `${MONTH_NAMES[q * 3].slice(0, 3)}–${MONTH_NAMES[q * 3 + 2].slice(0, 3)}`, end: new Date(y, q * 3 + 3, 0) };
+      return { key: `${y}-Q${q + 1}`, label: `${MONTH_NAMES[q * 3].slice(0, 3)}–${MONTH_NAMES[q * 3 + 2].slice(0, 3)}`, start: new Date(y, q * 3, 1), end: new Date(y, q * 3 + 3, 0) };
     }
-    if (period === 'half') return m < 6 ? { key: `${y}-H1`, label: 'Jan–Jun', end: new Date(y, 6, 0) } : { key: `${y}-H2`, label: 'Jul–Dec', end: new Date(y, 12, 0) };
-    return { key: `${y}`, label: resets === 'card' ? `${y} (add your annual fee date for your card year)` : String(y), end: new Date(y, 12, 0) };
+    if (period === 'half') {
+      return m < 6 ? { key: `${y}-H1`, label: 'Jan–Jun', start: new Date(y, 0, 1), end: new Date(y, 6, 0) }
+        : { key: `${y}-H2`, label: 'Jul–Dec', start: new Date(y, 6, 1), end: new Date(y, 12, 0) };
+    }
+    return { key: `${y}`, label: resets === 'card' ? `${y} (add your annual fee date for your card year)` : String(y), start: new Date(y, 0, 1), end: new Date(y, 12, 0) };
   }
 
   // Every credit on the cards you hold: presets plus ones you've added, with where each stands this period.
-  // Credits offered for a limited time (select hotels in 2026; Peloton, Google Workspace and the IHG cards' airline
-  // credits through 2027; AAdvantage Executive's Grubhub through Aug 31, 2027), by card and credit id: the last day
-  // each counts.
+  // Credits offered for a limited time (select hotels and Delta Gold's Uber One in 2026; Sapphire Reserve's Lyft through
+  // Sep 30, 2027; StubHub, Peloton, Google Workspace and the IHG cards' airline credits through 2027; AAdvantage
+  // Executive's Grubhub through Aug 31, 2027), by card and credit id: the last day each counts.
   const CREDIT_LAST_DAY = { 'sapphire-reserve:select-hotels': '2026-12-31', 'sapphire-reserve-business:select-hotels': '2026-12-31',
+    'delta-gold:uber-one': '2026-12-31',
+    'sapphire-reserve:lyft': '2027-09-30', 'sapphire-reserve:stubhub': '2027-12-31',
     'sapphire-reserve:peloton': '2027-12-31', 'sapphire-reserve-business:google': '2027-12-31',
     'ihg-premier-select:airline': '2027-12-31', 'ihg-premier:airline': '2027-12-31', 'ihg-premier-business:airline': '2027-12-31',
     'aadvantage-executive:grubhub': '2027-08-31' };
+  // A card's credits as listed: presets (with their December amount, `dec`, kept apart) plus ones you've added.
+  function cardCreditDefs(cardId) {
+    const preset = (CREDITS[cardId] || []).map(([id, name, amount, period, resets, note, dec]) => ({ id, name, amount, period, resets, note, dec }));
+    const custom = (state.customCredits[cardId] || []).map(([id, name, amount, period]) => ({ id, name, amount, period, resets: 'calendar', custom: true }));
+    return [...preset, ...custom];
+  }
   function heldCredits() {
     return state.cards.flatMap((cardId) => {
       const card = CARD_BY_ID[cardId];
       const december = new Date().getMonth() === 11;
-      const preset = (CREDITS[cardId] || []).map(([id, name, amount, period, resets, note, dec]) =>
-        ({ id, name, amount: december && dec ? dec : amount, period, resets, note, december: Boolean(december && dec) }));
-      const custom = (state.customCredits[cardId] || []).map(([id, name, amount, period]) => ({ id, name, amount, period, resets: 'calendar', custom: true }));
-      return [...preset, ...custom].filter((credit) => !(isoOf(new Date()) > CREDIT_LAST_DAY[`${cardId}:${credit.id}`])).map((credit) => {
+      const credits = cardCreditDefs(cardId).map(({ id, name, amount, period, resets, note, dec, custom }) => (custom
+        ? { id, name, amount, period, resets, custom }
+        : { id, name, amount: december && dec ? dec : amount, period, resets, note, december: Boolean(december && dec) }));
+      return credits.filter((credit) => !(isoOf(new Date()) > CREDIT_LAST_DAY[`${cardId}:${credit.id}`])).map((credit) => {
         const key = creditId(cardId, credit.id);
         const period = creditPeriod(cardId, credit.period, credit.resets);
         // A card-year credit without your fee date has no known reset, so it never counts as "soon".
         const dated = !(credit.resets === 'card' && credit.period === 'year' && !state.renewals[cardId]);
-        return { card, credit, key, period, dated, used: state.creditsUsed[key] === period.key, skipped: !!state.creditsSkipped[key], days: daysUntil(period.end) };
+        // Part of it used, typed on the Credits page: the rest is what's left (all of it typed is used).
+        const part = (state.creditsLog[key] || {})[period.key];
+        const used = state.creditsUsed[key] === period.key || (typeof part === 'number' && part >= credit.amount);
+        const left = used ? 0 : cents(Math.max(0, credit.amount - (typeof part === 'number' ? part : 0)));
+        return { card, credit, key, period, dated, used, left, skipped: !!state.creditsSkipped[key], days: daysUntil(period.end) };
       });
     });
   }
@@ -10749,22 +11013,99 @@
   // "$15 a month", or "$35 this month" when December's bigger amount applies (it isn't every month).
   const creditRate = (credit) => `${creditMoney(credit.amount)} ${credit.december ? 'this month' : CREDIT_PERIODS[credit.period]}`;
 
+  // Records one period of a credit for the Credits page: used (true), part used (dollars) or nothing (null).
+  function logCredit(key, periodKey, value) {
+    const log = state.creditsLog[key] || (state.creditsLog[key] = {});
+    if (value === true || value > 0) log[periodKey] = value;
+    else delete log[periodKey];
+    if (!Object.keys(log).length) delete state.creditsLog[key];
+  }
+
+  // A box ticked, part used or cleared (on either page). For the period a credit is in now it's the main page's
+  // "Mark used" too, so the two pages and Coming up agree. A "Mark used" left from an earlier period goes when its
+  // box is cleared, or the next load would tick it again. A part-used amount keeps its day too (creditsPartOn), so
+  // a card-year amount moves with the fee date into the card year it was spent in.
+  function setCreditBox(key, periodKey, value, late = false) {
+    creditPartBefore.delete(key); // changed some other way than Mark used: unmarking can't bring back an old amount
+    cardYearTicks.delete(key); // and a fee-date change starts from the ticks as they are now
+    const before = (state.creditsLog[key] || {})[periodKey];
+    const marked = state.creditsUsed[key] === periodKey;
+    const since = marked ? state.creditsUsedOn[key] : typeof before === 'number' ? state.creditsPartOn[key] : null;
+    logCredit(key, periodKey, value);
+    if (value !== true && marked) { delete state.creditsUsed[key]; delete state.creditsUsedOn[key]; }
+    const [cardId, id] = key.split(/:(.*)/s);
+    const credit = cardCreditDefs(cardId).find((c) => c.id === id);
+    const period = credit && creditPeriod(cardId, credit.period, credit.resets);
+    if (!period || period.key !== periodKey) return;
+    // The day it was used, as best known: kept from before, today for the main page's Mark used, or for a card-year
+    // credit ticked on the Credits page (`late`: often after the fact) halfway from the card year's start to today,
+    // which is where a fee-date change looks to see which card year it was used in.
+    const guess = late && credit.resets === 'card' && credit.period === 'year';
+    const day = since && since >= isoOf(period.start) ? since : guess ? isoOf(middleDay(period.start, parseISODate(todayISO()))) : todayISO();
+    if (value === true) {
+      state.creditsUsed[key] = periodKey;
+      state.creditsUsedOn[key] = day;
+    }
+    if (value > 0 && value !== true) state.creditsPartOn[key] = day;
+    else delete state.creditsPartOn[key];
+  }
+
+  // Before "Mark used" on the main page covers a part-used amount: put back if it's unmarked straight after (this
+  // visit only). Any other change to that box forgets it, and so does another tracker coming in (switching person,
+  // a restored backup or its Undo, another window's save), so one person's amount never shows up on another's.
+  const creditPartBefore = new Map(); // "card:credit" → { period, value }
+  function forgetCreditParts() { creditPartBefore.clear(); cardYearTicks.clear(); }
+
+  // Coming up's line for a credit ending soon, with what's left of it: "Use your $20 Hotel credit".
+  const creditUseText = (x) => `Use your ${creditMoney(x.left)} ${x.credit.name}`;
+  // Where a credit stands this period, for the text summary: "used", "$120 of $300 used" or "not used yet".
+  const creditStatusText = (x) => (x.used ? 'used' : x.left < x.credit.amount
+    ? `${creditMoney(cents(x.credit.amount - x.left))} of ${creditMoney(x.credit.amount)} used` : 'not used yet');
+
+  // Stops tracking a credit, or removes one you added, with Undo (from the main page or the Credits page).
+  function skipCredit(key) {
+    const [cardId, id] = key.split(/:(.*)/s);
+    const credit = cardCreditDefs(cardId).find((c) => c.id === id);
+    if (credit && credit.custom) { // one you added: remove it
+      const list = state.customCredits[cardId];
+      const index = list.findIndex(([cid]) => cid === id);
+      const [removed] = list.splice(index, 1);
+      showToast(`Removed ${credit.name}`, () => { list.splice(index, 0, removed); scheduleSave(); renderCredits(); renderUpcoming(); });
+    } else {
+      state.creditsSkipped[key] = true;
+      showToast(`Not tracking ${credit ? credit.name : 'that credit'}`, () => { delete state.creditsSkipped[key]; scheduleSave(); renderCredits(); renderUpcoming(); });
+    }
+  }
+
+  // Dollars typed in a box: "$12.50", "12,50" (a comma for cents) or "1,200". 0 when it isn't an amount.
+  function parseDollars(text) {
+    let raw = String(text).trim().replace(/[$\s]/g, '');
+    raw = /,\d{1,2}$/.test(raw) && !raw.includes('.') ? raw.replace(',', '.') : raw.replace(/,/g, ''); // "12,50" vs "1,200"
+    return /^\d+(\.\d{1,2})?$/.test(raw) ? Math.round(Number(raw) * 100) / 100 : 0;
+  }
+
   let addingCreditFor = null; // card id whose "add a credit" form is open
   const creditOpen = new Map(); // card id → open/closed once you've tapped it (otherwise: open if something resets soon)
 
-  function renderCredits(...args) { keepFocus(() => renderCreditsNow(...args)); }
+  // The Card credits section, and the Credits page when it's open (they show the same marks).
+  function renderCredits(...args) {
+    keepFocus(() => {
+      renderCreditsNow(...args);
+      if (creditsPageOpen()) renderCreditsPageNow();
+    });
+  }
   function renderCreditsNow() {
     const section = $('#credits-section');
     section.hidden = !state.programs || !state.cards.length;
     if (section.hidden) return;
     const all = heldCredits();
     const groups = state.cards.map((cardId) => [CARD_BY_ID[cardId], all.filter((x) => x.card.id === cardId)]);
-    const unusedNow = all.filter((x) => !x.used && !x.skipped).reduce((sum, x) => sum + x.credit.amount, 0);
+    const unusedNow = all.filter((x) => !x.used && !x.skipped).reduce((sum, x) => sum + x.left, 0);
     $('#c-meta').textContent = all.length ? `${money(unusedNow)} unused right now` : '';
     $('#credits-list').replaceChildren(...groups.map(([card, list]) => {
       const shown = list.filter((x) => !x.skipped);
       const skipped = list.filter((x) => x.skipped);
-      const unused = shown.filter((x) => !x.used).reduce((sum, x) => sum + x.credit.amount, 0);
+      const unused = shown.filter((x) => !x.used).reduce((sum, x) => sum + x.left, 0);
       const soon = shown.filter((x) => !x.used && x.dated && x.credit.period !== 'month' && x.days <= 21).length;
       const bonus = bonusShort(card.id);
       const bonusDue = bonus && ['due-soon', 'overdue', 'met'].includes(bonusStatus(bonuses()[card.id]));
@@ -10819,19 +11160,17 @@
     if (d.creditUse) {
       const x = heldCredits().find((c) => c.key === d.creditUse);
       if (!x) return;
-      if (x.used) { delete state.creditsUsed[x.key]; delete state.creditsUsedOn[x.key]; }
-      else { state.creditsUsed[x.key] = x.period.key; state.creditsUsedOn[x.key] = todayISO(); }
-    } else if (d.creditSkip) {
-      const x = heldCredits().find((c) => c.key === d.creditSkip);
-      if (x && x.credit.custom) { // one you added: remove it
-        const list = state.customCredits[x.card.id];
-        const index = list.findIndex(([id]) => id === x.credit.id);
-        const [removed] = list.splice(index, 1);
-        showToast(`Removed ${x.credit.name}`, () => { list.splice(index, 0, removed); scheduleSave(); renderCredits(); renderUpcoming(); });
+      // The Credits page ticks this period's box too (or clears it, back to a part-used amount it covered).
+      const part = (state.creditsLog[x.key] || {})[x.period.key];
+      if (x.used) {
+        const prev = creditPartBefore.get(x.key);
+        setCreditBox(x.key, x.period.key, prev && prev.period === x.period.key ? prev.value : null);
       } else {
-        state.creditsSkipped[d.creditSkip] = true;
-        showToast(`Not tracking ${x ? x.credit.name : 'that credit'}`, () => { delete state.creditsSkipped[d.creditSkip]; scheduleSave(); renderCredits(); renderUpcoming(); });
+        setCreditBox(x.key, x.period.key, true);
+        if (typeof part === 'number') creditPartBefore.set(x.key, { period: x.period.key, value: part });
       }
+    } else if (d.creditSkip) {
+      skipCredit(d.creditSkip);
     } else if (d.creditUnskip) {
       delete state.creditsSkipped[d.creditUnskip];
     } else if (d.creditAdd) {
@@ -10852,9 +11191,7 @@
     if (!form) return;
     const cardId = form.dataset.creditForm;
     const name = str(form.elements.name.value, 60);
-    let raw = form.elements.amount.value.trim().replace(/[$\s]/g, '');
-    raw = /,\d{1,2}$/.test(raw) && !raw.includes('.') ? raw.replace(',', '.') : raw.replace(/,/g, ''); // "12,50" vs "1,200"
-    const amount = /^\d+(\.\d{1,2})?$/.test(raw) ? Math.round(Number(raw) * 100) / 100 : 0;
+    const amount = parseDollars(form.elements.amount.value);
     if (!name || !(amount > 0)) { form.elements[name ? 'amount' : 'name'].focus(); return; }
     const list = state.customCredits[cardId] || (state.customCredits[cardId] = []);
     list.push([`c${Math.random().toString(36).slice(2, 8)}`, name, Math.min(amount, 100000), form.elements.period.value]);
@@ -10862,6 +11199,429 @@
     scheduleSave();
     renderCredits();
     renderUpcoming();
+  });
+
+  /* ---------- Credits page ---------- */
+
+  // A full page (#credits) with a box for every month, quarter, half or year of each credit on your cards this year:
+  // tick it once you've used it, and see what's left, what ends soon and what you missed. Last year stays viewable.
+  const CREDITS_PAGE_CARDS = ['sapphire-reserve', 'amex-platinum', 'amex-gold', 'delta-gold', 'bilt-palladium']; // "Add your cards"
+  const CREDIT_SOON_DAYS = 14; // "Expiring soon" at the top
+  const PERIOD_STARTS = { month: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], quarter: [0, 3, 6, 9], half: [0, 6], year: [0] }; // months
+  const isCardYear = (cardId, credit) => credit.resets === 'card' && credit.period === 'year' && !!state.renewals[cardId];
+  const CREDIT_LATE_DAYS = 31; // last year's boxes can still be ticked this long after they end (December, in January)
+  // Credits that started partway through (select hotels in 2026): no boxes before this day, so last year doesn't list them.
+  const CREDIT_FIRST_DAY = { 'sapphire-reserve:select-hotels': '2026-01-01', 'sapphire-reserve-business:select-hotels': '2026-01-01' };
+  // Credits whose amount changed: [first day of the new amount, dollars before it]. Sapphire Reserve's DoorDash was $5.
+  const CREDIT_AMOUNT_BEFORE = { 'sapphire-reserve:doordash': ['2026-10-01', 5] };
+
+  // A credit's boxes for `year` (this year or last): each period's key, labels, dollars (December's bigger amount in
+  // December), what's recorded, and whether it's past, current or not started. A card-year credit with a fee date
+  // has a box for each card year that runs into `year` (one or two); each counts toward the calendar year that holds
+  // most of it (`counts`), so it's in one year's totals, not two. A credit that ends (CREDIT_LAST_DAY) stops at its
+  // last period, and one that started later (CREDIT_FIRST_DAY) begins at its first. Periods before an amount changed
+  // (CREDIT_AMOUNT_BEFORE) are worth the old amount. This year's boxes up to today's can be changed; last year's
+  // only while on or for a month after they end, so December can still be ticked in January.
+  function creditBoxes(cardId, credit, year) {
+    const key = creditId(cardId, credit.id);
+    const today = todayISO();
+    const thisYear = new Date().getFullYear();
+    const log = state.creditsLog[key] || {};
+    const last = CREDIT_LAST_DAY[key];
+    const first = CREDIT_FIRST_DAY[key];
+    const before = CREDIT_AMOUNT_BEFORE[key];
+    let periods;
+    if (isCardYear(cardId, credit)) {
+      const first = creditPeriod(cardId, 'year', 'card', new Date(year, 0, 1));
+      const last = creditPeriod(cardId, 'year', 'card', new Date(year, 11, 31));
+      periods = (first.key === last.key ? [first] : [first, last]).map((p) => {
+        const middle = new Date(p.start.getFullYear(), p.start.getMonth(), p.start.getDate() + 182);
+        return { ...p, short: `${dateFmt.format(p.start)} – ${dateFmt.format(p.end)}`, long: `the ${p.label}`, belongs: middle.getFullYear() };
+      });
+    } else {
+      periods = PERIOD_STARTS[credit.period].map((m) => {
+        const p = creditPeriod(cardId, credit.period, credit.resets, new Date(year, m, 1));
+        const q = `Q${m / 3 + 1}`;
+        const [short, long] = { month: [MONTH_NAMES[m].slice(0, 3), MONTH_NAMES[m]], quarter: [q, `${q} (${p.label})`], half: [p.label, p.label] }[credit.period] || [String(year), String(year)];
+        return { ...p, short, long };
+      });
+    }
+    return periods.filter((p) => !(last && isoOf(p.start) > last) && !(first && isoOf(p.end) < first)).map((p) => {
+      const amount = before && isoOf(p.start) < before[0] ? before[1]
+        : credit.period === 'month' && p.start.getMonth() === 11 && credit.dec ? credit.dec : credit.amount;
+      const value = log[p.key];
+      const used = value === true ? amount : typeof value === 'number' ? Math.min(value, amount) : 0;
+      const phase = isoOf(p.end) < today ? 'past' : isoOf(p.start) > today ? 'future' : 'current';
+      const belongs = p.belongs || year;
+      return { key: p.key, short: p.short, long: p.long, start: p.start, end: p.end, amount, value: value ?? null, used, full: used >= amount,
+        phase, days: phase === 'current' ? daysUntil(p.end) : null, counts: belongs === year, belongs,
+        editable: phase !== 'future' && (year === thisYear || daysUntil(p.end) >= -CREDIT_LATE_DAYS) };
+    });
+  }
+
+  // Everything the Credits page shows for this year (or last, with `past`): per card, its credits and totals, and
+  // across them what's used, still available now, missed, and ending within two weeks. `filter`: 'all', 'month'
+  // (what's left this period ends this month) or 'unused' (something left this period). "Add your cards" offers
+  // the five cards when you hold none of them, or all along with `keepSuggest` (once shown, it stays while the page
+  // is open, so each can be tapped in turn). Rows in `keep` (shown since the filter was picked) stay under it, so
+  // one you just ticked doesn't vanish under your finger.
+  function creditsPageModel({ past = false, filter = 'all', keepSuggest = false, keep = null } = {}) {
+    const now = new Date();
+    const year = now.getFullYear() - (past ? 1 : 0);
+    const cards = state.cards.map((cardId) => {
+      const rows = cardCreditDefs(cardId).map((credit) => {
+        const key = creditId(cardId, credit.id);
+        const boxes = creditBoxes(cardId, credit, year);
+        const current = past ? null : boxes.find((b) => b.phase === 'current') || null;
+        return { key, cardId, credit, boxes, current, left: current ? cents(current.amount - current.used) : 0,
+          // A card-year credit without your fee date has no known reset, so it never counts as ending soon.
+          dated: !(credit.resets === 'card' && credit.period === 'year' && !state.renewals[cardId]),
+          cardYear: isCardYear(cardId, credit), last: CREDIT_LAST_DAY[key] || null, skipped: !!state.creditsSkipped[key] };
+      }).filter((row) => row.boxes.length);
+      const tracked = rows.filter((row) => !row.skipped);
+      const sum = (f) => cents(tracked.reduce((n, row) => n + row.boxes.reduce((m, b) => m + (b.counts ? f(b) : 0), 0), 0));
+      return { card: CARD_BY_ID[cardId], rows: tracked, skipped: rows.filter((row) => row.skipped),
+        used: sum((b) => b.used), total: sum((b) => b.amount), missed: sum((b) => (b.phase === 'past' ? b.amount - b.used : 0)),
+        feeDate: rows.some((row) => row.credit.resets === 'card' && row.credit.period === 'year') };
+    }).filter((c) => c.rows.length || c.skipped.length);
+    const all = cards.flatMap((c) => c.rows);
+    const shows = {
+      month: (row) => row.left > 0 && row.current.end.getMonth() === now.getMonth() && row.current.end.getFullYear() === now.getFullYear(),
+      unused: (row) => row.left > 0,
+    };
+    return {
+      year, past, filter,
+      cards: cards.map((c) => ({ ...c, shown: shows[filter] && !past ? c.rows.filter((row) => shows[filter](row) || (keep && keep.has(row.key))) : c.rows })), // last year: no filters
+      used: cents(cards.reduce((n, c) => n + c.used, 0)),
+      available: cents(all.reduce((n, row) => n + row.left, 0)),
+      missed: cents(cards.reduce((n, c) => n + c.missed, 0)),
+      soon: all.filter((row) => row.left > 0 && row.dated && row.current.days <= CREDIT_SOON_DAYS)
+        .map((row) => ({ key: row.key, card: CARD_BY_ID[row.cardId], name: row.credit.name, amount: row.left, end: row.current.end, days: row.current.days }))
+        .sort((a, b) => a.days - b.days),
+      suggest: keepSuggest || !CREDITS_PAGE_CARDS.some((id) => state.cards.includes(id)) ? CREDITS_PAGE_CARDS : [],
+    };
+  }
+
+  const creditsPage = $('#credits-page');
+  const trackerView = $('main'); // the tracker itself, hidden while the Credits page is open
+  const appTitle = document.title;
+  let creditsPast = false; // showing last year
+  let creditsFilter = 'all';
+  let creditsPushed = false; // opened from inside the app, so ← Tracker is the browser's Back
+  let creditsScroll = 0; // where the tracker was scrolled to
+  let creditsOpener = null; // the button that opened the page, focused again when it closes
+  let creditsSuggesting = false; // "Add your cards" was shown since the page opened, so it stays until it closes
+  let creditsShown = new Set(); // rows shown since the filter was picked
+
+  function creditsPageOpen() { return !$('#credits-page').hidden; }
+
+  function showCreditsPage(show) {
+    if (show === creditsPageOpen()) return;
+    if (show) {
+      creditsScroll = scrollY;
+      const from = document.activeElement;
+      creditsOpener = from && from !== document.body && !creditsPage.contains(from) ? from : null;
+      creditsPast = false;
+      creditsSuggesting = false;
+      creditsShown = new Set();
+      trackerView.hidden = true;
+      creditsPage.hidden = false;
+      document.title = `Credits · ${appTitle}`;
+      renderCreditsPage();
+      scrollTo(0, 0);
+      const title = $('#cp-title');
+      if (title) title.focus({ preventScroll: true });
+    } else {
+      creditsPage.hidden = true;
+      trackerView.hidden = false;
+      document.title = appTitle;
+      scrollTo(0, creditsScroll);
+      // Focus back where you were (from a link: the header's Credits button), not lost on the hidden page.
+      const back = [creditsOpener, $('#credits-btn')].find((el) => el && el.isConnected && !el.hidden && !el.closest('[hidden]'));
+      creditsOpener = null;
+      if (back) back.focus({ preventScroll: true });
+    }
+  }
+  function openCreditsPage() {
+    if (location.hash !== '#credits') {
+      history.pushState(null, '', '#credits');
+      creditsPushed = true;
+    }
+    showCreditsPage(true);
+  }
+  function closeCreditsPage() {
+    if (creditsPushed && location.hash === '#credits') { history.back(); return; } // closes it when the hash goes
+    if (location.hash === '#credits') history.replaceState(null, '', location.pathname + location.search);
+    syncCreditsRoute();
+  }
+  // The page follows the address: #credits opens it (a link, a reload, Forward), anything else closes it (Back).
+  function syncCreditsRoute() {
+    if (location.hash !== '#credits') creditsPushed = false;
+    showCreditsPage(location.hash === '#credits');
+  }
+  addEventListener('popstate', syncCreditsRoute);
+  addEventListener('hashchange', syncCreditsRoute);
+  $('#credits-btn').addEventListener('click', openCreditsPage);
+  $('#credits-open').addEventListener('click', openCreditsPage);
+
+  function renderCreditsPage() { if (creditsPageOpen()) keepFocus(renderCreditsPageNow); }
+
+  const daysLeftText = (days) => (days === 0 ? 'last day today' : days === 1 ? '1 day left' : `${days} days left`);
+  // "ends Nov 30 · 30 days left", or "last day today"
+  const endsText = (end, days) => (days === 0 ? 'last day today' : `ends ${monthDayFmt.format(end)} · ${daysLeftText(days)}`);
+
+  function renderCreditsPageNow() {
+    // A date or amount field you're in stays the same element, so typing isn't interrupted by the redraw.
+    const typing = document.activeElement && creditsPage.contains(document.activeElement) && document.activeElement.matches('input[data-cp-renewal], input[data-cp-amt]')
+      ? document.activeElement : null;
+    const same = (attrs) => (typing && Object.entries(attrs).every(([k, v]) => typing.getAttribute(k) === v) ? typing : null);
+    const thisYear = new Date().getFullYear();
+    // The year switch only once there's a card with credits to look back on.
+    const topBar = (years) => h('div', { class: 'cp-top' },
+      h('button', { type: 'button', class: 'pill-btn cp-back', 'data-cp-back': '' }, '← Tracker'),
+      h('h1', { id: 'cp-title', tabindex: '-1' }, 'Credits'),
+      years ? h('div', { class: 'view-pick cp-year', role: 'group', 'aria-label': 'Year' },
+        h('button', { type: 'button', 'data-cp-year': 'now', 'aria-pressed': String(!creditsPast) }, String(thisYear)),
+        h('button', { type: 'button', 'data-cp-year': 'past', 'aria-pressed': String(creditsPast) }, String(thisYear - 1))) : null);
+    if (!state.programs) {
+      creditsPage.replaceChildren(topBar(false), h('div', { class: 'card cp-panel' }, h('p', null, 'Set up your tracker first, then add your cards to see their credits here.')));
+      return;
+    }
+    if (!CREDITS_PAGE_CARDS.some((id) => state.cards.includes(id))) creditsSuggesting = true;
+    const m = creditsPageModel({ past: creditsPast, filter: creditsFilter, keepSuggest: creditsSuggesting, keep: creditsShown });
+    for (const c of m.cards) for (const row of c.shown) creditsShown.add(row.key);
+    const top = topBar(m.cards.length > 0);
+    // "Not tracking" lists you had open stay open after the redraw (e.g. after Track again).
+    const openSkipped = new Set([...creditsPage.querySelectorAll('[data-cp-card] details[open]')].map((el) => el.closest('[data-cp-card]').dataset.cpCard));
+    const tile = (value, label, sub, cls = '') => h('div', { class: `cp-tile ${cls}` }, h('span', { class: 'cp-tile-v' }, value), h('span', { class: 'cp-tile-l' }, label), sub ? h('small', null, sub) : null);
+    const summary = h('div', { class: 'cp-summary' },
+      // Last year: just what's ticked (much of it was never recorded here, so nothing reads as missed).
+      // This year: no "missed" dollars either (months before you started ticking aren't money lost).
+      tile(money(m.used), m.past ? `used in ${m.year}` : 'used this year', null, m.past ? 'cp-tile-solo' : ''),
+      m.past ? null : tile(money(m.available), 'still available now'),
+      m.past ? null : h('div', { class: 'cp-tile cp-soon' },
+        h('span', { class: 'cp-tile-l' }, 'Expiring soon'),
+        m.soon.length ? h('ul', null, m.soon.map((s) => h('li', null, h('button', { type: 'button', 'data-cp-jump': s.key },
+          h('span', { class: 'cp-soon-name' }, `${s.card.name} · ${s.name}`),
+          h('span', { class: `cp-soon-when${s.days <= 3 ? ' warn' : ''}` }, `${creditMoney(s.amount)} · ${endsText(s.end, s.days)}`)))))
+          : h('small', null, 'Nothing ends in the next two weeks')));
+    const add = m.suggest.length ? h('div', { class: 'card cp-panel cp-add' },
+      h('h2', null, 'Add your cards'),
+      h('p', { class: 'fine' }, 'Tap the cards you have to see their credits. Each goes on Your cards with its statuses, as if you picked it there.'),
+      h('div', { class: 'cp-chips' }, m.suggest.map((id) => (state.cards.includes(id)
+        ? h('button', { type: 'button', class: 'cert-chip cp-added', 'data-cp-add-card': id, 'aria-disabled': 'true' }, `✓ ${CARD_BY_ID[id].name} added`)
+        : h('button', { type: 'button', class: 'cert-chip', 'data-cp-add-card': id }, `+ ${CARD_BY_ID[id].name}`)))),
+      h('button', { type: 'button', class: 'link', 'data-cp-choose': '' }, 'Other cards: Choose cards')) : null;
+    const filters = m.past ? null : h('div', { class: 'filters cp-filters', role: 'group', 'aria-label': 'Show credits' },
+      [['all', 'All'], ['month', 'Due this month'], ['unused', 'Not used yet']].map(([key, label]) =>
+        h('button', { type: 'button', class: 'filter', 'data-cp-filter': key, 'aria-pressed': String(m.filter === key) }, label)));
+
+    const creditRow = (row) => {
+      const { credit, current } = row;
+      const rate = [`${creditMoney(credit.amount)} ${CREDIT_PERIODS[credit.period]}`, credit.dec ? `${creditMoney(credit.dec)} in December` : null,
+        row.last ? `through ${dateFmt.format(parseISODate(row.last))}` : null].filter(Boolean).join(' · ');
+      const note = (credit.note || '').replace(/^\$[\d.]+ in December(; )?/, ''); // already in the rate
+      let now = null;
+      if (current) {
+        now = current.full ? `✓ Used for ${current.long}`
+          : current.used ? `${creditMoney(current.amount - current.used)} left for ${current.long} · ${daysLeftText(current.days)}`
+            : `${current.long}: ${daysLeftText(current.days)}`;
+      }
+      const partial = current && current.editable && (credit.period === 'year' || credit.period === 'half') && credit.amount >= 50;
+      let amountInput = null;
+      if (partial) {
+        const attrs = { 'data-cp-amt': row.key, 'data-cp-period': current.key };
+        amountInput = same(attrs) || h('input', { type: 'text', inputmode: 'decimal', class: 'cp-amt-input', ...attrs, placeholder: '0', autocomplete: 'off',
+          'aria-label': `${credit.name}: dollars used so far for ${current.long}` });
+        if (amountInput !== typing) amountInput.value = current.used ? String(current.used) : '';
+      }
+      return h('li', { class: 'cp-row', 'data-cp-row': row.key, tabindex: '-1' },
+        h('div', { class: 'cp-row-head' },
+          h('div', { class: 'cp-row-text' },
+            h('span', { class: 'cp-name' }, credit.name),
+            h('small', null, rate),
+            note ? h('small', { class: 'cp-note' }, note) : null,
+            !row.dated && !m.past ? h('small', { class: 'cp-note' }, 'Counts by calendar year until you add the annual fee date above') : null,
+            now ? h('small', { class: current.full ? 'cp-now done' : current.days <= CREDIT_SOON_DAYS && row.dated ? 'cp-now warn' : 'cp-now' }, now) : null),
+          m.past ? null : h('button', { type: 'button', class: 'icon-btn cp-skip', 'data-cp-skip': row.key,
+            'aria-label': `${credit.custom ? 'Remove' : 'Stop tracking'} ${credit.name}`, title: credit.custom ? 'Remove' : 'Don’t track this one' }, svgIcon(ICON.x))),
+        h('div', { class: `cp-boxes cp-${row.cardYear ? 'cardyear' : credit.period}` }, row.boxes.map((b) => {
+          // Last year's unticked ones weren't recorded, not missed; nor is a card year that counts toward last year.
+          const missed = !m.past && b.phase === 'past' && !b.full && b.counts;
+          const phase = m.past && b.phase === 'current' ? 'past' : b.phase; // a card year still on, seen from last year
+          const label = [credit.name, b.long, creditMoney(b.amount), missed ? (b.used ? `${creditMoney(b.used)} used` : 'missed') : null,
+            !b.full && b.used && !missed ? `${creditMoney(b.used)} used` : null, b.phase === 'future' ? 'not started yet' : null,
+            b.counts ? null : `counts toward ${b.belongs}`].filter(Boolean).join(', ');
+          const cls = ['cp-box', `cp-${phase}`, b.full ? 'on' : b.used ? 'part' : missed ? 'cp-missed' : null,
+            !b.editable && b.phase !== 'future' ? 'cp-locked' : null].filter(Boolean).join(' '); // view-only: no pointer
+          return h('label', { class: cls },
+            h('input', { type: 'checkbox', class: 'cp-check', 'data-cp-box': row.key, 'data-cp-period': b.key, 'aria-label': label,
+              checked: b.full ? '' : null, disabled: b.editable ? null : '' }),
+            h('span', { class: 'cp-box-l', 'aria-hidden': 'true' }, b.short),
+            b.phase === 'current' && !m.past ? h('span', { class: 'cp-box-d', 'aria-hidden': 'true' }, b.days === 0 ? 'today' : `${b.days}d`) : null,
+            b.counts ? null : h('span', { class: 'cp-box-y', 'aria-hidden': 'true' }, `counts toward ${b.belongs}`));
+        })),
+        partial ? h('label', { class: 'cp-amt' }, 'Used $', amountInput, ` of ${creditMoney(current.amount)} so far`) : null);
+    };
+
+    const cardSection = (c) => {
+      const pct = c.total ? Math.min(100, Math.round((c.used / c.total) * 100)) : 0;
+      let fee = null;
+      if (c.feeDate && !m.past) {
+        const attrs = { 'data-cp-renewal': c.card.id };
+        const input = same(attrs) || h('input', { type: 'date', class: 'exp-input', ...attrs, 'aria-label': `${c.card.name} annual fee date` });
+        if (input !== typing) input.value = state.renewals[c.card.id] || '';
+        fee = h('label', { class: 'cp-fee' }, h('span', null, 'Annual fee date', h('small', null, 'Card-year credits reset on it')), input);
+      }
+      // Last year: only what was ticked (the list of credits is this year's, so "of $Y" and the bar would be off).
+      const sum = m.past ? (c.rows.length ? `${money(c.used)} used in ${m.year}` : null) : c.total ? `${money(c.used)} used of ${money(c.total)} this year` : null;
+      return h('section', { class: 'card cp-card', 'data-cp-card': c.card.id, 'aria-label': c.card.name, tabindex: '-1' }, // focus lands here when nothing nearer is left
+        h('div', { class: 'cp-card-head' },
+          h('span', { class: `cp-swatch tone-${c.card.tone}`, 'aria-hidden': 'true' }),
+          h('h2', null, c.card.label || c.card.name),
+          sum ? h('span', { class: 'cp-card-sum' }, sum) : null),
+        c.total && !m.past ? h('div', { class: 'cp-bar', role: 'progressbar', 'aria-label': `${c.card.name} credits used this year`, 'aria-valuemin': '0',
+          'aria-valuemax': String(c.total), 'aria-valuenow': String(c.used) }, h('i', { style: `width:${pct}%` })) : null, // nothing tracked: no $0 of $0
+        fee,
+        c.shown.length ? h('ul', { class: 'cp-rows' }, c.shown.map(creditRow))
+          : h('p', { class: 'cp-none' }, c.rows.length ? (m.filter === 'month' ? 'Nothing due this month.' : 'Everything’s used for now.') : 'Every credit here is hidden.'),
+        c.skipped.length ? h('details', { class: 'cp-skipped', open: openSkipped.has(c.card.id) ? '' : null }, h('summary', null, `Not tracking (${c.skipped.length})`),
+          h('ul', null, c.skipped.map((row) => h('li', null, h('span', null, row.credit.name),
+            h('button', { type: 'button', class: 'link', 'data-cp-unskip': row.key }, 'Track again'))))) : null);
+    };
+
+    const none = !m.cards.length && !m.suggest.length
+      ? h('div', { class: 'card cp-panel' }, h('p', null, 'None of your cards list statement credits. '), h('button', { type: 'button', class: 'link', 'data-cp-choose': '' }, 'Choose cards')) : null;
+    // Under the year toggle on last year: it's for looking back (December stays tickable through January).
+    const late = m.past && m.cards.some((c) => c.rows.some((row) => row.boxes.some((b) => b.editable)));
+    const pastNote = m.past ? h('p', { class: 'fine cp-past-note' }, late ? `Viewing ${m.year}: you can still tick what’s on now or ended in the last month` : `Viewing ${m.year} (read-only)`) : null;
+    const fine = h('p', { class: 'fine cp-fine' }, `Credits as of ${CREDITS_AS_OF}. Most need enrolling and only apply at the listed merchants — check your card’s benefits page. Tick a month you used even after it’s over. Last year is view-only, except what ended in the last month.`);
+    // No card with credits yet: just Add your cards (no $0 totals, filters or year switch). Otherwise the panel
+    // stays above the totals while it's shown, so the cards you just added are right under it.
+    creditsPage.replaceChildren(...(m.cards.length
+      ? [top, pastNote, add, summary, none, filters, h('div', { class: 'cp-cards' }, m.cards.map(cardSection)), fine]
+      : [top, add, none, fine]).filter(Boolean));
+  }
+
+  // Tapped under Expiring soon: its row, scrolled to and highlighted, with its box ready for a tap or keypress.
+  function jumpToCredit(key) {
+    const find = () => creditsPage.querySelector(`[data-cp-row="${CSS.escape(key)}"]`);
+    if (!find() && creditsFilter !== 'all') { creditsFilter = 'all'; creditsShown = new Set(); renderCreditsPage(); }
+    const row = find();
+    if (!row) return;
+    jumpTo(row, 'center');
+    row.classList.remove('cp-flash');
+    void row.offsetWidth; // restart the highlight
+    row.classList.add('cp-flash');
+    const box = row.querySelector('.cp-current input');
+    if (box) box.focus({ preventScroll: true });
+  }
+
+  // An "Add your cards" chip: the card goes on as in Your cards, with Undo.
+  function addCardFromPage(cardId) {
+    if (!state.programs || !CARD_BY_ID[cardId] || state.cards.includes(cardId)) return;
+    const who = people.active;
+    const message = addHeldCard(cardId);
+    const redraw = () => { scheduleSave(); renderPrograms(); renderUpcoming(); renderCredits(); renderCertSuggest(); };
+    redraw();
+    showToast(message, () => {
+      if (who !== people.active || !state.cards.includes(cardId)) return;
+      removeCard(state, cardId);
+      redraw();
+    });
+  }
+
+  creditsPage.addEventListener('click', (e) => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    const d = b.dataset;
+    if ('cpBack' in d) closeCreditsPage();
+    else if (d.cpYear) { creditsPast = d.cpYear === 'past'; creditsShown = new Set(); renderCreditsPage(); }
+    else if (d.cpFilter) { creditsFilter = d.cpFilter; creditsShown = new Set(); renderCreditsPage(); }
+    else if (d.cpJump) jumpToCredit(d.cpJump);
+    else if (d.cpAddCard) addCardFromPage(d.cpAddCard);
+    else if ('cpChoose' in d) chooseCardsFromPage();
+    else if (d.cpSkip || d.cpUnskip) {
+      // The button goes with the redraw, so focus moves on: after Stop tracking to the next row's ✕ (or the one
+      // before, or the card's "Not tracking"); after Track again to that credit's box for now.
+      const key = d.cpSkip || d.cpUnskip;
+      const card = `[data-cp-card="${CSS.escape(key.split(':')[0])}"]`;
+      const rows = [...creditsPage.querySelectorAll(`${card} [data-cp-row]`)].map((r) => r.dataset.cpRow);
+      const at = rows.indexOf(key);
+      const near = at < 0 ? null : rows[at + 1] || rows[at - 1];
+      if (d.cpSkip) skipCredit(d.cpSkip);
+      else delete state.creditsSkipped[d.cpUnskip];
+      scheduleSave();
+      renderCredits();
+      renderUpcoming();
+      const keyed = (k) => `[data-cp-row="${CSS.escape(k)}"]`;
+      const to = (d.cpSkip
+        ? [near && `${keyed(near)} [data-cp-skip]`, `${card} .cp-skipped summary`]
+        : [`${keyed(key)} .cp-current input`, `${keyed(key)} input`, keyed(key), `${card} .cp-skipped summary`])
+        .concat(card).filter(Boolean).map((sel) => creditsPage.querySelector(sel)).find(Boolean);
+      if (to && !(document.activeElement && document.activeElement !== document.body && document.activeElement.isConnected)) to.focus({ preventScroll: true });
+    }
+  });
+
+  // Choose cards from the page: once the sheet closes, focus goes back to the link (the page may have been redrawn
+  // with a card you picked, so the sheet's own return target is gone).
+  function chooseCardsFromPage() {
+    openCards();
+    $('#cards-sheet').addEventListener('close', () => {
+      const now = document.activeElement;
+      if (!creditsPageOpen() || (now && now !== document.body && now.isConnected)) return;
+      const link = creditsPage.querySelector('[data-cp-choose]') || $('#cp-title');
+      if (link) link.focus({ preventScroll: true });
+    }, { once: true });
+  }
+
+  creditsPage.addEventListener('change', (e) => {
+    const t = e.target;
+    const d = t.dataset || {};
+    if (d.cpRenewal) { setRenewal(d.cpRenewal, t.value); return; }
+    const key = d.cpBox || d.cpAmt;
+    if (!key) return;
+    const [cardId, id] = key.split(/:(.*)/s);
+    const credit = state.cards.includes(cardId) && cardCreditDefs(cardId).find((c) => c.id === id);
+    const thisYear = new Date().getFullYear(); // the box as this year or last shows it (December, ticked in January)
+    const box = credit && [thisYear, thisYear - 1].map((y) => creditBoxes(cardId, credit, y).find((x) => x.key === d.cpPeriod)).find((x) => x && x.editable);
+    if (!box) { renderCreditsPage(); return; } // not started yet, view-only, or the page was out of date
+    // Undo puts back exactly what was there: the box, the main page's mark and the days they were made.
+    const kept = (o) => (Object.hasOwn(o, key) ? o[key] : undefined);
+    const before = { value: box.value, used: kept(state.creditsUsed), on: kept(state.creditsUsedOn), part: kept(state.creditsPartOn) };
+    const putBack = (o, v) => { if (v === undefined) delete o[key]; else o[key] = v; };
+    let value;
+    if (d.cpBox) {
+      // Unticked straight after ticking over a part-used amount: back to that amount, as on the main page.
+      const prev = creditPartBefore.get(key);
+      value = t.checked ? true : prev && prev.period === box.key && before.value === true ? prev.value : null;
+    } else {
+      const n = parseDollars(t.value);
+      const typed = t.value.trim();
+      if (typed && !(n > 0) && !/^\$?0*(\.0*)?$/.test(typed)) { // not an amount ("1200o", "-20"): keep what's there
+        t.value = box.used ? String(box.used) : '';
+        showToast(`${typed.length > 12 ? 'That' : `“${typed}”`} isn’t an amount, so it’s still ${creditMoney(box.used)} used. Type dollars, like 120`);
+        return;
+      }
+      value = !(n > 0) ? null : n >= box.amount ? true : n;
+    }
+    setCreditBox(key, box.key, value, true);
+    if (d.cpBox && value === true && typeof before.value === 'number') creditPartBefore.set(key, { period: box.key, value: before.value });
+    scheduleSave();
+    renderCredits();
+    renderUpcoming();
+    if (before.value != null && (value == null || (before.value === true && value !== true))) { // unticked or emptied: Undo puts it back
+      showToast(`${d.cpBox ? 'Unchecked' : 'Cleared'} ${credit.name} for ${box.long}${value ? ` (${creditMoney(value)} used)` : ''}`, () => {
+        logCredit(key, box.key, before.value);
+        if (before.value === true && typeof value === 'number') creditPartBefore.set(key, { period: box.key, value }); // untick again: the amount again
+        putBack(state.creditsUsed, before.used);
+        putBack(state.creditsUsedOn, before.on);
+        putBack(state.creditsPartOn, before.part);
+        scheduleSave();
+        renderCredits();
+        renderUpcoming();
+      });
+    }
   });
 
   /* ---------- Certificates from your cards (free nights, companion fares) ---------- */
@@ -10969,8 +11729,12 @@
     renderNews();
     renderPeople();
     syncValuesPick();
-    if (!setup) renderCredits();
-    else $('#credits-section').hidden = true;
+    $('#credits-btn').hidden = setup;
+    if (!setup) renderCredits(); // the Credits page too, when it's open
+    else {
+      $('#credits-section').hidden = true;
+      renderCreditsPage();
+    }
     if (setup) {
       renderSetup();
     } else {
@@ -11028,6 +11792,7 @@
   renderToday();
   renderSafely(rollOver);
   receiveFromLink();
+  syncCreditsRoute(); // opened at …/#credits
 
   if (IS_STANDALONE && navigator.storage && navigator.storage.persist) {
     navigator.storage.persist().catch(() => {});
