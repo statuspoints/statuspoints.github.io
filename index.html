@@ -1754,8 +1754,10 @@
   /* The Credits page on wide screens: totals across the top, cards two or three across. */
   @media (min-width: 1000px) {
     main.cpage { display: block; max-width: 1400px; }
-    .cp-summary { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 2fr); }
-    .cp-soon { grid-column: auto; }
+    /* The two totals stacked beside Expiring soon, so they fill its height rather than leave a gap under them */
+    .cp-summary { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); align-items: stretch; }
+    .cp-soon { grid-column: 2; grid-row: 1 / span 2; }
+    .cp-tile:not(.cp-soon) { align-content: center; }
     /* Columns rather than grid rows, so a short card doesn't leave a gap under it beside a long one */
     .cp-cards { display: block; columns: 420px 3; column-gap: 14px; }
     .cp-card { break-inside: avoid; margin-bottom: 14px; }
