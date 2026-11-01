@@ -5299,6 +5299,8 @@
       // Another language's units and counts in English, so the rules below read them.
       .replace(SCAN_ABROAD, (word) => SCAN_ABROAD_WORDS.find(([re]) => re.test(word))[1])
       .replace(/\bpremier[ \t]*[il1|!][ \t]*k\b/gi, 'Premier 1K')
+      // Captions at small sizes, as the reader garbles them.
+      .replace(/\bloyaty\b/gi, 'Loyalty').replace(/\bqualifying rights\b/gi, 'Qualifying nights').replace(/\bqualifying pants\b/gi, 'Qualifying points')
       // A card's masked last four ("(...4417)", "•••• 1009", "xxxx7731") read as "ending 4417", never a balance.
       .replace(/(?:(?:[•●*]{2,}|\b[xX]{2,})[•●*xX \t]*|(?:\.{2,}|…)[•●*xX]*)(\d{4})(?![\d,])/g, 'ending $1')
       // A thousands comma misread as a mark ("128 »400", "57’900"): a comma again.
@@ -5821,7 +5823,7 @@
 
   // OCR slips inside a level's name, mended only to match the level: a capital I for an l ("SiIver", "PIatinum",
   // "GIobalist"), a lone l or I for a 1 ("Mosaic l"), an O for a 0 beside a digit ("5OK").
-  const levelSlips = (s) => s.replace(/([A-Za-z])I(?=[a-z])/g, '$1l').replace(/(^|\s)[lI](?=\s|$)/g, '$11').replace(/\b([\dO]*\d[\dO]*)(?=K\b)/gi, (n) => n.replace(/O/gi, '0'));
+  const levelSlips = (s) => s.replace(/([A-Za-z])I(?=[a-z])/g, '$1l').replace(/(^|\s)[lI](?=\s|$)/g, '$11').replace(/\b([\dO]*\d[\dO]*)(?=K\b)/gi, (n) => n.replace(/O/gi, '0')).replace(/\bSOK\b/g, '50K');
 
   // Pulls program, balance, status, end date, this year's counts, MQDs, and member number out of an account
   // screen's text. Built to tolerate OCR: labels above or below values, stray marks, near-miss spellings.
@@ -6201,7 +6203,7 @@
       // What you're working toward: "A-List progress", and other languages' words for "to", right before the level or a
       // word or two before it ("para Oro", "für den Status Gold"). After it they're about something else ("Gold para 2027",
       // "Gold Member 10 points per $1"), as "progress" is apart from it ("Gold Member View progress").
-      if (new RegExp(` (?:para|pour|atteindre|bis|zum|zur|fur|fir|fiir|voor|per)(?: [a-z']+){0,2} ${alias} | ${alias}(?: (?:status|tier|level|elite|member))? progress `).test(hay)) continue;
+      if (new RegExp(` (?:para|pour|atteindre|bis|zum|zur|fur|fir|fiir|voor|per)(?: [a-z']+){0,2} ${alias} |(?<! qualified| you)(?<=[a-z]) for ${alias} | ${alias}(?: (?:status|tier|level|elite|member))? progress `).test(hay)) continue;
       // A row of captions over a row of numbers, the level after a unit and other words ("… Points for HON Circle Member"
       // over "210,000 12,550", or its words blurred, "… $r HON Circle Member"), says what a number counts toward; "Your
       // current status Gold" over "84,250 12" is held.
@@ -6267,12 +6269,17 @@
   // found (the program, a status, a member number, counts); the first reading wins a tie. What it missed comes from
   // another reading of the same program, and that reading's balances are offered as alternatives.
   function readingOf(read, forceId) {
-    const tried = (read.passes || [read]).map((pass) => {
-      const found = parseAccountText(columnsApart(pass), forceId);
+    const weigh = (pass, id) => {
+      const found = parseAccountText(columnsApart(pass), id);
       const worth = Math.max(0, found.score) + (found.programId ? 4 : 0) + (found.tierIndex >= 0 ? 2 : 0) + (found.member ? 1 : 0)
         + [found.progress, found.altProgress, found.mqd].filter((v) => v != null).length;
       return { pass, found, worth };
-    });
+    };
+    let tried = (read.passes || [read]).map((pass) => weigh(pass, forceId));
+    // A reading that lost the logo (small, or garbled: "World of Hyott") is still a reading of the same page, when no
+    // reading names any other program: read with that program in mind, its numbers count like the others'.
+    const namedIds = [...new Set(tried.map((t) => t.found.programId).filter(Boolean))];
+    if (forceId === undefined && namedIds.length === 1) tried = tried.map((t) => (t.found.programId || t.found.ownId ? t : weigh(t.pass, namedIds[0])));
     const best = tried.reduce((a, b) => (b.worth > a.worth ? b : a));
     const f = best.found;
     const splitDoubt = !!f.unsure; // its balance was read from split-off pieces ("1 54,250", see parseAccountText)
@@ -6372,15 +6379,15 @@
     }
     return { ...read, text: best.pass.text, lines: faint ? [...(best.pass.lines || []), faint.line] : best.pass.lines, found: f };
   }
-  // Which member number its re-reads settle on: every size the same, and one of those read, or off by a character or
-  // two (the sharper reading). The sizes disagreeing, the number really is hard to read, so none.
+  // Which member number its re-reads settle on: every size the same, and one of those read, or off by one character
+  // (the sharper reading). The sizes disagreeing, the number really is hard to read, so none.
   function settledId(idReads, named) {
     for (const id of named) {
       const [first, ...rest] = idReads[id] || [];
       if (!first || rest.some((text) => text !== first)) continue;
       const backed = named.find((n) => n.toUpperCase() === first);
       if (backed) return backed;
-      if (first.length === id.length && [...id.toUpperCase()].filter((c, i) => c !== first[i]).length <= 2) return first;
+      if (first.length === id.length && [...id.toUpperCase()].filter((c, i) => c !== first[i]).length === 1) return first;
     }
     return null;
   }
