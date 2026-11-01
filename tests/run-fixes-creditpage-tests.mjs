@@ -147,7 +147,7 @@ vm.runInContext(`${fakeDom}
   ${piece('  const MONTH_NAMES', '  /* ---------- Certificates from your cards')}
   ${piece('  // One "Coming up" item as a line', '  // A plain-text summary meant for reading')}
   globalThis.ui = { shown, normalize, comingUpLine, document, setRenewal, forgetCreditParts: typeof forgetCreditParts !== 'undefined' ? forgetCreditParts : () => {},
-    creditUseText: typeof creditUseText !== 'undefined' ? creditUseText : null, creditStatusText: typeof creditStatusText !== 'undefined' ? creditStatusText : null, heldCredits, creditBoxes, cardCreditDefs, creditsPageModel, setCreditBox, renderCredits, openCreditsPage, closeCreditsPage,
+    creditUseText: typeof creditUseText !== 'undefined' ? creditUseText : null, creditStatusText: typeof creditStatusText !== 'undefined' ? creditStatusText : null, heldCredits, creditBoxes, cardCreditDefs, creditsPageModel, setCreditBox, renderCredits, openCreditsPage,
     syncCreditsRoute, fire, page, tracker, location, body, CREDITS_PAGE_CARDS,
     getState: () => state, setState: (s) => { state = s; }, saves: () => saves };`, ctx);
 const app = ctx.ui;
@@ -158,6 +158,16 @@ const def = (cardId, id) => app.cardCreditDefs(cardId).find((c) => c.id === id);
 const boxes = (cardId, id, year = now.getFullYear()) => app.creditBoxes(cardId, def(cardId, id), year);
 const summary = (list) => list.map((b) => [b.key, b.short, b.phase, b.amount]);
 const state = () => app.getState();
+// The checklist is always on the first page: draw it and go to it. Most checks below look at every credit, so All is
+// picked once here; "Due this month" as the first thing you see has its own checks.
+const openPage = () => { app.renderCredits(); app.openCreditsPage(); };
+let startedOn = null;
+{
+  setup({ cards: ['amex-gold'] });
+  app.renderCredits();
+  startedOn = page.querySelector('[data-cp-filter="month"]').getAttribute('aria-pressed');
+  page.querySelector('[data-cp-filter="all"]').dispatch('click');
+}
 
 // 1. The boxes for each kind of credit
 setup({ cards: ['amex-platinum', 'sapphire-reserve'] });
@@ -189,8 +199,10 @@ now = new Date(2026, 9, 31, 12);
 const pageBox = (key, period) => page.querySelector(`[data-cp-box="${key}"][data-cp-period="${period}"]`);
 const tick = (key, period, on = true) => { const el = pageBox(key, period); if (!el) throw new Error(`no box ${key} ${period}`); el.checked = on; el.dispatch('change'); };
 setup({ cards: ['amex-platinum', 'amex-gold'] });
-app.openCreditsPage();
-check('opening: #credits, the page shown and the tracker hidden, scrolled to the top', [app.location.hash, page.hidden, app.tracker.hidden, shown.scrollTo.at(-1)], ['#credits', false, true, 0]);
+openPage();
+check('on the first page: shown, with the tracker still there, and nothing in the address', [app.location.hash, page.hidden, app.tracker.hidden], ['', false, false]);
+check('it starts on Due this month', startedOn, 'true');
+check('going to it scrolls there rather than changing page', shown.scrolled.at(-1) === page, true);
 check('a box is a checkbox labeled with the credit, period and dollars', pageBox('amex-platinum:uber', '2026-10').getAttribute('aria-label'), 'Uber Cash, October, $15');
 check('…a past one left unticked says missed', pageBox('amex-platinum:uber', '2026-9').getAttribute('aria-label'), 'Uber Cash, September, $15, missed');
 check('…and looks it', pageBox('amex-platinum:uber', '2026-9').parentNode.classList.contains('cp-missed'), true);
@@ -327,7 +339,7 @@ const lastUber = last.cards[0].rows.find((r) => r.key === 'amex-gold:uber');
 check('…2026 still there: Nov and Dec ticked, all past, only December (ended yesterday) still changeable', [last.year, lastUber.boxes.filter((b) => b.full).map((b) => b.short), lastUber.boxes.every((b) => b.phase === 'past'), lastUber.boxes.filter((b) => b.editable).map((b) => b.short)], [2026, ['Nov', 'Dec'], true, ['Dec']]);
 check('…its totals: $20 used, nothing available', [last.used, last.available], [20, 0]);
 check('…the main page’s Mark used has moved on to January', app.heldCredits().find((x) => x.key === 'amex-gold:uber').used, false);
-app.openCreditsPage();
+openPage();
 app.renderCredits(); // the new day's redraw
 const yearBtn = page.querySelector('[data-cp-year="past"]');
 check('a 2026 toggle', yearBtn && yearBtn.text, '2026');
@@ -386,19 +398,20 @@ check('no card-year credits: no fee date field', page.querySelector('[data-cp-re
 
 // 12. Opening and closing
 setup({ cards: ['amex-gold'] });
-page.querySelector('[data-cp-back]').dispatch('click');
-check('← Tracker: back to the tracker, no #credits', [app.location.hash, page.hidden, app.tracker.hidden], ['', true, false]);
+app.renderCredits();
+shown.scrolled.length = 0;
 app.location.hash = '#credits';
 app.fire('hashchange');
-check('a #credits link opens it', [page.hidden, app.tracker.hidden], [false, true]);
-page.querySelector('[data-cp-back]').dispatch('click');
-check('…and ← Tracker clears the hash', [app.location.hash, page.hidden], ['', true]);
-app.openCreditsPage();
-app.location.hash = ''; app.fire('popstate');
-check('the browser’s Back closes it', [page.hidden, app.tracker.hidden], [true, false]);
-check('…and the page went back where it was', shown.scrollTo.length > 0, true);
+check('a #credits link goes to it, on the same page', [shown.scrolled.at(-1) === page, page.hidden, app.tracker.hidden, app.document.activeElement === page.querySelector('#cp-title')], [true, false, false, true]);
+app.location.hash = '';
+shown.scrolled.length = 0;
+app.fire('hashchange');
+check('leaving the link: stays put', [shown.scrolled.length, page.hidden], [0, false]);
+app.setState({ ...state(), programs: null });
+check('before setup: going to it does nothing', (app.renderCredits(), page.hidden), true);
+setup({ cards: ['amex-gold'] });
 // A day later with the page open: drawn again for November
-app.openCreditsPage();
+openPage();
 now = new Date(2026, 10, 1, 9);
 app.renderCredits();
 check('Nov 1 (the day changed): November is now the highlighted box', pageBox('amex-gold:uber', '2026-11').parentNode.classList.contains('cp-current'), true);
@@ -407,7 +420,7 @@ now = new Date(2026, 9, 31, 12);
 
 // 13. Expiring soon: tapping one goes to its row
 setup({ cards: ['amex-gold'] });
-app.openCreditsPage();
+openPage();
 app.renderCredits();
 shown.scrolled.length = 0;
 page.querySelector('[data-cp-jump="amex-gold:uber"]').dispatch('click');
@@ -485,7 +498,7 @@ setup({ cards: ['sapphire-reserve'] });
 now = new Date(2026, 1, 1, 12);
 toggleUsed('sapphire-reserve:travel');
 now = new Date(2026, 9, 31, 12);
-app.openCreditsPage();
+openPage();
 app.renderCredits();
 tick('sapphire-reserve:travel', '2026', false);
 shown.toasts.at(-1).undo();
@@ -559,24 +572,9 @@ check('two chips tapped: both cards added, the panel still there', [state().card
 page.querySelector('[data-cp-add-card="amex-gold"]').dispatch('click');
 check('…tapping an added one does nothing', state().cards, ['amex-gold', 'sapphire-reserve']);
 
-// Focus goes back to what opened the page
-const browserBack = () => { app.location.hash = ''; app.fire('popstate'); };
-browserBack();
-check('…and next time it opens, with some of the five held, no panel', (app.openCreditsPage(), page.querySelectorAll('[data-cp-add-card]').length), 0);
-browserBack();
-const opener = app.body.querySelector('#credits-open');
-opener.focus();
-app.openCreditsPage();
-browserBack();
-check('closing: focus back on the button that opened it', [page.hidden, app.document.activeElement === opener], [true, true]);
-app.document.activeElement = null;
-app.location.hash = '#credits'; app.fire('hashchange');
-browserBack();
-check('…opened from a link: focus on the header’s Credits button', app.document.activeElement === app.body.querySelector('#credits-btn'), true);
-
 // Styles: wide layout as columns, the header button under the title on phones
 const style = html.slice(html.indexOf('<style>'), html.indexOf('</style>'));
-const wide = style.slice(style.indexOf('/* The Credits page on wide screens'));
+const wide = style.slice(style.indexOf('/* The credits checklist on wide screens'));
 check('wide: cards flow in columns, a card never split', [/\.cp-cards \{ display: block; columns: 420px 3;/.test(wide), /\.cp-card \{[^}]*break-inside: avoid/.test(wide)], [true, true]);
 const phone = style.slice(style.indexOf('@media (max-width: 480px) { /* the switcher'));
 check('phones: Credits sits on the second line under the date', /\.hero-link \{ order: 3; margin-left: 52px; \}/.test(phone.slice(0, phone.indexOf('\n  }'))), true);
@@ -627,7 +625,7 @@ now = new Date(2027, 0, 1, 0, 1);
 setup({ cards: ['amex-gold', 'amex-platinum'] });
 check('Jan 1 2027: December 2026, Q4 and Jul–Dec can still be ticked; November can’t',
   [boxes('amex-gold', 'uber', 2026)[11].editable, boxes('amex-gold', 'uber', 2026)[10].editable, boxes('amex-platinum', 'resy', 2026)[3].editable, boxes('amex-platinum', 'hotel', 2026)[1].editable, boxes('amex-platinum', 'hotel', 2026)[0].editable], [true, false, true, true, false]);
-app.openCreditsPage();
+openPage();
 page.querySelector('[data-cp-year="past"]').dispatch('click');
 tick('amex-gold:uber', '2026-12');
 check('…ticking December 2026 in last year’s view: kept, and Mark used still means January', [state().creditsLog['amex-gold:uber'], state().creditsUsed['amex-gold:uber'] || null], [{ '2026-12': true }, null]);
@@ -697,7 +695,7 @@ check('$120 typed Apr 1, fee date moved to Jun 1: on the card year Jun 1, 2025 �
 
 // A tick on the Credits page, then the fee date corrected to one that just passed
 setup({ cards: ['sapphire-reserve'], renewals: { 'sapphire-reserve': '2025-03-15' } });
-app.openCreditsPage();
+openPage();
 app.renderCredits();
 tick(SR, 'A2026-03-15');
 feeOnPage('2025-10-15');

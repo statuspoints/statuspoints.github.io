@@ -613,9 +613,9 @@
   .hero-link:hover { background: rgba(255, 255, 255, .18); }
   .hero-link:focus-visible { outline: 2px solid #FFFFFF; outline-offset: 2px; }
   .hero-link:not([hidden]) + .person-chip { margin-left: 8px; }
-  .cp-top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; margin: 8px 0 16px; }
-  .cp-top h1 { flex: 1; min-width: 0; font-size: 24px; outline: none; }
-  .cp-back { height: 36px; }
+  .cpage { scroll-margin-top: 12px; }
+  .cp-top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; margin: 28px 2px 10px; }
+  .cp-top h2 { flex: 1; min-width: 0; outline: none; }
   .cp-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 10px; margin-bottom: 14px; }
   .cp-tile { display: grid; align-content: start; gap: 2px; min-width: 0; padding: 12px 14px; border: 1px solid var(--line); border-radius: 16px; background: var(--card); box-shadow: var(--shadow); }
   .cp-tile-v { font-family: var(--num-font); font-size: 22px; font-weight: 750; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
@@ -1751,13 +1751,15 @@
     .programs:not(.editing) > .row:nth-child(odd) { border-right: 1px solid var(--line); }
     .programs:not(.editing) > .empty-row { grid-column: 1 / -1; }
   }
-  /* The Credits page on wide screens: totals across the top, cards two or three across. */
+  /* The credits checklist on wide screens: totals across the top, cards side by side when there's room. */
   @media (min-width: 1000px) {
-    main.cpage { display: block; max-width: 1400px; }
     /* The two totals stacked beside Expiring soon, so they fill its height rather than leave a gap under them */
     .cp-summary { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); align-items: stretch; }
     .cp-soon { grid-column: 2; grid-row: 1 / span 2; }
     .cp-tile:not(.cp-soon) { align-content: center; }
+    /* Nothing ending soon: the totals side by side, with that one line under them */
+    .cp-calm { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .cp-calm .cp-soon { grid-column: 1 / -1; grid-row: auto; }
     /* Columns rather than grid rows, so a short card doesn't leave a gap under it beside a long one */
     .cp-cards { display: block; columns: 420px 3; column-gap: 14px; }
     .cp-card { break-inside: avoid; margin-bottom: 14px; }
@@ -1806,7 +1808,7 @@
     <div class="install-body">
       <strong>New in your tracker</strong>
       <ul class="news-list">
-        <li><b>Credits checklist</b>: tap <b>Credits</b> at the top for a box for every month, quarter or half-year of your card credits — tick each one once you’ve used it.</li>
+        <li><b>Credits checklist</b>: right under your programs, a box for every month, quarter or half-year of your card credits — tick each one once you’ve used it.</li>
         <li><b>Made for big screens too</b>: on a laptop or desktop, your programs spread across the page, with what’s coming up, vouchers, and card credits beside them.</li>
         <li><b>Update from a screenshot</b>: drop or choose screenshots of your account pages (several at once works) and your points and status update. Small and compressed screenshots read better now.</li>
         <li><b>Welcome bonuses</b>: add a new card’s bonus under <b>Your cards</b> and see how much is left to spend, with reminders before the deadline.</li>
@@ -1907,6 +1909,8 @@
       <label for="notes">Note under your list (optional)</label>
       <textarea id="notes" rows="3" maxlength="400" placeholder="e.g. $75k spend on my card this year would unlock more status"></textarea>
     </div>
+    <!-- The credits checklist, under your programs (#credits goes to it): drawn by renderCreditsPageNow. -->
+    <section class="cpage" id="credits-page" aria-labelledby="cp-title" hidden></section>
   </section>
 
   <div class="side side-bottom">
@@ -1942,7 +1946,7 @@
       <h2 class="sec" id="h-credits">Card credits</h2>
       <span class="sec-actions">
         <span class="sec-meta" id="c-meta"></span>
-        <button class="pill-btn sm" id="credits-open" type="button">Open checklist</button>
+        <button class="pill-btn sm" id="credits-open" type="button">Go to checklist</button>
       </span>
     </div>
     <div class="card credits-card" id="credits-list"></div>
@@ -1993,8 +1997,6 @@
     <input type="file" id="import-file" accept="application/json,.json" hidden>
   </footer>
 </main>
-<!-- The Credits page (#credits): drawn by renderCreditsPageNow, in place of the tracker while it's open. -->
-<main class="cpage" id="credits-page" aria-labelledby="cp-title" hidden></main>
 
 <dialog class="sheet" id="sheet" aria-labelledby="sheet-title">
   <form id="sheet-form" method="dialog" autocomplete="off">
@@ -11091,10 +11093,11 @@
   let addingCreditFor = null; // card id whose "add a credit" form is open
   const creditOpen = new Map(); // card id → open/closed once you've tapped it (otherwise: open if something resets soon)
 
-  // The Card credits section, and the Credits page when it's open (they show the same marks).
+  // The Card credits section and the checklist under your programs (they show the same marks).
   function renderCredits(...args) {
     keepFocus(() => {
       renderCreditsNow(...args);
+      $('#credits-page').hidden = !state.programs;
       if (creditsPageOpen()) renderCreditsPageNow();
     });
   }
@@ -11307,63 +11310,23 @@
   }
 
   const creditsPage = $('#credits-page');
-  const trackerView = $('main'); // the tracker itself, hidden while the Credits page is open
-  const appTitle = document.title;
   let creditsPast = false; // showing last year
-  let creditsFilter = 'all';
-  let creditsPushed = false; // opened from inside the app, so ← Tracker is the browser's Back
-  let creditsScroll = 0; // where the tracker was scrolled to
-  let creditsOpener = null; // the button that opened the page, focused again when it closes
-  let creditsSuggesting = false; // "Add your cards" was shown since the page opened, so it stays until it closes
+  let creditsFilter = 'month'; // it sits in the middle of the first page, so it starts short
+  let creditsSuggesting = false; // "Add your cards" has been shown, so it stays while you add more
   let creditsShown = new Set(); // rows shown since the filter was picked
 
   function creditsPageOpen() { return !$('#credits-page').hidden; }
 
-  function showCreditsPage(show) {
-    if (show === creditsPageOpen()) return;
-    if (show) {
-      creditsScroll = scrollY;
-      const from = document.activeElement;
-      creditsOpener = from && from !== document.body && !creditsPage.contains(from) ? from : null;
-      creditsPast = false;
-      creditsSuggesting = false;
-      creditsShown = new Set();
-      trackerView.hidden = true;
-      creditsPage.hidden = false;
-      document.title = `Credits · ${appTitle}`;
-      renderCreditsPage();
-      scrollTo(0, 0);
-      const title = $('#cp-title');
-      if (title) title.focus({ preventScroll: true });
-    } else {
-      creditsPage.hidden = true;
-      trackerView.hidden = false;
-      document.title = appTitle;
-      scrollTo(0, creditsScroll);
-      // Focus back where you were (from a link: the header's Credits button), not lost on the hidden page.
-      const back = [creditsOpener, $('#credits-btn')].find((el) => el && el.isConnected && !el.hidden && !el.closest('[hidden]'));
-      creditsOpener = null;
-      if (back) back.focus({ preventScroll: true });
-    }
-  }
+  // The Credits button, Go to checklist, and a #credits link all land on the checklist under your programs.
   function openCreditsPage() {
-    if (location.hash !== '#credits') {
-      history.pushState(null, '', '#credits');
-      creditsPushed = true;
-    }
-    showCreditsPage(true);
+    if (!creditsPageOpen()) return;
+    jumpTo(creditsPage);
+    const title = $('#cp-title');
+    if (title) title.focus({ preventScroll: true });
   }
-  function closeCreditsPage() {
-    if (creditsPushed && location.hash === '#credits') { history.back(); return; } // closes it when the hash goes
-    if (location.hash === '#credits') history.replaceState(null, '', location.pathname + location.search);
-    syncCreditsRoute();
-  }
-  // The page follows the address: #credits opens it (a link, a reload, Forward), anything else closes it (Back).
   function syncCreditsRoute() {
-    if (location.hash !== '#credits') creditsPushed = false;
-    showCreditsPage(location.hash === '#credits');
+    if (location.hash === '#credits') openCreditsPage();
   }
-  addEventListener('popstate', syncCreditsRoute);
   addEventListener('hashchange', syncCreditsRoute);
   $('#credits-btn').addEventListener('click', openCreditsPage);
   $('#credits-open').addEventListener('click', openCreditsPage);
@@ -11382,15 +11345,10 @@
     const thisYear = new Date().getFullYear();
     // The year switch only once there's a card with credits to look back on.
     const topBar = (years) => h('div', { class: 'cp-top' },
-      h('button', { type: 'button', class: 'pill-btn cp-back', 'data-cp-back': '' }, '← Tracker'),
-      h('h1', { id: 'cp-title', tabindex: '-1' }, 'Credits'),
+      h('h2', { class: 'sec', id: 'cp-title', tabindex: '-1' }, 'Credits checklist'),
       years ? h('div', { class: 'view-pick cp-year', role: 'group', 'aria-label': 'Year' },
         h('button', { type: 'button', 'data-cp-year': 'now', 'aria-pressed': String(!creditsPast) }, String(thisYear)),
         h('button', { type: 'button', 'data-cp-year': 'past', 'aria-pressed': String(creditsPast) }, String(thisYear - 1))) : null);
-    if (!state.programs) {
-      creditsPage.replaceChildren(topBar(false), h('div', { class: 'card cp-panel' }, h('p', null, 'Set up your tracker first, then add your cards to see their credits here.')));
-      return;
-    }
     if (!CREDITS_PAGE_CARDS.some((id) => state.cards.includes(id))) creditsSuggesting = true;
     const m = creditsPageModel({ past: creditsPast, filter: creditsFilter, keepSuggest: creditsSuggesting, keep: creditsShown });
     for (const c of m.cards) for (const row of c.shown) creditsShown.add(row.key);
@@ -11403,7 +11361,7 @@
       h('span', { class: 'cp-soon-name' }, `${s.card.name} · ${s.name}`),
       h('span', { class: `cp-soon-when${s.days <= 3 ? ' warn' : ''}` }, `${creditMoney(s.amount)} · ${endsText(s.end, s.days)}`)));
     const tile = (value, label, sub, cls = '') => h('div', { class: `cp-tile ${cls}` }, h('span', { class: 'cp-tile-v' }, value), h('span', { class: 'cp-tile-l' }, label), sub ? h('small', null, sub) : null);
-    const summary = h('div', { class: 'cp-summary' },
+    const summary = h('div', { class: m.soon.length ? 'cp-summary' : 'cp-summary cp-calm' },
       // Last year: just what's ticked (much of it was never recorded here, so nothing reads as missed).
       // This year: no "missed" dollars either (months before you started ticking aren't money lost).
       tile(money(m.used), m.past ? `used in ${m.year}` : 'used this year', null, m.past ? 'cp-tile-solo' : ''),
@@ -11545,8 +11503,7 @@
     const b = e.target.closest('button');
     if (!b) return;
     const d = b.dataset;
-    if ('cpBack' in d) closeCreditsPage();
-    else if (d.cpYear) { creditsPast = d.cpYear === 'past'; creditsShown = new Set(); renderCreditsPage(); }
+    if (d.cpYear) { creditsPast = d.cpYear === 'past'; creditsShown = new Set(); renderCreditsPage(); }
     else if (d.cpFilter) { creditsFilter = d.cpFilter; creditsShown = new Set(); renderCreditsPage(); }
     else if (d.cpJump) jumpToCredit(d.cpJump);
     else if (d.cpAddCard) addCardFromPage(d.cpAddCard);
@@ -11668,7 +11625,7 @@
 
   // A one-time card listing new features for people who already use the app; new setups skip it.
   const NEWS_KEY = 'status-tracker-news';
-  const NEWS_ID = '2026-10c';
+  const NEWS_ID = '2026-11a';
   const newsSeen = () => { try { return localStorage.getItem(NEWS_KEY) === NEWS_ID; } catch (e) { return true; } };
   const markNewsSeen = () => { try { localStorage.setItem(NEWS_KEY, NEWS_ID); } catch (e) { /* private mode */ } };
   // The card is one for the whole device: a new setup skips it only when no one else here already uses the app
@@ -11740,10 +11697,10 @@
     renderPeople();
     syncValuesPick();
     $('#credits-btn').hidden = setup;
-    if (!setup) renderCredits(); // the Credits page too, when it's open
+    if (!setup) renderCredits(); // the checklist too
     else {
       $('#credits-section').hidden = true;
-      renderCreditsPage();
+      $('#credits-page').hidden = true;
     }
     if (setup) {
       renderSetup();
