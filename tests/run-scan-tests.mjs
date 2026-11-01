@@ -329,6 +329,21 @@ const bigChecks = [];
   vm.runInContext('globalThis.many = (passes) => readMany({ passes: passes.map((text) => ({ text })) });', context);
   const amex = `Marriott Bonvoy® Gold Elite Status\nMarriott Bonvoy Number: - 4471\nHilton Honors™ Gold Status\nHilton Honors Number: 2045318860\nLeaders Club Sterling Status from The\nLeading Hotels of the World®\nLeaders Club Number: 5523190\nThe American Express Global Lounge\nCollection®\nEnrolled in Priority Pass Select Membership Number:\n3301742255`;
   const got = context.many([amex]);
+  // A member number read unsurely is read again alone (read.idReads), and that settles it.
+  {
+    const idLine = (id, sure) => ({ text: `Member # ${id}`, words: [{ text: 'Member', confidence: 96, bbox: { x0: 0, x1: 9, y0: 0, y1: 9 } }, { text: '#', confidence: 96, bbox: { x0: 10, x1: 12, y0: 0, y1: 9 } }, { text: id, confidence: sure, bbox: { x0: 13, x1: 40, y0: 0, y1: 9 } }] });
+    const idOf = (reads, idReads) => vm.runInContext(`readingOf(${JSON.stringify({ idReads, passes: reads.map(([id, sure]) => ({ text: `World of Hyatt\n37,415 points\nMember # ${id}`, lines: [idLine(id, sure)] })) })}).found.member`, context);
+    const thrice = (t) => [t, t, t];
+    bigChecks.push(['read unsurely, nothing more: stays empty', idOf([['514807263K', 70]], undefined), null]);
+    bigChecks.push(['…the same at every size: kept', idOf([['514807263K', 70]], { '514807263K': thrice('514807263K') }), '514807263K']);
+    bigChecks.push(['…different across sizes: stays empty', idOf([['514807263K', 70]], { '514807263K': ['514807263K', '514807262K', '514807263K'] }), null]);
+    bigChecks.push(['…one character different at every size: the sharper reading', idOf([['514807268K', 70]], { '514807268K': thrice('514807263K') }), '514807263K']);
+    bigChecks.push(['…something else altogether: stays empty', idOf([['514807263K', 70]], { '514807263K': thrice('99') }), null]);
+    bigChecks.push(['two readings, and the re-reads back one', idOf([['514807263K', 95], ['514807268K', 95]], { '514807263K': thrice('514807268K'), '514807268K': thrice('514807268K') }), '514807268K']);
+    bigChecks.push(['two readings, nothing backing either: stays empty', idOf([['514807263K', 95], ['514807268K', 95]], undefined), null]);
+    bigChecks.push(['a dash before the number doesn’t count against it', vm.runInContext(`readingOf(${JSON.stringify({ passes: [{ text: 'Qantas Frequent Flyer\nJordan Lake - 1923456789\n184,500 points', lines: [{ text: 'Jordan Lake - 1923456789', words: [{ text: 'Jordan', confidence: 96, bbox: { x0: 0, x1: 9, y0: 0, y1: 9 } }, { text: 'Lake', confidence: 96, bbox: { x0: 10, x1: 19, y0: 0, y1: 9 } }, { text: '-', confidence: 30, bbox: { x0: 20, x1: 22, y0: 0, y1: 9 } }, { text: '1923456789', confidence: 96, bbox: { x0: 23, x1: 60, y0: 0, y1: 9 } }] }] }] })}).found.member`, context), '1923456789']);
+    bigChecks.push(['read surely: no re-read needed', idOf([['514807263K', 95]], undefined), '514807263K']);
+  }
   bigChecks.push(['a card benefits page with four statuses: all four, with member numbers', got && got.map((f) => [f.id, f.tierIndex, f.member]),
     [['marriott', 1, null], ['hilton', 1, '2045318860'], ['lhw', 0, '5523190'], ['lounges', 2, '3301742255']]]);
   bigChecks.push(['…the lounge membership reads as Priority Pass Select', context.read({ text: 'Enrolled in Priority Pass Select Membership Number:\n3301742255' }).program, null]);

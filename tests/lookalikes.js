@@ -23,6 +23,11 @@ export const programs = [['delta', 'Delta SkyMiles', 'miles'], ['united', 'Unite
   ['etihad', 'Etihad Guest', 'miles'], ['frontier', 'Frontier Miles', 'miles'], ['singapore', 'Singapore KrisFlyer', 'miles']];
 
 export const pages = [
+  // A member card: the number has no label and ends in a letter (all made up).
+  { name: 'Hyatt member card, number under “Member since”', w: 702, h: 422, bg: '#f4f6fb', ink: '#fff', rects: [[0, 0, 702, 316, '#2f6fc4'], [72, 2, 576, 360, ['#2f66b4', '#24558f']], [528, 26, 96, 96, '#2f6fc4']],
+    text: [t('WORLD', 576, 52, 18, 600, '#fff', 'center'), t('OF', 576, 78, 18, 600, '#fff', 'center'), t('HYATT', 576, 104, 18, 600, '#fff', 'center'), t('MEMBER', 176, 92, 42, 600),
+      t('Current point balance', 96, 158, 22), t('37,415', 96, 198, 31, 700), t('Member since Mar 14, 2026', 96, 242, 22), t('514807263K', 96, 282, 31, 700), t('DR PAT SAMPLE', 96, 332, 22)],
+    expect: { program: 'Hyatt', balance: 37415, member: '263K' } },
   { name: 'IHG web, balance beside the greeting', w: 2000, h: 644, rects: [[0, 120, 2000, 434, '#dde2e6'], [1374, 140, 2, 392, '#c9ced3']],
     text: [t('IHG', 60, 64, 52, 500), t('ONE', 212, 40, 22), t('REWARDS', 212, 62, 22), t('My Account', 968, 54, 26), t('Points', 1435, 54, 26),
       t('Hello Alex,', 46, 276, 42), t('Platinum Elite Member', 46, 362, 70, 700), t('Member #123456789', 46, 420, 42),
@@ -340,6 +345,7 @@ export async function scan(page, variant = {}) {
   const balance = rows.map((r) => /^([\d,]+) (?:points|miles|avios)/i.exec(r)).find(Boolean);
   const status = rows.find((r) => /\| Status/.test(r));
   const got = { title, flagged: rows.some((r) => /^Check this first/.test(r)) || /Which program/.test(title),
+    member: (rows.find((r) => /Member number/.test(r)) || '').match(/•+ *(\w{4})/)?.[1] || null,
     balance: balance ? Number(balance[1].replace(/,/g, '')) : null, tier: status ? status.split(' | ')[0] : null,
     counts: rows.filter((r) => !/Balance|\| Status|Member number|On your list|Adding it|Check this/.test(r)).map((r) => r.split(' | ')[0]) };
   const e = page.expect;
@@ -350,6 +356,7 @@ export async function scan(page, variant = {}) {
   }
   // `ask`: the page can't be read for sure (two balances, a number cut off), so a right card still has to ask.
   const ok = title.includes(e.program) && got.balance === e.balance && (e.tier === undefined || got.tier === e.tier)
+    && (e.member === undefined || got.member === e.member)
     && (e.counts || []).every((c) => got.counts.includes(c)) && (!e.ask || got.flagged);
   // Wrong without saying so is the failure that matters: a flagged card waits for you to check it.
   return { name: page.name, ok, silentlyWrong: !ok && !got.flagged, got };
