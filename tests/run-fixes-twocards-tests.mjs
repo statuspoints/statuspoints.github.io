@@ -178,7 +178,7 @@ const tick = (key, period, on = true) => { const el = pageBox(key, period); if (
 const click = (sel) => { const el = page.querySelector(sel); if (!el) throw new Error(`nothing at ${sel}`); el.dispatch('click'); };
 const section = (id) => page.querySelector(`[data-cp-card="${id}"]`);
 const due = (extra = {}) => app.creditsPageModel({ filter: 'month', ...extra }).cards.flatMap((c) => c.shown.map((r) => [r.key, r.left]));
-// The checklist sits on the first page, starting on Due this month, and stays where you left it.
+// The checklist sits on the first page, starting on All, and stays where you left it.
 const open = (filter = 'all') => { app.renderCredits(); app.openCreditsPage(); if (page.querySelector('[data-cp-year="past"]')) click('[data-cp-year="now"]'); if (page.querySelector('[data-cp-filter]')) click(`[data-cp-filter="${filter}"]`); };
 const runTimers = () => { for (const fn of shown.timers.splice(0)) fn(); };
 

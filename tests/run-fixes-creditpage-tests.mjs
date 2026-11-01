@@ -167,7 +167,7 @@ vm.runInContext(`${fakeDom}
   ${piece('  function renderToday', '  function renderAll')}
   ${piece('  let drawnDay', '  // Just after each midnight')}
   globalThis.ui = { refreshDay, shown, stored, storageKey, people, switchPerson, renderUpcoming, removeCard, addHeldCard, creditRate, isoOf, cents, money, normalize, comingUpLine, document, setRenewal, forgetCreditParts: typeof forgetCreditParts !== 'undefined' ? forgetCreditParts : () => {},
-    creditUseText: typeof creditUseText !== 'undefined' ? creditUseText : null, creditStatusText: typeof creditStatusText !== 'undefined' ? creditStatusText : null, heldCredits, creditBoxes, cardCreditDefs, creditsPageModel, setCreditBox, renderCredits, openCreditsPage, closeCreditsPage: () => { resetCreditsView(); creditsFilter = 'all'; },
+    creditUseText: typeof creditUseText !== 'undefined' ? creditUseText : null, creditStatusText: typeof creditStatusText !== 'undefined' ? creditStatusText : null, heldCredits, creditBoxes, cardCreditDefs, creditsPageModel, setCreditBox, renderCredits, openCreditsPage, closeCreditsPage: () => { resetCreditsView(); },
     syncCreditsRoute, fire, page, tracker, location, body, CREDITS_PAGE_CARDS,
     getState: () => state, setState: (s) => { state = s; }, saves: () => saves };`, ctx);
 const app = ctx.ui;
@@ -178,15 +178,13 @@ const def = (cardId, id) => app.cardCreditDefs(cardId).find((c) => c.id === id);
 const boxes = (cardId, id, year = now.getFullYear()) => app.creditBoxes(cardId, def(cardId, id), year);
 const summary = (list) => list.map((b) => [b.key, b.short, b.phase, b.amount]);
 const state = () => app.getState();
-// The checklist is always on the first page: draw it and go to it. Most checks below look at every credit, so All is
-// picked once here; "Due this month" as the first thing you see has its own checks.
+// The checklist is always on the first page: draw it and go to it.
 const openPage = () => { app.renderCredits(); app.openCreditsPage(); };
 let startedOn = null;
 {
   setup({ cards: ['amex-gold'] });
   app.renderCredits();
-  startedOn = page.querySelector('[data-cp-filter="month"]').getAttribute('aria-pressed');
-  page.querySelector('[data-cp-filter="all"]').dispatch('click');
+  startedOn = page.querySelector('[data-cp-filter="all"]').getAttribute('aria-pressed');
 }
 
 // 1. The boxes for each kind of credit
@@ -221,7 +219,7 @@ const tick = (key, period, on = true) => { const el = pageBox(key, period); if (
 setup({ cards: ['amex-platinum', 'amex-gold'] });
 openPage();
 check('on the first page: shown, with the tracker still there, and nothing in the address', [app.location.hash, page.hidden, app.tracker.hidden], ['', false, false]);
-check('it starts on Due this month', startedOn, 'true');
+check('it starts on All, so no credit is out of sight', startedOn, 'true');
 check('going to it scrolls there rather than changing page', shown.scrolled.at(-1) === page, true);
 check('a box is a checkbox labeled with the credit, period and dollars', pageBox('amex-platinum:uber', '2026-10').getAttribute('aria-label'), 'Uber Cash, October, $15');
 check('…a past one left unticked says missed', pageBox('amex-platinum:uber', '2026-9').getAttribute('aria-label'), 'Uber Cash, September, $15, missed');
@@ -970,8 +968,7 @@ page.querySelector('[data-cp-filter="unused"]').dispatch('click');
 pastView();
 check('Sam holds none of the five: Add your cards, looking at last year', [!!page.querySelector('.cp-add'), page.querySelector('[data-cp-year="past"]').getAttribute('aria-pressed')], [true, 'true']);
 app.switchPerson('p2');
-check('…to Pat with the page open: Pat’s card, no chips, this year, Due this month', [page.querySelectorAll('[data-cp-card]').map((c) => c.dataset.cpCard), !!page.querySelector('.cp-add'), page.querySelector('[data-cp-year="now"]').getAttribute('aria-pressed'), page.querySelector('[data-cp-filter="month"]').getAttribute('aria-pressed')], [['amex-gold'], false, 'true', 'true']);
-page.querySelector('[data-cp-filter="all"]').dispatch('click');
+check('…to Pat with the page open: Pat’s card, no chips, this year, All', [page.querySelectorAll('[data-cp-card]').map((c) => c.dataset.cpCard), !!page.querySelector('.cp-add'), page.querySelector('[data-cp-year="now"]').getAttribute('aria-pressed'), page.querySelector('[data-cp-filter="all"]').getAttribute('aria-pressed')], [['amex-gold'], false, 'true', 'true']);
 check('…Pat’s own tick on both pages', [pageBox('amex-gold:uber', '2026-11').checked, heldOf('amex-gold:uber').used], [true, true]);
 app.switchPerson('p3');
 check('New person: the chips, none added', page.querySelectorAll('[data-cp-add-card]').map((b) => b.text.startsWith('+')), [true, true, true, true, true]);
@@ -980,7 +977,6 @@ check('…a chip adds the card to them, with no ticks of Pat’s', [state().card
 tick('amex-gold:uber', '2026-10');
 check('…and their tick is theirs, Pat’s unchanged', [state().creditsLog, JSON.parse(app.stored.get(app.storageKey('p2'))).creditsLog], [{ 'amex-gold:uber': { '2026-10': true } }, { 'amex-gold:uber': { '2026-11': true } }]);
 app.switchPerson('p2');
-page.querySelector('[data-cp-filter="all"]').dispatch('click');
 check('Back to Pat: their own tick, and no chips left over from the last person', [pageBox('amex-gold:uber', '2026-11').checked, pageBox('amex-gold:uber', '2026-10').checked, !!page.querySelector('.cp-add')], [true, false, false]);
 app.switchPerson('me');
 check('Sam again: the Hilton Aspire’s page, chips offered', [page.querySelectorAll('[data-cp-card]').map((c) => c.dataset.cpCard), !!page.querySelector('.cp-add')], [['hilton-aspire'], true]);
@@ -1410,6 +1406,65 @@ if (!process.env.CREDITPAGE_TZ) {
     check(`all of the above in ${tz}`, [run.status, (run.stdout.match(/^✗.*$/gm) || []).slice(0, 3)], [0, []]);
   }
 }
+
+// 18. Credits with no month or year to tick: on the checklist, each with what it is, outside the dollar totals
+now = new Date(2026, 10, 1, 12);
+setup({ cards: ['sapphire-reserve', 'amex-platinum', 'amex-gold', 'delta-gold', 'bilt-palladium'] });
+app.closeCreditsPage();
+app.renderCredits();
+const totalsBefore = page.querySelector('.cp-summary').text;
+const others = (card) => page.querySelector(`[data-cp-card="${card}"]`).querySelectorAll('[data-cp-other-row]').map((r) => r.dataset.cpOtherRow);
+check('Sapphire Reserve: Global Entry, Apple, DashPass, The Edit stays and the two spend credits', others('sapphire-reserve'),
+  ['sapphire-reserve:trusted-traveler', 'sapphire-reserve:apple', 'sapphire-reserve:dashpass', 'sapphire-reserve:edit-property', 'sapphire-reserve:southwest-bonus', 'sapphire-reserve:shops-bonus']);
+check('Amex Platinum: Global Entry and the two hotel stay credits', others('amex-platinum'), ['amex-platinum:trusted-traveler', 'amex-platinum:fhr-property', 'amex-platinum:thc-property']);
+check('Amex Gold: The Hotel Collection', others('amex-gold'), ['amex-gold:thc-property']);
+check('Delta Gold: the $200 flight credit', others('delta-gold'), ['delta-gold:flight-bonus']);
+check('Bilt Palladium: nothing else to list', others('bilt-palladium'), []);
+const otherBox = (key) => page.querySelector(`[data-cp-other="${key}"]`);
+check('a per-stay or spend credit has nothing to tick', [otherBox('amex-gold:thc-property'), otherBox('delta-gold:flight-bonus')], [null, null]);
+check('its line says how it comes', [page.querySelector('[data-cp-other-row="amex-gold:thc-property"]').text.includes('$100 each stay'), page.querySelector('[data-cp-other-row="delta-gold:flight-bonus"]').text.includes('$200 after spending')], [true, true]);
+otherBox('sapphire-reserve:trusted-traveler').checked = true;
+otherBox('sapphire-reserve:trusted-traveler').dispatch('change');
+check('ticked: today saved, and when it comes around again', [state().creditsOther['sapphire-reserve:trusted-traveler'], page.querySelector('[data-cp-other-row="sapphire-reserve:trusted-traveler"]').text.includes('again from Nov 1, 2030')], ['2026-11-01', true]);
+check('…the dollar totals don’t move', page.querySelector('.cp-summary').text, totalsBefore);
+const otherDate = page.querySelector('[data-cp-other-date="sapphire-reserve:trusted-traveler"]');
+otherDate.value = '2024-03-10';
+otherDate.dispatch('change');
+check('the day you really used it can be set', [state().creditsOther['sapphire-reserve:trusted-traveler'], page.querySelector('[data-cp-other-row="sapphire-reserve:trusted-traveler"]').text.includes('again from Mar 10, 2028')], ['2024-03-10', true]);
+const badDate = page.querySelector('[data-cp-other-date="sapphire-reserve:trusted-traveler"]');
+badDate.value = '2027-01-01';
+badDate.dispatch('change');
+check('…not a day ahead of today', state().creditsOther['sapphire-reserve:trusted-traveler'], '2024-03-10');
+now = new Date(2028, 2, 10, 12);
+app.renderCredits();
+check('four years on it can be used again: unticked, with when it last was', [otherBox('sapphire-reserve:trusted-traveler').checked, page.querySelector('[data-cp-other-row="sapphire-reserve:trusted-traveler"]').text.includes('Last used Mar 10, 2024')], [false, true]);
+now = new Date(2026, 10, 1, 12);
+app.renderCredits();
+otherBox('sapphire-reserve:apple').checked = true;
+otherBox('sapphire-reserve:apple').dispatch('change');
+check('an activate-once perk stays ticked, with no “again”', [otherBox('sapphire-reserve:apple').checked, page.querySelector('[data-cp-other-row="sapphire-reserve:apple"]').text.includes('Activated Nov 1, 2026'), page.querySelector('[data-cp-other-row="sapphire-reserve:apple"]').text.includes('again')], [true, true, false]);
+shown.toasts.length = 0;
+otherBox('sapphire-reserve:apple').checked = false;
+otherBox('sapphire-reserve:apple').dispatch('change');
+check('unticked: gone, with Undo', ['sapphire-reserve:apple' in state().creditsOther, shown.toasts.length > 0], [false, true]);
+shown.toasts.at(-1).undo?.();
+check('…Undo puts the day back', state().creditsOther['sapphire-reserve:apple'], '2026-11-01');
+const dirtyOthers = app.normalize({ programs: [], cards: ['sapphire-reserve'], creditsOther: { 'sapphire-reserve:trusted-traveler': '2025-02-03', 'sapphire-reserve:nope': '2025-02-03', 'nope:apple': '2025-02-03', 'sapphire-reserve:apple': 'soon', 'sapphire-reserve:dashpass': '2099-01-01', 'amex-gold:thc-property': '2025-02-03', '__proto__': '2025-02-03' } });
+check('a saved file keeps only real days on credits that have a box', dirtyOthers.creditsOther, { 'sapphire-reserve:trusted-traveler': '2025-02-03' });
+check('…and an old backup without them loads', app.normalize({ programs: [], cards: [] }).creditsOther, {});
+
+// A filter says what it's leaving out
+setup({ cards: ['amex-platinum'] });
+app.closeCreditsPage();
+app.renderCredits();
+page.querySelector('[data-cp-filter="month"]').dispatch('click');
+const later = page.querySelector('.cp-filter-note');
+const stillShown = page.querySelectorAll('[data-cp-row]').length;
+check('Due this month says how many end later, and links to All', [later.text.includes(`${app.creditsPageModel({ filter: 'month' }).later} more end later`), app.creditsPageModel({ filter: 'month' }).later > 0, stillShown > 0, !!later.querySelector('[data-cp-filter="all"]')], [true, true, true, true]);
+check('…those extra credits show under All only', page.querySelectorAll('[data-cp-other-row]').length, 0);
+later.querySelector('[data-cp-filter="all"]').dispatch('click');
+check('…the link goes to All', [page.querySelectorAll('[data-cp-row]').length > stillShown, page.querySelector('.cp-filter-note')], [true, null]);
+now = new Date(2026, 9, 31, 12);
 
 console.log(`\n${total - failed}/${total} passed`);
 if (failed) process.exit(1);
