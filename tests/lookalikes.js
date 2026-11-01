@@ -339,7 +339,9 @@ export async function scan(page, variant = {}) {
     if (/^Found|^New program|up to date|Which program|Couldn|looks like|no points or status|^These/.test(title)) break;
   }
   document.querySelector('#play').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); // no automatic update
-  const rows = [...document.querySelectorAll('#play-loot li')].map((li) => li.innerText.replace(/\n+/g, ' | '));
+  // A row's lines; innerText drops them when the page isn't being laid out (tabs switching), so its pieces then.
+  const pieces = (li) => { const out = []; const walk = document.createTreeWalker(li, NodeFilter.SHOW_TEXT); while (walk.nextNode()) if (walk.currentNode.nodeValue.trim()) out.push(walk.currentNode.nodeValue.trim()); return out.join(' | '); };
+  const rows = [...document.querySelectorAll('#play-loot li')].map((li) => (li.innerText.includes('\n') ? li.innerText.replace(/\n+/g, ' | ') : pieces(li)));
   document.querySelector('#play-close').click();
   await pause(300);
   const balance = rows.map((r) => /^([\d,]+) (?:points|miles|avios)/i.exec(r)).find(Boolean);

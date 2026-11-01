@@ -5301,6 +5301,7 @@
       .replace(/\bpremier[ \t]*[il1|!][ \t]*k\b/gi, 'Premier 1K')
       // Captions at small sizes, as the reader garbles them.
       .replace(/\bloyaty\b/gi, 'Loyalty').replace(/\bqualifying rights\b/gi, 'Qualifying nights').replace(/\bqualifying pants\b/gi, 'Qualifying points')
+      .replace(/\b(?:award|foward)[ \t]+mies\b/gi, 'Award miles').replace(/\b(?:ufetime|lfetime)\b/gi, 'Lifetime').replace(/\bbalance[ \t]+s[oa]c\b/gi, 'balance SQC')
       // A card's masked last four ("(...4417)", "•••• 1009", "xxxx7731") read as "ending 4417", never a balance.
       .replace(/(?:(?:[•●*]{2,}|\b[xX]{2,})[•●*xX \t]*|(?:\.{2,}|…)[•●*xX]*)(\d{4})(?![\d,])/g, 'ending $1')
       // A thousands comma misread as a mark ("128 »400", "57’900"): a comma again.
@@ -6186,7 +6187,10 @@
       // The logo's name on the line above, and this line only the alliance's tier ("GOLD", "Gold member").
       if (li > 0 && /^(?:star alliance|sky ?team|one ?world)$/.test(normTier(lines[li - 1]))
         && !` ${normTier(lines[li - 1])} ${normTier(line)} `.replace(alliance, '').trim()) continue;
-      const hay = nameSigns.reduce((h, s) => h.split(` ${s} `).join(' '), ` ${normTier(levelSlips(line))} `).replace(alliance, '');
+      // A long level alone on its line, one letter off ("Giobalist"): nothing else reads so close to one.
+      const asRead = normTier(levelSlips(line));
+      const nearLevel = !asRead.includes(' ') && asRead.length >= 7 ? tiers.flatMap((t) => t.aliases).find((a) => a.length >= 7 && !a.includes(' ') && nearWord(asRead, a)) : null;
+      const hay = nameSigns.reduce((h, s) => h.split(` ${s} `).join(' '), ` ${nearLevel || asRead} `).replace(alliance, '');
       const matched = tiers.map((t, i) => ({ i, alias: t.aliases.filter((a) => hay.includes(` ${a} `)).sort((x, y) => y.length - x.length)[0] }))
         .filter((m) => m.alias);
       const distinct = matched.filter((m) => !matched.some((o) => o !== m && o.alias.length > m.alias.length && o.alias.includes(m.alias)));
