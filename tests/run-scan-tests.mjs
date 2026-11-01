@@ -23,7 +23,14 @@ const stubs = `
   const localStorage = { getItem: () => null, setItem() {}, removeItem() {}, key: () => null, length: 0 };
   const document = { querySelector: () => null, createElement: () => ({}) };
 `;
-const context = vm.createContext({ console, Intl, Math, Date, Number, String, Object, Array, Set, Map, RegExp, JSON });
+// The cases name the levels of 2026, so they're read as of a day in 2026 (run-fixes-y27-tests.mjs reads the United and
+// Southwest ones on 2027's rules).
+const today = new Date(2026, 10, 1).getTime();
+class FixedDate extends Date {
+  constructor(...args) { if (args.length) super(...args); else super(today); }
+  static now() { return today; }
+}
+const context = vm.createContext({ console, Intl, Math, Date: FixedDate, Number, String, Object, Array, Set, Map, RegExp, JSON });
 vm.runInContext(`${stubs}\n${head}\n${dates}\nconst state = { programs: [], balances: {}, progress: {}, updated: {} };\n${parser}\n
   // A case's text, or each of its readings (passes) with the better one kept, as the app does with a screenshot.
   globalThis.read = (c) => {
@@ -31,16 +38,16 @@ vm.runInContext(`${stubs}\n${head}\n${dates}\nconst state = { programs: [], bala
     // Or { text, lines: [[[word, confidence, [x0, y0, x1, y1]], …], …] }: each line's words with where they sit.
     const boxed = ([text, confidence, [x0, y0, x1, y1]]) => ({ text, confidence, bbox: { x0, y0, x1, y1 } });
     const pass = (x) => (typeof x === 'string' ? { text: x, lines: [] }
-      : x.lines ? { text: x.text, disputed: x.disputed, lines: x.lines.map((ws) => ({ text: ws.map((w) => w[0]).join(' '), words: ws.map(boxed) })) }
+      : x.lines ? { text: x.text, disputed: x.disputed, rereadAs: x.rereadAs, lines: x.lines.map((ws, i) => ({ text: ws.map((w) => w[0]).join(' '), words: ws.map(boxed), card: (x.cardLines || []).includes(i) })) }
       : { text: x.text, disputed: x.disputed, lines: [{ text: '', words: (x.words || []).map(([text, confidence]) => ({ text, confidence })) }] });
     // A case's own programs the catalog doesn't know (custom: ['Finnair Plus']) are on the list while it's read.
     state.programs = (c.custom || []).map((name, i) => ({ id: 'custom-' + i, name, unit: 'Avios', status: [] }));
-    const r = c.passes ? readingOf({ passes: c.passes.map(pass) }).found : parseAccountText(c.text);
+    const r = c.passes ? readingOf({ passes: c.passes.map(pass), width: c.width, height: c.height }).found : parseAccountText(c.text);
     const own = r.ownId ? state.programs.find((p) => p.id === r.ownId).name : null;
     state.programs = [];
     const tiers = r.programId ? scanTiersFor(r.programId) : [];
     return { program: r.programId, balance: r.balances[0] ?? null, tier: r.tierIndex >= 0 ? tiers[r.tierIndex].name : null,
-      exp: r.exp, progress: r.progress, alt: r.altProgress, mqd: r.mqd, member: r.member, unsure: !!r.unsure, weak: r.weak || null, own, name: r.name || null,
+      exp: r.exp, progress: r.progress, alt: r.altProgress, mqd: r.mqd, member: r.member, unsure: !!r.unsure, several: r.several || null, weak: r.weak || null, own, name: r.name || null,
       ask: (r.unsureCounts || []).join(',') || null }; // the counts or end date the card asks about
   };`, context);
 
@@ -81,7 +88,7 @@ for (const [name, ids, text, want] of guesses) {
 }
 // Big numbers read again on their own: which words count as one big number, and when a re-read replaces them.
 const bigSrc = slice('  const boxAround', '  /* ---------- The game');
-vm.runInContext(`${bigSrc}\nglobalThis.big = { bigNumbers, useReread, shakyBeside, useSmallReread };`, context);
+vm.runInContext(`${bigSrc}\nglobalThis.big = { bigNumbers, useReread, shakyBeside, useSmallReread, readScale };`, context);
 const word = (text, x0, x1, y0, y1, confidence = 95) => ({ text, confidence, bbox: { x0, x1, y0, y1 } });
 const hilton = () => {
   const top = { text: 'Hilton Honors', words: [word('Hilton', 50, 200, 40, 80), word('Honors', 210, 380, 40, 80)] };
@@ -121,6 +128,19 @@ const bigChecks = [];
   t = one('57,900', 82);
   bigChecks.push(['“57,900” at 82% read again as “37,900” at 86%: kept, and noted as read two ways',
     [context.big.useReread(t.pass, t.group, '37,900', 86), t.pass.text, t.pass.disputed], [false, 'Points\n57,900\n', [57900]]]);
+}
+{ // Big bold digits read best at about 40px tall: every re-read at 90%+ at that size was right, on 468 big numbers in real
+  // readings of look-alike pages, where at their full height "54,320" came out "94,320" and "254,800" "254,300".
+  bigChecks.push(['a big number is read again shrunk to 40px tall; one that small already stays its size', [0.25, 1, 1].map((_, i) => context.big.readScale([160, 40, 25][i])), [0.25, 1, 1]]);
+  const one = (text, confidence) => {
+    const w = word(text, 100, 400, 100, 200, confidence);
+    const pass = { text: `Points\n${text}\n`, lines: [{ text, words: [w] }] };
+    return { pass, group: { line: pass.lines[0], words: [w] } };
+  };
+  let t = one('94,320', 90);
+  bigChecks.push(['“94,320” at 90% gives way to “54,320” at 96% (sure at the size it reads best, and surer)', [context.big.useReread(t.pass, t.group, '54,320', 96), t.pass.text, t.pass.disputed], [true, 'Points\n54,320\n', undefined]]);
+  t = one('94,320', 94);
+  bigChecks.push(['“94,320” at 94% against “54,320” at 96%: not clearly surer, so it stays and the card asks', [context.big.useReread(t.pass, t.group, '54,320', 96), t.pass.disputed, t.pass.rereadAs], [false, [94320], [[94320, 54320]]]]);
 }
 { // A big number not written "57,900" (its comma read as "." or "’", or printed with a space, "78 450"): a re-read with
   // other digits still has to be clearly surer, and one with the same digits only fixes the grouping.
@@ -244,7 +264,7 @@ const bigChecks = [];
 { // Light or colored type a gray screenshot loses (a gold "Gold" on white, white on a gold badge): when a program with
   // levels is named but no level read, the picture is darkened and read once more, and only a level on lines the
   // other readings didn't have counts.
-  vm.runInContext(`Object.assign(globalThis.big, (function () {\n${slice('  function darkenFaint', '  const scanSheet')}\nreturn { darkenFaint, lightCards, badges };\n})());`, context);
+  vm.runInContext(`Object.assign(globalThis.big, (function () {\n${slice('  function darkenFaint', '  const scanSheet')}\nreturn { blankCards, withCardLines, darkenFaint, lightCards, badges };\n})());`, context);
   const gray = (w, h, shade) => {
     const px = new Uint8ClampedArray(w * h * 4).fill(255);
     for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const v = shade(x, y); px.fill(v, (y * w + x) * 4, (y * w + x) * 4 + 3); }
@@ -346,6 +366,24 @@ const bigChecks = [];
   const accept = (/id="scan-file"[^>]*accept="([^"]*)"/.exec(html) || [])[1] || '';
   bigChecks.push(['the file picker offers picture types every browser opens (PNG, JPG), not any image (which invites HEIC)',
     [/image\/\*/.test(accept), /image\/png/.test(accept), /image\/jpeg/.test(accept)], [false, true, true]]);
+}
+{ // Dark type on a middle-shade card: the reader blacks the card out with its type on it, so nothing there is read.
+  const gray = (w, h, shade) => {
+    const px = new Uint8ClampedArray(w * h * 4).fill(255);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const v = shade(x, y); px.fill(v, (y * w + x) * 4, (y * w + x) * 4 + 3); }
+    return px;
+  };
+  // A silver gradient card on white, with rows of dark marks across it.
+  const shot = gray(600, 400, (x, y) => (y >= 100 && y < 260 && x >= 40 && x < 560 ? ((y >= 140 && y < 164) || (y >= 190 && y < 230)) && x % 12 < 6 && x > 60 && x < 300 ? 20 : 155 + Math.round((x - 40) / 10) : 255));
+  const word = (x0, y0, x1, y1) => ({ text: 'x', confidence: 95, bbox: { x0, y0, x1, y1 } });
+  const blank = context.big.blankCards(shot, 600, 400, [{ words: [word(40, 20, 300, 60)] }]);
+  bigChecks.push(['a gradient card with marks no reading has a word on is a blank card', blank.length === 1 && blank[0].x0 <= 48 && blank[0].x1 >= 552 && blank[0].y0 <= 104 && blank[0].y1 >= 256, true]);
+  bigChecks.push(['…also when the reader took the blacked-out card for one empty word', context.big.blankCards(shot, 600, 400, [{ words: [{ ...word(30, 90, 570, 270), text: ' ' }] }]).length, 1]);
+  bigChecks.push(['…not when a reading has words on most of its marks', context.big.blankCards(shot, 600, 400, [{ words: [word(60, 136, 300, 168), word(60, 186, 300, 234)] }]), []]);
+  bigChecks.push(['…nor a smooth card with no marks', context.big.blankCards(gray(600, 400, (x, y) => (y >= 100 && y < 260 && x >= 40 && x < 560 ? 180 : 255)), 600, 400, []), []]);
+  bigChecks.push(['…nor a page all in one shade (a dark page, flipped)', context.big.blankCards(gray(600, 400, (x, y) => (y % 40 < 12 && x % 12 < 6 ? 20 : 230)), 600, 400, []), []]);
+  const merged = context.big.withCardLines([{ words: [word(0, 10, 9, 20)] }, { words: [] }, { words: [{ ...word(0, 300, 9, 310), text: 'below' }] }], [{ words: [{ ...word(0, 150, 9, 160), text: 'card' }] }]);
+  bigChecks.push(['the card’s lines go in among the reading’s, top to bottom', merged.text, 'x\ncard\nbelow\n']);
 }
 for (const [name, got, want] of bigChecks) {
   const ok = JSON.stringify(got) === JSON.stringify(want);

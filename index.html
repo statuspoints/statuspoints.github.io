@@ -2838,6 +2838,18 @@
     ],
   };
 
+  // The levels as they stand from Jan 1, 2027 (see on2027Rules), per the airlines' announcements as of November 2026.
+  // United keeps its names and perks; only what each takes changes. Southwest's old names stay as aliases, so saved
+  // statuses and old screenshots still read as the level they became.
+  const BENEFITS_2027 = {
+    united: BENEFITS.united.map(([name, , short, perks], i) => [name, `${['6,000', '12,000', '18,000', '32,000'][i]} PQP a year, with at least 4 flights on United or United Express`, short, perks]),
+    southwest: [
+      ['Silver', '25 flights or 35,000 tier points a year', ["1st checked bag free", "Seat pick at booking", "Priority lanes"], ['40% bonus points on flights', 'Board in Group 1', 'First checked bag free (the second is $35 through Dec 31, 2027 if you earned A-List in 2026)', 'Pick a Preferred or Standard seat at booking (when available)', 'Priority and Express lanes', 'Free same-day standby, Basic fares too'], ['a list']],
+      ['Gold', '50 flights or 65,000 tier points a year', ["2 free checked bags", "Any seat incl. Extra Legroom", "Board before Group 1"], ['60% bonus points on flights (100% through Dec 31, 2027 if you earned A-List Preferred in 2026)', 'Board before Group 1', '2 free checked bags', 'Pick any seat at booking, Extra Legroom too (when available)', 'Up to 2 free premium drinks (select flights)', 'Priority and Express lanes', 'Free same-day standby, Basic fares too'], ['a list preferred']],
+      ['Platinum', '100 flights or 140,000 tier points a year', ["Unlimited Companion Pass", "3 free checked bags", "Board before Gold"], ['120% bonus points on flights', 'Unlimited Companion Pass trips', 'Board before Gold and Group 1', '3 free checked bags', 'Pick any seat at booking, Extra Legroom too (when available)', 'Up to 2 free premium drinks (select flights)', 'Priority and Express lanes', 'Free same-day standby, Basic fares too']],
+    ],
+  };
+
   // Progress toward each level this qualifying year: the metric and one threshold per BENEFITS tier (same order).
   // `also` names levels that need something we don't track (spend), so a count alone doesn't award them.
   // `alt` is a second way to qualify (stays, flights, points), per level; `with` = main count that path also needs.
@@ -2856,6 +2868,19 @@
     alaska: { unit: 'status points', steps: [20000, 40000, 80000, 135000], thru: endOf(2, 1), note: 'Status points this calendar year.' },
     aeroplan: { unit: 'SQC', steps: [25000, 35000, 50000, 75000, 125000], thru: endOf(2, 1), note: 'Status Qualifying Credits this calendar year. Everyday-partner points (100,000 for 25K) and Chase Aeroplan card spend ($75,000 for 35K) count too, not tracked here.' },
   };
+
+  // United and Southwest change their rules on Jan 1, 2027. Nothing about the switch is saved: each read asks the
+  // clock, so it happens at midnight without an app update. A count from 2026 is still judged by 2026's rules (see
+  // earnedTier). United's 2027 is the earning year for status in 2028; its levels keep their names.
+  const SWITCH_2027 = new Date(2027, 0, 1);
+  const on2027Rules = (d = new Date()) => d >= SWITCH_2027;
+  const TRACKS_2027 = {
+    united: { unit: 'PQP', steps: [6000, 12000, 18000, 32000], thru: TRACKS.united.thru, note: 'PQP only: flights no longer count, and Premier 1K needs 32,000 PQP. You still need at least 4 flights on United or United Express that year.' },
+    southwest: { unit: 'tier points', steps: [35000, 65000, 140000], alt: { unit: 'flights', steps: [25, 50, 100] }, thru: TRACKS.southwest.thru, note: 'Tier qualifying points, or qualifying one-way flights. Every Rapid Rewards credit card earns 1 tier point per $1 spent. A-List is now Silver and A-List Preferred is now Gold.' },
+  };
+  const trackById = (id, d) => (on2027Rules(d) && TRACKS_2027[id]) || TRACKS[id];
+  // Levels renamed by the 2027 rules: [old name, new name], longest first.
+  const RENAMED_2027 = { southwest: [['A-List Preferred', 'Gold'], ['A-List', 'Silver']] };
 
   // The qualifying year a date falls in, named by the year it starts; "2026", or "2026–27" for American.
   const qualYear = (track, d = new Date()) => d.getFullYear() - (d.getMonth() + 1 < (track.starts || 1) ? 1 : 0);
@@ -3227,19 +3252,40 @@
   // At these, "Elite" or "Plus" is a level of its own (or "Premier" is part of a name, as in JAL's JGC Premier, or
   // National's Executive Elite is a level above Executive), so levels match by their full names only.
   const FULL_TIER_NAMES = new Set(['singapore', 'turkish', 'jal', 'national']);
-  for (const [id, tiers] of Object.entries(BENEFITS)) {
-    BENEFITS[id] = tiers.map(([name, earn, short, perks, also = []]) => {
-      const full = normTier(name);
-      const bare = FULL_TIER_NAMES.has(id) ? full : full.replace(TIER_FILLER, ' ').replace(/\s+/g, ' ').trim();
-      // A free entry level (Flying Blue Explorer, BA Blue) is where everyone starts, not a status to earn.
-      const base = /^Free to join\b/.test(earn);
-      return { name, earn, short, perks, base, aliases: [...new Set([full, bare, ...also].filter(Boolean))] };
-    });
+  for (const table of [BENEFITS, BENEFITS_2027]) {
+    for (const [id, tiers] of Object.entries(table)) {
+      table[id] = tiers.map(([name, earn, short, perks, also = []]) => {
+        const full = normTier(name);
+        const bare = FULL_TIER_NAMES.has(id) ? full : full.replace(TIER_FILLER, ' ').replace(/\s+/g, ' ').trim();
+        // A free entry level (Flying Blue Explorer, BA Blue) is where everyone starts, not a status to earn.
+        const base = /^Free to join\b/.test(earn);
+        return { name, earn, short, perks, base, aliases: [...new Set([full, bare, ...also].filter(Boolean))] };
+      });
+    }
   }
 
   const catalogFor = (p) => CATALOG_BY_ID[p.id] || catalogByName(p.name);
-  const benefitsFor = (p) => { const c = catalogFor(p); return (c && BENEFITS[c.id]) || null; };
-  const trackFor = (p) => { const c = catalogFor(p); return (c && TRACKS[c.id]) || null; };
+  const tiersById = (id) => (on2027Rules() && BENEFITS_2027[id]) || BENEFITS[id];
+  const benefitsFor = (p) => { const c = catalogFor(p); return (c && tiersById(c.id)) || null; };
+  // The rules as of today, or as of date `d`.
+  const trackFor = (p, d) => { const c = catalogFor(p); return (c && trackById(c.id, d)) || null; };
+  // A level that ended before the switch was never renamed, and its terms never changed.
+  const endedBefore2027 = (exp) => !!exp && exp < '2027-01-01';
+  // A status's name on screen: from Jan 1, 2027 a saved "A-List" shows as Silver. What's saved stays as it was, so the
+  // switch needs no change to anyone's data or backups.
+  function shownTier(p, text, exp) {
+    const c = on2027Rules() && text && !endedBefore2027(exp) ? catalogFor(p) : null;
+    if (!c || !RENAMED_2027[c.id]) return text;
+    return RENAMED_2027[c.id].reduce((t, [old, name]) => t.replace(new RegExp(`\\b${old.replace(/[- ]/g, '[\\s-]+')}\\b`, 'gi'), name), text);
+  }
+  // The name a renamed level first had, for what must stay the same across the rename (a calendar reminder's id).
+  function firstTierName(p, text) {
+    const c = catalogFor(p);
+    const hit = c && (RENAMED_2027[c.id] || []).find(([, name]) => sameText(name, text));
+    return hit ? hit[0] : text;
+  }
+  // The name to save a level under, given when it ends: the old one if it ended before the switch.
+  const nameEnding = (p, name, exp) => (endedBefore2027(exp) ? firstTierName(p, name) : name);
   const expiryFor = (p) => { const c = catalogFor(p); return (p.unit && c && EXPIRY[c.id]) || null; };
   // Cents per point: yours if set, else the published typical value; null when neither exists.
   // `In` versions read any tracker (s), for household totals; the plain ones read whoever's showing.
@@ -3285,14 +3331,22 @@
   }
 
   // The level a progress count has already earned — programs award it as soon as you qualify, through `thru`.
+  // The count is judged by the rules of the day it was entered, not by today's: on Jan 1, United's 2026 count still
+  // earned on 2026's rules, flights included. (A date ahead of today, from a clock set ahead, goes by today's.)
   function earnedTier(p) {
-    const info = progressInfo(p);
-    if (!info || !info.entered) return null;
-    const { track, tiers, n, a } = info;
+    const today = new Date();
+    const stamp = progressStamp(p);
+    const track = trackFor(p, stamp && stamp < today ? stamp : today);
+    const tiers = benefitsFor(p);
+    if (!track || !tiers) return null;
+    const value = state.progress[p.id];
+    const a = track.alt ? state.progress[altKey(p.id)] : undefined;
+    if (value == null && a == null) return null;
+    const n = value || 0;
     let best = -1;
     track.steps.forEach((step, i) => { if (reachesLevel(track, n, a, i) && !(track.also && track.also[i])) best = i; });
     if (best < 0) return null;
-    const year = qualYear(track, progressStamp(p) || new Date());
+    const year = qualYear(track, stamp || today);
     const thru = track.thru(year);
     return { index: best, tier: tiers[best], year, thru, via: `earned in ${qualLabel(track, year)} · thru ${mdy(thru)}` };
   }
@@ -3429,7 +3483,12 @@
     return best;
   }
 
-  function perksFor(p, text) {
+  // With `exp`, a level that ended before the switch has the terms it had then.
+  function perksFor(p, text, exp) {
+    const c = endedBefore2027(exp) && catalogFor(p);
+    const then = c ? BENEFITS[c.id] : null;
+    const was = then ? findTier(then, text) : -1;
+    if (was >= 0) return then[was];
     const tiers = benefitsFor(p);
     const i = tiers ? findTier(tiers, text) : -1;
     return i < 0 ? null : tiers[i];
@@ -3841,7 +3900,7 @@
   }
 
   function exampleSetup() {
-    const s = { programs: EXAMPLE.programs.map((id) => programFromCatalog(CATALOG_BY_ID[id])), cards: [], notes: EXAMPLE.notes };
+    const s = { programs: EXAMPLE.programs.map((id) => programFromCatalog(CATALOG_BY_ID[id])), cards: [], notes: on2027Rules() ? EXAMPLE.notes.replace('Southwest A-List', 'Southwest Silver') : EXAMPLE.notes };
     EXAMPLE.cards.forEach((id) => applyCard(s, id));
     return s;
   }
@@ -3959,9 +4018,11 @@
 
   // The Credits page's record (creditsLog): "card:credit" → period key → true (used) or the dollars used so far.
   // Period keys are creditPeriod's: "2026-10", "2026-Q4", "2026-H2", "2026", or "A2026-03-15" for a card year.
-  // Cleaned like everything else imported: cards the app knows, at most 60 credits a card and 40 periods a credit,
-  // and only this year and last (a card year that ran into last year stays). Marks saved before the page existed
-  // (creditsUsed: the one period each credit was last marked used in) are ticked there too.
+  // Cleaned like everything else imported: cards the app knows, amounts of at least a cent, and only this year and
+  // last (a card year that ran into last year stays), or next (another device's clock, not years ahead). Marks saved
+  // before the page existed (creditsUsed: the one period each credit was last marked used in) are ticked there too,
+  // over a part-used amount if there's one. At most 60 credits a card and 40 periods a credit, which only a damaged
+  // file reaches: the earliest written go first, so what you just did survives a reload, and a mark always stays.
   const CREDIT_KEY_RE = /^[a-z0-9-]{1,40}:[A-Za-z0-9-]{1,40}$/;
   const PERIOD_KEY_RE = /^(\d{4})(-([1-9]|1[0-2]|Q[1-4]|H[12]))?$|^A(\d{4})-\d{2}-\d{2}$/;
   function cleanCreditsLog(rawLog, used) {
@@ -3969,31 +4030,41 @@
     const keepPeriod = (p) => {
       const m = typeof p === 'string' && PERIOD_KEY_RE.exec(p);
       if (!m) return false;
+      if (Number(m[4] || m[1]) > oldest + 2) return false;
       if (m[4]) return parseISODate(p.slice(1)) && Number(m[4]) + 1 >= oldest; // a card year ends the year after it starts
       return Number(m[1]) >= oldest;
     };
-    const keepValue = (v) => v === true || (typeof v === 'number' && Number.isFinite(v) && v > 0 && v <= 100000);
-    const log = {};
-    const perCard = {};
-    const add = (key, period, v) => {
-      const cardId = key.split(':')[0];
-      if (!CREDIT_KEY_RE.test(key) || !CARD_BY_ID[cardId] || !keepPeriod(period) || !keepValue(v)) return;
-      if (!log[key]) {
-        if ((perCard[cardId] || 0) >= 60) return;
-        perCard[cardId] = (perCard[cardId] || 0) + 1;
-        log[key] = {};
-      }
-      if (period in log[key] || Object.keys(log[key]).length >= 40) return;
-      log[key][period] = v === true ? true : Math.round(v * 100) / 100;
+    const toCents = (v) => Math.round(v * 100) / 100;
+    const keepValue = (v) => v === true || (typeof v === 'number' && Number.isFinite(v) && toCents(v) > 0 && v <= 100000);
+    const keepCredit = (key) => CREDIT_KEY_RE.test(key) && !!CARD_BY_ID[key.split(':')[0]];
+    const capped = (list, cap, stays = () => false) => { let over = list.length - cap; return list.filter((x) => stays(x) || over-- <= 0); };
+    const cappedPerCard = (keys, stays) => {
+      const byCard = new Map();
+      for (const key of keys) { const cardId = key.split(':')[0]; byCard.set(cardId, [...(byCard.get(cardId) || []), key]); }
+      return new Set([...byCard.values()].flatMap((list) => capped(list, 60, stays)));
     };
+    const credits = new Map(); // "card:credit" → [[period, value]], as written
     if (rawLog && typeof rawLog === 'object' && !Array.isArray(rawLog)) {
       for (const [key, periods] of ownEntries(rawLog)) {
-        if (!periods || typeof periods !== 'object' || Array.isArray(periods)) continue;
-        for (const [period, v] of ownEntries(periods)) add(key, period, v);
+        if (!periods || typeof periods !== 'object' || Array.isArray(periods) || !keepCredit(key)) continue;
+        const list = ownEntries(periods).filter(([period, v]) => keepPeriod(period) && keepValue(v));
+        if (list.length) credits.set(key, list);
       }
     }
-    for (const [key, period] of ownEntries(used)) add(key, period, true);
-    for (const key of Object.keys(log)) if (!Object.keys(log[key]).length) delete log[key];
+    const marked = cappedPerCard(ownEntries(used).filter(([key, period]) => keepCredit(key) && keepPeriod(period)).map(([key]) => key));
+    for (const key of marked) {
+      const list = credits.get(key) || [];
+      const there = list.find(([period]) => period === used[key]);
+      if (there) there[1] = true;
+      else list.push([used[key], true]);
+      credits.set(key, list);
+    }
+    const kept = cappedPerCard(credits.keys(), (key) => marked.has(key));
+    const log = {};
+    for (const [key, list] of credits) {
+      if (!kept.has(key)) continue;
+      log[key] = Object.fromEntries(capped(list, 40, ([period]) => marked.has(key) && period === used[key]).map(([period, v]) => [period, v === true ? true : toCents(v)]));
+    }
     return log;
   }
 
@@ -4034,10 +4105,11 @@
       for (const [k, v] of ownEntries(raw.creditsSkipped)) if (v === true) s.creditsSkipped[k] = true;
     }
     if (raw.customCredits && typeof raw.customCredits === 'object') { // credits you added: card → [[id, name, $, period]]
+      const dollars = (amount) => Math.round(Math.min(amount, 100000) * 100) / 100; // under half a cent is $0, so it goes
       for (const [cardId, list] of ownEntries(raw.customCredits)) {
         if (!CARD_BY_ID[cardId] || !Array.isArray(list)) continue;
-        const clean = list.filter((c) => Array.isArray(c) && typeof c[0] === 'string' && str(c[1], 60) && isCount(c[2]) && Object.hasOwn(CREDIT_PERIODS, c[3]))
-          .slice(0, 30).map(([id, name, amount, period]) => [id.slice(0, 20), str(name, 60), Math.round(amount * 100) / 100, period]);
+        const clean = list.filter((c) => Array.isArray(c) && typeof c[0] === 'string' && str(c[1], 60) && isCount(c[2]) && dollars(c[2]) > 0 && Object.hasOwn(CREDIT_PERIODS, c[3]))
+          .slice(0, 30).map(([id, name, amount, period]) => [id.slice(0, 20), str(name, 60), dollars(amount), period]);
         if (clean.length) s.customCredits[cardId] = clean;
       }
     }
@@ -4330,12 +4402,12 @@
   function refreshDay() {
     let rolled = false;
     try { rolled = rollOver(); } catch (err) { openFresh(err); return; }
+    renderToday(); // the date at the top of the page, which drawing the page again leaves alone
     if (rolled || todayISO() !== drawnDay) {
       drawnDay = todayISO();
       renderSafely();
       if (detail.open) renderDetail(); // the program sheet's countdowns too
     } else {
-      renderToday();
       renderCredits(); // a month or quarter may have turned over
       renderVouchers(); // days-left may have rolled over while backgrounded
     }
@@ -4588,15 +4660,20 @@
   // One line per tier when several cards give the same status: "Preferred Plus · Amex Platinum · Sapphire Reserve".
   // Each merged line keeps its underlying lines (`refs`). It expires when its last source does; one source
   // without an end date (e.g. a card you keep) means it doesn't expire.
-  function mergedLines(lines) {
+  // With a program `p`, levels go by the name they show under (see shownTier). A level that ended before the switch
+  // and goes on under the new name is one level: renewing A-List Preferred gives one Gold row, not a Gold and an expired one.
+  function mergedLines(lines, p) {
     const out = [];
-    for (const line of lines) {
-      const same = line.tier && out.find((o) => sameText(o.tier, line.tier));
+    const shown = lines.map((line) => (p ? shownTier(p, line.tier, line.exp) : line.tier));
+    for (const [i, line] of lines.entries()) {
+      const renamed = p ? shownTier(p, line.tier) : line.tier;
+      const tier = renamed && shown.some((name) => sameText(name, renamed)) ? renamed : shown[i];
+      const same = tier && out.find((o) => sameText(o.tier, tier));
       if (same) {
         same.via = [same.via, line.via].filter(Boolean).join(' · ');
         same.refs.push(line);
       } else {
-        out.push({ tier: line.tier, via: line.via, refs: [line] });
+        out.push({ tier, via: line.via, refs: [line] });
       }
     }
     for (const group of out) group.exp = group.refs.every((l) => l.exp) ? group.refs.map((l) => l.exp).sort().pop() : '';
@@ -4631,7 +4708,7 @@
 
   function statusBlock(p, withMedallion) {
     // The row is a summary: a dated status you keep longer through another one is left to the detail sheet.
-    const lines = mergedLines(p.status).filter((group) => !(group.exp && daysLeft(group.exp) >= 0 && outlasted(p, group)))
+    const lines = mergedLines(p.status, p).filter((group) => !(group.exp && daysLeft(group.exp) >= 0 && outlasted(p, group)))
       .map((group) => statusLine(group, p));
     const earned = newlyEarned(p);
     if (earned) lines.unshift(statusLine({ tier: earned.tier.name, via: earned.via }, p));
@@ -4851,7 +4928,7 @@
         h('span', { class: 'via' }, [thru ? `thru ${mdy(parseISODate(thru))}` : null, `${fmt(state.mqd)} MQDs in ${mqdYear()}`].filter(Boolean).join(' · ')));
     }
     const tiers = benefitsFor(p);
-    const active = mergedLines(p.status).filter((g) => g.tier && !(g.exp && daysLeft(g.exp) < 0));
+    const active = mergedLines(p.status, p).filter((g) => g.tier && !(g.exp && daysLeft(g.exp) < 0));
     const earned = newlyEarned(p);
     let best = null; // { index, exp, end } — the highest level; among equals, the one lasting longest (no end date wins)
     // `end` is the date itself: an earned level's can be past what parseISODate takes back (a progress date in
@@ -4994,12 +5071,15 @@
     lhw: ['leaders club', 'leading hotels'], omni: ['select guest', 'omni hotels'], avis: ['avis preferred', 'avis'], hertz: ['gold plus rewards', 'hertz'],
     national: ['emerald club', 'national car'],
   };
+  // A program's level names, old ones too: an "A-List" page still names Southwest after the rename. (The same either
+  // side of the switch, since the new names are plain words, so what's built from it below needn't be built again.)
+  const scanLevelNames = (pid) => [...scanTiersFor(pid).map((t) => t.name), ...(RENAMED_2027[pid] || []).map(([old]) => old)].map((n) => n.toLowerCase());
   // A level name only one program uses, two words or more ("Gold Medallion", "Mosaic 2", "Premier 1K"): on a short
   // line of its own it names that program as surely as its logo — a partner's tile never shows your level in it.
   let levelSigns = null;
   function levelSignsFor(id) {
     if (!levelSigns) {
-      const names = (pid) => [...new Set(scanTiersFor(pid).map((t) => t.name.toLowerCase()).filter((n) => /[ -]/.test(n)))];
+      const names = (pid) => [...new Set(scanLevelNames(pid).filter((n) => /[ -]/.test(n)))];
       const count = new Map();
       for (const pid of Object.keys(SCAN_SIGNS)) for (const n of names(pid)) count.set(n, (count.get(n) || 0) + 1);
       levelSigns = Object.fromEntries(Object.keys(SCAN_SIGNS).map((pid) => [pid, names(pid).filter((n) => count.get(n) === 1)]));
@@ -5011,7 +5091,7 @@
   const LEVEL_PLAIN = /^(?:silver|gold|platinum|diamond|bronze|titanium|blue|red|green|classic|elite|member|plus|select)$/;
   let levelNames = null;
   function levelLine(ll) {
-    if (!levelNames) levelNames = new Set(Object.keys(SCAN_SIGNS).flatMap((pid) => scanTiersFor(pid).map((t) => t.name.toLowerCase())).filter((n) => !LEVEL_PLAIN.test(n)));
+    if (!levelNames) levelNames = new Set(Object.keys(SCAN_SIGNS).flatMap(scanLevelNames).filter((n) => !LEVEL_PLAIN.test(n)));
     const bare = ll.replace(/\s+(?:member|status|tier)$/, '').trim();
     return levelNames.has(ll.trim()) || levelNames.has(bare);
   }
@@ -5079,12 +5159,21 @@
   const scanDateOnly = (line) => /\d/.test(line) && !/^\W*(?:19|20)\d\d\W*$/.test(line) && !/[a-z\d]/i.test(scanDateless(line).replace(/\b(?:to|through|thru|until|from)\b/gi, ''));
   const toNumber = (text) => Number(String(text).replace(/[^\d]/g, ''));
 
+  // A balance's or a count's caption on a page in another language (the reader may drop its accents), in English: a
+  // program's own site may be in the language of its country (Flying Blue in French, Miles & More in German).
+  const SCAN_ABROAD_WORDS = [[/^status(?:meilen|punkte)$/i, 'Status miles'], [/^(?:puntos|pontos|punti) (?:calificables|qualific[aá]veis|qualificanti)$/i, 'Qualifying points'],
+    [/^(?:puntos|pontos|punti) elite$/i, 'Elite Points'], [/^points d.exp[eé]rience$/i, 'XP'],
+    [/^(?:pr[aäe]mienmeilen|meilen|millas|milhas|miglia)$/i, 'Miles'], [/^(?:punkte|puntos|pontos|punti|punten)$/i, 'Points']];
+  const SCAN_ABROAD = /(?<![\p{L}\d])(?:status(?:meilen|punkte)|(?:puntos|pontos|punti) (?:calificables|qualific[aá]veis|qualificanti|elite)|points d.exp[eé]rience|pr[aäe]mienmeilen|meilen|millas|milhas|miglia|punkte|puntos|pontos|punti|punten)(?![\p{L}\d])/giu;
+
   // Text from a screenshot, tidied: trademark marks dropped, "26.948", "78 450 Miles", "2 450 Reward points", "Avios 96 320" and a lone
   // "78 450" beside a Miles caption ("Miles", "Virgin Points") read as thousands, O/l misread as digits ("l8", "2O",
   // "6l,4OO"; S/B too inside a comma-grouped number, "1S2,400"), "Premier IK" as 1K. Digit groups after a member-number label ("Member # 123 456 789", "SkyMiles Number"
   // over "9123 456 789", "Member 123 456 789" starting a line) are one id, not thousands.
   function cleanScanText(text) {
     return String(text || '')
+      // Another language's units and counts in English, so the rules below read them.
+      .replace(SCAN_ABROAD, (word) => SCAN_ABROAD_WORDS.find(([re]) => re.test(word))[1])
       .replace(/\bpremier[ \t]*[il1|!][ \t]*k\b/gi, 'Premier 1K')
       // A card's masked last four ("(...4417)", "•••• 1009", "xxxx7731") read as "ending 4417", never a balance.
       .replace(/(?:(?:[•●*]{2,}|\b[xX]{2,})[•●*xX \t]*|(?:\.{2,}|…)[•●*xX]*)(\d{4})(?![\d,])/g, 'ending $1')
@@ -5107,12 +5196,12 @@
       })
       .replace(/\b(\d{1,3})((?:[ \u00a0\u202f]\d{3})+)(?=[ \t]*(?:(?!of\b|to\b)[a-z]+[ \t]+){0,2}(?:miles|points|avios|pts|mi|sqc|pqp|mqds?|xp|qpoints)\b)/gi, (all, a, b) => `${a}${b.replace(/\D/g, ',')}`)
       .replace(/(\b(?:miles|points|avios|pts|balance|sqc|pqp|mqds?|xp|qpoints|credits)[ \t]*:?[ \t]*\$?[ \t]*)(\d{1,3}(?:[ \u00a0\u202f]\d{3})+)(?![\d,.])/gi, (all, pre, n) => `${pre}${n.replace(/\D/g, ',')}`)
-      .replace(/(^|\n)(\d{1,3}(?:[ \u00a0\u202f]\d{3})+)[ \t]*(?=\n[ \t]*(?:[a-z]+[ \t]+){0,2}(?:miles|points|avios|pts|sqc|pqp|mqds?|xp|qpoints|credits)\b)/gi, (all, pre, n) => `${pre}${n.replace(/\D+/g, ',')}`)
-      // Also when the reader ran the line into the column beside it ("YOUR POINTS" over "Hello Alex, 26 948"), and
-      // when the caption names its year ("PQP (2026)", "Tier Points 2026/27").
-      .replace(/((?:^|\n)[^\n\d]*\b(?:miles|points|avios|pts|sqc|pqp|mqds?|xp|qpoints|credits)\b[^\n\d]*(?:\(?(?:19|20)\d\d(?:[/\-\u2013]\d{2,4})?\)?[^\n\d]*)?\n[^\n\d]*?)(\d{1,3}(?:[ \u00a0\u202f]\d{3})+)[ \t]*(?=\n|$)/gi, (all, pre, n) => `${pre}${n.replace(/\D+/g, ',')}`)
+      .replace(/(^|\n)(\d{1,3}(?:[ \u00a0\u202f]\d{3})+)[ \t]*(?=(?:\n[ \t]*)+(?:[a-z]+[ \t]+){0,2}(?:miles|points|avios|pts|sqc|pqp|mqds?|xp|qpoints|credits)\b)/gi, (all, pre, n) => `${pre}${n.replace(/\D+/g, ',')}`)
+      // Also when the reader ran the line into the column beside it ("YOUR POINTS" over "Hello Alex, 26 948"), when
+      // the caption names its year ("PQP (2026)", "Tier Points 2026/27"), and past the blank line between its blocks.
+      .replace(/((?:^|\n)[^\n\d]*\b(?:miles|points|avios|pts|sqc|pqp|mqds?|xp|qpoints|credits)\b[^\n\d]*(?:\(?(?:19|20)\d\d(?:[/\-\u2013]\d{2,4})?\)?[^\n\d]*)?(?:\n[ \t]*)+[^\n\d]*?)(\d{1,3}(?:[ \u00a0\u202f]\d{3})+)[ \t]*(?=\n|$)/gi, (all, pre, n) => `${pre}${n.replace(/\D+/g, ',')}`)
       // \u2026or the caption is on the line under the run-in ("Hi Sam Rivera, 26 948" over "YOUR POINTS").
-      .replace(/(^|[^\d,.\n])(\d{1,3}(?:[ \u00a0\u202f]\d{3})+)[ \t]*(?=\n[^\n\d]{0,40}\b(?:miles|points|avios|pts|sqc|pqp|mqds?|xp|qpoints|credits)\b[^\n\d]{0,40}(?:\n|$))/gi, (all, pre, n) => `${pre}${n.replace(/\D+/g, ',')}`)
+      .replace(/(^|[^\d,.\n])(\d{1,3}(?:[ \u00a0\u202f]\d{3})+)[ \t]*(?=(?:\n[ \t]*)+[^\n\d]{0,40}\b(?:miles|points|avios|pts|sqc|pqp|mqds?|xp|qpoints|credits)\b[^\n\d]{0,40}(?:\n|$))/gi, (all, pre, n) => `${pre}${n.replace(/\D+/g, ',')}`)
       // Inside a comma-grouped number every place is a digit, so S and B are 5 and 8 too ("1S2,400", "4B,320").
       .replace(/\b[\dOolISB]{1,3}(?:[,.][\dOolISB]{3})+\b/g, (n) => (/\d/.test(n) ? n.replace(/[Oo]/g, '0').replace(/[lI]/g, '1').replace(/S/g, '5').replace(/B/g, '8') : n))
       // A comma in the wrong place ("15,2310", "1,52,310") is a misread mark: the digits are the number. Not a day and
@@ -5165,15 +5254,32 @@
   // no one) — the program's own levels when the screen names it, else any program's. Tells two accounts in one
   // program apart, and names a second account.
   const GREETING_STOP = /^(?:points?|miles|avios|member|members|membership|account|balance|status|your|you|to|the|rewards|club|honors|bonvoy|skymiles|mileageplus|aadvantage|elite|number|id|no|since|my|profile|level|tier|back)$/i;
+  const GREETING_WORDS = 'welcome(?: back)?|hello|hi|hey|good (?:morning|afternoon|evening)';
+  const scanSignWords = () => new Set(Object.values(SCAN_SIGNS).flat().flatMap((sign) => sign.split(' '))); // "Hilton", "Honors"
   let allLevelWords = null;
+  const anyLevelWords = () => allLevelWords || (allLevelWords = new Set(Object.keys(SCAN_SIGNS).flatMap((pid) => scanTiersFor(pid).flatMap((t) => t.aliases)).flatMap((a) => a.split(' '))));
+  // A name that ends in a level's word ("Hi, Pat Gold", or "PAT GOLD" on a line of its own) isn't that level. It takes a
+  // plain word at the very end, after words that could be a name: "Hi Pat Gold Member", "Tier Gold" and "Premier Gold"
+  // are still levels, and so is "Hi Gold", with no name before it.
+  const SURNAME_LEVEL = /^(?:silver|gold|platinum|diamond|bronze|titanium|blue|green|red)$/;
+  const NOT_A_FIRST_NAME = /^(?:current|new|now|earned|reached|achieved|alliance|star|lifetime)$/i;
+  function surnameLine(line, alias) {
+    if (!SURNAME_LEVEL.test(alias)) return false;
+    const words = line.replace(new RegExp(`^(?:${GREETING_WORDS})\\b[,!]?\\s*`, 'i'), '').replace(/[,!.]+$/, '').split(/\s+/);
+    if (words.length < 2 || words.length > 3 || normTier(words[words.length - 1]) !== alias) return false;
+    const signWords = scanSignWords();
+    return words.slice(0, -1).every((raw) => {
+      const word = raw.replace(/\.$/, '').toLowerCase();
+      return /^\p{Lu}[\p{L}'’.-]+$/u.test(raw) && !GREETING_STOP.test(word) && !NOT_A_FIRST_NAME.test(word) && !signWords.has(word) && !anyLevelWords().has(normTier(word));
+    });
+  }
   function greetingName(text, levels = []) {
     // A whole word: "Hilton" and "Highlights" aren't "Hi". The name may sit under a blank line.
-    const g = /(?:^|\n)[ \t]*(?:welcome(?: back)?|hello|hi|hey|good (?:morning|afternoon|evening))\b[,!]?[ \t]*(?:\n[ \t]*){0,2}/i.exec(text);
+    const g = new RegExp(`(?:^|\\n)[ \\t]*(?:${GREETING_WORDS})\\b[,!]?[ \\t]*(?:\\n[ \\t]*){0,2}`, 'i').exec(text);
     const m = g && /^((?:\p{Lu}[\p{L}'’.-]*[ \t]*){1,3})/u.exec(text.slice(g.index + g[0].length));
     if (!m) return null;
-    const signWords = new Set(Object.values(SCAN_SIGNS).flat().flatMap((sign) => sign.split(' '))); // "Hilton", "Honors"
-    if (!allLevelWords) allLevelWords = new Set(Object.keys(SCAN_SIGNS).flatMap((pid) => scanTiersFor(pid).flatMap((t) => t.aliases)).flatMap((a) => a.split(' ')));
-    const levelWords = levels.length ? new Set(levels.flatMap((a) => a.split(' '))) : allLevelWords;
+    const signWords = scanSignWords();
+    const levelWords = levels.length ? new Set(levels.flatMap((a) => a.split(' '))) : anyLevelWords();
     const words = [];
     for (const raw of m[1].trim().split(/\s+/)) {
       const word = /^\p{Lu}\p{Ll}{0,3}\.$/u.test(raw) ? raw : raw.replace(/[,!.:]+$/, ''); // "Dr." keeps its period
@@ -5215,7 +5321,7 @@
   // Lounge memberships a card's benefits page lists under "Airport lounges" (no ladder of levels).
   const LOUNGE_TIERS = ['Priority Pass', 'Priority Pass Standard Plus', 'Priority Pass Select', 'Priority Pass Prestige'];
   function scanTiersFor(id) {
-    if (BENEFITS[id]) return BENEFITS[id];
+    if (BENEFITS[id]) return tiersById(id);
     if (id === 'lounges') return LOUNGE_TIERS.map((name) => ({ name, aliases: [normTier(name)] }));
     // Matched by their full names: at some airlines "Elite" or "Plus" is a level of its own.
     return (STATUS_NAMES[id] || []).map((name) => ({ name, aliases: [normTier(name)] }));
@@ -5226,7 +5332,23 @@
   // Every program's level names ("Platinum", "Premier 1K", "A-List Preferred"), longest first, as one pattern.
   const SCAN_LEVELS = [...new Set([...Object.keys(BENEFITS), ...Object.keys(STATUS_NAMES)].flatMap((id) => scanTiersFor(id).flatMap((t) => t.aliases)))]
     .sort((a, b) => b.length - a.length).map((a) => a.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/ /g, '[\\s-]+')).join('|');
-  const SCAN_TO_GO = new RegExp(`^\\s*(?:[a-z&]+\\s+){0,3}(?:more|to go|away|needed|until|to reach|to unlock|to qualify|to earn|to (?:${SCAN_LEVELS}))\\b`);
+  // In another language: "98 XP pour atteindre Platinum", "7,450 Points bis zum nächsten Status", "350 Elite Points para Oro".
+  const SCAN_TO_LEVEL = `(?:to|for|para|pour|bis|f(?:[uüi]|ii)r|voor|per) (?:${SCAN_LEVELS})`;
+  const SCAN_TO_GO = new RegExp(`^\\s*(?:[a-z&]+\\s+){0,3}(?:more|to go|away|needed|until|to reach|to unlock|to qualify|to earn|pour atteindre|bis zu[mr]|${SCAN_TO_LEVEL})\\b`);
+  // A caption naming what a count is for ("Miles to Platinum", "Points für HON Circle Member"), not what you have.
+  const SCAN_FOR_LEVEL = new RegExp(`(?:^|[^a-z0-9])${SCAN_TO_LEVEL}(?:[^a-z0-9]|$)`);
+  const SCAN_LEVEL_ONLY = new RegExp(`^(?:${SCAN_LEVELS})$`);
+  // A count's caption saying it's still to earn ("Points to go", "Next level", "Next: Gold"); "Plan your next trip" and
+  // "Points ready to go" say nothing about the number under them.
+  const SCAN_STILL_TO_EARN = new RegExp(`\\b(?:points?|miles?|avios|pts|xp|nights?|stays?|credits?|flights?|segments?)\\s+to go\\b|^\\W*to go\\b|\\bnext\\s*:|\\bnext (?:level|tier|status|reward|award|milestone|goal|stage|rank|${SCAN_LEVELS})\\b`);
+  // A level's threshold ("Morning Calm Premium Club at 500,000 miles", "Gold from 25,000 points"), not a balance.
+  const SCAN_LEVEL_AT = new RegExp(`(?:^|[^a-z0-9])(?:${SCAN_LEVELS})[\\s:-]+(?:at|from)\\s*$`);
+  // What a rate is per: "1,200 points per rental", "10,000 points / night", "6 points / $1". After a slash only those:
+  // "84,250 points / $842.50" is what a balance is worth, and "42,000 points / 75,000 points" is a target.
+  const SCAN_PER = '(?:night|stay|flight|rental|ride|trip|booking|day|mile|point|dollar)';
+  const SCAN_SLASH_RATE = `\\/\\s*(?:${SCAN_PER}|\\$\\s?1(?:\\.00)?(?![\\d,.]))`;
+  const SCAN_RATE_AFTER = new RegExp(`^\\s*(?:points?|miles?|avios|pts)\\s*(?:per\\s|${SCAN_SLASH_RATE})`);
+  const SCAN_PRICE_AFTER = new RegExp(`^\\s*(?:points?|miles?|avios|pts)?\\s*(?:(?:per|a)\\s*(?:${SCAN_PER}|\\$)|${SCAN_SLASH_RATE})`);
   // Amounts on a line (not "of 15,000" targets or "8 more to go"), in reading order, with where each sits.
   function lineAmounts(line, dollars) {
     const out = [];
@@ -5239,6 +5361,8 @@
         continue;
       }
       if (dollars === false && m[1]) continue;
+      // A rate: "Hertz: 500 points per rental", "1 mile per $1".
+      if (SCAN_RATE_AFTER.test(after)) continue;
       // A number run into one letter is a level ("Premier 1K", "35K") or a misread digit ("3B"), not a count.
       if (/^[a-z](?![a-z])/i.test(line.slice(m.index + m[0].length))) continue;
       if (!m[1] && /^\d{4}$/.test(m[2]) && Number(m[2]) >= 1990 && Number(m[2]) <= 2100) continue; // a year, as in "in 2026"
@@ -5266,13 +5390,17 @@
   // Tile layouts put values and captions on lines of their own: a bare value line ("78,450", "1,840 / 3,500",
   // "302,118 61 24") and a caption line (short, no digits: "Miles", "Qualifying nights").
   // A line that is only a year ("2026") is a heading, not a value.
-  const scanBare = (line) => /\d/.test(line) && !/%|\d{1,2}[/.]\d{1,2}[/.]\d{2,4}/.test(line) && !/^\W*(?:19|20)\d\d\W*$/.test(line) && /^[\W\d]*$/.test(line.replace(/\b(?:out of|of)\b/gi, ' '));
+  // A level at the end of a row of numbers is its own tile's value ("33,420 18,000 Silver").
+  const scanBare = (line) => /\d/.test(line) && !/%|\d{1,2}[/.]\d{1,2}[/.]\d{2,4}/.test(line) && !/^\W*(?:19|20)\d\d\W*$/.test(line)
+    && /^[\W\d]*$/.test(line.replace(/\b(?:out of|of)\b/gi, ' ').replace(/(\d\s+\d[\d,]*\s+)(?:silver|gold|platinum|diamond|titanium|bronze)\s*$/i, '$1'));
   // A unit caption may name its year or period ("Miles earned in 2026", "Tier Points 2026/27", "Loyalty Points since
   // Mar 1", "PQP (Jan 1 – Dec 31)", "as of 10/18/2026") — an offer with its end date ("Double points through Dec 31") is none.
   const scanOffer = (line) => /\b(?:earn|double|triple|bonus|offer|promo|\d+x)\b/i.test(line);
+  // A phone's tab bar ("Book Trips Miles", "Home Stays Rewards Account") labels no value, whatever its last tab is called.
+  const scanTabBar = (line) => (line.match(/\b(?:home|today|book|trips?|stays|flights|wallet|account|profile|menu|more|offers)\b/gi) || []).length >= 2;
   const scanCaption = (line) => {
     const t = scanDateless(line);
-    return !/\d/.test(t) && /[a-z]/i.test(t) && t.split(/\s+/).length <= 5 && (t === line || SCAN_UNIT.test(t)) && !(/\d/.test(line) && scanOffer(line));
+    return !scanTabBar(line) && !/\d/.test(t) && /[a-z]/i.test(t) && t.split(/\s+/).length <= 5 && (t === line || SCAN_UNIT.test(t)) && !(/\d/.test(line) && scanOffer(line));
   };
   // Words that make a caption a value's label rather than a header or a level ("Gold", "Hilton Honors"). Flying
   // Blue's Ultimate XP ("UXP") is a count like XP.
@@ -5290,7 +5418,14 @@
       if (SCAN_UNIT.test(w) && !SCAN_UNIT.test(words[k + 1] || '')) { groups.push(part.join(' ')); part = []; }
     });
     if (part.length && groups.length) groups[groups.length - 1] += ` ${part.join(' ')}`;
-    return groups.length === n ? groups : null;
+    if (groups.length === n) return groups;
+    // Or one unit word each, words between them leading the next ("Avios Qpoints Qpoints to Gold", "Skywards Miles Tier
+    // Miles Miles to Platinum").
+    const each = [];
+    part = [];
+    words.forEach((w, k) => { part.push(w); if (SCAN_UNIT.test(w) && !/^(?:balance|available|redeemable)\b/i.test(words[k + 1] || '')) { each.push(part.join(' ')); part = []; } });
+    if (part.length && each.length) each[each.length - 1] += ` ${part.join(' ')}`;
+    return each.length === n ? each : null;
   }
   // A pairing that can't be right: thousands of nights, stays or flights, or a plain points balance under 100.
   const scanOdd = (value, caption) => (/night|stay|flight|pqf|segment|\bu?xp\b/i.test(caption) && value > 999)
@@ -5311,7 +5446,13 @@
   // 34,500 / Nights / 18"), or, when either way leaves one line over, only the other way gives no two values the same
   // caption ("My Points / 45,120 / Points / 312 / Base points": "My Points" is a header).
   function scanLayout(lines) {
-    const kind = lines.map((l) => (scanBare(l) ? 'v' : scanCaption(l) ? 'c' : ''));
+    // A row of captions over a row of values, one each, may run longer than one caption ("Point balance Qualifying
+    // nights Qualifying points" over "184,210 18 22,400").
+    const wide = (i) => !/\d/.test(lines[i]) && [lines[i - 1], lines[i + 1]].some((l) => {
+      const n = l && scanBare(l) ? lineNumbers(l).length : 0;
+      return n >= 2 && lines[i].split(/\s+/).length <= 4 * n && splitCaption(lines[i], n);
+    });
+    const kind = lines.map((l, i) => (scanBare(l) ? 'v' : scanCaption(l) || wide(i) ? 'c' : ''));
     const owner = new Map(); // caption line → the value line it labels
     const owns = new Map(); // value line → its caption line
     const capOf = (v, c, k) => (splitCaption(lines[c], lineNumbers(lines[v]).length) || [])[k] ?? lines[c];
@@ -5327,7 +5468,7 @@
       const twice = (d) => { const names = pairs(d).map(([, c]) => scanNames(lines[c])); return names.length - new Set(names).size; };
       const [upTwice, downTwice] = e > s && kind[s] === kind[e] ? [twice(-1), twice(1)] : [0, 0];
       const d = up !== down ? (up < down ? -1 : 1) : upTwice !== downTwice ? (upTwice < downTwice ? -1 : 1)
-        : kind[s] === 'c' && (SCAN_UNIT.test(lines[s]) || /\brewards\b/i.test(lines[s])) ? -1 : 1;
+        : kind[s] === 'c' && (SCAN_UNIT.test(lines[s]) || /\brewards\b/i.test(lines[s]) || kind[e] === 'v') ? -1 : 1;
       for (const [v, c] of pairs(d)) { owner.set(c, v); owns.set(v, c); }
       s = e;
     }
@@ -5371,7 +5512,7 @@
       }
       return false;
     };
-    const skip = /lifetime|member since|head ?start|jump ?start|rollover|\bnext\b|milestone|\breach\b|\brequire[sd]?\b|\bfrom\b(?! (?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.? \d| \d{1,2}[/.]\d)|card spend|\b(?:with|on|by) (?:your |the |my |)card\b|boost|companion|starting at|as low as|\bearn\b|\brefer(?:rals?)?\b/i;
+    const skip = /lifetime|member since|head ?start|jump ?start|rollover|\bnext\b|\bto (?:level|tier|status)\b|milestone|\breach\b|\brequire[sd]?\b|\bfrom\b(?! (?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.? \d| \d{1,2}[/.]\d)|card spend|\b(?:with|on|by) (?:your |the |my |)card\b|boost|companion|starting at|as low as|\bearn\b|\brefer(?:rals?)?\b/i;
     // A line that's just a value, maybe with its target ("$11,240 of $15,000") and a word or two.
     const short = (line) => line && /^\W*\$?\d[\d,]*(?:\.\d{1,2})?(?:\s*(?:of|\/)\s*\$?\d[\d,]*)?\W*(?:[a-z]+\W*){0,3}$/i.test(line.trim());
     // Under a "Companion Pass progress" heading, until the next heading ("A-List progress"), past the section's own
@@ -5380,7 +5521,7 @@
       // A status count in between ("Tier qualifying points 80,200") is another section's; a pass held, with its own
       // end date under it ("Companion Pass" over "Valid through 12/31/2028"), heads no progress.
       for (let j = i; j >= 0; j--) {
-        if (/tier|a-list|status/i.test(lines[j])) return false;
+        if (/tier|a-list|status/i.test(lines[j]) || levels.some((a) => ` ${normTier(lines[j])} `.includes(` ${a} `))) return false;
         if (j < i && !/\d/.test(lines[j]) && /companion/i.test(lines[j])) return !/holder|member/i.test(lines[j]) && !/^(?:valid|good|expires|through|thru|until)\b/i.test(lines[j + 1] || '');
       }
       return false;
@@ -5422,7 +5563,9 @@
         if (k >= 0) return { value: here[k].value, line: i };
         if (labels.some((t) => label.test(t))) continue;
       }
-      if (skip.test(lines[i])) continue;
+      // A row of captions over a row of values: only the first caption's own words count ("Loyalty Points Next level …").
+      const firstOfRow = !here.length && lineAmounts(lines[i + 1] || '', dollars).length > 1 && label.exec(lines[i]).index === 0 && !/\bto (?:level|tier|status)\b/i.test(lines[i]);
+      if (skip.test(firstOfRow ? label.exec(lines[i])[0] : lines[i])) continue;
       // Not thousands of stays: "Points 34,500 My Stays" is a balance beside a tab.
       if (here.length) { if (scanOdd(here[0].value, label.exec(lines[i])[0])) continue; return { value: here[0].value, line: i }; }
       // A label with only a target on its line ("Earn 12,000 more PQP") or an offer with its end date ("Double Elite
@@ -5447,11 +5590,15 @@
         const at = (where(label)[0] || [-1])[0];
         const k = groups.findIndex(([from, to]) => at >= from && at < to);
         if (groups.length === row.length && k >= 0) return { value: row[k].value, line: i + 1 };
+        // Fewer captions known than values ("Loyalty Points Next level Points to go" over three): the first's the first.
+        if (at === 0 && !layout.owner.has(i)) return { value: row[0].value, line: i + 1 };
       }
       // A tile's caption: the value it labels (its own share when one caption line spans several values).
       if (layout.owner.has(i)) {
         const v = layout.owner.get(i);
         const all = lineAmounts(lines[v]);
+        // A caption line that doesn't split over its values says only that the first is its first caption's.
+        if (all.length > 1 && !splitCaption(lines[i], all.length) && label.exec(lines[i]).index !== 0) continue;
         const pick = all[Math.max(0, all.findIndex((a, k) => label.test(layout.caption(v, k))))];
         if (pick && !(dollars === false && pick.dollar)) return { value: pick.value, line: v };
         continue;
@@ -5477,22 +5624,22 @@
   // upgrade's or coupon's end are neither. A line that opens with its date is read with the heading above it ("Gold
   // Medallion" over "Valid through Jan 31, 2027"). A merged line naming a level anywhere (not inside the program's
   // name) reads its date as the status's too, unless points or miles are named just before the date ("… PQF 33 Valid
-  // through Jan 31, 2028").
+  // through Jan 31, 2028"). A trip's or a booking's dates and an offer's end, in any language read here, are neither.
   // A line naming status or tier goes first, then one only saying elite or member.
   function scanDate(text, dayFirst, levels = [], names = []) {
     const lower = text.toLowerCase();
-    const trigger = /(?:valid through|valid thru|valid until|good through|status ends|expiration(?: date)?|expiry(?: date)?|validity(?: date)?|expires(?: on)?|expiring(?: on)?|\bexp\b\.?|through|thru|until|\btill\b)\s*:?\s*/g;
+    const trigger = /(?:valid through|valid thru|valid until|good through|status ends|expiration(?: date)?|expiry(?: date)?|validity(?: date)?|expires(?: on)?|expiring(?: on)?|\bexp\b\.?|through|thru|until|\btill\b|\bbis\b|jusqu.{0,2}au\b|\bhasta\b|\bat[eé](?![a-zà-ÿ]))\s*:?\s*/g;
     const found = [];
     for (const t of lower.matchAll(trigger)) {
       const start = lower.lastIndexOf('\n', t.index) + 1;
       const line = lower.slice(start).split('\n')[0];
-      if (/\b(?:earn|double|triple|bonus|offer|promo|promotion|\d+x)\b/.test(line)) continue;
+      if (/\b(?:earn|double|triple|bonus|offer|promo|promotion|\d+x|angebot|aktion|promoci[oó]n|promo[cç][aã]o|oferta|offerta|offre)\b/.test(line)) continue;
       // A line that opens with its date ("Valid through Jan 31, 2027") belongs to the heading just above it.
       const above = /[a-z]/.test(lower.slice(start, t.index)) ? '' : lower.slice(0, start).split('\n').map((l) => l.trim()).filter(Boolean).pop() || '';
       const about = `${above}\n${line}`;
       // A free night award's, certificate's, companion fare's or pass's, or lounge membership's own end date
       // ("Anniversary Free Night expires 09/30/2027", "Delta Sky Club Membership valid through…") isn't status.
-      if (/\bfree night|\bcertificates?\b|\bcerts?\b|\bvouchers?\b|\bcompanion\b|\blounge\b|\b(?:sky|admirals|united) club\b/.test(about)) continue;
+      if (/\bfree night|\bcertificates?\b|\bcerts?\b|\bvouchers?\b|\bgutschein\b|\bcup[oó]n\b|\bcupom\b|\bcompanion\b|\blounge\b|\b(?:sky|admirals|united) club\b/.test(about)) continue;
       const lead = ` ${normTier(lower.slice(start, t.index))}`;
       const clause = lower.slice(start, t.index).replace(/^[\s\S]*\d/, '');
       const lineHay = names.reduce((h, s) => h.split(` ${s} `).join(' '), ` ${normTier(line)} `);
@@ -5500,6 +5647,10 @@
       const named = onLine || levels.some((a) => lead.endsWith(` ${a}`) || ` ${normTier(above)}`.endsWith(` ${a}`));
       const status = named || /status|tier|medallion|level/.test(about) ? 2 : /elite|member/.test(about) ? 1 : 0;
       if (!status && /\b(?:points?|miles?|avios|pts)\b/.test(line)) continue;
+      // A trip's or a booking's own dates ("Your trip Mar 12, 2027 through Mar 14, 2027", "Ihre Reise … bis …").
+      if (!status && /\b(?:trips?|flights?|stays?|bookings?|reservations?|reise|flug|aufenthalt|buchung|viajes?|viagem|vuelo|voo|voyage|vol|estancia|s[eé]jour|estadia|reserva)\b/.test(line)) continue;
+      // Something else named as expiring ("Miles expiring Dec 31", its word misread "Mies"), when status isn't what's named.
+      if (!status && /expir/.test(t[0]) && /[a-z]{3,}[\s:]*$/.test(lower.slice(start, t.index))) continue;
       // An award's, upgrade's, reward's or coupon's own end date ("Suite Upgrade Award" over "Valid through…",
       // "Go Free award night", "Confirmable Upgrade Reward expires…", even after the level on a merged line) isn't
       // status. "Platinum Pro thru 01/31/2028 Award miles 45,210" still is: the award comes after its date (and award
@@ -5521,7 +5672,8 @@
       else if ((m = /^(\d{1,2})[/.](\d{1,2})[/.](\d{2,4})/.exec(rest))) {
         const [a, b] = [Number(m[1]), Number(m[2])];
         y = Number(m[3].length === 2 ? `20${m[3]}` : m[3]);
-        [mo, d] = dayFirst || a > 12 ? [b, a] : [a, b]; // 31/03/2027 can only be day-first
+        // 31/03/2027 can only be day-first; so are the languages whose words for "until" are read here.
+        [mo, d] = dayFirst || a > 12 || /^(?:bis|jusqu|hasta|at[eé])/.test(t[0]) ? [b, a] : [a, b];
       }
       else if ((m = /^(\d{4})-(\d{2})-(\d{2})/.exec(rest))) [y, mo, d] = [Number(m[1]), Number(m[2]), Number(m[3])];
       else if ((m = /^(\d{1,2})[/.](\d{4})\b/.exec(rest)) && Number(m[1]) <= 12) { y = Number(m[2]); mo = Number(m[1]); d = new Date(y, mo, 0).getDate(); }
@@ -5534,6 +5686,14 @@
     }
     return (found.find((f) => f.status === 2) || found.find((f) => f.status) || found[0] || { iso: null }).iso;
   }
+
+  // A row of activity opens with its date ("10/18/2026 1,240", "Oct 12 Flight 1,240 miles").
+  const SCAN_OPENS_DATED = new RegExp(`^\\W*(?:(?:${SCAN_MONTH})\\.?\\s+\\d{1,2}(?:,?\\s+(?:19|20)\\d\\d)?|\\d{1,2}\\s+(?:${SCAN_MONTH})\\.?,?(?:\\s+(?:19|20)\\d\\d)?|\\d{1,2}[/.]\\d{1,2}(?:[/.]\\d{2,4})?)\\b`, 'i');
+  const SCAN_GOING_ON = new RegExp(`\\b(?:points|miles|avios|pts)\\s+[a-z]*(?:xp|ng)[a-z]*\\s+(?:(?:${SCAN_MONTH})\\.?\\s+\\d{1,2},?\\s+(?:19|20)\\d\\d|\\d{1,2}\\s+(?:${SCAN_MONTH})\\.?,?\\s+(?:19|20)\\d\\d|\\d{1,2}[/.]\\d{1,2}[/.]\\d{2,4})\\W*$`, 'i');
+  const SCAN_DATED = new RegExp(`^\\s*(?:[a-z]+\\s+){0,2}?(?:points|miles|avios|pts)\\s+(?:on|by|before)\\s+(?:${SCAN_DATE.source})`, 'i');
+
+  // Points that don't go away ("Your points never expire", "Points do not expire"): nothing about expiring is meant.
+  const SCAN_NEVER_EXPIRE = /\b(?:never|not|no|[a-z]+n.t)\s+expir[a-z]*|\bnon-?expiring\b/g;
 
   // OCR slips inside a level's name, mended only to match the level: a capital I for an l ("SiIver", "PIatinum",
   // "GIobalist"), a lone l or I for a 1 ("Mosaic l"), an O for a 0 beside a digit ("5OK").
@@ -5563,7 +5723,7 @@
     // card ("Delta SkyMiles Reserve American Express Card"), the issuer's name barely counts either.
     // Near-miss spellings count a little less; a program already on your list wins ties.
     const signIn = (sign, ll) => new RegExp(`(^|[^a-z])${sign.replace(/[-+.]/g, (c) => `\\${c}`)}([^a-z]|$)`).test(ll);
-    const offer = (ll) => /\b(?:apply|earn|bonus|offer|sign up)\b|pre-?approved/.test(ll);
+    const offer = (ll) => /\b(?:apply|earn|bonus|offer|sign up)\b|pre-?approved|\b(?:gagn(?:ez|er)|offre|sammeln|verdienen|erhalten|gana|ganar|ganhe|acumula)\b/.test(ll);
     const coBrands = new Set(); // the programs a co-brand card on the screen belongs to
     for (const line of lines) {
       const ll = line.toLowerCase();
@@ -5576,12 +5736,20 @@
     // "Our partners" or "Convert points to miles" heading, down to the next amount, balance caption ("Your …
     // points", "… available") or level line ("Premier Gold": a list never shows your level). A "From …" line names the source.
     const ratio = (ll) => /\b\d+(?:[.,]\d+)?\s?:\s?\d+(?:[.,]\d+)?\b/.test(ll) && !/^\W*\d{1,2}:\d{2}\b/.test(ll);
+    // A notification across the top ("Chase - now", "United · 2m ago"): whoever sent it, not the page's program.
+    // With no mark before its time and no "ago" ("CHASE now"), only a program's bare name: "Delta SkyMiles Book now" is
+    // a button beside the page's name, and "Delta SkyMiles 5m" isn't a banner.
+    const notice = (ll) => {
+      const m = /^\W*([a-z][\w .&'-]{1,30}?)(\s*[^\w\s]+\s*|\s+)(just now|now|\d+\s?(?:m|min|mins|h|hr|hrs)(?: ago)?|yesterday)\W*$/.exec(ll);
+      if (!m) return false;
+      return !!m[2].trim() || /ago$|just now/.test(m[3]) || (/^(?:now|yesterday)$/.test(m[3]) && Object.values(SCAN_SIGNS).flat().includes(m[1].trim()));
+    };
     const partnerHeading = (ll) => !/\d/.test(ll) && /\btransfer|\bpartners?\b|\bconvert\b.*\b(?:miles|points)\b|\bfly with\b|\bbook with\b|\bredeem with\b/.test(ll);
     let listed = false;
     const partner = lines.map((line) => {
       const ll = line.toLowerCase();
       if (listed && ((/\d{3}/.test(ll) && !ratio(ll)) || /\b(?:available|balance|you have)\b|^your\b/.test(ll) || levelLine(ll))) listed = false;
-      const demoted = (listed && !/^from\b/.test(ll)) || /transfer|partner|redeem with|book with|airline and hotel/.test(ll) || offer(ll) || ratio(ll);
+      const demoted = (listed && !/^from\b/.test(ll)) || /transfer|partner|redeem with|book with|airline and hotel/.test(ll) || offer(ll) || ratio(ll) || notice(ll);
       if (partnerHeading(ll)) listed = true;
       return demoted;
     });
@@ -5666,14 +5834,18 @@
     // "… number" caption ("Flying Blue number").
     // Any word right before "#" is a label too ("TrueBlue # 3012345678"). A label word that turns out to be part of
     // the program's name ("Rapid Rewards Member # …", "IHG One Rewards Member 123…") makes way for the next label.
-    const memberAt = /(member(?:ship)?|account|\bnumber[ \t]*:?[ \t]*\n|number|\bno\.|skymiles|mileageplus|aadvantage|rewards|honors|bonvoy|[a-z]+(?=[ \t]*#))[ \t]*(?:(?:number|no\.?|num|id|#)[ \t]*[:#]?[ \t]*\n?|[:#]?)[ \t]*#?[ \t]*((?:[A-Z]{2,3} )?(?:\d{6,12}|\d{3,4}(?: \d{3,4}){1,3})\b|[A-Z0-9]{6,16}\b)/gi;
+    const memberAt = /(member(?:ship)?|account|\bnumber[ \t]*:?[ \t]*\n|number|\bn[uú]m[eé]ro(?: (?:de )?[a-z]+){0,2}|\b(?:mitglieds|kunden|service(?:karten)?|vielflieger|teilnehmer|lid|klant)?-?nummer|\bno\.|skymiles|mileageplus|aadvantage|rewards|honors|bonvoy|[a-z]+(?=[ \t]*#))[ \t]*(?:(?:number|no\.?|num|id|#)[ \t]*[:#]?[ \t]*\n?|[:#]?)[ \t]*#?[ \t]*((?:[A-Z]{2,3} )?(?:\d{6,12}|\d{3,4}(?: \d{3,4}){1,3})\b|[A-Z0-9]{6,16}\b)/gi;
+    // After "número" or "numéro", only a member's own word or a program's name says whose ("Número de socio", "Numéro
+    // Flying Blue"): "Número de tarjeta" is a card's, as "Card number" is in English.
+    const memberWords = /^n[uú]m[eé]ro(?:$| (?:de )?(?:socio|s[oó]cio|miembro|membro|membre|cuenta|conta|compte|cliente?|adh[eé]rent|viajero|viajante|fidelidade?|fid[eé]lit[eé])\b)/i;
     for (let m; (m = memberAt.exec(text));) {
       memberAt.lastIndex = m.index + m[1].length;
       const id = m[2].replace(/\s+/g, '');
+      if (/^n[uú]m[eé]ro/i.test(m[1]) && !memberWords.test(m[1]) && !Object.values(SCAN_SIGNS).flat().some((s) => signIn(s, m[1].toLowerCase()))) continue;
       // Not card digits ("ending", "Card #" on the label's own line) or a booking's number ("Confirmation # 845…").
       const lineStart = lower.lastIndexOf('\n', m.index - 1) + 1;
       const before = lower.slice(Math.max(lineStart, m.index - 12), m.index);
-      if (/ending|ends in|card|confirmation|reservation|booking|order|ticket|itinerary|phone/.test(before + m[0].toLowerCase())) continue;
+      if (/ending|ends in|card|confirmation|reservation|booking|order|ticket|itinerary|phone|telefon|rechnung|buchung|bestell|(?<!service)karten? ?nummer/.test(before + m[0].toLowerCase())) continue;
       // A booking word anywhere earlier on the label's line ("Confirmation number 4567…", "Reservation no. 8451…").
       if (/\b(?:confirmation|reservation|booking|itinerary|order|ticket)\b/.test(lower.slice(lineStart, m.index))) continue;
       // Another program's number on a card's benefits page ("Hertz Gold Plus Rewards number: …" under "Capital One"):
@@ -5687,7 +5859,7 @@
     const levels = tiers.flatMap((t) => t.aliases).sort((a, b) => b.length - a.length);
     // Counts for this year, in the program's units (and its second path), plus Delta MQDs.
     const layout = scanLayout(lines);
-    const track = programId && TRACKS[programId];
+    const track = programId && trackById(programId);
     const claimed = new Set(); // "line:value" of each count, so it isn't mistaken for the balance
     const count = (label, dollars) => { const hit = label && labeledNumber(lines, label, dollars, layout, levels); if (hit) claimed.add(`${hit.line}:${hit.value}`); return hit ? hit.value : null; };
     const mqd = programId === 'delta' || /mqd/i.test(text) ? count(SCAN_LABELS.MQD, true) : null;
@@ -5704,10 +5876,12 @@
     // A heading naming a level and no unit ("Lifetime Platinum Elite" over "82,416 Points") is a status, not a caption.
     const levelHeading = (c) => !!c && levels.some((a) => ` ${normTier(c)} `.includes(` ${a} `)) && !SCAN_UNIT.test(unleveled(c));
     const candidates = [];
+    const unitName = String((CATALOG_BY_ID[programId] || {}).unit || '').toLowerCase();
+    const unitWord = unitName ? new RegExp(`\\b${unitName}\\b`) : /$^/;
     lines.forEach((line, li) => {
       const ll = line.toLowerCase();
       // A transfer line is a ratio or minimum ("Minimum transfer 1,000 points") unless it says what you have.
-      if (/lifetime|member since|expir|earn up to|bonus|\brefer(?:rals?)?\b/i.test(ll) || (/transfer/.test(ll) && !/\bavailable\b|\byou have\b|\bbalance\b/.test(ll))) return;
+      if (/lifetime|member since|expir|earn up to|bonus|\brefer(?:rals?)?\b|\b(?:gagn(?:ez|er)|offre|sammeln|verdienen|erhalten|gana|ganar|ganhe|acumula)\b/i.test(ll.replace(SCAN_NEVER_EXPIRE, ' ')) || (/transfer/.test(ll) && !/\bavailable\b|\byou have\b|\bbalance\b/.test(ll))) return;
       const amounts = lineAmounts(ll);
       const labels = amountLabels(ll, amounts);
       const free = (j) => layout.kind[j] === 'c' && !layout.owner.has(j);
@@ -5752,12 +5926,19 @@
           if (!/[a-z]/.test(before) && free(li - 1)) above = lines[li - 1].toLowerCase();
           if (!/[a-z0-9]/.test(after) && !/[a-z]/.test(before) && free(li + 1)) below = lines[li + 1].toLowerCase();
         }
+        // On a merged row, a value with its own unit isn't labeled by a caption over the row naming another ("Notes Prime
+        // XP" over "12,340 Miles 120"); "Tier Miles" over "18,000 miles 84,250 miles" still labels it.
+        const rowUnit = amounts.length > 1 && /^\s*(?:[a-z]+\s+){0,2}?(points|miles|avios|pts|skymiles|mi)\b/.exec(after);
+        if (rowUnit && !new RegExp(`\\b${rowUnit[1]}\\b`).test(above)) above = '';
+        // A program's name with a unit's word in it ("Miles & More", "Miles&Smiles" over a number) isn't that unit's caption.
+        // Nor is what you do next ("Your next stay") a count of stays.
+        [above, below] = [above, below].map((c) => c.replace(/\bmiles\s*(?:&|and)\s*(?:more|smiles)\b|\bnext (?:trip|stay|flight|night)s?\b/g, ''));
         if (levelHeading(above)) above = '';
         if (levelHeading(below)) below = '';
         // A qualifying caption ("Tier Points", "XP", "Status points") marks a count, never the balance.
         const counted = SCAN_COUNTED.test(unleveled(label)) || SCAN_COUNTED.test(above) || SCAN_COUNTED.test(below);
         // A price or offer ("rooms from 5,000 Points", "Earn 500 points", "from 1,000 points") gets no unit bonus.
-        const price = /\b(?:from|earn|get|for|as low as|starting at|save|up to|only|extra)\s*$/.test(before) || /\b(?:buy|purchase)\b/.test(before) || /^\s*(?:points|miles|avios|pts)?\s*(?:per|a|\/)\s*(?:night|stay|flight)\b/.test(after);
+        const price = /\b(?:from|earn|earned|received|redeemed|used|spent|get|for|as low as|starting at|save|up to|only|extra)\s*$/.test(before) || /\b(?:buy|purchase)\b/.test(before) || SCAN_PRICE_AFTER.test(after) || SCAN_LEVEL_AT.test(before);
         let score = 1 + (m[2].includes(',') ? 2 : 0);
         // A rate ("2,000 points = €40 off", "10,000 pts for $135") gets no unit bonus either.
         const rate = /^\s*(?:[a-z]+\s+){0,2}?(?:points|miles|avios|pts)\s*(?:=|for)\s*[$€£]/.test(after);
@@ -5765,7 +5946,9 @@
         // confirmation) aren't the balance; "points to use on flights" still is.
         const toWhere = /^\s*(?:[a-z]+\s+){0,2}?(?:points|miles|avios|pts)\s+(?:to|into)\s+/.exec(after);
         const moved = !!toWhere && Object.values(SCAN_SIGNS).flat().some((s) => signIn(s, after.slice(toWhere[0].length)));
-        if (!counted && !price && !rate && (unitBefore.test(before) || (above && unitBefore.test(`${above}\n`)))) score += 5;
+        // The earlier value's unit on a row isn't this one's ("41,200 points 12,800 points").
+        const unitNext = amounts.length > 1 && /^\s*(?:points|miles|avios|pts|skymiles|mi)\b/.test(after);
+        if (!counted && !price && !rate && !unitNext && (unitBefore.test(before) || (above && unitBefore.test(`${above}\n`)))) score += 5;
         if (!counted && !price && !rate && (/^\s*(?:[a-z]+\s+){0,2}?(points|miles|avios|pts|skymiles|mi)\b/.test(after) || /\b(points|miles|avios|pts|skymiles)\b/.test(below))) score += 5;
         if (counted) score -= 5;
         if (m[1] || claimed.has(`${li}:${value}`)) score -= 8;
@@ -5773,12 +5956,33 @@
         // A credit or debit in recent activity ("+1,240 Miles", "-25,000 points"), not the balance.
         if (!m[1] && /(?:^|\s)[+\u2212-]\s*$/.test(before)) score -= 8;
         if (SCAN_TO_GO.test(after)) score -= 8;
-        // Not spendable yet, or a price or offer: "4,250 Points pending", "rooms from 5,000 Points", "Earn 500 points".
-        if (/pending|on hold|lifetime/.test(`${own}\n${above}\n${below}`)) score -= 8;
+        // Not spendable yet, going away, or a price or offer: "4,250 Points pending", "Expiring soon" over "1,200 miles",
+        // "rooms from 5,000 Points", "Earn 500 points".
+        // A heading with its own date ("Points expiry date 15/06/2028") doesn't head the number under it.
+        const ownUnit = /^\s*(?:[a-z]+\s+){0,2}?(?:points|miles|avios|pts|skymiles|mi)\b/.test(after);
+        if (/pending|on hold|lifetime/.test(`${own}\n${above}\n${below}`) || [above, below].some((c) => /expir/.test(c.replace(SCAN_NEVER_EXPIRE, ' ')) && (!ownUnit || !/\d/.test(c)))) score -= 8;
+        // A balance has no date: "1,200 miles on 30 Apr 2027" is what's going or what arrived.
+        // On its own it's still the only number there is, unless a line says otherwise; "You have" says it's the balance.
+        if (SCAN_DATED.test(after) && !/\b(?:you have|balance|available|total)\b/.test(before)) score -= 5;
+        // What a count is for: "Miles to Platinum", "Points für HON Circle Member", "Points to go", "Next level". Over a
+        // row its words don't split, "next" anywhere ("Loyalty Points Next level", blurred), unless the caption opens
+        // with the first value's unit ("Miles Next reward" over "84,250 1,000").
+        const opensUnit = (c) => amounts.length > 1 && k === 0 && /^\W*(?:points|miles|avios|pts|skymiles)\b(?! to go\b)/.test(c);
+        if ([above, below, before].some((c) => SCAN_FOR_LEVEL.test(c) || (!opensUnit(c) && (SCAN_STILL_TO_EARN.test(c) || (amounts.length > 1 && c !== before && /\bnext\b|\bto go\b/.test(c)))))) score -= 8;
+        // Points named going on a date ("Miles expinng Dec 31, 2027", its word blurred) are what's going. A date on the
+        // same line for anything else ("Gold through Dec 31, 2027", "Balance Oct 31, 2026") says nothing about the number.
+        if (!ownUnit && SCAN_GOING_ON.test(before)) score -= 8;
+        // What a line of activity added or took: under a bare balance, and left only when nothing else is there.
+        if (!m[1] && SCAN_OPENS_DATED.test(before)) score -= 6;
+        // A mailbox's count in a title ("Inbox (12,403)"), in brackets with no unit, is someone else's.
+        if (!counted && score <= 3 && /\b(?:inbox|e?mails?|messages?|notifications?|alerts?|unread|updates?|cart|tasks?|comments?|reviews?|results?|photos?|followers?)\W*\(\s*$/.test(before) && /^\s*\)/.test(after)) score -= 8;
         // Last statement's balance ("Previous points balance 118,000", "Opening balance", "Beginning Balance"), not today's.
         if (/\b(?:previous|opening|beginning|starting|prior)(?: (?:points?|miles?|avios|rewards?))? balance\b/.test(`${own}\n${above}\n${below}`)) score -= 8;
         if (price || moved) score -= 8;
-        candidates.push({ value, score, about: `${own}\n${label}\n${above}\n${below}` });
+        // In the program's own unit: goes first over the same kind of number in another ("Miles" over "Points" at Lufthansa).
+        // A caption naming the balance plainly ("Available" over "84,250") is as good as the unit's name.
+        if (score > 0 && (unitWord.test(`${own}\n${above}\n${below}`) || /\b(?:available|balance|redeemable)\b/.test(`${above}\n${below}`))) score += 0.5;
+        candidates.push({ value, score, about: `${own}\n${label}\n${above}\n${below}`, plain: /^[\W\d]*(?:(?:points?|miles?|avios|pts)\b[\W\d]*)*$/i.test(line) });
       }
     });
     candidates.sort((a, b) => b.score - a.score);
@@ -5812,7 +6016,12 @@
     // A bank named only on an offer or partner line ("Earn miles with your Amex") doesn't make it a bank's screen.
     const bankScreen = lines.some((line, i) => !partner[i] && (/\bamex\b/i.test(line)
       || [...SCAN_ISSUER_IDS].some((id) => (SCAN_SIGNS[id] || []).some((s) => signIn(s, line.toLowerCase())))));
+    // A ladder written out level by level ("Silver" / "25,000" / "Gold" / "75,000"): what each takes, not what's yours.
+    const levelAlone = (line) => tiers.findIndex((t) => t.aliases.includes(normTier(levelSlips(line))));
+    const stepOf = (i) => (scanBare(lines[i + 1] || '') ? levelAlone(lines[i]) : -1);
+    const steps = new Set(lines.map((_, i) => stepOf(i)).filter((t) => t >= 0));
     for (const [li, line] of lines.entries()) {
+      if (steps.size >= 2 && stepOf(li) >= 0) continue;
       // The logo's name on the line above, and this line only the alliance's tier ("GOLD", "Gold member").
       if (li > 0 && /^(?:star alliance|sky ?team|one ?world)$/.test(normTier(lines[li - 1]))
         && !` ${normTier(lines[li - 1])} ${normTier(line)} `.replace(alliance, '').trim()) continue;
@@ -5820,9 +6029,9 @@
       const matched = tiers.map((t, i) => ({ i, alias: t.aliases.filter((a) => hay.includes(` ${a} `)).sort((x, y) => y.length - x.length)[0] }))
         .filter((m) => m.alias);
       const distinct = matched.filter((m) => !matched.some((o) => o !== m && o.alias.length > m.alias.length && o.alias.includes(m.alias)));
-      if (distinct.length !== 1) continue;
+      if (distinct.length !== 1 || surnameLine(line, distinct[0].alias)) continue;
       const ll = line.toLowerCase();
-      const undated = ll.replace(/\b(?:until|to|through|thru)\s*:?\s*(?:[a-z]{3,9}\.?\s+\d{1,2},?\s+\d{4}|\d{1,2}\s+[a-z]{3,9}\.?,?\s+\d{4}|\d{1,2}[/.]\d{1,2}[/.]\d{2,4}|[a-z]{3,9}\.?\s+\d{4})/g, ' ');
+      const undated = ll.replace(/\b(?:until|to|through|thru|bis|hasta)\s*:?\s*(?:\p{L}{3,9}\.?\s+\d{1,2},?\s+\d{4}|\d{1,2}\s+\p{L}{3,9}\.?,?\s+\d{4}|\d{1,2}[/.]\d{1,2}[/.]\d{2,4}|\p{L}{3,9}\.?\s+\d{4})/gu, ' ');
       const levelCard = hay.trim() === `${distinct[0].alias} card` && !bankScreen;
       if (/\b(to|next|reach|unlocks?|qualify for|away from|until|needed|required|requires?|previous|former|prior|retain|requalify)\b|benefits|perks|american express|visa|mastercard/.test(undated) || (!levelCard && /\bcard\b/.test(undated))) continue;
       // What a level takes, in a row of a tier table or on a progress bar ("Platinum tier: 450 Qpoints", "Silver tier
@@ -5830,14 +6039,26 @@
       // ("Gold 182 XP", "Silver Tier Points 420", "Diamond status: 42 nights this year" and "You qualified for Platinum
       // Elite with 52 nights" still are: the count is yours, or comes after the level).
       const { alias } = distinct[0];
+      // What you're working toward: "A-List progress", and other languages' words for "to", right before the level or a
+      // word or two before it ("para Oro", "für den Status Gold"). After it they're about something else ("Gold para 2027",
+      // "Gold Member 10 points per $1"), as "progress" is apart from it ("Gold Member View progress").
+      if (new RegExp(` (?:para|pour|atteindre|bis|zum|zur|fur|fir|fiir|voor|per)(?: [a-z']+){0,2} ${alias} | ${alias}(?: (?:status|tier|level|elite|member))? progress `).test(hay)) continue;
+      // A row of captions over a row of numbers, the level after a unit and other words ("… Points for HON Circle Member"
+      // over "210,000 12,550", or its words blurred, "… $r HON Circle Member"), says what a number counts toward; "Your
+      // current status Gold" over "84,250 12" is held.
+      const ahead = hay.trim().split(alias)[0].trim();
+      const blurred = /[^\p{L}\s,.'’-]/u.test(line.split(new RegExp(alias.split(' ').join('[^a-z0-9]+'), 'i'))[0]);
+      if (scanBare(lines[li + 1] || '') && lineNumbers(lines[li + 1]).length > 1 && ahead.split(' ').length >= 2 && (SCAN_UNIT.test(ahead) || blurred)) continue;
       const plain = undated.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[’`]/g, "'");
       const takes = new RegExp(`(?:^|[^a-z0-9'])${alias.split(' ').join('[^a-z0-9]+')}(?:[^a-z0-9]+(?:tier|status|level)\\s*:?|\\s*:|\\s+(?:at|from))\\s*(?!(?:19|20)\\d\\d\\b)\\d[\\d,.]*(.*)`).exec(plain);
       const yours = takes && /\b(?:this year|so far|to date|ytd|you|your|current)\b/.test(takes[1]);
-      const forLevel = new RegExp(`\\d[^\\n]* for ${alias}(?: |$)`).test(hay);
+      const forLevel = new RegExp(`(?:\\d|\\b(?:points?|miles?|pts|credits?|nights?|stays?|xp)\\b)[^\\n]* for ${alias}(?: |$)`).test(hay);
       // What's left to a level ("You're 4 flights from A-List", "12,000 PQP from Premier Platinum", "3 stays from
       // Explorist"): a number and what it counts, then "from" the level — a target, not the level held.
       const fromLevel = new RegExp(`\\d (?:[a-z]+ ){1,3}from ${alias}(?: |$)`).test(hay);
-      if ((takes && !yours && SCAN_COUNTED.test(takes[1])) || forLevel || fromLevel) continue;
+      // A unit, a blurred "für", then the level ("Points f$r HON Circle Member", "Punkte fiir …") is for that level too.
+      const unitForLevel = new RegExp(`(?:^| )(?:points?|miles?|xp|pts|credits?) f(?: |\\S{0,3})r ${alias}(?: |$)`).test(hay);
+      if ((takes && !yours && SCAN_COUNTED.test(takes[1])) || forLevel || fromLevel || unitForLevel) continue;
       // "Lifetime Diamond Status" over "4 of 10 years" is progress toward a lifetime level, not the level held.
       if (/lifetime/.test(ll) && /\b\d+ (?:of|\/) \d+\b/.test(`${ll} ${lines[lines.indexOf(line) + 1] || ''}`)) continue;
       const score = (/(member|status|elite|tier|medallion|you('| a)re)/.test(ll) ? 3 : 0) + (line.split(/\s+/).length <= 4 ? 2 : 0) - lines.indexOf(line) * 0.01;
@@ -5845,7 +6066,12 @@
     }
     // `score`: how surely the balance reads (a unit caption and thousands commas count most), for picking a reading.
     // `unsure`: the balance was read from split-off pieces, so the card asks (readingOf clears it when another reading read it whole).
-    return { programId, weak, ownId, member, balances, score: candidates.length ? candidates[0].score : 0, tierIndex, unsure: splitWhole != null && balances[0] === splitWhole,
+    // Or no caption says which of several numbers it is ("63,120 2,100 38,400" under captions the parser can't split).
+    const uncaptioned = candidates.length > 1 && candidates[0].score === 3 && candidates.some((c) => c.score === 3 && c.value !== candidates[0].value);
+    // Other numbers captioned just as the balance is, nothing else on their lines: maybe a second card's or member's
+    // (readingOf compares their size).
+    const rivals = candidates[0] && candidates[0].plain && candidates[0].score >= 8 ? candidates.filter((c) => c.plain && c.value !== candidates[0].value && c.score >= candidates[0].score - 0.5).map((c) => c.value) : [];
+    return { programId, weak, ownId, member, balances, score: candidates.length ? candidates[0].score : 0, tierIndex, rivals, notBalance: candidates.filter((c) => c.score <= 0).map((c) => c.value), unsure: (splitWhole != null && balances[0] === splitWhole) || uncaptioned,
       exp: scanDate(text, DAY_FIRST.has(programId), levels, nameSigns), progress, altProgress, mqd, name: greetingName(text, levels) };
   }
 
@@ -5855,6 +6081,7 @@
   function clippedLeft(pass, value) {
     const lines = (pass.lines || []).filter((l) => (l.words || []).length && l.words.every((w) => w && w.bbox));
     return lines.some((line, k) => {
+      if (line.card) return false; // read off a card (see readCards), inset from the page's margin
       let digits = '';
       let end = -1;
       for (const [i, w] of line.words.entries()) {
@@ -5882,7 +6109,7 @@
   // another reading of the same program, and that reading's balances are offered as alternatives.
   function readingOf(read, forceId) {
     const tried = (read.passes || [read]).map((pass) => {
-      const found = parseAccountText(pass.text, forceId);
+      const found = parseAccountText(columnsApart(pass), forceId);
       const worth = Math.max(0, found.score) + (found.programId ? 4 : 0) + (found.tierIndex >= 0 ? 2 : 0) + (found.member ? 1 : 0)
         + [found.progress, found.altProgress, found.mqd].filter((v) => v != null).length;
       return { pass, found, worth };
@@ -5931,6 +6158,8 @@
       for (const k of ['member', 'progress', 'altProgress', 'mqd', 'exp']) {
         if (f[k] == null) { if (k !== 'exp' && o[k] != null) { f[k] = o[k]; src[k] = pass; } continue; }
         if (k === 'member' || o[k] == null || o[k] === f[k] || (k === 'exp' && o.tierIndex !== f.tierIndex)) continue;
+        // The same number with its first digits missing ("2,300" for 62,300, at a column's edge): the longer one.
+        if (k !== 'exp' && String(o[k]).length > String(f[k]).length && String(o[k]).endsWith(String(f[k])) && sureOf(pass, o[k]) >= sureOf(src[k], f[k]) - 5) { f[k] = o[k]; src[k] = pass; continue; }
         const sure = k === 'exp' ? sureOfYear : sureOf;
         const [sureMine, sureTheirs] = [sure(src[k], f[k]), sure(pass, o[k])];
         const surer = sureTheirs >= 90 && sureTheirs > sureMine + 5;
@@ -5940,9 +6169,16 @@
       // The same balance with its first digits missing ("1 1 2,450" read as 2,450 where the other reading has
       // 112,450): narrow digits split off big numbers, so the longer one is the balance.
       const [mine, theirs] = [String(f.balances[0] ?? ''), String(o.balances[0] ?? '')];
-      if (mine && theirs.length > mine.length && theirs.endsWith(mine)) { f.balances = [o.balances[0], ...f.balances.filter((v) => v !== o.balances[0])]; from = pass; }
+      // Unless the longer one is clearly the less sure ("154,250" at 71% against "54,250" at 97%: a stray mark read as a 1).
+      if (mine && theirs.length > mine.length && theirs.endsWith(mine) && sureOf(pass, o.balances[0]) >= sureOf(from, f.balances[0]) - 5) { f.balances = [o.balances[0], ...f.balances.filter((v) => v !== o.balances[0])]; from = pass; }
       // Two different balances otherwise: the one the reader was clearly surer of ("97,900" at 82% where the other
       // reading has "57,900" at 97%: a big bold digit misread in one layout).
+      // The other reading has only this number's end ("41," and "200" on two lines): this one stands.
+      else if (mine && theirs && mine.length > theirs.length && mine.endsWith(theirs) && sureOf(from, f.balances[0]) >= sureOf(pass, o.balances[0]) - 5) continue;
+      // This reading read its number two ways, and the other reading has the second: two reads against one. Settled.
+      else if (mine && theirs && (from.rereadAs || []).some(([a, b]) => String(a) === mine && String(b) === theirs)) { f.balances = [o.balances[0], ...f.balances.filter((v) => v !== o.balances[0])]; from = pass; }
+      // Both readings saw both numbers, this one with the better caption ("Available miles" unread in the other): settled.
+      else if (mine && theirs && mine !== theirs && (o.balances || []).includes(Number(mine)) && f.balances.includes(Number(theirs)) && f.score > o.score) continue;
       else if (mine && theirs && mine !== theirs) {
         const [sureMine, sureTheirs] = [sureOf(best.pass, f.balances[0]), sureOf(pass, o.balances[0])];
         // The layout settles it when one reading found clearly more (the IHG page's caption over its balance): a
@@ -5952,18 +6188,118 @@
         if (!settled && sureTheirs > sureMine + 5) { f.balances = [o.balances[0], ...f.balances.filter((v) => v !== o.balances[0])]; from = pass; }
         const confident = Math.max(sureMine, sureTheirs) >= 90 && Math.abs(sureMine - sureTheirs) > 5;
         if (settled ? sureTheirs >= 90 && sureTheirs > sureMine + 5 : !confident) f.unsure = true;
+        // The other reading has this number under a count's caption ("Tier Miles" over 18,000, here blurred to "Tir Miles").
+        if ((o.notBalance || []).includes(f.balances[0])) f.unsure = true;
       }
       // The same balance read whole by the other reading settles the split-off pieces: no doubt left.
       else if (mine && mine === theirs && splitDoubt && !o.unsure) f.unsure = false;
     }
     // The reader read the balance, or a big count, two ways in its own reading (see useReread), or its first digit
     // may be cut off (see clippedLeft).
-    if ((from.disputed || []).includes(f.balances[0]) || (f.balances.length && clippedLeft(from, f.balances[0]))) f.unsure = true;
+    if ((from.disputed || []).includes(f.balances[0]) || (f.balances.length && (clippedLeft(from, f.balances[0]) || atEdge(from, f.balances[0], read)))) f.unsure = true;
+    // Two accounts or two cards on one page, each with its balance in the same big type: only you know which is which.
+    if (f.balances.length && sameBigType(from, f.balances[0], f.rivals || [])) { f.unsure = true; f.several = true; }
     for (const k of ['progress', 'altProgress', 'mqd']) if (f[k] != null && (src[k].disputed || []).includes(f[k])) ask(k);
     // No reading read a level: one only the darkened reading has (see readFaint), with its line for the box.
     const faint = f.tierIndex < 0 && f.programId && read.faint ? faintLevel(read.faint, tried.map((t) => t.pass.text), f.programId) : null;
     if (faint) f.tierIndex = faint.tierIndex;
+    // A member number read two ways, or not read surely (under 90%), stays empty: saved wrong, it would later say a
+    // screen of this account is someone else's.
+    if (f.member) {
+      const sure = tried.filter((t) => t.found.member === f.member).map((t) => sureOfId(t.pass, f.member));
+      if (tried.some((t) => t.found.member && t.found.member !== f.member && t.found.programId === f.programId) || (sure.some((v) => v != null) && Math.max(...sure.filter((v) => v != null)) < 90)) f.member = null;
+    }
     return { ...read, text: best.pass.text, lines: faint ? [...(best.pass.lines || []), faint.line] : best.pass.lines, found: f };
+  }
+  // How sure the reader was of a member number: its words side by side, as sure as the least sure of them, or null when
+  // no line has it word for word.
+  function sureOfId(pass, id) {
+    const bare = (t) => cleanScanText(t).replace(/[^a-z0-9]/gi, '').toUpperCase();
+    for (const line of pass.lines || []) {
+      for (const i of (line.words || []).keys()) {
+        let [so, sure] = ['', 100];
+        for (let j = i; j < line.words.length && id.toUpperCase().startsWith(so + bare(line.words[j].text)); j++) {
+          so += bare(line.words[j].text);
+          sure = Math.min(sure, line.words[j].confidence || 0);
+          if (so && so === id.toUpperCase()) return sure;
+        }
+      }
+    }
+    return null;
+  }
+  // A line's columns: its words, split where the gap is wider than the line's words are tall.
+  function columnsOf(line) {
+    const words = (line.words || []).filter((w) => w && w.bbox && String(w.text).trim());
+    const heights = words.map((w) => w.bbox.y1 - w.bbox.y0).sort((a, b) => a - b);
+    const tall = heights[Math.floor(heights.length / 2)] || 0;
+    const columns = [];
+    words.forEach((w, i) => {
+      if (i && w.bbox.x0 - words[i - 1].bbox.x1 <= tall) columns[columns.length - 1].push(w);
+      else columns.push([w]);
+    });
+    return columns.map((c) => ({ text: c.map((w) => w.text).join(' '), x0: c[0].bbox.x0, x1: c[c.length - 1].bbox.x1 }));
+  }
+  // A row of captions over a row of values, read as two lines across the columns ("Points balance SQC" over "187,350
+  // 41,200"): which caption is whose goes by where they sit, not by guessing from the words. Each caption is written
+  // on one line with its value, in the order they sit. The reading's text otherwise as it is.
+  function columnsApart(pass) {
+    const flat = (t) => t.trim().replace(/\s+/g, ' ');
+    const lines = (pass.lines || []).filter((l) => (l.words || []).length);
+    let rows = null;
+    for (let i = 0; i + 1 < lines.length; i++) {
+      const [a, b] = [columnsOf(lines[i]), columnsOf(lines[i + 1])];
+      if (a.length < 2 || a.length !== b.length) continue;
+      const number = (c) => /^[\W\d]*\d[\W\d]*$/.test(c.text);
+      // A row of values: its first two columns numbers or dates ("Jan 31, 2028" among the tiles), at least one a number.
+      const valued = (r) => r.slice(0, 2).every((c) => number(c) || scanDateOnly(c.text)) && r.slice(0, 2).some(number);
+      const values = valued(a) ? a : valued(b) ? b : null;
+      if (!values) continue;
+      const captions = values === a ? b : a;
+      // A date goes with a caption saying what ends then ("Status through"); under "Date" or "Posted" it's a row of activity.
+      const fits = (row) => values.every((v, k) => Math.max(v.x0, row[k].x0) < Math.min(v.x1, row[k].x1) && (!number(v) || !/\d/.test(scanDateless(row[k].text)))
+        && (!scanDateOnly(v.text) || /\b(?:through|thru|until|till|valid|expir\w*|ends?|status|tier|bis|hasta|jusqu\S*|at[eé])(?![a-zà-ÿ])/i.test(row[k].text)));
+      if (!fits(captions)) continue;
+      // A ladder ("Silver Gold" over "25,000 50,000"): what each level takes, not what's yours.
+      if (captions.filter((c) => SCAN_LEVEL_ONLY.test(normTier(c.text))).length >= 2) continue;
+      // A heading over the values, their captions under them ("Summary Status" / "12,400 84,250" / "MQMs Miles").
+      const units = (row) => row.filter((c) => SCAN_UNIT.test(c.text)).length;
+      const under = values === b && lines[i + 2] ? columnsOf(lines[i + 2]) : [];
+      if (under.length === values.length && !valued(under) && fits(under) && units(under) > units(captions)) continue;
+      rows = rows || String(pass.text || '').split('\n');
+      const joined = (l) => flat(l.words.map((w) => w.text).join(' '));
+      const at = rows.findIndex((r) => flat(r) === joined(lines[i]));
+      const to = rows.findIndex((r, k) => k > at && flat(r) === joined(lines[i + 1]));
+      if (at < 0 || to < 0 || rows.slice(at + 1, to).some((r) => r.trim())) continue;
+      rows.splice(at, to - at + 1, ...a.map((c, k) => `${c.text} ${b[k].text}`));
+      i++;
+    }
+    return rows ? rows.join('\n') : pass.text;
+  }
+  // The words of a number on a reading, side by side on a line, as [line, first word's index, last word's index].
+  function wordsOf(pass, value) {
+    for (const line of pass.lines || []) {
+      for (const i of (line.words || []).keys()) {
+        let digits = '';
+        for (let j = i; j < line.words.length && /^[\d,.]+$/.test(line.words[j].text); j++) {
+          digits += line.words[j].text.replace(/\D/g, '');
+          if (digits === String(value)) return line.words.slice(i, j + 1).filter((w) => w.bbox);
+        }
+      }
+    }
+    return [];
+  }
+  // A number touching the picture's edge may have lost digits there ("84,250", half its "1" gone).
+  function atEdge(pass, value, { width, height }) {
+    const words = wordsOf(pass, value);
+    if (!words.length || !width || !height) return false;
+    return words.some((w) => w.bbox.x0 <= 2 || w.bbox.y0 <= 2 || w.bbox.x1 >= width - 3 || w.bbox.y1 >= height - 3);
+  }
+  // Another number as tall as this one (within 15%), both big for the page (1.3 times most words).
+  function sameBigType(pass, value, others) {
+    const tall = (v) => { const words = wordsOf(pass, v); return words.length ? Math.max(...words.map((w) => w.bbox.y1 - w.bbox.y0)) : 0; };
+    const mine = tall(value);
+    const heights = (pass.lines || []).flatMap((l) => l.words || []).filter((w) => w.bbox).map((w) => w.bbox.y1 - w.bbox.y0).sort((a, b) => a - b);
+    return mine > 1.3 * (heights[Math.floor(heights.length / 2)] || Infinity) && others.some((v) => Math.abs(tall(v) - mine) <= 0.15 * mine);
   }
   // A level from the darkened reading's lines (see readFaint): only lines none of the other readings has (light type
   // they missed), and only when those name exactly one of the program's levels as a level held — each line on its own
@@ -6058,6 +6394,35 @@
   // By brightness, not by color (a color's darkest part would turn a yellow card black, and its black type with it).
   function darkenFaint(px) {
     for (let i = 0; i < px.length; i += 4) px[i] = px[i + 1] = px[i + 2] = ((px[i] - 170) * 255) / 70;
+  }
+  // Dark type on a card in a middle shade (a gold or silver gradient): the reader splits the whole picture at one shade,
+  // which blacks out the card with its type on it, so nothing there is read. Even patches of shades 110 to 235, a quarter
+  // of the picture across or more and 48px down, half or more filled, most of whose marks (cells inside that aren't even)
+  // no reading has a word on, as { x0, y0, x1, y1 }: the first three. The page itself is no card.
+  function blankCards(px, width, height, lines) {
+    // (The blacked-out card itself may come back as one empty word.)
+    const words = lines.flatMap((line) => line.words || []).filter((w) => w && w.bbox && /[a-z0-9]/i.test(w.text));
+    const read = (x, y) => words.some(({ bbox: b }) => x >= b.x0 - 8 && x <= b.x1 + 8 && y >= b.y0 - 8 && y <= b.y1 + 8);
+    return patches(px, width, height, (shade, lo, hi) => shade >= 110 && shade <= 235 && hi - lo <= 16, 80)
+      .filter((p) => p.x1 - p.x0 >= width / 4 && p.y1 - p.y0 >= 48 && p.n * 64 >= 0.5 * (p.x1 - p.x0) * (p.y1 - p.y0)
+        && !(p.x1 - p.x0 > 0.95 * width && p.y1 - p.y0 > 0.6 * height))
+      .filter((p) => {
+        let [marks, unread] = [0, 0];
+        for (let y = p.y0 / 8 + 1; y < p.y1 / 8 - 1; y++) {
+          for (let x = p.x0 / 8 + 1; x < p.x1 / 8 - 1; x++) {
+            if (p.cells(x, y)) continue;
+            marks++;
+            if (!read(x * 8 + 4, y * 8 + 4)) unread++;
+          }
+        }
+        return unread >= 6 && unread >= marks / 2;
+      }).slice(0, 3).map(({ x0, y0, x1, y1 }) => ({ x0, y0, x1, y1 }));
+  }
+  // A reading's lines with the lines read off cards among them, top to bottom, as a reading of its own.
+  function withCardLines(lines, cardLines) {
+    const top = (line) => Math.min(...line.words.map((w) => w.bbox.y0));
+    const all = [...lines.filter((l) => l.words && l.words.length), ...cardLines].sort((a, b) => top(a) - top(b));
+    return { text: `${all.map((l) => l.words.map((w) => w.text).join(' ')).join('\n')}\n`, lines: all };
   }
   // Patches of a gray picture's 8px cells (side by side or one above another) that pass `test(shade, lo, hi)` — a
   // cell's average, darkest and lightest (of every other pixel) — as boxes { x0, y0, x1, y1, shade, n, cells }
@@ -6192,10 +6557,44 @@
       await rereadBig(worker, canvas, pass);
       passes.push(pass);
     }
+    const cards = await readCards(worker, canvas, passes);
+    if (cards) passes.push(cards);
     // Neither reading names the program: its logo may be light text in a dark header bar, read again on its own.
     const bands = passes.some((pass) => parseAccountText(pass.text).programId) ? '' : await readDarkBands(worker, canvas);
     const faint = await readFaint(worker, file, passes, bands);
     return { ...passes[0], passes, bands, faint, width: canvas.width, height: canvas.height };
+  }
+
+  // A card most of whose type no reading has (see blankCards) is read again on its own: alone, its type stands out from
+  // it. Its lines join the lines of the single-block reading as one more reading (readingOf weighs it with the others).
+  async function readCards(worker, canvas, passes) {
+    const px = canvas.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, canvas.width, canvas.height).data;
+    const cards = blankCards(px, canvas.width, canvas.height, passes.flatMap((pass) => pass.lines || []));
+    if (!cards.length) return null;
+    ocrPass.quiet = true;
+    try {
+      await worker.setParameters({ tessedit_pageseg_mode: '3', tessedit_char_whitelist: '' });
+      const found = [];
+      for (const card of cards) {
+        const crop = document.createElement('canvas');
+        crop.width = card.x1 - card.x0;
+        crop.height = card.y1 - card.y0;
+        crop.getContext('2d').drawImage(canvas, card.x0, card.y0, crop.width, crop.height, 0, 0, crop.width, crop.height);
+        const { data } = await worker.recognize(crop, {}, { text: true, blocks: true });
+        const lines = data.lines || (data.blocks || []).flatMap((b) => (b.paragraphs || []).flatMap((para) => para.lines || []));
+        for (const line of lines) {
+          const words = (line.words || []).filter((w) => w.confidence >= 60).map((w) => ({ text: w.text, confidence: w.confidence,
+            bbox: { x0: w.bbox.x0 + card.x0, x1: w.bbox.x1 + card.x0, y0: w.bbox.y0 + card.y0, y1: w.bbox.y1 + card.y0 } }));
+          if (words.length) found.push({ text: words.map((w) => w.text).join(' '), words, card: true });
+        }
+      }
+      if (!found.length) return null;
+      const pass = withCardLines(passes[passes.length - 1].lines || [], found);
+      await rereadBig(worker, canvas, pass);
+      return pass;
+    } catch { return null; /* no second look: the readings stand */ } finally {
+      ocrPass.quiet = false;
+    }
   }
 
   // Rows of a gray screenshot that are mostly dark across (a header bar, a dark card; its light text never covers
@@ -6270,16 +6669,18 @@
     const groups = bigNumbers(pass.lines);
     if (!groups.length) return;
     const runs = shakyBeside(groups);
-    const readAlone = async (words) => {
+    const readAlone = async (words, scale = 1) => {
       const box = boxAround(words);
       const pad = Math.round((box.y1 - box.y0) * 0.35);
+      const [w, tall] = [box.x1 - box.x0 + 2 * pad, box.y1 - box.y0 + 2 * pad];
       const crop = document.createElement('canvas');
-      crop.width = box.x1 - box.x0 + 2 * pad;
-      crop.height = box.y1 - box.y0 + 2 * pad;
+      crop.width = Math.round(w * scale);
+      crop.height = Math.round(tall * scale);
       const ctx = crop.getContext('2d');
+      ctx.imageSmoothingQuality = 'high';
       ctx.fillStyle = '#fff';
       ctx.fillRect(0, 0, crop.width, crop.height);
-      ctx.drawImage(canvas, box.x0 - pad, box.y0 - pad, crop.width, crop.height, 0, 0, crop.width, crop.height);
+      ctx.drawImage(canvas, box.x0 - pad, box.y0 - pad, w, tall, 0, 0, crop.width, crop.height);
       const { data } = await worker.recognize(crop);
       return data;
     };
@@ -6287,7 +6688,8 @@
     try {
       await worker.setParameters({ tessedit_pageseg_mode: '7', tessedit_char_whitelist: '0123456789,' });
       for (const group of groups) {
-        const data = await readAlone(group.words);
+        const box = boxAround(group.words);
+        const data = await readAlone(group.words, readScale(box.y1 - box.y0));
         useReread(pass, group, data.text || '', data.confidence || 0);
       }
       if (runs.length) await worker.setParameters({ tessedit_char_whitelist: '' });
@@ -6302,6 +6704,9 @@
   }
   const boxAround = (words) => ({ x0: Math.min(...words.map((w) => w.bbox.x0)), y0: Math.min(...words.map((w) => w.bbox.y0)),
     x1: Math.max(...words.map((w) => w.bbox.x1)), y1: Math.max(...words.map((w) => w.bbox.y1)) });
+  // The reader mistakes the digits of big bold numbers ("54,320" for "94,320", "254,800" for "254,300") and reads the
+  // same digits right at about 40px tall, so a big number is read again shrunk to that size.
+  const readScale = (tall) => Math.min(1, 40 / tall);
   // The big numbers on a reading: number-only words much taller than most words (1.6×), side by side pieces of one
   // number together ("1", "52,31", "0").
   function bigNumbers(lines) {
@@ -6332,10 +6737,12 @@
     // confident one. The same digits regrouped ("12.500" to 12,500) always go in: only the marks changed.
     const whole = /^(?:\d{1,3}(?:[,.»«’'‚;]\d{3})+|\d+)[,.;]?$/.test(was) || /^\d{1,3}(?: \d{3})+$/.test(was);
     const least = Math.min(...group.words.map((w) => w.confidence || 0)); // a split number is as sure as its least sure piece
-    // A whole number the re-read reads differently without being clearly surer (10 points): it stays, and the reader
-    // has read it two ways, so the card asks you to check it.
-    if (whole && digitsNow !== digitsWas && confidence <= least + 10) {
+    // A whole number the re-read reads differently without being clearly surer (10 points, or 5 when the re-read is
+    // sure, 90%+: that size is where the reader reads digits best): it stays, and the reader has read it two ways, so
+    // the card asks you to check it.
+    if (whole && digitsNow !== digitsWas && confidence <= least + (confidence >= 90 ? 5 : 10)) {
       (pass.disputed || (pass.disputed = [])).push(Number(digitsWas));
+      (pass.rereadAs || (pass.rereadAs = [])).push([Number(digitsWas), Number(digitsNow)]);
       return false;
     }
     const mark = /[,.;]$/.test(was) && !/[,.;]$/.test(now) ? was.slice(-1) : ''; // "16," stays punctuated as "18,"
@@ -6745,7 +7152,7 @@
   // member number only fills an empty one.
   function valsFrom(found, p) {
     const cid = found.programId;
-    const track = TRACKS[cid];
+    const track = trackById(cid);
     const vals = {};
     if (p.unit && found.balances.length) vals.balance = found.balances[0];
     if (found.tierIndex >= 0) { vals.tierIndex = found.tierIndex; vals.exp = found.exp || ''; }
@@ -6867,7 +7274,7 @@
 
   function lootRows(p, own, vals, outcome) {
     const cid = catalogFor(p) ? catalogFor(p).id : null;
-    const track = cid && TRACKS[cid];
+    const track = cid && trackById(cid);
     const goal = goalWith(p, vals);
     const was = (store, key) => (own && store[key] != null ? store[key] : null);
     const rows = [h('li', null, avatar(p), lootText(nameOf(p), own ? 'On your list' : 'Adding it to your list'), lootTag(own ? 'Found' : 'New', own ? '' : 'new'))];
@@ -6876,7 +7283,7 @@
         deltaTag(was(state.balances, p.id), vals.balance)));
     }
     if (outcome) {
-      const name = scanTiersFor(cid)[vals.tierIndex].name;
+      const name = nameEnding(p, scanTiersFor(cid)[vals.tierIndex].name, vals.exp);
       const exp = parseISODate(vals.exp);
       rows.push(h('li', null, lootIcon('star', MARK_COLORS.status), lootText(name, exp ? `Status through ${dateFmt.format(exp)}` : 'Status'),
         outcome.kind === 'new' ? lootTag('New status', 'new') : lootTag(outcome.kind === 'same' ? 'Confirmed' : outcome.why)));
@@ -6888,7 +7295,7 @@
       rows.push(h('li', null, lootIcon('count', MARK_COLORS.count), lootText(`${fmt(vals.progress)} ${track.unit}`, goal || `${qualLabel(track, qualYear(track))} so far`),
         deltaTag(was(state.progress, p.id), vals.progress)));
     }
-    if (vals.alt !== undefined) {
+    if (vals.alt !== undefined && track && track.alt) {
       rows.push(h('li', null, lootIcon('count', MARK_COLORS.count), lootText(`${fmt(vals.alt)} ${track.alt.unit}`, vals.progress === undefined && goal ? goal : `${qualLabel(track, qualYear(track))} so far`),
         deltaTag(was(state.progress, altKey(p.id)), vals.alt)));
     }
@@ -6919,7 +7326,7 @@
       return first || [];
     };
     const cid = found.programId;
-    const track = TRACKS[cid];
+    const track = trackById(cid);
     const sign = (SCAN_SIGNS[cid] || []).find((sg) => lines.some((l) => l.text.toLowerCase().includes(sg)));
     if (sign) {
       const line = lines.find((l) => l.text.toLowerCase().includes(sign));
@@ -6929,7 +7336,7 @@
     if (vals.balance !== undefined) add(numberAt(vals.balance), p.unit, MARK_COLORS.balance);
     if (vals.mqd !== undefined) add(numberAt(vals.mqd, SCAN_LABELS.MQD), 'MQDs', MARK_COLORS.count);
     if (vals.progress !== undefined) add(numberAt(vals.progress, SCAN_LABELS[track.unit]), track.unit, MARK_COLORS.count);
-    if (vals.alt !== undefined) add(numberAt(vals.alt, SCAN_LABELS[track.alt.unit]), track.alt.unit, MARK_COLORS.count);
+    if (vals.alt !== undefined && track && track.alt) add(numberAt(vals.alt, SCAN_LABELS[track.alt.unit]), track.alt.unit, MARK_COLORS.count);
     if (vals.tierIndex >= 0) {
       const tier = scanTiersFor(cid)[vals.tierIndex];
       for (const line of lines) {
@@ -7046,7 +7453,7 @@
     // A card's benefits page ("Your card benefits … IHG Platinum Elite status") read as one program's account page,
     // showing a lower level than your account does: a card's level never lowers one, so it waits for you.
     if (own && vals.tierIndex >= 0 && heldAbove(p, vals.tierIndex) && benefitsPage(reading.text, found)) doubts.push(`this looks like a card’s benefits page, and your account shows a higher level than ${scanTiersFor(cid)[vals.tierIndex].name}`);
-    if (found.unsure && vals.balance !== undefined && playing.balancePick == null) doubts.push('the balance was hard to read, so check it');
+    if (found.unsure && vals.balance !== undefined && playing.balancePick == null) doubts.push(found.several ? 'this page shows more than one balance, so check this one’s yours' : 'the balance was hard to read, so check it');
     // A count or the end date the readings disagreed on (see readingOf): the card asks before it updates.
     const track = trackFor(p);
     for (const k of found.unsureCounts || []) {
@@ -7231,7 +7638,7 @@
       const skip = !own && rows.length >= 2 ? 'Which of your accounts? Not updated' : own && heldAbove(p, vals.tierIndex) ? 'Your account shows higher' : null;
       if (skip && own) delete vals.tierIndex;
       const outcome = skip ? null : asListed(p, own, () => statusOutcome(p, vals.tierIndex, vals.exp));
-      return { p, own, choice: own ? own.id : `add:${f.id}`, vals, outcome, skip, level: scanTiersFor(f.id)[f.tierIndex].name };
+      return { p, own, choice: own ? own.id : `add:${f.id}`, vals, outcome, skip, level: nameEnding(p, scanTiersFor(f.id)[f.tierIndex].name, f.exp) };
     });
     Object.assign(playing, { many: items, choice: null, found: null });
     $('#play-shot').className = 'play-shot done';
@@ -7507,7 +7914,7 @@
     const found = again ? { ...detected, tierIndex: again.tierIndex, exp: again.exp, progress: again.progress, altProgress: again.altProgress, mqd: again.mqd } : detected;
     const field = scanField;
     const numberInput = scanNumber;
-    const track = cid && TRACKS[cid];
+    const track = cid && trackById(cid);
     const out = [];
     if (!p || p.unit) { // car rental and lounge programs have no balance
       const unit = p && p.unit ? p.unit : 'points';
@@ -7607,13 +8014,14 @@
       if (outcome.kind === 'same') {
         // The screen shows you hold it now, so a past end date no longer applies.
         const line = outcome.line;
+        const name = shownTier(p, line.tier, vals.exp);
         // Another level read from an earlier screen goes, as in 'new' below: the screen shows where you are now.
         const old = p.status.filter((l) => l !== line && !l.card && l.via === 'from your account');
-        if (old.length) { p.status = p.status.filter((l) => !old.includes(l)); notes.push(line.tier); }
-        if (vals.exp && line.exp !== vals.exp) notes.push(`${line.tier} through ${mdy(parseISODate(vals.exp))}`);
+        if (old.length) { p.status = p.status.filter((l) => !old.includes(l)); notes.push(name); }
+        if (vals.exp && line.exp !== vals.exp) notes.push(`${name} through ${mdy(parseISODate(vals.exp))}`);
         if (vals.exp) line.exp = vals.exp;
         else if (line.exp && lineExpired(line)) {
-          notes.push(`${line.tier} active again`);
+          notes.push(`${name} active again`);
           if (thruDate(line.via)) line.exp = ''; // cleared: don't read the past date back from "thru …" on the next load
           else delete line.exp;
         }
@@ -7623,9 +8031,10 @@
         // The screen shows your status now: it replaces one read from an earlier screen (an upgrade or a drop), while
         // statuses you typed in or have from a card stay.
         p.status = p.status.filter((l) => l.card || l.via !== 'from your account');
-        p.status.unshift(vals.exp ? { tier: outcome.tier.name, via: 'from your account', exp: vals.exp } : { tier: outcome.tier.name, via: 'from your account' });
+        const name = nameEnding(p, outcome.tier.name, vals.exp);
+        p.status.unshift(vals.exp ? { tier: name, via: 'from your account', exp: vals.exp } : { tier: name, via: 'from your account' });
         changes.push('status');
-        notes.push(outcome.tier.name);
+        notes.push(name);
         statusNew = true;
       }
     }
@@ -7638,7 +8047,7 @@
   // The counts in `vals` whose qualifying year has ended since they were read (`years`, from readYears).
   function staleCounts(choice, vals, years) {
     const own = (state.programs || []).find((x) => x.id === choice);
-    const track = own ? trackFor(own) : TRACKS[choice.replace(/^(?:add|new):/, '')];
+    const track = own ? trackFor(own) : trackById(choice.replace(/^(?:add|new):/, ''));
     return ['mqd', 'progress', 'alt'].filter((key) => vals[key] !== undefined
       && (key === 'mqd' ? years.mqd !== mqdYear() : !!track && years.prog !== qualYear(track)));
   }
@@ -8059,8 +8468,9 @@
     // Adds the earned level unless a status at least as high already lasts as long.
     const keep = (p, index, tier, via, thru) => {
       const exp = isoOf(thru);
-      if (!coveredThrough(p, index, exp)) p.status.unshift({ tier, via, exp });
-      kept.push(p === delta ? tier : `${nameOf(p)} ${tier}`);
+      const name = nameEnding(p, tier, exp);
+      if (!coveredThrough(p, index, exp)) p.status.unshift({ tier: name, via, exp });
+      kept.push(p === delta ? name : `${nameOf(p)} ${name}`);
     };
     const delta = medallionProgram();
     for (const p of state.programs) {
@@ -8318,9 +8728,9 @@
   const sheet = $('#sheet');
   let sheetId = null; // program being edited; null when adding
 
-  function statusEditorRow(line) {
+  function statusEditorRow(line, p) {
     return h('div', { class: 'sl', 'data-card': line.card || null, 'data-cleared': line.exp === '' ? 'yes' : null }, // you cleared its "thru" date
-      h('input', { type: 'text', class: 'sl-tier', maxlength: '120', placeholder: 'Gold', 'aria-label': 'Status level', value: line.tier }),
+      h('input', { type: 'text', class: 'sl-tier', maxlength: '120', placeholder: 'Gold', 'aria-label': 'Status level', value: p ? shownTier(p, line.tier, line.exp) : line.tier }),
       h('input', { type: 'text', class: 'sl-via', maxlength: '120', placeholder: 'Amex Platinum', 'aria-label': 'Where the status comes from (optional)', value: line.via }),
       h('button', { type: 'button', class: 'icon-btn sl-del', 'aria-label': 'Remove this status' }, svgIcon(ICON.x)),
       h('label', { class: 'sl-exp' }, 'Expires',
@@ -8342,7 +8752,7 @@
     $('#p-who').value = p.who || '';
     $('#p-medallion').checked = !!p.medallion;
     const lines = p.status.length ? p.status : [{ tier: '', via: '' }];
-    $('#p-status').replaceChildren(...lines.map(statusEditorRow));
+    $('#p-status').replaceChildren(...lines.map((line) => statusEditorRow(line, p)));
     $('#p-delete').hidden = !id;
     syncMedallionToggle();
     sheet.showModal();
@@ -8966,7 +9376,7 @@
   }
 
   function setStatusExp(p, index, value) {
-    const group = mergedLines(p.status)[index];
+    const group = mergedLines(p.status, p)[index];
     if (!group) return;
     for (const line of group.refs) {
       if (parseISODate(value)) line.exp = value;
@@ -8988,7 +9398,7 @@
       emptyText ? h('span', { class: 'via' }, emptyText) : null,
       from ? h('span', { class: 'via' }, from) : null));
     // A status you keep longer through another one shows just its dates; its perks are listed with that one.
-    const tiers = group && group.exp && daysLeft(group.exp) >= 0 && outlasted(p, group) ? [] : parts.map((t) => perksFor(p, t)).filter(Boolean);
+    const tiers = group && group.exp && daysLeft(group.exp) >= 0 && outlasted(p, group) ? [] : parts.map((t) => perksFor(p, t, group && group.exp)).filter(Boolean);
     for (const tier of tiers) {
       if (tiers.length > 1) block.append(h('p', { class: 'earn' }, tier.name));
       block.append(h('ul', { class: 'perks' }, tier.perks.map((perk) => h('li', null, perk))));
@@ -9011,7 +9421,7 @@
     }
     const earned = newlyEarned(p);
     if (earned) blocks.push(perkBlock(p, earned.tier.name, earned.via));
-    mergedLines(p.status).forEach((group, i) => blocks.push(perkBlock(p, group.tier, group.via, null, group, i)));
+    mergedLines(p.status, p).forEach((group, i) => blocks.push(perkBlock(p, group.tier, group.via, null, group, i)));
     const heading = h('h3', { class: 'd-label' }, 'Your status');
     if (p === medallionProgram() && !p.status.some((line) => /medallion/i.test(line.tier))) {
       blocks.push(h('p', { class: 'fine' }, 'Still hold a higher tier from last year? Add it with Edit — e.g. Level “Platinum Medallion”, expires Jan 31 — so it counts until then.'));
@@ -9031,6 +9441,10 @@
     const c = catalogFor(p);
     const url = c && OFFICIAL[c.id];
     if (!url) return h('p', { class: 'fine' }, `Headline perks as of ${BENEFITS_AS_OF}. Programs change benefits often — check the program’s site for full terms.`);
+    if (on2027Rules() && TRACKS_2027[c.id]) {
+      return h('p', { class: 'fine' }, 'These are the 2027 rules as announced by November 2026. Programs change benefits often, so ',
+        h('a', { href: url, target: '_blank', rel: 'noopener noreferrer' }, `${new URL(url).hostname.replace(/^www\./, '')} ↗`), ' has the last word.');
+    }
     return h('p', { class: 'fine' }, `Checked against the program’s official page on ${CHECKED_ON[c.id] || BENEFITS_CHECKED}: `,
       h('a', { href: url, target: '_blank', rel: 'noopener noreferrer' }, `${new URL(url).hostname.replace(/^www\./, '')} ↗`),
       '. Programs change benefits often, so that page has the last word.');
@@ -9065,7 +9479,7 @@
     $('#d-levels').replaceChildren(
       h('h3', { class: 'd-label' }, 'All levels'),
       h('div', null, levels),
-      lifetimeLine(p),
+      lifetimeLine(p) || '',
       officialLine(p));
   }
 
@@ -9112,7 +9526,7 @@
     if (data.expCancel != null) { expEditing = null; renderDetailStatus(p); return; }
     if (data.open != null) { openDetail(data.open); return; } // a transfer partner on your list
     if (data.expCal != null) {
-      const group = mergedLines(p.status)[Number(data.expCal)];
+      const group = mergedLines(p.status, p)[Number(data.expCal)];
       saveCalendar(buildICS([statusItem(p, group)]), `${fileTag()}${slugify(`${p.name} ${group.tier}`)}-reminder.ics`, btn);
       return;
     }
@@ -9225,7 +9639,7 @@
       }
       const earned = newlyEarned(p);
       if (earned) earned.tier.perks.forEach((perk) => add(p, perk, earned.tier.name, earned.via));
-      for (const group of mergedLines(p.status)) {
+      for (const group of mergedLines(p.status, p)) {
         if (!group.tier || (group.exp && daysLeft(group.exp) < 0)) continue;
         const via = splitParts(group.via).join(' · ');
         for (const part of splitParts(group.tier)) {
@@ -9323,7 +9737,7 @@
       if (medallion && !coveredThrough(p, medallionIndex, isoOf(medallionThrough()))) {
         earned.push({ tier: `${medallion.name} Medallion`, via: `earned in ${mqdYear()}`, exp: isoOf(medallionThrough()) });
       }
-      for (const group of [...earned, ...mergedLines(p.status)]) {
+      for (const group of [...earned, ...mergedLines(p.status, p)]) {
         if (!group.tier || !parseISODate(group.exp) || p.id === 'lounges' || outlasted(p, group)) continue;
         const item = statusItem(p, group);
         if (inWindow(item.days, STATUS_SOON_DAYS)) items.push(item);
@@ -9410,7 +9824,7 @@
         : h('span', { class: 'tag warn' }, item.days === 0 ? 'Today' : plural(item.days, 'day'));
       const verb = item.days < 0 ? 'expired' : 'expires';
       if (item.kind === 'credit') {
-        return h('li', null, h('button', { type: 'button', class: 'up-item', 'data-credits': '' },
+        return h('li', null, h('button', { type: 'button', class: 'up-item', 'data-credit-row': item.x.key },
           h('span', { class: 'v-ico', 'aria-hidden': 'true' }, svgIcon(ICON.card)),
           h('div', { class: 'up-body' },
             h('div', { class: 'up-name' }, creditUseText(item.x)),
@@ -9509,7 +9923,7 @@
       if (item.kind === 'status') {
         const tier = splitParts(item.group.tier).join(' · ');
         const info = tier ? perksFor(item.p, splitParts(item.group.tier)[0]) : null; // "·" alone names no level
-        uid = `status-${uidPart(item.p.id)}-${uidPart(tier)}`;
+        uid = `status-${uidPart(item.p.id)}-${uidPart(firstTierName(item.p, tier))}`; // re-adding it replaces the reminder, whatever the level's called now
         subject = tier ? `${nameOf(item.p)} ${tier}` : nameOf(item.p);
         description = [
           item.group.via && (/^earned\b/i.test(item.group.via) ? `Earned ${item.group.via.slice(7)}.` : `From ${splitParts(item.group.via).join(' · ')}.`),
@@ -9604,7 +10018,8 @@
     const open = e.target.closest('[data-open]');
     if (open) { openDetail(open.dataset.open); return; }
     if (e.target.closest('[data-voucher]')) { jumpTo($('#vouchers-section')); return; }
-    if (e.target.closest('[data-credits]')) { jumpTo($('#credits-section')); return; }
+    const credit = e.target.closest('[data-credit-row]');
+    if (credit) { openCreditRow(credit.dataset.creditRow); return; }
     const renewal = e.target.closest('[data-card-renewal]');
     if (renewal) { openCards(renewal.dataset.cardRenewal); return; }
     const bonus = e.target.closest('[data-bonus-spent]');
@@ -10423,7 +10838,7 @@
         out.push(`  ${current ? `${current.name} Medallion earned in ${mqdYear()} (valid through ${dateFmt.format(medallionThrough())})` : `No Medallion earned in ${mqdYear()} yet`} · ${fmt(state.mqd)} MQDs · ${mqdNextText()}`);
         if (current) pushPerks(p, `${current.name} Medallion`);
       }
-      for (const line of mergedLines(p.status)) {
+      for (const line of mergedLines(p.status, p)) {
         const tier = splitParts(line.tier).join(' · ');
         const via = splitParts(line.via).join(' · ');
         const expDate = parseISODate(line.exp);
@@ -10523,6 +10938,7 @@
     stopScanning();
     Object.assign(state, next);
     forgetCreditParts();
+    resetCreditsView();
     editMode = false;
     filter = 'all'; // a different tracker starts from All, as when switching person
     rollOver();
@@ -10851,6 +11267,7 @@
     for (const key of Object.keys(state)) delete state[key];
     Object.assign(state, next);
     forgetCreditParts();
+    resetCreditsView();
     for (const open of document.querySelectorAll('dialog[open]')) open.close();
     editMode = false;
     filter = 'all';
@@ -11007,9 +11424,10 @@
         const period = creditPeriod(cardId, credit.period, credit.resets);
         // A card-year credit without your fee date has no known reset, so it never counts as "soon".
         const dated = !(credit.resets === 'card' && credit.period === 'year' && !state.renewals[cardId]);
-        // Part of it used, typed on the Credits page: the rest is what's left (all of it typed is used).
+        // This period's box on the Credits page says it all: ticked or all of it typed is used, part of it typed
+        // leaves the rest.
         const part = (state.creditsLog[key] || {})[period.key];
-        const used = state.creditsUsed[key] === period.key || (typeof part === 'number' && part >= credit.amount);
+        const used = part === true || (typeof part === 'number' && part >= credit.amount);
         const left = used ? 0 : cents(Math.max(0, credit.amount - (typeof part === 'number' ? part : 0)));
         return { card, credit, key, period, dated, used, left, skipped: !!state.creditsSkipped[key], days: daysUntil(period.end) };
       });
@@ -11256,9 +11674,9 @@
     return periods.filter((p) => !(last && isoOf(p.start) > last) && !(first && isoOf(p.end) < first)).map((p) => {
       const amount = before && isoOf(p.start) < before[0] ? before[1]
         : credit.period === 'month' && p.start.getMonth() === 11 && credit.dec ? credit.dec : credit.amount;
-      const value = log[p.key];
-      const used = value === true ? amount : typeof value === 'number' ? Math.min(value, amount) : 0;
       const phase = isoOf(p.end) < today ? 'past' : isoOf(p.start) > today ? 'future' : 'current';
+      const value = phase === 'future' ? undefined : log[p.key]; // ticked ahead of time (a damaged file, a wrong clock): counts once it starts
+      const used = value === true ? amount : typeof value === 'number' ? Math.min(value, amount) : 0;
       const belongs = p.belongs || year;
       return { key: p.key, short: p.short, long: p.long, start: p.start, end: p.end, amount, value: value ?? null, used, full: used >= amount,
         phase, days: phase === 'current' ? daysUntil(p.end) : null, counts: belongs === year, belongs,
@@ -11314,8 +11732,17 @@
   let creditsFilter = 'month'; // it sits in the middle of the first page, so it starts short
   let creditsSuggesting = false; // "Add your cards" has been shown, so it stays while you add more
   let creditsShown = new Set(); // rows shown since the filter was picked
+  let creditsShownOn = ''; // and the day they were: on a new day what's due has moved on
 
   function creditsPageOpen() { return !$('#credits-page').hidden; }
+
+  // Someone else's tracker coming in (another person, a restored backup): this year, Due this month, as the tracker itself does.
+  function resetCreditsView() {
+    creditsPast = false;
+    creditsFilter = 'month';
+    creditsSuggesting = false;
+    creditsShown = new Set();
+  }
 
   // The Credits button, Go to checklist, and a #credits link all land on the checklist under your programs.
   function openCreditsPage() {
@@ -11350,7 +11777,16 @@
         h('button', { type: 'button', 'data-cp-year': 'now', 'aria-pressed': String(!creditsPast) }, String(thisYear)),
         h('button', { type: 'button', 'data-cp-year': 'past', 'aria-pressed': String(creditsPast) }, String(thisYear - 1))) : null);
     if (!CREDITS_PAGE_CARDS.some((id) => state.cards.includes(id))) creditsSuggesting = true;
-    const m = creditsPageModel({ past: creditsPast, filter: creditsFilter, keepSuggest: creditsSuggesting, keep: creditsShown });
+    if (creditsShownOn !== todayISO()) {
+      creditsShownOn = todayISO();
+      creditsShown = new Set();
+    }
+    const model = () => creditsPageModel({ past: creditsPast, filter: creditsFilter, keepSuggest: creditsSuggesting, keep: creditsShown });
+    let m = model();
+    if (creditsPast && !m.cards.length) { // no cards, no year switch to come back with
+      creditsPast = false;
+      m = model();
+    }
     for (const c of m.cards) for (const row of c.shown) creditsShown.add(row.key);
     const top = topBar(m.cards.length > 0);
     // "Not tracking" lists you had open stay open after the redraw (e.g. after Track again).
@@ -11485,6 +11921,11 @@
     if (box) box.focus({ preventScroll: true });
   }
 
+  // Tapped in Coming up: that credit's row in the checklist.
+  function openCreditRow(key) {
+    jumpToCredit(key);
+  }
+
   // An "Add your cards" chip: the card goes on as in Your cards, with Undo.
   function addCardFromPage(cardId) {
     if (!state.programs || !CARD_BY_ID[cardId] || state.cards.includes(cardId)) return;
@@ -11555,7 +11996,7 @@
     if (!box) { renderCreditsPage(); return; } // not started yet, view-only, or the page was out of date
     // Undo puts back exactly what was there: the box, the main page's mark and the days they were made.
     const kept = (o) => (Object.hasOwn(o, key) ? o[key] : undefined);
-    const before = { value: box.value, used: kept(state.creditsUsed), on: kept(state.creditsUsedOn), part: kept(state.creditsPartOn) };
+    const before = { value: box.value, used: kept(state.creditsUsed), on: kept(state.creditsUsedOn), part: kept(state.creditsPartOn), fee: state.renewals[cardId] };
     const putBack = (o, v) => { if (v === undefined) delete o[key]; else o[key] = v; };
     let value;
     if (d.cpBox) {
@@ -11573,17 +12014,33 @@
       value = !(n > 0) ? null : n >= box.amount ? true : n;
     }
     setCreditBox(key, box.key, value, true);
+    const markAfter = kept(state.creditsUsed);
     if (d.cpBox && value === true && typeof before.value === 'number') creditPartBefore.set(key, { period: box.key, value: before.value });
     scheduleSave();
     renderCredits();
     renderUpcoming();
     if (before.value != null && (value == null || (before.value === true && value !== true))) { // unticked or emptied: Undo puts it back
       showToast(`${d.cpBox ? 'Unchecked' : 'Cleared'} ${credit.name} for ${box.long}${value ? ` (${creditMoney(value)} used)` : ''}`, () => {
+        // The fee date has changed since, so this card year's box may be gone: undo it under the old date, and the
+        // new date moves it like any other tick.
+        const fee = state.renewals[cardId];
+        const feeMoved = credit.resets === 'card' && credit.period === 'year' && fee !== before.fee;
+        if (feeMoved) setRenewal(cardId, before.fee || '');
         logCredit(key, box.key, before.value);
-        if (before.value === true && typeof value === 'number') creditPartBefore.set(key, { period: box.key, value }); // untick again: the amount again
-        putBack(state.creditsUsed, before.used);
-        putBack(state.creditsUsedOn, before.on);
-        putBack(state.creditsPartOn, before.part);
+        if (before.value === true && typeof value === 'number' && !feeMoved) creditPartBefore.set(key, { period: box.key, value }); // untick again: the amount again
+        // The mark stays if it has moved since (another box ticked in the meantime), unless it's this box, ticked since:
+        // the amount takes the box back, or the next load would tick it again.
+        const tickedSince = typeof before.value === 'number' && kept(state.creditsUsed) === box.key;
+        if (kept(state.creditsUsed) === markAfter || tickedSince) {
+          putBack(state.creditsUsed, before.used);
+          putBack(state.creditsUsedOn, before.on);
+          if (box.phase === 'current') putBack(state.creditsPartOn, before.part); // its day goes with this period's amount, no other box's
+          if (tickedSince && (state.creditsLog[key] || {})[before.used] !== true) { // and an older mark, only if its box is still ticked
+            delete state.creditsUsed[key];
+            delete state.creditsUsedOn[key];
+          }
+        }
+        if (feeMoved) setRenewal(cardId, fee || '');
         scheduleSave();
         renderCredits();
         renderUpcoming();

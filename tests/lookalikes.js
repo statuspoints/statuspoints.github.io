@@ -5,7 +5,7 @@
 //   const m = await import('/tests/lookalikes.js'); await m.run(); // then: m.results, m.results.filter((r) => !r.ok)
 // Harder copies: m.run(m.pages, { scale: 0.5 }) (a low-resolution screenshot), { jpeg: 0.5 } (compressed),
 // { font: 'Georgia, serif' } or { light: true } (thin text) — any mix.
-// 58 pages, 25 programs. It never applies a read (each card is closed), and setUp() is for a test browser only.
+// 79 pages, 31 programs. It never applies a read (each card is closed), and setUp() is for a test browser only.
 
 const W = '#fff';
 const D = '#0f1115';
@@ -16,9 +16,11 @@ export const programs = [['delta', 'Delta SkyMiles', 'miles'], ['united', 'Unite
   ['amex', 'Amex Membership Rewards'], ['chase', 'Chase Ultimate Rewards'], ['southwest', 'Southwest Rapid Rewards'],
   ['alaska', 'Alaska Atmos Rewards'], ['capitalone', 'Capital One Miles', 'miles'], ['bilt', 'Bilt Rewards'],
   ['emirates', 'Emirates Skywards', 'miles'], ['ba', 'British Airways Club', 'Avios'], ['flyingblue', 'Air France-KLM Flying Blue', 'miles'],
-  ['qatar', 'Qatar Privilege Club', 'Avios'], ['singapore', 'Singapore KrisFlyer', 'miles'], ['aeroplan', 'Air Canada Aeroplan'],
+  ['qatar', 'Qatar Privilege Club', 'Avios'], ['aeroplan', 'Air Canada Aeroplan'],
   ['wyndham', 'Wyndham Rewards'], ['choice', 'Choice Privileges'], ['accor', 'ALL Accor'], ['bestwestern', 'Best Western Rewards'],
-  ['hertz', 'Hertz Gold Plus Rewards', ''], ['national', 'National Emerald Club', '']];
+  ['hertz', 'Hertz Gold Plus Rewards', ''], ['national', 'National Emerald Club', ''],
+  ['koreanair', 'Korean Air SKYPASS', 'miles'], ['iberia', 'Iberia Club', 'Avios'], ['lufthansa', 'Lufthansa Miles & More', 'miles'], ['jal', 'JAL Mileage Bank', 'miles'],
+  ['etihad', 'Etihad Guest', 'miles'], ['frontier', 'Frontier Miles', 'miles'], ['singapore', 'Singapore KrisFlyer', 'miles']];
 
 export const pages = [
   { name: 'IHG web, balance beside the greeting', w: 2000, h: 644, rects: [[0, 120, 2000, 434, '#dde2e6'], [1374, 140, 2, 392, '#c9ced3']],
@@ -217,6 +219,81 @@ export const pages = [
     text: [t('Hertz', 60, 130, 60, 700), t('Gold Plus Rewards®', 80, 320, 44, 700), t('Five Star', 80, 420, 56, 700),
       t('9 of 15 rentals to President’s Circle', 60, 640, 34, 400, '#c8c8c8')],
     expect: { program: 'Hertz', balance: null, tier: 'Five Star' } },
+  // Pages from the real reader's readings of fresh look-alikes (2026-11-01): each one was read wrong, or asked for no reason.
+  { name: 'KrisFlyer app, dark type on a silver gradient card, expiring miles below', w: 1170, h: 1300, rects: [[66, 360, 1040, 400, ['#9aa0a6', '#d6d9dc']]],
+    text: [t('KrisFlyer', 66, 200, 62, 700, '#00266b'), t('Mr Lee Chan · 8812345678', 66, 280, 42), t('Elite Silver', 114, 440, 42), t('Valid through 31 Jan 2028', 114, 490, 36),
+      t('42,800', 114, 640, 108, 700), t('KrisFlyer miles', 114, 710, 39), t('Expiring soon', 66, 860, 42, 700), t('1,200 miles on 30 Apr 2027', 66, 920, 42), t('Elite miles', 66, 1040, 42, 700), t('18,500 of 25,000', 66, 1100, 42)],
+    expect: { program: 'Singapore', balance: 42800, tier: 'Elite Silver' } },
+  { name: 'SKYPASS web, a level’s threshold in miles, three captions over three values', w: 1280, h: 760,
+    text: [t('KOREAN AIR', 40, 50, 22, 700, '#00256c'), t('My SKYPASS', 60, 130, 22, 600), t('SKYPASS No. KE 112233445566', 60, 170, 15), t('Morning Calm Club', 60, 220, 18, 600, '#00256c'),
+      t('Available mileage', 60, 290, 14), t('Miles expiring Dec 31, 2027', 320, 290, 14), t('Accrued flight miles', 640, 290, 14), t('63,120', 60, 340, 38, 700), t('2,100', 320, 340, 38, 700), t('38,400', 640, 340, 38, 700),
+      t('Morning Calm Premium Club at 500,000 miles', 60, 410, 15)],
+    expect: { program: 'Korean Air', balance: 63120, tier: 'Morning Calm Club' } },
+  { name: 'Southwest app, “A-List progress” and Companion Pass, no level held', w: 1170, h: 1500,
+    text: [t('Rapid Rewards', 66, 200, 66, 700, '#304cb2'), t('41,200', 66, 370, 132, 700), t('points', 66, 430, 42), t('A-List progress', 66, 560, 45, 600), t('Tier qualifying points 18,400 of 35,000', 66, 620, 42),
+      t('Qualifying flights 11 of 20', 66, 680, 42), t('Companion Pass', 66, 810, 45, 600), t('86,400 of 135,000 points', 66, 870, 42), t('48,600 to go', 66, 930, 42)],
+    expect: { program: 'Southwest', balance: 41200, tier: null, counts: ['18,400 tier points', '11 flights'] } },
+  { name: 'Iberia Club in Spanish, the next level named', w: 1170, h: 1300,
+    text: [t('Iberia Club', 66, 200, 66, 700, '#d7192d'), t('Hola, Lucía', 66, 280, 45), t('Tarjeta Plata', 66, 360, 48, 600), t('Tus Avios', 66, 480, 39), t('18.300', 66, 600, 120, 700), t('Elite Points', 66, 700, 39),
+      t('450', 66, 780, 72, 600), t('Te faltan 350 Elite Points para Oro', 66, 850, 39), t('Válida hasta 31/12/2027', 66, 920, 39)],
+    expect: { program: 'Iberia', balance: 18300, tier: 'Plata' } },
+  { name: 'Lufthansa in German, points for the next level beside the miles', w: 1440, h: 640, rects: [[0, 0, 1440, 80, '#05164d']],
+    text: [t('Lufthansa', 40, 54, 26, 700, W), t('Miles & More', 1200, 50, 18, 400, W), t('Ihr Meilenkonto', 60, 150, 24), t('Senator · Gültig bis 31.03.2028', 60, 190, 16), t('Prämienmeilen', 60, 260, 14), t('Punkte für HON Circle Member', 420, 260, 14),
+      t('210.000', 60, 310, 40, 700), t('12.550', 420, 310, 40, 700), t('Noch 7.450 Punkte bis zum nächsten Status', 60, 380, 15)],
+    expect: { program: 'Lufthansa', balance: 210000, tier: 'Senator' } },
+  { name: 'Flying Blue in French, spaced thousands', w: 1170, h: 1400,
+    text: [t('Flying Blue', 66, 200, 66, 700, '#002157'), t('Bonjour Camille', 66, 280, 45), t('Gold', 66, 360, 54, 600), t('Solde de Miles', 66, 470, 39), t('78 450', 66, 590, 120, 700), t('Points d’expérience', 66, 680, 39), t('182 XP', 66, 760, 72, 600),
+      t('98 XP pour atteindre Platinum', 66, 820, 39), t('Valable jusqu’au 30/04/2027', 66, 890, 39), t('Numéro Flying Blue 1234567890', 66, 950, 39)],
+    expect: { program: 'Flying Blue', balance: 78450, tier: 'Gold' } },
+  { name: 'Qatar web, Avios, Qpoints and Qpoints to Gold in a row', w: 1440, h: 560, rects: [[0, 0, 1440, 80, '#5c0632']],
+    text: [t('QATAR AIRWAYS', 40, 54, 24, 700, W), t('Privilege Club', 60, 150, 24), t('Silver · Membership number 112233445', 60, 190, 15), t('Avios', 60, 260, 14), t('Qpoints', 280, 260, 14), t('Qpoints to Gold', 480, 260, 14), t('38,200', 60, 310, 40, 700), t('180', 280, 310, 40, 700), t('120', 480, 310, 40, 700)],
+    expect: { program: 'Qatar', balance: 38200, tier: 'Silver' } },
+  { name: 'IHG web, a wide row of captions over balance, nights and points', w: 1440, h: 560,
+    text: [t('IHG One Rewards', 60, 50, 22, 700), t('Welcome, Sam', 60, 130, 26), t('Gold Elite · Member #210987654', 60, 170, 15), t('Point balance', 60, 240, 14), t('Qualifying nights', 330, 240, 14), t('Qualifying points', 560, 240, 14), t('184,210', 60, 295, 42, 700), t('18', 330, 295, 42, 700), t('22,400', 560, 295, 42, 700),
+      t('22 more nights or 37,600 more points to reach Platinum Elite', 60, 360, 15)],
+    expect: { program: 'IHG', balance: 184210, tier: 'Gold Elite', counts: ['18 nights'] } },
+  { name: 'American web, tier widget with four big numbers', w: 1440, h: 700, rects: [[0, 0, 1440, 80, '#0078d2']],
+    text: [t('American Airlines', 40, 54, 24, 700, W), t('Hi, Casey', 60, 140, 24), t('Award miles', 60, 210, 14), t('Lifetime miles', 320, 210, 14), t('61,040', 60, 260, 40, 700), t('412,905', 320, 260, 40, 700), t('Platinum', 60, 340, 18, 600), t('Your status through Mar 31, 2028', 60, 370, 14),
+      t('Loyalty Points', 60, 430, 14), t('Next level', 480, 430, 14), t('Points to go', 900, 430, 14), t('82,350', 60, 475, 28, 700), t('125,000', 480, 475, 28, 700), t('42,650', 900, 475, 28, 700)],
+    expect: { program: 'American', balance: 61040, tier: 'Platinum', counts: ['82,350 Loyalty Points'] } },
+  { name: 'Chase, two cards each with its own points: the card asks', w: 1440, h: 620,
+    text: [t('CHASE', 40, 50, 24, 700, '#117aca'), t('Sapphire Reserve (...4821)', 60, 130, 18, 600), t('Ultimate Rewards', 60, 160, 15), t('84,210 pts', 60, 210, 34, 700), t('Freedom Unlimited (...9033)', 60, 300, 18, 600), t('Ultimate Rewards', 60, 330, 15), t('12,345 pts', 60, 380, 34, 700)],
+    expect: { program: 'Chase', balance: 84210, ask: true } },
+  { name: 'Marriott household page, two members: the card asks', w: 1440, h: 520,
+    text: [t('MARRIOTT BONVOY', 40, 50, 24, 700), t('Household accounts', 60, 120, 22, 600), t('Alex Rivera', 60, 180, 18, 600), t('Sam Rivera', 760, 180, 18, 600), t('Gold Elite · Member 123456789', 60, 210, 15), t('Silver Elite · Member 987654321', 760, 210, 15), t('41,200 points', 60, 270, 34, 700), t('12,800 points', 760, 270, 34, 700)],
+    expect: { program: 'Marriott', balance: 41200, ask: true } },
+  { name: 'United app, the first digit cut off at the left edge: the card asks', w: 1170, h: 1000,
+    text: [t('MileagePlus', 66, 200, 66, 700, '#002244'), t('Premier Gold', 66, 280, 42), t('184,250', -108, 560, 168, 700), t('miles', 66, 640, 42)],
+    expect: { program: 'United', balance: 84250, tier: 'Premier Gold', ask: true } },
+  { name: 'Marriott app, a bank’s notification across the top', w: 1170, h: 1300, rects: [[30, 90, 1110, 170, '#e9e9ee']],
+    text: [t('9:41', 84, 60, 45, 600), t('Chase · now', 66, 140, 39, 700), t('Your balance of $12,500 is due Nov 14. You earned 4,210 points.', 66, 200, 34), t('Marriott Bonvoy', 66, 380, 66, 600), t('Gold Elite', 66, 450, 45), t('48,320', 66, 620, 126, 700), t('Points', 66, 680, 42), t('Nights this year: 32', 66, 770, 42)],
+    expect: { program: 'Marriott', balance: 48320, tier: 'Gold Elite', counts: ['32 nights'] } },
+  { name: 'Aeroplan web, dark, points and SQC side by side, a transfer offer', w: 1440, h: 600, bg: D, ink: '#e6edf3',
+    text: [t('Air Canada', 40, 50, 24, 700), t('Aeroplan', 60, 130, 24), t('50K · Aeroplan number 123 456 789', 60, 170, 15), t('Points balance', 60, 240, 14, 400, '#9aa'), t('SQC', 330, 240, 14, 400, '#9aa'), t('187,350', 60, 290, 40, 700), t('41,200', 330, 290, 40, 700), t('Transfer from Chase Ultimate Rewards at 1:1 and get a 30% bonus', 60, 360, 15)],
+    expect: { program: 'Aeroplan', balance: 187350, tier: '50K', counts: ['41,200 SQC'] } },
+  { name: 'Marriott on a big monitor, small type, partner rates in a sidebar', w: 1920, h: 700, rects: [[1580, 70, 340, 630, '#f5f5f5']],
+    text: [t('MARRIOTT BONVOY', 40, 44, 22, 700), t('Welcome back, Dana', 80, 110, 15), t('Titanium Elite · Member number 123456789', 80, 135, 14), t('Points', 80, 180, 12), t('Nights', 260, 180, 12), t('250,145', 80, 215, 26, 700), t('76', 260, 215, 26, 700),
+      t('Earn with partners', 1610, 110, 13, 700), t('Hertz: 500 points per rental', 1610, 135, 13), t('United Airlines: 1 mile per $1', 1610, 180, 13), t('Uber: 2 points per $1', 1610, 215, 13)],
+    expect: { program: 'Marriott', balance: 250145, tier: 'Titanium Elite', counts: ['76 nights'] } },
+  { name: 'Hyatt app, a bold 5 in the balance', w: 1170, h: 1400,
+    text: [t('World of Hyatt', 66, 200, 60), t('Discoverist', 66, 280, 45), t('54,320', 66, 470, 132, 700), t('Current points', 66, 530, 42), t('Tier progress', 66, 650, 42, 600), t('18 of 30 Qualifying nights', 66, 710, 42), t('28,400 of 50,000 Base points', 66, 770, 42), t('12 nights to Explorist', 66, 830, 42)],
+    expect: { program: 'Hyatt', balance: 54320, tier: 'Discoverist', counts: ['18 nights'] } },
+  { name: 'Hilton app, dark type on a flat gray card', w: 1170, h: 1300, rects: [[66, 280, 1040, 390, '#b4b9be']],
+    text: [t('Hilton Honors', 66, 200, 66, 700, '#104c97'), t('Gold Member', 114, 360, 48, 600), t('152,310', 114, 530, 114, 700), t('Points', 114, 600, 39), t('Nights this year 21', 66, 760, 42), t('Stays this year 8', 66, 820, 42)],
+    expect: { program: 'Hilton', balance: 152310, tier: 'Gold', counts: ['21 nights'] } },
+  { name: 'Etihad web, a level as a tile’s value in a row of numbers', w: 1440, h: 520,
+    text: [t('Etihad', 40, 50, 24, 700, '#6a5a3a'), t('Hello Sam', 60, 130, 26), t('Etihad Guest 501234567890', 60, 165, 14), t('Guest Miles', 60, 230, 14), t('Tier Miles', 300, 230, 14), t('Your tier', 560, 230, 14), t('33,420', 60, 285, 40, 700), t('18,000', 300, 285, 40, 700), t('Silver', 560, 285, 40, 700), t('of 25,000 to retain', 300, 320, 13)],
+    expect: { program: 'Etihad', balance: 33420, tier: 'Silver' } },
+  { name: 'JAL app, a second points number with its own caption', w: 780, h: 1100,
+    text: [t('JAL Mileage Bank', 44, 120, 40, 600, '#c00'), t('JMB Sapphire', 44, 170, 28), t('Available miles', 44, 260, 26), t('52,008', 44, 340, 72, 700), t('FLY ON Points', 44, 420, 26), t('38,200', 44, 480, 48, 600), t('JMB No. 301234567', 44, 560, 26)],
+    expect: { program: 'JAL', balance: 52008, tier: 'JMB Sapphire' } },
+  { name: 'Frontier app, dark, a level then two tiles', w: 1170, h: 1100, bg: D, ink: '#f1f3f5',
+    text: [t('FRONTIER Miles', 66, 200, 72, 800, '#3fb56f'), t('Elite Silver', 66, 270, 42, 400, '#bbb'), t('Miles', 66, 400, 39, 400, '#bbb'), t('18,250', 66, 520, 120, 700), t('Elite Status Points', 66, 620, 39, 400, '#bbb'), t('12,500 / 20,000', 66, 700, 72, 600)],
+    expect: { program: 'Frontier', balance: 18250, tier: 'Elite Silver' } },
+  { name: 'Hyatt web, a sidebar beside tier progress', w: 1440, h: 700, rects: [[0, 0, 300, 700, '#1a2a44']],
+    text: [t('World of Hyatt', 26, 50, 20, 400, W), t('Taylor Quinn', 26, 100, 14, 400, W), t('Globalist', 26, 122, 14, 400, W), t('Current points', 26, 200, 13, 400, W), t('91,450', 26, 240, 30, 400, W),
+      t('My tier progress', 330, 60, 26), t('Qualifying nights: 41 of 60', 330, 100, 15), t('Base points: 62,300 of 100,000', 330, 128, 15), t('Earn 5,000 bonus points on your next stay', 330, 170, 15)],
+    expect: { program: 'Hyatt', balance: 91450, tier: 'Globalist', counts: ['41 nights'] } },
 ];
 
 export function draw(page, variant = {}) {
@@ -228,7 +305,11 @@ export function draw(page, variant = {}) {
   g.scale(k, k);
   g.fillStyle = page.bg || W;
   g.fillRect(0, 0, page.w, page.h);
-  for (const [x, y, w, h, color] of page.rects || []) { g.fillStyle = color; g.fillRect(x, y, w, h); }
+  for (const [x, y, w, h, color] of page.rects || []) {
+    // Two colors: a gradient across the box.
+    if (Array.isArray(color)) { const fill = g.createLinearGradient(x, y, x + w, y); fill.addColorStop(0, color[0]); fill.addColorStop(1, color[1]); g.fillStyle = fill; } else g.fillStyle = color;
+    g.fillRect(x, y, w, h);
+  }
   for (const [text, x, y, size, weight, color, align] of page.text) {
     g.font = `${variant.light ? Math.min(weight, 300) : weight} ${size}px ${variant.font || 'Helvetica Neue, Arial'}`;
     g.fillStyle = color || page.ink || '#111';
@@ -267,8 +348,9 @@ export async function scan(page, variant = {}) {
     const ok = /^Found \d+ status(?:es)?|^These \d+ statuses/.test(title) && e.many.every((name) => rows.some((r) => r.startsWith(`${name} |`) || r.includes(`| ${name} |`)));
     return { name: page.name, ok, silentlyWrong: !ok && !got.flagged, got: { ...got, rows } };
   }
+  // `ask`: the page can't be read for sure (two balances, a number cut off), so a right card still has to ask.
   const ok = title.includes(e.program) && got.balance === e.balance && (e.tier === undefined || got.tier === e.tier)
-    && (e.counts || []).every((c) => got.counts.includes(c));
+    && (e.counts || []).every((c) => got.counts.includes(c)) && (!e.ask || got.flagged);
   // Wrong without saying so is the failure that matters: a flagged card waits for you to check it.
   return { name: page.name, ok, silentlyWrong: !ok && !got.flagged, got };
 }

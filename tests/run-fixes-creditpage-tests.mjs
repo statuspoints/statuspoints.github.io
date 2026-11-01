@@ -1,8 +1,10 @@
 // Checks the Credits page (from index.html, opened at #credits) against a small fake page and a fake clock: a box
 // per month, quarter, half or year of each credit, ticking and unticking them (this period and past ones), partial
 // amounts, the totals at the top, the record kept in creditsLog and how it agrees with the main page's "Mark used",
-// old saved data, backups, a new year, skipped and added credits, and the "Add your cards" chips.
+// old saved data, backups, a new year, skipped and added credits, the "Add your cards" chips, and (section 17) the
+// page as time passes: rollovers, people, damaged files, and a fuzz that every total agrees, in several time zones.
 // Usage: node tests/run-fixes-creditpage-tests.mjs  — exits non-zero if any check fails.
+import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
@@ -116,7 +118,8 @@ const fakeDom = `
   const scrollTo = (x, y) => { shown.scrollTo.push(y); scrollY = y; };
   const matchMedia = () => ({ matches: false, addEventListener() {} });
   const navigator = {};
-  const localStorage = { getItem: () => null, setItem() {}, removeItem() {}, key: () => null, length: 0 };
+  const stored = new Map();
+  const localStorage = { getItem: (k) => (stored.has(k) ? stored.get(k) : null), setItem: (k, v) => { stored.set(k, String(v)); }, removeItem: (k) => { stored.delete(k); }, key: () => null, length: 0 };
   const CSS = { escape: (s) => s };
   const setTimeout = () => 0; const clearTimeout = () => {};
   const requestAnimationFrame = (fn) => fn();
@@ -135,7 +138,7 @@ vm.runInContext(`${fakeDom}
   let saves = 0;
   const showToast = (message, onUndo) => shown.toasts.push({ message, undo: onUndo || null });
   const scheduleSave = () => { saves++; }; const saveNow = () => {};
-  const renderPrograms = () => {}; const renderUpcoming = () => {}; const renderCertSuggest = () => {};
+  const renderPrograms = () => {}; const renderCertSuggest = () => {};
   const bonusShort = () => null; const bonusProgress = () => null; const bonuses = () => ({}); const bonusBox = () => null;
   const openCards = () => { shown.cardsOpened++; };
   const jumpTo = (el) => { if (el) el.scrollIntoView(); };
@@ -146,8 +149,24 @@ vm.runInContext(`${fakeDom}
   ${piece('  // Puts a card on your list', "  $('#cards-picker').addEventListener('click'")}
   ${piece('  const MONTH_NAMES', '  /* ---------- Certificates from your cards')}
   ${piece('  // One "Coming up" item as a line', '  // A plain-text summary meant for reading')}
-  globalThis.ui = { shown, normalize, comingUpLine, document, setRenewal, forgetCreditParts: typeof forgetCreditParts !== 'undefined' ? forgetCreditParts : () => {},
-    creditUseText: typeof creditUseText !== 'undefined' ? creditUseText : null, creditStatusText: typeof creditStatusText !== 'undefined' ? creditStatusText : null, heldCredits, creditBoxes, cardCreditDefs, creditsPageModel, setCreditBox, renderCredits, openCreditsPage,
+  // The real Coming up (nothing but credits and fee dates in these trackers) and the real switch between people.
+  const lineExpired = () => false; const mergedLines = () => []; const hasStatus = () => false; const dependsOn = () => '';
+  const medallionProgram = () => null; const medallionFor = () => ({ current: null }); const effectiveMedallion = () => null;
+  const backupDue = () => null; const renderBackupStatus = () => {}; const updateBadge = () => {};
+  const openDetail = () => {}; const addAllToCalendar = () => {}; const backUp = () => {}; let bonusReturn = null;
+  ${piece('  function statusItem', '  // Number on the home-screen icon')}
+  ${piece("  $('#upcoming').addEventListener('click'", "  $('#cal-btn').addEventListener")}
+  let saveTimer = 0; let editMode = false; let filter = 'all'; let planOpen = false; let planMqd = 0; let planSpend = 0; let intro = false; let renaming = null;
+  const picked = new Set(); const pickedCards = new Set();
+  const stopScanning = () => {}; const hideTrackerToast = () => { shown.toasts.length = 0; }; const showNote = () => {}; const renderPeople = () => {};
+  const rollOver = () => false;
+  const renderSafely = (prepare) => { if (prepare) prepare(); renderUpcoming(); renderCredits(); return true; };
+  ${piece('  function switchPerson', '  function saveRename')}
+  const detail = { open: false }; const renderDetail = () => {}; const renderVouchers = () => {}; const openFresh = (err) => { throw err; };
+  ${piece('  function renderToday', '  function renderAll')}
+  ${piece('  let drawnDay', '  // Just after each midnight')}
+  globalThis.ui = { refreshDay, shown, stored, storageKey, people, switchPerson, renderUpcoming, removeCard, addHeldCard, creditRate, isoOf, cents, money, normalize, comingUpLine, document, setRenewal, forgetCreditParts: typeof forgetCreditParts !== 'undefined' ? forgetCreditParts : () => {},
+    creditUseText: typeof creditUseText !== 'undefined' ? creditUseText : null, creditStatusText: typeof creditStatusText !== 'undefined' ? creditStatusText : null, heldCredits, creditBoxes, cardCreditDefs, creditsPageModel, setCreditBox, renderCredits, openCreditsPage, closeCreditsPage: () => { resetCreditsView(); creditsFilter = 'all'; },
     syncCreditsRoute, fire, page, tracker, location, body, CREDITS_PAGE_CARDS,
     getState: () => state, setState: (s) => { state = s; }, saves: () => saves };`, ctx);
 const app = ctx.ui;
@@ -789,6 +808,607 @@ check('no cards: Add your cards, no totals, filters or year switch', [!!page.que
 page.querySelector('[data-cp-add-card="amex-gold"]').dispatch('click');
 const kids = page.children;
 check('…after adding one: the panel above the totals', kids.findIndex((k) => k.classList.contains('cp-add')) < kids.findIndex((k) => k.classList.contains('cp-summary')), true);
+
+// 17. As time passes: rollovers, a page left open, people, damaged data, and every total agreeing
+const at = (y, m, d, h = 12, min = 0) => { now = new Date(y, m - 1, d, h, min); };
+const midnight = (y, m, d) => { at(y, m, d, 0, 0); now = new Date(now.getTime() + 5000); app.refreshDay(); }; // the page's own redraw just after midnight
+const open = (fields) => { setup(fields); app.closeCreditsPage(); app.location.hash = ''; openPage(); app.renderUpcoming(); app.renderCredits(); };
+const rowOf = (key, past = false) => app.creditsPageModel({ past }).cards.flatMap((c) => c.rows).find((r) => r.key === key);
+const heldOf = (key) => app.heldCredits().find((x) => x.key === key);
+app.document.querySelector('#upcoming').append(app.document.querySelector('#up-list'));
+const comingUp = () => { app.renderUpcoming(); return app.document.querySelector('#upcoming').hidden ? [] : app.document.querySelector('#up-list').querySelectorAll('[data-credit-row]').map((b) => b.dataset.creditRow); };
+const pastView = (on = true) => page.querySelector(`[data-cp-year="${on ? 'past' : 'now'}"]`).dispatch('click');
+const backToOct = () => { now = new Date(2026, 9, 31, 12); page.hidden = true; app.location.hash = ''; };
+
+// Oct 31 to Nov 1, with the page open
+open({ cards: ['amex-gold', 'amex-platinum'] });
+at(2026, 10, 31, 23, 59);
+app.renderCredits();
+tick('amex-gold:uber', '2026-10');
+check('Oct 31: October’s Uber Cash ticked, here and on the main page', [rowOf('amex-gold:uber').current.key, rowOf('amex-gold:uber').left, heldOf('amex-gold:uber').used], ['2026-10', 0, true]);
+const q4Left = rowOf('amex-platinum:resy').left;
+midnight(2026, 11, 1);
+check('…Nov 1: the box on now is November, unused on both pages, October stays ticked', [rowOf('amex-gold:uber').current.key, rowOf('amex-gold:uber').left, heldOf('amex-gold:uber').used, pageBox('amex-gold:uber', '2026-10').checked, pageBox('amex-gold:uber', '2026-11').checked], ['2026-11', 10, false, true, false]);
+check('…a quarterly credit is still Q4, with what it had', [rowOf('amex-platinum:resy').current.key, rowOf('amex-platinum:resy').left], ['2026-Q4', q4Left]);
+
+check('…and the date at the top of the tracker has moved on', app.document.querySelector('#today').textContent, 'Sunday, November 1, 2026');
+
+// Nov 30 to Dec 1: Uber Cash is $35 in December only
+at(2026, 11, 30, 23, 59);
+open({ cards: ['amex-platinum'] });
+const availNov = app.creditsPageModel().available;
+const totalNov = app.creditsPageModel().cards[0].total;
+check('Nov 30: Uber Cash $15 on both pages', [rowOf('amex-platinum:uber').left, heldOf('amex-platinum:uber').left], [15, 15]);
+midnight(2026, 12, 1);
+check('Dec 1: $35 on both pages, available up $20, the year’s total the same', [rowOf('amex-platinum:uber').left, heldOf('amex-platinum:uber').left, app.creditsPageModel().available - availNov, app.creditsPageModel().cards[0].total], [35, 35, 20, totalNov]);
+check('…the main page’s rate says this month, the page’s both', [app.creditRate(heldOf('amex-platinum:uber').credit), page.querySelector('[data-cp-row="amex-platinum:uber"] small').text], ['$35 this month', '$15 a month · $35 in December']);
+tick('amex-platinum:uber', '2026-11');
+tick('amex-platinum:uber', '2026-12');
+check('…November ticked late is $15, December $35: $50 used', app.creditsPageModel().used, 50);
+midnight(2027, 1, 1);
+check('Jan 1: back to $15, and the $35 December still in 2026', [rowOf('amex-platinum:uber').left, heldOf('amex-platinum:uber').left, rowOf('amex-platinum:uber', true).boxes.at(-1).used, app.creditsPageModel({ past: true }).used], [15, 15, 35, 50]);
+
+// Dec 31 to Jan 1, with the page open: the year toggle, half-year keys, credits that end, Bilt Cash
+at(2026, 12, 31, 23, 59);
+open({ cards: ['sapphire-reserve', 'bilt-palladium'], renewals: { 'sapphire-reserve': '2025-03-15' } });
+check('Dec 31: the toggle reads 2026 and 2025', [page.querySelector('[data-cp-year="now"]').text, page.querySelector('[data-cp-year="past"]').text], ['2026', '2025']);
+tick('sapphire-reserve:select-hotels', '2026');
+tick('bilt-palladium:bilt-cash', '2026');
+typeAmt('bilt-palladium:hotel', '2026-H2', '50');
+check('…select hotels is on Coming up’s day-of list until used; ticked, it’s gone', comingUp().includes('sapphire-reserve:select-hotels'), false);
+const used2026 = app.creditsPageModel().used;
+midnight(2027, 1, 1);
+check('Jan 1: the toggle reads 2027 and 2026, showing 2027', [page.querySelector('[data-cp-year="now"]').text, page.querySelector('[data-cp-year="past"]').text, page.querySelector('[data-cp-year="now"]').getAttribute('aria-pressed')], ['2027', '2026', 'true']);
+check('…select hotels (through Dec 31, 2026) has left this year and the main page', [rowOf('sapphire-reserve:select-hotels'), heldOf('sapphire-reserve:select-hotels')], [undefined, undefined]);
+check('…Bilt Cash posted again: a fresh 2027 box, $200 available, last year’s still ticked', [rowOf('bilt-palladium:bilt-cash').current.key, rowOf('bilt-palladium:bilt-cash').left, rowOf('bilt-palladium:bilt-cash', true).boxes[0].full], ['2027', 200, true]);
+check('…half-year: 2027-H1 with nothing used, the $50 stays on 2026-H2', [rowOf('bilt-palladium:hotel').current.key, rowOf('bilt-palladium:hotel').left, rowOf('bilt-palladium:hotel', true).boxes[1].value], ['2027-H1', 200, 50]);
+check('…a card year doesn’t change at New Year', [rowOf('sapphire-reserve:travel').current.key, heldOf('sapphire-reserve:travel').period.key], ['A2026-03-15', 'A2026-03-15']);
+check('…last year’s total is what it was on Dec 31 (the card year counts where most of it falls)', app.creditsPageModel({ past: true }).used, used2026);
+check('…and this year’s starts at nothing', app.creditsPageModel().used, 0);
+pastView();
+check('…2026 keeps select hotels, ticked; December-ending boxes can still be changed', [pageBox('sapphire-reserve:select-hotels', '2026').checked, pageBox('sapphire-reserve:select-hotels', '2026').disabled], [true, false]);
+tick('bilt-palladium:bilt-cash', '2026', false);
+check('…unticking last year’s leaves this year’s total alone', [app.creditsPageModel({ past: true }).used, app.creditsPageModel().used], [used2026 - 200, 0]);
+pastView(false);
+reload();
+check('…a reload on Jan 1 keeps last year', rowOf('sapphire-reserve:select-hotels', true).boxes[0].full, true);
+at(2028, 1, 1);
+reload();
+check('…a reload on Jan 1, 2028: 2026’s ticks have gone', state().creditsLog, {});
+at(2027, 1, 1);
+setup({ cards: ['amex-gold'], creditsLog: { 'amex-gold:uber': { '2025-12': true, '2026-1': true, '2027-1': true }, 'sapphire-reserve:travel': { 'A2025-03-15': true, 'A2024-03-15': true } } });
+check('Two-year retention on Jan 1, 2027: 2026 and 2027 stay, a card year that ran into 2026 too', state().creditsLog, { 'amex-gold:uber': { '2026-1': true, '2027-1': true }, 'sapphire-reserve:travel': { 'A2025-03-15': true } });
+
+// Jun 30 to Jul 1
+at(2027, 6, 30, 23, 59);
+open({ cards: ['bilt-palladium'] });
+typeAmt('bilt-palladium:hotel', '2027-H1', '50');
+check('Jun 30: H1’s last day: $150 left, last day today, on Coming up with what’s left', [rowOf('bilt-palladium:hotel').left, rowOf('bilt-palladium:hotel').current.days, comingUp().includes('bilt-palladium:hotel'), heldOf('bilt-palladium:hotel').left], [150, 0, true, 150]);
+midnight(2027, 7, 1);
+check('Jul 1: H2 with $200, the amount stays on H1, off Coming up', [rowOf('bilt-palladium:hotel').current.key, rowOf('bilt-palladium:hotel').left, rowOf('bilt-palladium:hotel').boxes[0].used, comingUp().includes('bilt-palladium:hotel')], ['2027-H2', 200, 50, false]);
+
+// Feb 28 and Feb 29, 2028, and a fee date of Feb 29
+at(2028, 2, 28);
+open({ cards: ['amex-gold'] });
+check('Feb 28, 2028: February has a day left', [rowOf('amex-gold:uber').current.key, rowOf('amex-gold:uber').current.days], ['2028-2', 1]);
+midnight(2028, 2, 29);
+check('Feb 29: its last day', [rowOf('amex-gold:uber').current.key, rowOf('amex-gold:uber').current.days, pageBox('amex-gold:uber', '2028-2').disabled], ['2028-2', 0, false]);
+midnight(2028, 3, 1);
+check('Mar 1: March', rowOf('amex-gold:uber').current.key, '2028-3');
+at(2027, 2, 27);
+open({ cards: ['sapphire-reserve'], renewals: { 'sapphire-reserve': '2024-02-29' } });
+const cardYear = () => { const b = rowOf('sapphire-reserve:travel').current; return [b.key, app.isoOf(b.end), heldOf('sapphire-reserve:travel').period.key]; };
+check('fee date Feb 29: on Feb 27, 2027, the card year began Feb 28, 2026', cardYear(), ['A2026-02-28', '2027-02-27', 'A2026-02-28']);
+at(2027, 2, 28);
+check('…Feb 28, 2027 starts the next (no Feb 29 that year)', cardYear(), ['A2027-02-28', '2028-02-28', 'A2027-02-28']);
+at(2028, 2, 28);
+check('…Feb 28, 2028 is its last day', cardYear(), ['A2027-02-28', '2028-02-28', 'A2027-02-28']);
+at(2028, 2, 29);
+app.renderCredits();
+check('…Feb 29, 2028 starts the next, ending Feb 27, 2029', cardYear(), ['A2028-02-29', '2029-02-27', 'A2028-02-29']);
+tick('sapphire-reserve:travel', 'A2028-02-29');
+reload();
+check('…its tick survives a reload', [state().creditsLog['sapphire-reserve:travel'], rowOf('sapphire-reserve:travel').left, heldOf('sapphire-reserve:travel').left], [{ 'A2028-02-29': true }, 0, 0]);
+check('…each calendar year has its card years with no gap and one counted', [2027, 2028, 2029].map((y) => boxes('sapphire-reserve', 'travel', y).map((b) => [b.key, b.counts])), [[['A2026-02-28', false], ['A2027-02-28', true]], [['A2027-02-28', false], ['A2028-02-29', true]], [['A2028-02-29', false], ['A2029-02-28', true]]]);
+
+// A fee date still to come
+at(2026, 11, 1);
+open({ cards: ['sapphire-reserve'], renewals: { 'sapphire-reserve': '2027-03-15' } });
+check('fee date in the future: this card year runs up to it', [rowOf('sapphire-reserve:travel').current.key, app.isoOf(rowOf('sapphire-reserve:travel').current.end), heldOf('sapphire-reserve:travel').period.key], ['A2026-03-15', '2027-03-14', 'A2026-03-15']);
+at(2027, 3, 15);
+app.renderCredits();
+check('…on that day, the next one', [rowOf('sapphire-reserve:travel').current.key, heldOf('sapphire-reserve:travel').period.key], ['A2027-03-15', 'A2027-03-15']);
+
+// A page drawn yesterday, tapped today (asleep through midnight)
+at(2026, 10, 31, 23, 59);
+open({ cards: ['amex-gold'] });
+const stale = pageBox('amex-gold:uber', '2026-10');
+at(2026, 11, 1, 0, 1);
+stale.checked = true;
+stale.dispatch('change');
+check('October’s box, tapped just after midnight: October’s, not November’s, and the main page’s November stays unused', [state().creditsLog['amex-gold:uber'], heldOf('amex-gold:uber').used, state().creditsUsed['amex-gold:uber']], [{ '2026-10': true }, false, undefined]);
+at(2026, 12, 31, 23, 59);
+open({ cards: ['bilt-palladium'] });
+const staleAmt = amt('bilt-palladium:hotel', '2026-H2');
+at(2027, 1, 1, 0, 1);
+staleAmt.value = '40';
+staleAmt.dispatch('change');
+check('an amount typed across New Year goes on the half-year it was typed for', [state().creditsLog['bilt-palladium:hotel'], heldOf('bilt-palladium:hotel').left], [{ '2026-H2': 40 }, 200]);
+at(2027, 1, 31, 23, 59);
+open({ cards: ['amex-gold'] });
+pastView();
+const lastDec = pageBox('amex-gold:uber', '2026-12');
+check('December can be ticked up to Jan 31…', lastDec.disabled, false);
+at(2027, 2, 1, 0, 1);
+lastDec.checked = true;
+lastDec.dispatch('change');
+check('…tapped after that midnight, it isn’t, and the box goes back', [state().creditsLog['amex-gold:uber'], pageBox('amex-gold:uber', '2026-12').checked, pageBox('amex-gold:uber', '2026-12').disabled], [undefined, false, true]);
+
+// Under a filter across midnight: rows kept since it was picked don't outlast the day
+at(2026, 12, 31, 23, 59);
+open({ cards: ['bilt-palladium', 'amex-gold'] });
+page.querySelector('[data-cp-filter="month"]').dispatch('click');
+const dueDec = () => page.querySelectorAll('[data-cp-row]').map((r) => r.dataset.cpRow);
+check('Dec 31, Due this month: the half-year credit is due', dueDec().includes('bilt-palladium:hotel'), true);
+midnight(2027, 1, 1);
+check('…Jan 1: it isn’t any more (it ends in June), and January’s monthly is', [dueDec().includes('bilt-palladium:hotel'), dueDec().includes('amex-gold:uber')], [false, true]);
+page.querySelector('[data-cp-filter="all"]').dispatch('click');
+
+// People: another person's tracker coming in with the page open
+at(2026, 11, 15);
+const person = (id, fields) => app.stored.set(app.storageKey(id), JSON.stringify(app.normalize({ programs: [], ...fields })));
+app.people.list.splice(0, app.people.list.length, { id: 'me', name: 'Sam Sample' }, { id: 'p2', name: 'Pat Example' }, { id: 'p3', name: 'New Person' });
+person('me', { cards: ['hilton-aspire'] });
+person('p2', { cards: ['amex-gold'], creditsLog: { 'amex-gold:uber': { '2026-11': true } }, creditsUsed: { 'amex-gold:uber': '2026-11' } });
+person('p3', { cards: [] });
+app.setState(app.normalize(JSON.parse(app.stored.get(app.storageKey('me')))));
+page.hidden = true; app.location.hash = '';
+openPage();
+app.renderCredits();
+page.querySelector('[data-cp-filter="unused"]').dispatch('click');
+pastView();
+check('Sam holds none of the five: Add your cards, looking at last year', [!!page.querySelector('.cp-add'), page.querySelector('[data-cp-year="past"]').getAttribute('aria-pressed')], [true, 'true']);
+app.switchPerson('p2');
+check('…to Pat with the page open: Pat’s card, no chips, this year, Due this month', [page.querySelectorAll('[data-cp-card]').map((c) => c.dataset.cpCard), !!page.querySelector('.cp-add'), page.querySelector('[data-cp-year="now"]').getAttribute('aria-pressed'), page.querySelector('[data-cp-filter="month"]').getAttribute('aria-pressed')], [['amex-gold'], false, 'true', 'true']);
+page.querySelector('[data-cp-filter="all"]').dispatch('click');
+check('…Pat’s own tick on both pages', [pageBox('amex-gold:uber', '2026-11').checked, heldOf('amex-gold:uber').used], [true, true]);
+app.switchPerson('p3');
+check('New person: the chips, none added', page.querySelectorAll('[data-cp-add-card]').map((b) => b.text.startsWith('+')), [true, true, true, true, true]);
+page.querySelector('[data-cp-add-card="amex-gold"]').dispatch('click');
+check('…a chip adds the card to them, with no ticks of Pat’s', [state().cards, pageBox('amex-gold:uber', '2026-11').checked, JSON.parse(app.stored.get(app.storageKey('p2'))).cards], [['amex-gold'], false, ['amex-gold']]);
+tick('amex-gold:uber', '2026-10');
+check('…and their tick is theirs, Pat’s unchanged', [state().creditsLog, JSON.parse(app.stored.get(app.storageKey('p2'))).creditsLog], [{ 'amex-gold:uber': { '2026-10': true } }, { 'amex-gold:uber': { '2026-11': true } }]);
+app.switchPerson('p2');
+page.querySelector('[data-cp-filter="all"]').dispatch('click');
+check('Back to Pat: their own tick, and no chips left over from the last person', [pageBox('amex-gold:uber', '2026-11').checked, pageBox('amex-gold:uber', '2026-10').checked, !!page.querySelector('.cp-add')], [true, false, false]);
+app.switchPerson('me');
+check('Sam again: the Hilton Aspire’s page, chips offered', [page.querySelectorAll('[data-cp-card]').map((c) => c.dataset.cpCard), !!page.querySelector('.cp-add')], [['hilton-aspire'], true]);
+app.people.list.splice(0, app.people.list.length, { id: 'me', name: '' });
+app.closeCreditsPage();
+
+// Last year's view doesn't outlast the cards: no year switch to come back with
+at(2026, 11, 15);
+open({ cards: ['hilton-aspire'] });
+pastView();
+state().cards = [];
+app.renderCredits();
+page.querySelector('[data-cp-add-card="amex-gold"]').dispatch('click');
+check('Looking at last year, every card taken off, one added back: this year', [page.querySelector('[data-cp-year="now"]').getAttribute('aria-pressed'), !!pageBox('amex-gold:uber', '2026-11')], ['true', true]);
+check('A restored backup or a link starts the page over too, as switching person does', [piece('  function switchPerson', '  function saveRename').includes('resetCreditsView()'), piece('  function replaceTracker', '  /* ---------- Send to another device').includes('resetCreditsView()')], [true, true]);
+
+// An old backup, a damaged one, and what comes through a link
+at(2026, 11, 15);
+open({ cards: ['amex-gold'], creditsUsed: { 'amex-gold:uber': '2026-11', 'amex-gold:dining': '2026-10' }, creditsUsedOn: { 'amex-gold:uber': '2026-11-02' } });
+check('an old backup (no creditsLog): its marks are ticks', [state().creditsLog, pageBox('amex-gold:uber', '2026-11').checked, heldOf('amex-gold:uber').used, heldOf('amex-gold:dining').used], [{ 'amex-gold:uber': { '2026-11': true }, 'amex-gold:dining': { '2026-10': true } }, true, true, false]);
+for (const junk of ['oops', 5, null, true, [], [['amex-gold:uber', {}]]]) {
+  setup({ cards: ['amex-gold'], creditsLog: junk });
+  check(`creditsLog ${JSON.stringify(junk)}: nothing kept`, state().creditsLog, {});
+}
+setup({ cards: ['amex-gold'], creditsLog: { 'amex-gold:uber': 'x', 'amex-gold:dining': ['2026-11'], 'amex-gold:resy': { '2026-11': 'yes', '2026-10': -5, '2026-9': 0, '2026-8': 1e9, '2026-7': null, '2026-6': [1], '2026-5': false, 'not a key': true, '2026-13': true, '2026-01': true } } });
+check('wrong types, huge or negative amounts, malformed keys: dropped', state().creditsLog, {});
+setup({ cards: ['amex-gold'], creditsLog: { 'made-up-card:x': { '2026-11': true }, 'amex-gold': { '2026-11': true }, ':x': { '2026-11': true } } });
+check('an unknown card, or no credit in the key: dropped', state().creditsLog, {});
+const pollute = `{"programs":[],"cards":["amex-gold"],"creditsLog":{"__proto__":{"2026-11":true,"polluted":true},"constructor:x":{"2026-11":true},"amex-gold:uber":{"__proto__":{"polluted":true},"constructor":true,"2026-11":true}},"creditsUsed":{"__proto__":"2026-11"},"creditsPartOn":{"__proto__":"2026-11-01"},"creditsSkipped":{"__proto__":true,"amex-gold:__proto__":true},"customCredits":{"__proto__":[["c1","Bad",1,"month"]]}}`;
+app.setState(app.normalize(JSON.parse(pollute)));
+check('"__proto__" keys: nothing polluted, the good tick kept', [state().creditsLog, ({}).polluted, vm.runInContext('({}).polluted || ({})["2026-11"]', ctx), Object.getPrototypeOf(state().creditsLog) === Object.getPrototypeOf(state().creditsUsed)], [{ 'amex-gold:uber': { '2026-11': true } }, undefined, undefined, true]);
+setup({ cards: ['amex-gold'], creditsLog: { 'amex-gold:uber': { '2026-11': 1e5, '2026-10': 3 } } });
+check('a huge amount on a $10 credit counts as the $10, on both pages', [rowOf('amex-gold:uber').current.used, rowOf('amex-gold:uber').left, heldOf('amex-gold:uber').used, heldOf('amex-gold:uber').left, app.creditsPageModel().used], [10, 0, true, 0, 13]);
+
+// Ticks for periods not started yet (a damaged file, or a clock that was wrong) count for nothing until they start
+open({ cards: ['amex-gold'], creditsLog: { 'amex-gold:uber': { '2026-12': true, '2099-1': true, 'A2099-01-01': true, 2099: true }, 'amex-gold:resy': { 2027: true } } });
+check('a tick on December in November: not counted, not shown ticked', [app.creditsPageModel().used, app.creditsPageModel().cards[0].used, pageBox('amex-gold:uber', '2026-12').checked, boxes('amex-gold', 'uber')[11].used], [0, 0, false, 0]);
+check('…years ahead are junk and go; next year’s stays', Object.keys(state().creditsLog['amex-gold:uber']), ['2026-12']);
+at(2026, 12, 2);
+app.renderCredits();
+check('…when December comes, it counts, on both pages alike', [rowOf('amex-gold:uber').current.full, heldOf('amex-gold:uber').used, app.creditsPageModel().used, app.heldCredits().filter((x) => !x.used).reduce((n, x) => n + x.left, 0) === app.creditsPageModel().available], [true, true, 10, true]);
+at(2026, 11, 15);
+
+// The two pages keep one record: a tick is "used" on both however it got there
+setup({ cards: ['amex-gold'], creditsLog: { 'amex-gold:uber': { '2026-11': true } } });
+check('a tick with no main-page mark (a hand-edited file): used on both', [rowOf('amex-gold:uber').left, heldOf('amex-gold:uber').used, heldOf('amex-gold:uber').left], [0, true, 0]);
+setup({ cards: ['amex-gold'], creditsLog: { 'amex-gold:uber': { '2026-11': 4 } }, creditsUsed: { 'amex-gold:uber': '2026-11' } });
+check('a main-page mark over a part-used amount: used on both', [rowOf('amex-gold:uber').left, heldOf('amex-gold:uber').used, heldOf('amex-gold:uber').left, state().creditsLog['amex-gold:uber']], [0, true, 0, { '2026-11': true }]);
+open({ cards: ['amex-gold'], creditsLog: { 'amex-gold:uber': { '2026-10': true } } });
+tick('amex-gold:uber', '2026-10', false);
+tick('amex-gold:uber', '2026-11');
+shown.toasts.at(-1).undo();
+check('October unticked, November ticked, then Undo: October back, November still used on both pages, and marked', [state().creditsLog['amex-gold:uber'], rowOf('amex-gold:uber').left, heldOf('amex-gold:uber').used, state().creditsUsed['amex-gold:uber']], [{ '2026-11': true, '2026-10': true }, 0, true, '2026-11']);
+open({ cards: ['amex-gold'], creditsLog: { 'amex-gold:uber': { '2026-10': true, '2026-11': true } }, creditsUsed: { 'amex-gold:uber': '2026-11' } });
+tick('amex-gold:uber', '2026-10', false);
+app.document.querySelector('#credits-list').querySelector('[data-credit-use="amex-gold:uber"]').dispatch('click');
+shown.toasts.at(-1).undo();
+check('October unticked, November unmarked on the main page, then Undo: October back, November stays unmarked on both', [state().creditsLog['amex-gold:uber'], rowOf('amex-gold:uber').left, heldOf('amex-gold:uber').used, state().creditsUsed['amex-gold:uber']], [{ '2026-10': true }, 10, false, undefined]);
+reload();
+check('…and a reload doesn’t tick November again', state().creditsLog['amex-gold:uber'], { '2026-10': true });
+
+// A damaged added credit
+setup({ cards: ['amex-gold'], customCredits: { 'amex-gold': [['c1', 'Zero', 0, 'month'], ['c2', 'Huge', 1e308, 'year'], ['c3', 'Fine', 5, 'month']] } });
+check('added credits: $0 ones go, huge ones stop at $100,000', state().customCredits['amex-gold'], [['c2', 'Huge', 100000, 'year'], ['c3', 'Fine', 5, 'month']]);
+
+// Off and back on
+open({ cards: ['amex-gold'], renewals: {} });
+tick('amex-gold:uber', '2026-11');
+tick('amex-gold:uber', '2026-3');
+typeAmt('amex-gold:resy', '2026-H2', '30');
+const ticksBefore = JSON.stringify(state().creditsLog);
+app.removeCard(state(), 'amex-gold');
+app.renderCredits();
+check('a card taken off: gone from the totals and the page', [app.creditsPageModel().used, app.creditsPageModel().available, app.heldCredits().length], [0, 0, 0]);
+reload();
+app.addHeldCard('amex-gold');
+app.renderCredits();
+check('…added back (even after a reload): its ticks and amounts, on both pages', [JSON.stringify(state().creditsLog) === ticksBefore, heldOf('amex-gold:uber').used, rowOf('amex-gold:resy').left, heldOf('amex-gold:resy').left], [true, true, rowOf('amex-gold:resy').current.amount - 30, rowOf('amex-gold:resy').current.amount - 30]);
+
+// A card not on the five-card list
+at(2026, 12, 20);
+open({ cards: ['hilton-aspire'] });
+const aspire = app.creditsPageModel().cards[0];
+check('Hilton Aspire: its own credits and boxes', aspire.rows.map((r) => [r.key, r.boxes.length, r.current.key]), [['hilton-aspire:resort', 2, '2026-H2'], ['hilton-aspire:flight', 4, '2026-Q4'], ['hilton-aspire:clear', 1, '2026']]);
+check('…the year’s total is $400 + $200 + $219', aspire.total, 819);
+check('…what’s left, Expiring soon, Coming up and the main page line up', [app.creditsPageModel().available, app.creditsPageModel().soon.map((s) => s.key).sort(), comingUp().sort(), app.document.querySelector('#c-meta').text], [469, ['hilton-aspire:clear', 'hilton-aspire:flight', 'hilton-aspire:resort'], ['hilton-aspire:clear', 'hilton-aspire:flight', 'hilton-aspire:resort'], '$469 unused right now']);
+typeAmt('hilton-aspire:resort', '2026-H2', '120');
+tick('hilton-aspire:flight', '2026-Q4');
+check('…a part-used amount and a tick, everywhere', [app.creditsPageModel().used, app.creditsPageModel().available, heldOf('hilton-aspire:resort').left, comingUp().sort(), app.document.querySelector('#c-meta').text, page.querySelector('.cp-card-sum').text], [170, 299, 80, ['hilton-aspire:clear', 'hilton-aspire:resort'], '$299 unused right now', '$170 used of $819 this year']);
+const aspireFirst = page.querySelector('[data-cp-card="hilton-aspire"]');
+check('…with no fee-date field (none of its credits runs on a card year)', !!aspireFirst.querySelector('[data-cp-renewal]'), false);
+
+// Coming up goes to the credit's row on the page
+at(2026, 12, 20);
+setup({ cards: ['hilton-aspire'] });
+app.closeCreditsPage(); app.location.hash = '';
+app.renderCredits();
+app.renderUpcoming();
+const upBtn = app.document.querySelector('#up-list').querySelector('[data-credit-row="hilton-aspire:clear"]');
+check('Coming up lists a credit ending soon, for the row it goes to', [!!upBtn, upBtn.text.includes('Use your $219 CLEAR+')], [true, true]);
+shown.scrolled.length = 0;
+upBtn.dispatch('click');
+const upRow = page.querySelector('[data-cp-row="hilton-aspire:clear"]');
+check('…tapped: that row scrolled to and highlighted, its box ready, on the same page', [page.hidden, app.location.hash, shown.scrolled.at(-1) === upRow, upRow.classList.contains('cp-flash'), app.document.activeElement === pageBox('hilton-aspire:clear', '2026')], [false, '', true, true, true]);
+pageBox('hilton-aspire:clear', '2026').checked = true;
+pageBox('hilton-aspire:clear', '2026').dispatch('change');
+check('…ticked there, it leaves Coming up', comingUp().includes('hilton-aspire:clear'), false);
+app.closeCreditsPage();
+open({ cards: ['hilton-aspire'] });
+page.querySelector('[data-cp-filter="month"]').dispatch('click');
+app.closeCreditsPage();
+app.renderUpcoming();
+const filtered = app.document.querySelector('#up-list').querySelector('[data-credit-row="hilton-aspire:flight"]');
+filtered.dispatch('click');
+check('…with a filter left on that hides nothing it needs: still its row', page.querySelector('[data-cp-row="hilton-aspire:flight"]').classList.contains('cp-flash'), true);
+page.querySelector('[data-cp-filter="all"]').dispatch('click');
+app.closeCreditsPage();
+
+// Every total agrees, whatever happens: the two tiles, the per-card lines, the main page's Card credits, Coming up
+const disagreements = () => {
+  const m = app.creditsPageModel();
+  const held = app.heldCredits();
+  const rows = m.cards.flatMap((c) => c.rows);
+  const bad = [];
+  const say = (what, a, b) => { if (JSON.stringify(a) !== JSON.stringify(b)) bad.push(`${what}: ${JSON.stringify(a)} vs ${JSON.stringify(b)}`); };
+  for (const r of rows) {
+    if (!r.current) continue;
+    const x = held.find((h) => h.key === r.key);
+    say(`${r.key} on the main page`, !!x, true);
+    if (!x) continue;
+    say(`${r.key} period`, x.period.key, r.current.key);
+    say(`${r.key} left`, x.left, r.left);
+    say(`${r.key} used`, x.used, r.current.full);
+    say(`${r.key} amount`, x.credit.amount, r.current.amount);
+    say(`${r.key} days`, x.days, r.current.days);
+  }
+  for (const x of held) if (!x.skipped && !x.used) say(`${x.key} has a row`, rows.some((r) => r.key === x.key && r.current), true);
+  const unused = held.filter((x) => !x.used && !x.skipped).reduce((n, x) => n + x.left, 0);
+  say('still available', app.cents(unused), m.available);
+  say('used this year', app.cents(rows.reduce((n, r) => n + r.boxes.reduce((b, box) => b + (box.counts ? box.used : 0), 0), 0)), m.used);
+  say('the cards’ used', app.cents(m.cards.reduce((n, c) => n + c.used, 0)), m.used);
+  for (const c of m.cards) if (c.used > c.total + 0.001) bad.push(`${c.card.id} used ${c.used} of ${c.total}`);
+  for (const r of rows) for (const b of r.boxes) if (b.phase === 'future' && b.used) bad.push(`${r.key} ${b.key} counted before it starts`);
+  say('Coming up', comingUp().sort(), rows.filter((r) => r.left > 0 && r.dated && r.credit.period !== 'month' && r.current.days <= 21).map((r) => r.key).sort());
+  if (!page.hidden && !page.querySelector('[data-cp-year="past"][aria-pressed="true"]') && m.cards.length) {
+    const tiles = page.querySelectorAll('.cp-tile-v').map((t) => t.text);
+    say('the tiles', tiles, [app.money(m.used), app.money(m.available)]);
+    for (const c of m.cards) {
+      const line = page.querySelector(`[data-cp-card="${c.card.id}"] .cp-card-sum`);
+      if (c.total) say(`${c.card.id} line`, line && line.text, `${app.money(c.used)} used of ${app.money(c.total)} this year`);
+    }
+    if (held.length) say('Card credits', app.document.querySelector('#c-meta').text, `${app.money(unused)} unused right now`);
+  }
+  return bad;
+};
+const seeded = (a) => () => { a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+const FUZZ_CARDS = ['sapphire-reserve', 'amex-platinum', 'amex-gold', 'delta-gold', 'bilt-palladium', 'hilton-aspire', 'aadvantage-executive', 'united-club', 'sapphire-preferred', 'ihg-premier', 'bilt-blue'];
+const FUZZ_FEES = ['2025-03-15', '2024-02-29', '2026-12-31', '2027-01-01', '2023-07-02', '2025-07-03', '2028-02-29', '2026-11-30', '2030-06-15'];
+const FUZZ_DAYS = [[2026, 10, 31], [2026, 11, 30], [2026, 12, 31], [2027, 1, 1], [2027, 6, 30], [2028, 2, 28], [2028, 2, 29], [2027, 2, 27], [2026, 12, 1], [2027, 12, 31]];
+const FUZZ_RUNS = Number(process.env.CREDITPAGE_FUZZ) || 15; // CREDITPAGE_FUZZ=500 for a long look
+let fuzzFailure = null;
+for (let seed = 1; seed <= FUZZ_RUNS && !fuzzFailure; seed++) {
+  const r = seeded(seed * 7919);
+  const pick = (a) => a[Math.floor(r() * a.length)];
+  at(...pick(FUZZ_DAYS));
+  const cards = [...new Set([pick(FUZZ_CARDS), pick(FUZZ_CARDS), pick(FUZZ_CARDS)])];
+  const renewals = Object.fromEntries(cards.filter(() => r() < 0.6).map((c) => [c, pick(FUZZ_FEES)]));
+  open({ cards, renewals, customCredits: r() < 0.3 ? { [cards[0]]: [['cmade1', 'Made-up credit', pick([12.95, 60]), pick(['month', 'quarter', 'half', 'year'])]] } : {} });
+  app.forgetCreditParts();
+  const did = [];
+  const onPage = (sel) => page.querySelectorAll(sel).filter((el) => !el.disabled);
+  const moves = {
+    tick() { const els = onPage('[data-cp-box]'); if (!els.length) return; const el = pick(els); did.push(`tick ${el.dataset.cpBox} ${el.dataset.cpPeriod}`); el.checked = !el.checked; el.dispatch('change'); },
+    amount() { const els = onPage('[data-cp-amt]'); if (!els.length) return; const el = pick(els); el.value = pick(['', '10', '0.5', '49.99', '100000', '12,50', '300', 'abc']); did.push(`type ${el.value} ${el.dataset.cpAmt}`); el.dispatch('change'); },
+    mark() { const els = app.document.querySelector('#credits-list').querySelectorAll('[data-credit-use]'); if (!els.length) return; const el = pick(els); did.push(`mark ${el.dataset.creditUse}`); el.dispatch('click'); },
+    undo() { const t = shown.toasts.at(-1); if (t && t.undo) { did.push(`undo ${t.message}`); t.undo(); } shown.toasts.length = 0; },
+    skip() { const els = onPage('[data-cp-skip]'); if (!els.length) return; const el = pick(els); did.push(`skip ${el.dataset.cpSkip}`); el.dispatch('click'); },
+    unskip() { const els = onPage('[data-cp-unskip]'); if (!els.length) return; const el = pick(els); did.push(`track ${el.dataset.cpUnskip}`); el.dispatch('click'); },
+    fee() { if (r() > 0.3) return; const els = onPage('[data-cp-renewal]'); if (!els.length) return; const el = pick(els); el.value = pick(['', ...FUZZ_FEES]); did.push(`fee ${el.dataset.cpRenewal} ${el.value}`); el.dispatch('change'); app.renderCredits(); },
+    clock() { const days = pick([1, 1, 1, 3, 15, 31, 45]); now = new Date(now.getFullYear(), now.getMonth(), now.getDate() + days, 12); did.push(`to ${app.isoOf(now)}`); app.renderCredits(); },
+    reload() {
+      const seen = () => JSON.stringify([false, true].map((past) => app.creditsPageModel({ past }).cards.flatMap((c) => c.rows.map((row) => [row.key, row.left, row.boxes.map((b) => [b.key, b.used])]))));
+      const before = seen();
+      did.push('reload');
+      app.setState(app.normalize(JSON.parse(JSON.stringify(state()))));
+      app.forgetCreditParts();
+      app.renderCredits();
+      if (seen() !== before) throw new Error('a reload changed what’s shown');
+    },
+    lastYear() { const el = page.querySelector('[data-cp-year="past"]'); if (!el) return; el.dispatch('click'); const els = onPage('[data-cp-box]'); if (els.length) { const b = pick(els); did.push(`last year ${b.dataset.cpBox} ${b.dataset.cpPeriod}`); b.checked = !b.checked; b.dispatch('change'); } page.querySelector('[data-cp-year="now"]').dispatch('click'); },
+    offAndOn() { const c = pick(state().cards.length ? state().cards : cards); const log = JSON.stringify(state().creditsLog); did.push(`off and on ${c}`); app.removeCard(state(), c); app.renderCredits(); app.addHeldCard(c); app.renderCredits(); if (JSON.stringify(state().creditsLog) !== log) throw new Error('taking a card off changed its ticks'); },
+  };
+  const names = ['tick', 'tick', 'tick', 'amount', 'mark', 'undo', 'skip', 'unskip', 'fee', 'clock', 'clock', 'reload', 'lastYear', 'offAndOn'];
+  for (let step = 0; step < 40 && !fuzzFailure; step++) {
+    try {
+      moves[pick(names)]();
+      app.renderUpcoming();
+      const bad = disagreements();
+      if (bad.length) fuzzFailure = { seed, bad: bad.slice(0, 3), did: did.slice(-6), day: app.isoOf(now) };
+    } catch (err) {
+      fuzzFailure = { seed, threw: err.message, did: did.slice(-6), day: app.isoOf(now) };
+    }
+  }
+  app.closeCreditsPage();
+  page.hidden = true; app.location.hash = '';
+}
+check(`fuzz: ${FUZZ_RUNS} trackers, 40 random ticks, amounts, marks, undos, skips, fee dates, reloads and new days each: every total agrees`, fuzzFailure, null);
+
+// The same with a hand-damaged file: anything may be in it, nothing throws, and the totals still agree
+const JUNK = [true, false, null, 0, -1, 5, 12.5, 1e5, 1e9, 0.001, 0.004, 0.005, 'x', '', [], {}, [true], { a: 1 }];
+const JUNK_KEYS = ['2026-11', '2026-Q4', '2026-H2', '2026', 'A2026-03-15', '2027-1', '2030', '2026-13', 'A2026-02-30', '__proto__', 'constructor', 'toString', ''];
+const JUNK_CREDITS = ['amex-gold:uber', 'amex-gold:dining', 'amex-gold:made-up', 'sapphire-reserve:travel', 'made-up:uber', 'constructor:x', 'amex-gold', '', '__proto__'];
+fuzzFailure = null;
+for (let seed = 1; seed <= FUZZ_RUNS * 2 && !fuzzFailure; seed++) {
+  const r = seeded(seed * 104729);
+  const pick = (a) => a[Math.floor(r() * a.length)];
+  at(...pick(FUZZ_DAYS));
+  const log = {};
+  for (let i = 0; i < 6; i++) { const periods = {}; for (let j = 0; j < 4; j++) Object.defineProperty(periods, pick(JUNK_KEYS), { value: pick(JUNK), enumerable: true, writable: true, configurable: true }); Object.defineProperty(log, pick(JUNK_CREDITS), { value: r() < 0.85 ? periods : pick(JUNK), enumerable: true, writable: true, configurable: true }); }
+  const fields = JSON.parse(JSON.stringify({ cards: ['amex-gold', 'sapphire-reserve', 'made-up'], creditsLog: log, creditsUsed: r() < 0.5 ? { 'amex-gold:uber': pick(JUNK_KEYS), 'sapphire-reserve:travel': pick(JUNK) } : pick(JUNK), creditsUsedOn: { 'amex-gold:uber': pick(JUNK) }, creditsPartOn: { 'amex-gold:uber': pick(JUNK) }, creditsSkipped: pick(JUNK), customCredits: r() < 0.5 ? { 'amex-gold': [['c1', 'Added', pick(JUNK), pick(['month', 'year', 'nope'])], pick(JUNK)] } : pick(JUNK), renewals: r() < 0.5 ? { 'sapphire-reserve': pick(['2025-03-15', '2024-02-29', 'nope', 5]) } : pick(JUNK) }));
+  try {
+    open(fields);
+    const cleaned = (st) => JSON.stringify([st.creditsLog, st.creditsPartOn, st.customCredits]);
+    const once = cleaned(state());
+    const bad = disagreements();
+    const again = cleaned(app.normalize(JSON.parse(JSON.stringify(state()))));
+    if (bad.length || once !== again) fuzzFailure = { seed, bad: bad.slice(0, 3), once, again, day: app.isoOf(now) };
+    app.closeCreditsPage();
+  } catch (err) {
+    fuzzFailure = { seed, threw: err.message, fields };
+  }
+  page.hidden = true; app.location.hash = '';
+}
+check('damaged files: nothing throws, the totals agree, and cleaning twice changes nothing', [fuzzFailure, ({}).polluted], [null, undefined]);
+now = new Date(2026, 9, 31, 12);
+
+// Undo over a box changed since: the two pages and a reload must agree, whatever moved in the meantime
+const metaLine = () => app.document.querySelector('#c-meta').text;
+const useBtn = (key) => app.document.querySelector('#credits-list').querySelector(`[data-credit-use="${key}"]`);
+const asideLog = (key) => ({ log: state().creditsLog[key], mark: state().creditsUsed[key], part: state().creditsPartOn[key] });
+at(2026, 11, 15);
+for (const [how, use] of [['ticks the box', () => tick('hilton-aspire:resort', '2026-H2')], ['taps Mark used', () => useBtn('hilton-aspire:resort').dispatch('click')]]) {
+  open({ cards: ['hilton-aspire'] });
+  typeAmt('hilton-aspire:resort', '2026-H2', '120');
+  typeAmt('hilton-aspire:resort', '2026-H2', '');
+  const clearedToast = shown.toasts.at(-1);
+  use();
+  clearedToast.undo();
+  check(`an amount cleared, then ${how}, then Undo: the amount back and no mark over it`, asideLog('hilton-aspire:resort'), { log: { '2026-H2': 120 }, mark: undefined, part: '2026-11-15' });
+  check('…$80 left on both pages', [rowOf('hilton-aspire:resort').left, heldOf('hilton-aspire:resort').left, heldOf('hilton-aspire:resort').used, metaLine()], [80, 80, false, '$349 unused right now']);
+  reload();
+  app.renderCredits();
+  check('…and a reload changes nothing', [asideLog('hilton-aspire:resort').log, rowOf('hilton-aspire:resort').left, heldOf('hilton-aspire:resort').left, metaLine()], [{ '2026-H2': 120 }, 80, 80, '$349 unused right now']);
+}
+open({ cards: ['hilton-aspire'], creditsLog: { 'hilton-aspire:resort': { '2026-H1': true, '2026-H2': 120 } }, creditsUsed: { 'hilton-aspire:resort': '2026-H1' } });
+typeAmt('hilton-aspire:resort', '2026-H2', '');
+const overOldMark = shown.toasts.at(-1);
+tick('hilton-aspire:resort', '2026-H2');
+overOldMark.undo();
+check('…with an older box marked before: that mark comes back too', asideLog('hilton-aspire:resort').log, { '2026-H1': true, '2026-H2': 120 });
+check('…on it', state().creditsUsed['hilton-aspire:resort'], '2026-H1');
+open({ cards: ['hilton-aspire'], creditsLog: { 'hilton-aspire:resort': { '2026-H1': true, '2026-H2': 120 } }, creditsUsed: { 'hilton-aspire:resort': '2026-H1' } });
+typeAmt('hilton-aspire:resort', '2026-H2', '');
+const overGoneMark = shown.toasts.at(-1);
+tick('hilton-aspire:resort', '2026-H1', false);
+tick('hilton-aspire:resort', '2026-H2');
+overGoneMark.undo();
+reload();
+check('…unless that box has been unticked since: a reload doesn’t tick it again', state().creditsLog['hilton-aspire:resort'], { '2026-H2': 120 });
+
+open({ cards: ['hilton-aspire'], creditsLog: { 'hilton-aspire:resort': { '2026-H1': true, '2026-H2': 120 } }, creditsPartOn: { 'hilton-aspire:resort': '2026-11-02' } });
+tick('hilton-aspire:resort', '2026-H1', false);
+const pastBoxToast = shown.toasts.at(-1);
+typeAmt('hilton-aspire:resort', '2026-H2', '');
+pastBoxToast.undo();
+check('an earlier box unticked, this period’s amount cleared, then Undo: no day left behind for an amount that’s gone', asideLog('hilton-aspire:resort'), { log: { '2026-H1': true }, mark: undefined, part: undefined });
+open({ cards: ['hilton-aspire'], creditsLog: { 'hilton-aspire:resort': { '2026-H1': true } } });
+tick('hilton-aspire:resort', '2026-H1', false);
+const pastBoxToast2 = shown.toasts.at(-1);
+typeAmt('hilton-aspire:resort', '2026-H2', '120');
+pastBoxToast2.undo();
+check('…an amount typed instead: it keeps its day', asideLog('hilton-aspire:resort'), { log: { '2026-H2': 120, '2026-H1': true }, mark: undefined, part: '2026-11-15' });
+
+// Undo after the fee date has moved: the tick goes to the card year holding it now, not a box that's gone
+const SR_TRAVEL = 'sapphire-reserve:travel';
+const feeTo = (date) => { const el = page.querySelector('[data-cp-renewal="sapphire-reserve"]'); el.value = date; el.dispatch('change'); };
+const undoAfterFee = (first, date) => {
+  open({ cards: ['sapphire-reserve'], renewals: { 'sapphire-reserve': '2025-03-15' } });
+  first();
+  const toast = shown.toasts.at(-1);
+  feeTo(date);
+  toast.undo();
+  app.renderCredits();
+};
+undoAfterFee(() => { tick(SR_TRAVEL, 'A2026-03-15'); tick(SR_TRAVEL, 'A2026-03-15', false); }, '2025-06-20');
+check('unticked, the fee date changed, then Undo: the tick is on the card year holding it now', [state().creditsLog[SR_TRAVEL], state().creditsUsed[SR_TRAVEL]], [{ 'A2026-06-20': true }, 'A2026-06-20']);
+check('…its box ticked, used on both pages', [pageBox(SR_TRAVEL, 'A2026-06-20').checked, rowOf(SR_TRAVEL).left, heldOf(SR_TRAVEL).used, heldOf(SR_TRAVEL).left], [true, 0, true, 0]);
+reload();
+check('…and a reload changes nothing', [state().creditsLog[SR_TRAVEL], heldOf(SR_TRAVEL).used], [{ 'A2026-06-20': true }, true]);
+undoAfterFee(() => { typeAmt(SR_TRAVEL, 'A2026-03-15', '120'); typeAmt(SR_TRAVEL, 'A2026-03-15', ''); }, '2025-06-20');
+check('…an amount cleared the same way: the amount, and its day', [state().creditsLog[SR_TRAVEL], state().creditsUsed[SR_TRAVEL], state().creditsPartOn[SR_TRAVEL], rowOf(SR_TRAVEL).left, heldOf(SR_TRAVEL).left], [{ 'A2026-06-20': 120 }, undefined, '2026-07-15', 180, 180]);
+undoAfterFee(() => { tick(SR_TRAVEL, 'A2026-03-15'); tick(SR_TRAVEL, 'A2026-03-15', false); }, '');
+check('…the fee date cleared: on the calendar year', [state().creditsLog[SR_TRAVEL], state().creditsUsed[SR_TRAVEL], heldOf(SR_TRAVEL).used], [{ 2026: true }, '2026', true]);
+open({ cards: ['sapphire-reserve'], renewals: { 'sapphire-reserve': '2025-03-15' } });
+tick(SR_TRAVEL, 'A2026-03-15');
+tick(SR_TRAVEL, 'A2026-03-15', false);
+const roundTrip = shown.toasts.at(-1);
+feeTo('2025-06-20');
+feeTo('2025-03-15');
+roundTrip.undo();
+check('…changed and changed back: where it was', [state().creditsLog[SR_TRAVEL], state().creditsUsed[SR_TRAVEL], state().renewals['sapphire-reserve']], [{ 'A2026-03-15': true }, 'A2026-03-15', '2025-03-15']);
+open({ cards: ['sapphire-reserve'], renewals: { 'sapphire-reserve': '2025-03-15' }, creditsLog: { 'sapphire-reserve:select-hotels': { 2026: true } }, creditsUsed: { 'sapphire-reserve:select-hotels': '2026' }, creditsUsedOn: { 'sapphire-reserve:select-hotels': '2026-05-01' } });
+tick('sapphire-reserve:select-hotels', '2026', false);
+const notCardYear = shown.toasts.at(-1);
+feeTo('2025-06-20');
+notCardYear.undo();
+check('…a calendar-year credit on that card just comes back', [state().creditsLog['sapphire-reserve:select-hotels'], state().creditsUsed['sapphire-reserve:select-hotels'], state().creditsUsedOn['sapphire-reserve:select-hotels'], state().renewals['sapphire-reserve']], [{ 2026: true }, '2026', '2026-05-01', '2025-06-20']);
+
+// Amounts under half a cent are $0 once rounded, so they're dropped like $0, not kept as $0
+at(2026, 12, 20);
+for (const tiny of [0.001, 0.004]) {
+  setup({ cards: ['amex-gold'], customCredits: { 'amex-gold': [['c1', 'Tiny', tiny, 'year'], ['c2', 'Fine', 5, 'month']] } });
+  check(`an added credit of ${tiny}: gone at the first cleaning`, state().customCredits['amex-gold'], [['c2', 'Fine', 5, 'month']]);
+  check('…not on either page, and nothing to use in Coming up', [!!heldOf('amex-gold:c1'), comingUp().includes('amex-gold:c1')], [false, false]);
+  setup({ cards: ['amex-gold'], creditsLog: { 'amex-gold:uber': { '2026-11': tiny } } });
+  check(`a log amount of ${tiny}: gone at the first cleaning`, state().creditsLog, {});
+}
+setup({ cards: ['amex-gold'], customCredits: { 'amex-gold': [['c1', 'Tiny', 0.005, 'year']] }, creditsLog: { 'amex-gold:resy': { '2026-H2': 0.005 } }, creditsPartOn: { 'amex-gold:resy': '2026-11-02' } });
+check('half a cent rounds up to a cent: kept', [state().customCredits['amex-gold'], state().creditsLog, state().creditsPartOn], [[['c1', 'Tiny', 0.01, 'year']], { 'amex-gold:resy': { '2026-H2': 0.01 } }, { 'amex-gold:resy': '2026-11-02' }]);
+setup({ cards: ['amex-gold'], creditsLog: { 'amex-gold:resy': { '2026-H2': 0.001 } }, creditsPartOn: { 'amex-gold:resy': '2026-11-02' } });
+check('…and an amount that goes takes its day with it', state().creditsPartOn, {});
+const cleanTwice = { programs: [], cards: ['amex-gold'], customCredits: { 'amex-gold': [['c1', 'Tiny', 0.001, 'month']] }, creditsLog: { 'amex-gold:uber': { '2026-11': 0.001, '2026-10': 3.333 } } };
+const onceCleaned = app.normalize(cleanTwice);
+const twiceCleaned = app.normalize(JSON.parse(JSON.stringify(onceCleaned)));
+check('…cleaning twice changes nothing', [twiceCleaned.customCredits, twiceCleaned.creditsLog], [onceCleaned.customCredits, onceCleaned.creditsLog]);
+
+// A credit crowded with valid-looking periods by a damaged file: what you do on it still survives a reload
+at(2026, 11, 15);
+const CROWD = [...Array.from({ length: 12 }, (_, i) => `2025-${i + 1}`), ...Array.from({ length: 12 }, (_, i) => `2026-${i + 1}`), '2026-Q1', '2026-Q2', '2026-Q3', '2026-Q4', '2026-H1', '2026-H2', ...Array.from({ length: 9 }, (_, i) => `A2026-0${i + 1}-01`), 'A2026-10-01', 'A2026-11-01'];
+const crowdOf = (...without) => Object.fromEntries(CROWD.filter((k) => !without.includes(k)).map((k) => [k, true]));
+open({ cards: ['amex-gold'], creditsLog: { 'amex-gold:uber': crowdOf() } });
+check('at most 40 periods a credit, the earliest written going first', [Object.keys(state().creditsLog['amex-gold:uber']).length, '2025-1' in state().creditsLog['amex-gold:uber'], 'A2026-11-01' in state().creditsLog['amex-gold:uber']], [40, false, true]);
+open({ cards: ['amex-gold'], creditsLog: { 'amex-gold:uber': crowdOf('2026-11') } });
+useBtn('amex-gold:uber').dispatch('click');
+check('Mark used on a crowded credit: used', heldOf('amex-gold:uber').used, true);
+reload();
+app.renderCredits();
+check('…still used after a reload, on both pages', [heldOf('amex-gold:uber').used, rowOf('amex-gold:uber').left, state().creditsLog['amex-gold:uber']['2026-11'], Object.keys(state().creditsLog['amex-gold:uber']).length], [true, 0, true, 40]);
+const crowdedOnce = JSON.stringify(state().creditsLog);
+reload();
+check('…and again', JSON.stringify(state().creditsLog), crowdedOnce);
+setup({ cards: ['amex-gold'], creditsLog: { 'amex-gold:uber': { '2026-11': 3, ...crowdOf('2026-11') } }, creditsUsed: { 'amex-gold:uber': '2026-11' } });
+check('a mark written first still stays, as a tick', [state().creditsLog['amex-gold:uber']['2026-11'], Object.keys(state().creditsLog['amex-gold:uber']).length], [true, 40]);
+setup({ cards: ['amex-gold'], creditsLog: { 'amex-gold:uber': crowdOf('2026-11') }, creditsUsed: { 'amex-gold:uber': '2026-11' } });
+check('a mark with nothing logged takes a place too, never the 41st', [state().creditsLog['amex-gold:uber']['2026-11'], Object.keys(state().creditsLog['amex-gold:uber']).length], [true, 40]);
+open({ cards: ['amex-gold'], creditsLog: { 'amex-gold:uber': crowdOf('2026-10', '2026-11') } });
+tick('amex-gold:uber', '2026-10');
+reload();
+check('a past box ticked on a crowded credit (no mark there): still ticked after a reload', state().creditsLog['amex-gold:uber']['2026-10'], true);
+open({ cards: ['hilton-aspire'], creditsLog: { 'hilton-aspire:resort': crowdOf('2026-H2') } });
+typeAmt('hilton-aspire:resort', '2026-H2', '120');
+reload();
+check('an amount typed on a crowded credit: still there after a reload', [state().creditsLog['hilton-aspire:resort']['2026-H2'], heldOf('hilton-aspire:resort').left], [120, 80]);
+const crowdedCard = Object.fromEntries(Array.from({ length: 70 }, (_, i) => [`amex-gold:junk${i}`, { '2026-11': true }]));
+open({ cards: ['amex-gold'], creditsLog: crowdedCard });
+check('at most 60 credits a card, the earliest written going first', [Object.keys(state().creditsLog).length, 'amex-gold:junk0' in state().creditsLog, 'amex-gold:junk69' in state().creditsLog], [60, false, true]);
+useBtn('amex-gold:uber').dispatch('click');
+reload();
+check('…Mark used on a card crowded with credits: still used after a reload', [heldOf('amex-gold:uber').used, Object.keys(state().creditsLog).length], [true, 60]);
+open({ cards: ['amex-gold'], creditsLog: { 'amex-gold:uber': { '2026-3': true }, ...crowdedCard } });
+tick('amex-gold:resy', '2026-H1');
+reload();
+check('…a past box too', state().creditsLog['amex-gold:resy'], { '2026-H1': true });
+
+// Focused fuzz: clear, tick, mark, Undo (any Undo still showing, even an older one) and fee dates on one card's credits.
+// Whatever the order, a reload changes nothing and no tick hides on a box that isn't there.
+fuzzFailure = null;
+const CREDIT_FUZZ_FEES = ['2025-03-15', '2025-06-20', '2025-09-01', '2024-02-29', ''];
+for (let seed = 1; seed <= FUZZ_RUNS * 8 && !fuzzFailure; seed++) {
+  const r = seeded(seed * 15485863);
+  const pick = (a) => a[Math.floor(r() * a.length)];
+  at(2026, 11, 15);
+  const cardId = pick(['sapphire-reserve', 'hilton-aspire']);
+  open(cardId === 'sapphire-reserve' ? { cards: [cardId], renewals: { [cardId]: '2025-03-15' } } : { cards: [cardId] });
+  const undos = [];
+  const did = [];
+  const keepUndos = () => { const t = shown.toasts.at(-1); if (t && t.undo && !undos.includes(t)) undos.push(t); };
+  const onPage = (sel) => page.querySelectorAll(sel).filter((el) => !el.disabled);
+  const moves = [
+    () => { const els = onPage('[data-cp-box]'); if (!els.length) return; const el = pick(els); did.push(`tick ${el.dataset.cpBox} ${el.dataset.cpPeriod}`); el.checked = !el.checked; el.dispatch('change'); },
+    () => { const els = onPage('[data-cp-amt]'); if (!els.length) return; const el = pick(els); el.value = pick(['', '', '120', '40', '9999']); did.push(`type ${el.value} ${el.dataset.cpAmt} ${el.dataset.cpPeriod}`); el.dispatch('change'); },
+    () => { const els = app.document.querySelector('#credits-list').querySelectorAll('[data-credit-use]'); if (!els.length) return; const el = pick(els); did.push(`mark ${el.dataset.creditUse}`); el.dispatch('click'); },
+    () => { if (!undos.length) return; const t = undos.splice(Math.floor(r() * undos.length), 1)[0]; did.push(`undo ${t.message}`); t.undo(); },
+    () => { const els = onPage('[data-cp-renewal]'); if (!els.length) return; const el = pick(els); el.value = pick(CREDIT_FUZZ_FEES); did.push(`fee ${el.value}`); el.dispatch('change'); },
+    () => { did.push('reload'); app.setState(app.normalize(JSON.parse(JSON.stringify(state())))); app.forgetCreditParts(); app.renderCredits(); },
+  ];
+  for (let step = 0; step < 14 && !fuzzFailure; step++) {
+    try {
+      pick(moves)();
+      keepUndos();
+      app.renderCredits();
+      app.renderUpcoming();
+      const bad = disagreements();
+      const reloaded = app.normalize(JSON.parse(JSON.stringify(state())));
+      const sorted = (log) => JSON.stringify(Object.keys(log).sort().map((k) => [k, Object.entries(log[k]).sort()]));
+      if (sorted(reloaded.creditsLog) !== sorted(state().creditsLog)) bad.push(`a reload changes the record: ${JSON.stringify(state().creditsLog)} to ${JSON.stringify(reloaded.creditsLog)}`);
+      for (const [key, periods] of Object.entries(state().creditsLog)) {
+        const id = key.split(':')[1];
+        const shownKeys = [now.getFullYear(), now.getFullYear() - 1].flatMap((y) => boxes(cardId, id, y).map((b) => b.key));
+        for (const period of Object.keys(periods)) if (!shownKeys.includes(period)) bad.push(`${key} ${period} has no box`);
+      }
+      if (bad.length) fuzzFailure = { seed, bad: bad.slice(0, 3), did: did.slice(-8) };
+    } catch (err) {
+      fuzzFailure = { seed, threw: err.message, did: did.slice(-8) };
+    }
+  }
+  app.closeCreditsPage();
+  page.hidden = true; app.location.hash = '';
+}
+check(`fuzz: ${FUZZ_RUNS * 8} runs of clear, tick, mark, any Undo, fee dates and reloads: a reload changes nothing, no tick without a box`, fuzzFailure, null);
+now = new Date(2026, 9, 31, 12);
+
+// Every check above again in other time zones: dates are local, so nothing may shift a day
+if (!process.env.CREDITPAGE_TZ) {
+  for (const tz of ['America/Los_Angeles', 'Pacific/Auckland', 'Asia/Kolkata']) {
+    const run = spawnSync(process.execPath, [fileURLToPath(import.meta.url)], { env: { ...process.env, TZ: tz, CREDITPAGE_TZ: tz, CREDITPAGE_FUZZ: '5' }, encoding: 'utf8' });
+    check(`all of the above in ${tz}`, [run.status, (run.stdout.match(/^✗.*$/gm) || []).slice(0, 3)], [0, []]);
+  }
+}
 
 console.log(`\n${total - failed}/${total} passed`);
 if (failed) process.exit(1);
