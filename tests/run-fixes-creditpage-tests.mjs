@@ -88,6 +88,7 @@ const fakeDom = `
     querySelector(sel) { return this.querySelectorAll(sel)[0] || null; }
     focus() { document.activeElement = this; } blur() {} scrollIntoView() { shown.scrolled.push(this); }
     get offsetWidth() { return 0; }
+    getBoundingClientRect() { return { top: 0 }; }
   }
   const body = new El('body');
   const shown = { toasts: [], scrolled: [], cardsOpened: 0, scrollTo: [] };
