@@ -1537,4 +1537,6 @@ export default [
   { name: 'Half size: “balance soc” is the SQC column (Aeroplan)', text: `Air Canada\nAeroplan\nPoints balance soc\n187,350 41,200`, expect: { balance: 187350, progress: 41200 } },
   { name: 'Near miss: a word one letter from a short level isn’t it (Hilton “Golf”)', text: `Hilton Honors\nGolf\n45,980 points`, expect: { balance: 45980, tier: null } },
   { name: 'Near miss: nor one letter from a level inside a sentence', text: `World of Hyatt\nGiobalist perks are great\n91,450 points`, expect: { balance: 91450, tier: null } },
+  { name: 'Half size: “soc” over its own column is SQC (Aeroplan)', passes: [{ text: `Air Canada\nAeroplan\nFores balance soc\n187,350 41,200`, lines: [[['Air', 96, [44, 40, 80, 66]], ['Canada', 96, [90, 40, 180, 66]]], [['Aeroplan', 96, [44, 80, 170, 106]]], [['Fores', 60, [66, 230, 110, 244]], ['balance', 90, [114, 230, 180, 244]], ['soc', 60, [533, 230, 570, 244]]], [['187,350', 97, [66, 260, 240, 314]], ['41,200', 97, [533, 260, 680, 301]]]] }], width: 1600, height: 700, expect: { program: 'aeroplan', balance: 187350, progress: 41200 } },
+  { name: 'Near miss: “sac” on another program’s page labels nothing', text: `Delta SkyMiles\n84,250 miles\nsac 41,200`, expect: { balance: 84250, progress: null } },
 ];
