@@ -2548,6 +2548,7 @@
     ihg: 'https://www.ihg.com/onerewards/content/us/en/tier-benefits',
     hyatt: 'https://world.hyatt.com/content/gp/en/tiers-and-benefits.html',
     wyndham: 'https://www.wyndhamhotels.com/wyndham-rewards/member-levels',
+    bilt: 'https://support.biltrewards.com/hc/en-us/articles/5536520671117-What-are-the-Bilt-status-tiers-',
     lhw: 'https://www.lhw.com/leaders-club',
     omni: 'https://www.omnihotels.com/-/media/digex/loyalty/pdfs/sg-benefits-grid.pdf',
     avis: 'https://www.avis.com/en/avis-preferred',
@@ -2583,7 +2584,7 @@
     avianca: 'https://www.avianca.com/en/lifemiles/discover-lifemiles/elite-program',
   };
   // Programs checked on a later day than BENEFITS_CHECKED.
-  const CHECKED_ON = { avianca: 'Oct 14, 2026', iberia: 'Oct 14, 2026', aeromexico: 'Oct 14, 2026', latam: 'Oct 14, 2026', frontier: 'Oct 14, 2026', bestwestern: 'Oct 14, 2026', sonesta: 'Oct 14, 2026', iprefer: 'Oct 14, 2026', shangrila: 'Oct 14, 2026', enterprise: 'Oct 14, 2026', flyingblue: 'Oct 8, 2026', ba: 'Oct 8, 2026', virgin: 'Oct 8, 2026', emirates: 'Oct 8, 2026', singapore: 'Oct 8, 2026', qatar: 'Oct 8, 2026', turkish: 'Oct 8, 2026', jetblue: 'Oct 8, 2026', choice: 'Oct 8, 2026', accor: 'Oct 8, 2026',
+  const CHECKED_ON = { bilt: 'Nov 5, 2026', avianca: 'Oct 14, 2026', iberia: 'Oct 14, 2026', aeromexico: 'Oct 14, 2026', latam: 'Oct 14, 2026', frontier: 'Oct 14, 2026', bestwestern: 'Oct 14, 2026', sonesta: 'Oct 14, 2026', iprefer: 'Oct 14, 2026', shangrila: 'Oct 14, 2026', enterprise: 'Oct 14, 2026', flyingblue: 'Oct 8, 2026', ba: 'Oct 8, 2026', virgin: 'Oct 8, 2026', emirates: 'Oct 8, 2026', singapore: 'Oct 8, 2026', qatar: 'Oct 8, 2026', turkish: 'Oct 8, 2026', jetblue: 'Oct 8, 2026', choice: 'Oct 8, 2026', accor: 'Oct 8, 2026',
     koreanair: 'Oct 10, 2026', lufthansa: 'Oct 10, 2026', cathay: 'Oct 10, 2026', qantas: 'Oct 10, 2026', ana: 'Oct 10, 2026', jal: 'Oct 10, 2026', etihad: 'Oct 10, 2026', aerlingus: 'Oct 10, 2026' };
   // Lifetime status, by each program's own terms (checked Oct 19, 2026 by two reviewers each), with the page it's from.
   const LIFETIME = {
@@ -2662,6 +2663,11 @@
       ['Discoverist', '10 nights or 25,000 base points a year', ["Preferred room", "2 p.m. checkout", "Premium Wi-Fi"], ['10% bonus points', 'Preferred room upgrade (when available)', '2 p.m. late checkout (when available)', 'Premium internet and daily bottled water']],
       ['Explorist', '30 nights or 50,000 base points a year', ["Best-room upgrade", "2 p.m. checkout", "20% bonus"], ['20% bonus points', 'Upgrade to the best available room, excluding suites', '2 p.m. late checkout (when available)', '72-hour room guarantee']],
       ['Globalist', '60 nights or 100,000 base points a year', ["Free breakfast", "Suite upgrades", "Club lounge"], ['30% bonus points', 'Best available room at check-in, up to standard suites (when available)', 'Club lounge access, or free daily breakfast at hotels without a club (or when it’s closed)', '4 p.m. late checkout, guaranteed at most hotels (when available at resorts and casino hotels)', 'No resort fees on any stay; free parking on award stays']],
+    ],
+    bilt: [
+      ['Silver', '50,000 Bilt Points, or $10,000 spent on a Bilt card, in a calendar year', ["Bigger Rent Day bonuses"], ['Larger transfer bonuses on Rent Day than Blue members get']],
+      ['Gold', '125,000 Bilt Points, or $25,000 spent on a Bilt card, in a calendar year', ["BLADE lounges", "Bigger Rent Day bonuses"], ['Larger transfer bonuses on Rent Day', 'BLADE lounge access']],
+      ['Platinum', '200,000 Bilt Points, or $50,000 spent on a Bilt card, in a calendar year', ["Flying Blue Gold", "BLADE lounges"], ['Air France-KLM Flying Blue Gold status match (SkyTeam Elite Plus)', 'Larger transfer bonuses on Rent Day', 'BLADE lounge access']],
     ],
     wyndham: [
       ['Gold', '5 qualifying nights (extra nights roll over)', ["Late checkout", "Preferred room", "10% bonus"], ['10% bonus points', 'Late checkout (when available)', 'Preferred room on request, same room type (when available)']],
@@ -5221,6 +5227,7 @@
   }
   // Status names for programs without perk details (lowest to highest), so screenshots can still be read.
   const STATUS_NAMES = {
+    bilt: ['Silver', 'Gold', 'Platinum'],
     flyingblue: ['Explorer', 'Silver', 'Gold', 'Platinum', 'Ultimate'],
     ba: ['Blue', 'Bronze', 'Silver', 'Gold', 'Gold Guest List'],
     koreanair: ['Morning Calm Club', 'Morning Calm Select Club', 'Morning Calm Premium Club', 'Million Miler Club'],
@@ -6198,7 +6205,9 @@
       const ll = line.toLowerCase();
       const undated = ll.replace(/\b(?:until|to|through|thru|bis|hasta)\s*:?\s*(?:\p{L}{3,9}\.?\s+\d{1,2},?\s+\d{4}|\d{1,2}\s+\p{L}{3,9}\.?,?\s+\d{4}|\d{1,2}[/.]\d{1,2}[/.]\d{2,4}|\p{L}{3,9}\.?\s+\d{4})/gu, ' ');
       const levelCard = hay.trim() === `${distinct[0].alias} card` && !bankScreen;
-      if (/\b(to|next|reach|unlocks?|qualify for|away from|until|needed|required|requires?|previous|former|prior|retain|requalify)\b|benefits|perks|american express|visa|mastercard/.test(undated) || (!levelCard && /\bcard\b/.test(undated))) continue;
+      // Bilt's own pages list its partners' statuses ("Flying Blue Gold status match") beside its levels of the same names.
+      if (programId === 'bilt' && Object.keys(SCAN_SIGNS).some((id) => id !== 'bilt' && SCAN_SIGNS[id].some((sign) => sign.length >= 4 && signIn(sign, ll)))) continue;
+      if (/\b(to|next|reach|unlocks?|qualify for|away from|until|needed|required|requires?|previous|former|prior|retain|requalify|after you spend|after spending)\b|benefits|perks|american express|visa|mastercard/.test(undated) || (!levelCard && /\bcard\b/.test(undated))) continue;
       // What a level takes, in a row of a tier table or on a progress bar ("Platinum tier: 450 Qpoints", "Silver tier
       // 25,000 Tier Miles", "Gold: 180 XP", "Collect 600 Tier Points for Silver status"), isn't the level you hold
       // ("Gold 182 XP", "Silver Tier Points 420", "Diamond status: 42 nights this year" and "You qualified for Platinum

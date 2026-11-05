@@ -1539,4 +1539,10 @@ export default [
   { name: 'Near miss: nor one letter from a level inside a sentence', text: `World of Hyatt\nGiobalist perks are great\n91,450 points`, expect: { balance: 91450, tier: null } },
   { name: 'Half size: “soc” over its own column is SQC (Aeroplan)', passes: [{ text: `Air Canada\nAeroplan\nFores balance soc\n187,350 41,200`, lines: [[['Air', 96, [44, 40, 80, 66]], ['Canada', 96, [90, 40, 180, 66]]], [['Aeroplan', 96, [44, 80, 170, 106]]], [['Fores', 60, [66, 230, 110, 244]], ['balance', 90, [114, 230, 180, 244]], ['soc', 60, [533, 230, 570, 244]]], [['187,350', 97, [66, 260, 240, 314]], ['41,200', 97, [533, 260, 680, 301]]]] }], width: 1600, height: 700, expect: { program: 'aeroplan', balance: 187350, progress: 41200 } },
   { name: 'Near miss: “sac” on another program’s page labels nothing', text: `Delta SkyMiles\n84,250 miles\nsac 41,200`, expect: { balance: 84250, progress: null } },
+  // Bilt's levels (all made up)
+  { name: 'Bilt: a level on its own line', text: `Bilt Rewards\nGold\nPoints\n18,500`, expect: { program: 'bilt', balance: 18500, tier: 'Gold' } },
+  { name: 'Bilt: “Platinum Status”', text: `Bilt Rewards\nPlatinum Status\n232,000 points`, expect: { program: 'bilt', balance: 232000, tier: 'Platinum' } },
+  { name: 'Near miss: a partner’s status on a Bilt page isn’t Bilt’s', text: `Bilt Rewards\n48,210 points\nFlying Blue Gold status match`, expect: { program: 'bilt', balance: 48210, tier: null } },
+  { name: 'Near miss: reaching a level isn’t holding it', text: `Bilt Rewards\n48,210 points\n1,790 points to Silver`, expect: { program: 'bilt', balance: 48210, tier: null } },
+  { name: 'Near miss: the Palladium offer’s Gold isn’t held', text: `Bilt Palladium Card\nEarn 50,000 points and Gold Status after you spend $4,000\nApply now`, expect: { tier: null } },
 ];
