@@ -9681,7 +9681,7 @@
       return h('p', { class: 'fine' }, 'These are the 2027 rules as announced by November 2026. Programs change benefits often, so ',
         h('a', { href: url, target: '_blank', rel: 'noopener noreferrer' }, `${new URL(url).hostname.replace(/^www\./, '')} ↗`), ' has the last word.');
     }
-    return h('p', { class: 'fine' }, `Checked against the program’s official page on ${CHECKED_ON[c.id] || BENEFITS_CHECKED}: `,
+    return h('p', { class: 'fine' }, c.id === 'bilt' ? `From points-site guides on ${CHECKED_ON[c.id]}; check Bilt’s page: ` : `Checked against the program’s official page on ${CHECKED_ON[c.id] || BENEFITS_CHECKED}: `,
       h('a', { href: url, target: '_blank', rel: 'noopener noreferrer' }, `${new URL(url).hostname.replace(/^www\./, '')} ↗`),
       '. Programs change benefits often, so that page has the last word.');
   }
