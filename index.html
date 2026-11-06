@@ -3636,6 +3636,26 @@
     const next = document.querySelector(key);
     if (next) next.focus({ preventScroll: true });
   }
+  // What you tapped in the credits stays where it is on screen when they redraw. Safari doesn't hold your place when
+  // something above changes height (a used credit leaving Coming up), so the page is put back by hand, and once more
+  // on the next frame for anything that moves after.
+  let touched = null; // what was last pressed, and when (see the listener by the credits page's)
+  function keepPlace(render) {
+    const active = document.activeElement && document.activeElement !== document.body ? document.activeElement : null;
+    const recent = touched && Date.now() - touched.at < 3000 ? touched.el : null;
+    const anchor = [active, recent].find((el) => el && el.isConnected && el.closest('#credits-page, #credits-section') && focusKey(el));
+    if (!anchor) { render(); return; }
+    const key = focusKey(anchor);
+    const top = anchor.getBoundingClientRect().top;
+    render();
+    const settle = () => {
+      const now = document.querySelector(key);
+      const shift = now ? now.getBoundingClientRect().top - top : 0;
+      if (Math.abs(shift) > 1) scrollBy(0, shift);
+    };
+    settle();
+    requestAnimationFrame(settle);
+  }
   // After Undo the toast's button has gone, so focus goes back to the control that did it (or what's there now).
   function focusAfterUndo(...selectors) {
     const now = document.activeElement;
@@ -11757,11 +11777,11 @@
   // The Card credits section and the checklist under your programs (they show the same marks).
   function renderCredits(...args) {
     if (waitForPress(renderCredits)) return;
-    keepFocus(() => {
+    keepPlace(() => keepFocus(() => {
       renderCreditsNow(...args);
       $('#credits-page').hidden = !state.programs;
       if (creditsPageOpen()) renderCreditsPageNow();
-    });
+    }));
   }
   function renderCreditsNow() {
     const section = $('#credits-section');
@@ -12042,7 +12062,7 @@
   $('#credits-btn').addEventListener('click', openCreditsPage);
   $('#credits-open').addEventListener('click', openCreditsPage);
 
-  function renderCreditsPage() { if (creditsPageOpen()) keepFocus(renderCreditsPageNow); }
+  function renderCreditsPage() { if (creditsPageOpen()) keepPlace(() => keepFocus(renderCreditsPageNow)); }
 
   const daysLeftText = (days) => (days === 0 ? 'last day today' : days === 1 ? '1 day left' : `${days} days left`);
   // "ends Nov 30 · 30 days left", or "last day today"
@@ -12399,6 +12419,10 @@
     if (el) el.focus({ preventScroll: true });
   }
 
+  document.addEventListener('pointerdown', (e) => {
+    const el = e.target instanceof Element ? e.target.closest('label, button, input, select, a') : null;
+    touched = el ? { el: (el.matches('label') && el.querySelector('input')) || el, at: Date.now() } : null;
+  }, true);
   creditsPage.addEventListener('click', (e) => {
     const b = e.target.closest('button');
     if (!b) return;
