@@ -520,7 +520,7 @@ check('a backup (or Send to another device) carries all of it', [backup.cardCopi
 check('a person with no copies next to one with: their own', app.normalize({ programs: [], cards: [SR] }).cardCopies, {});
 
 // 8. The three cards' credits as re-checked for November 2026: [id, dollars, period, resets, last day]
-check('credits as of: the month the whole table was last checked', app.CREDITS_AS_OF, 'October 2026');
+check('credits as of: the month the whole table was last checked', app.CREDITS_AS_OF, 'November 2026');
 const table = (cardId) => app.CREDITS[cardId].map(([id, , amount, period, resets]) => [id, amount, period, resets, app.CREDIT_LAST_DAY[`${cardId}:${id}`] || null]);
 check('Sapphire Reserve money', table(SR), [['travel', 300, 'year', 'card', null], ['edit', 500, 'year', 'calendar', null], ['select-hotels', 250, 'year', 'calendar', '2026-12-31'], ['dining', 150, 'half', 'calendar', null],
   ['stubhub', 150, 'half', 'calendar', '2027-12-31'], ['doordash', 15, 'month', 'calendar', null], ['doordash-grocery', 20, 'month', 'calendar', null], ['lyft', 10, 'month', 'calendar', '2027-09-30'], ['peloton', 10, 'month', 'calendar', '2027-12-31']]);

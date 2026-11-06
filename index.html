@@ -1172,6 +1172,8 @@ try { if (SITE_LOCK && sessionStorage.getItem('status-tracker-unlocked') !== SIT
   .cc-check svg { width: 12px; height: 12px; }
   .cc[aria-pressed="true"] .cc-check { display: grid; }
   .cc-name { display: -webkit-box; overflow: hidden; font-size: 12.5px; font-weight: 700; line-height: 1.2; letter-spacing: -0.005em; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+  .cc { overflow: hidden; }
+  .cc > span:last-child { display: block; min-width: 0; width: 100%; max-width: 100%; } /* WebKit sizes a flex button's child to its text, so the perks line ran past the tile */
   .cc-perks { display: block; overflow: hidden; margin-top: 2px; font-size: 11.5px; line-height: 1.25; white-space: nowrap; text-overflow: ellipsis; }
   .tone-platinum { --c1: #F1F2F4; --c2: #A9B0B9; color: #1C232C; }
   .tone-gold { --c1: #F3DA97; --c2: #BE9443; color: #372707; }
@@ -2117,7 +2119,7 @@ var siteLock = (function () {
     </div>
     <div class="field">
       <label for="p-who">Whose account (optional)</label>
-      <input id="p-who" maxlength="30" autocomplete="off" placeholder="e.g. Ms. Lee — for a second account in the same program">
+      <input id="p-who" maxlength="30" autocomplete="off" placeholder="e.g. Ms. Lee (a 2nd account)">
     </div>
     <label class="check" id="p-medallion-wrap"><input type="checkbox" id="p-medallion"> Show Delta Medallion progress (MQDs)</label>
     <fieldset class="field status-edit">
@@ -2173,7 +2175,7 @@ var siteLock = (function () {
       <h2 id="perks-title" tabindex="-1" autofocus>Your perks</h2>
       <p class="setup-sub perks-sub" id="perks-sub"></p>
     </div>
-    <input class="card-search" type="search" id="perks-search" placeholder="Search perks — breakfast, lounge, checkout…" aria-label="Search your perks" autocomplete="off">
+    <input class="card-search" type="search" id="perks-search" placeholder="Search perks, e.g. breakfast" aria-label="Search your perks" autocomplete="off">
     <div class="filters" id="perk-filters" role="group" aria-label="Perk type"></div>
     <div id="perks-list"></div>
     <p class="fine" id="perks-fine"></p>
@@ -2325,7 +2327,7 @@ var siteLock = (function () {
     <p class="fine" id="send-warn">The link holds your whole tracker, member numbers included, so send it only to yourself or someone you trust. Opening it asks before changing anything.</p>
     <p class="cards-status" id="send-status" role="status"></p>
     <div class="sheet-actions">
-      <button class="btn-secondary" id="send-cancel" type="button">Cancel</button>
+      <button class="btn-secondary" id="send-cancel" type="button">Close</button>
       <span class="spacer"></span>
       <button class="btn-secondary" id="send-copy" type="button" disabled>Copy link</button>
       <button class="add" id="send-share" type="button" disabled hidden>Share link</button>
@@ -3041,7 +3043,7 @@ var siteLock = (function () {
   // dollars (a monthly credit that's bigger in December)].
   // period: 'month' | 'quarter' | 'half' (Jan–Jun, Jul–Dec) | 'year'; resets: 'calendar' or 'card' (card-member year,
   // counted from your annual fee date when you've added it).
-  const CREDITS_AS_OF = 'October 2026';
+  const CREDITS_AS_OF = 'November 2026';
   const FHR = 'prepaid Fine Hotels + Resorts or The Hotel Collection via Amex Travel';
   const CREDITS = {
     'amex-platinum': [
@@ -9123,7 +9125,7 @@ var siteLock = (function () {
   function statusEditorRow(line, p) {
     return h('div', { class: 'sl', 'data-card': line.card || null, 'data-cleared': line.exp === '' ? 'yes' : null }, // you cleared its "thru" date
       h('input', { type: 'text', class: 'sl-tier', maxlength: '120', placeholder: 'Gold', 'aria-label': 'Status level', value: p ? shownTier(p, line.tier, line.exp) : line.tier }),
-      h('input', { type: 'text', class: 'sl-via', maxlength: '120', placeholder: 'Amex Platinum', 'aria-label': 'Where the status comes from (optional)', value: line.via }),
+      h('input', { type: 'text', class: 'sl-via', maxlength: '120', placeholder: 'e.g. a card', 'aria-label': 'Where the status comes from (optional)', value: line.via }),
       h('button', { type: 'button', class: 'icon-btn sl-del', 'aria-label': 'Remove this status' }, svgIcon(ICON.x)),
       h('label', { class: 'sl-exp' }, 'Expires',
         h('input', { type: 'date', class: 'sl-date', 'aria-label': 'Expiration date (optional)', value: line.exp || '' })));
@@ -11237,8 +11239,9 @@ var siteLock = (function () {
       }
       for (const line of mergedLines(p.status, p)) {
         const tier = splitParts(line.tier).join(' · ');
-        const via = splitParts(line.via).join(' · ');
         const expDate = parseISODate(line.exp);
+        // "Sapphire Reserve · thru 12/31/27": the end date is said once, after the dash
+        const via = splitParts(line.via).join(' · ').replace(expDate ? /\s*·?\s*\bthru\s+\d{1,2}\/\d{1,2}\/\d{2,4}\s*$/i : /$^/, '');
         const expired = !!expDate && daysUntil(expDate) < 0; // every line merged into it has ended
         const expires = expDate ? ` — ${expired ? 'EXPIRED' : 'valid through'} ${dateFmt.format(expDate)}` : '';
         const kept = expDate && !expired && outlasted(p, line); // a longer-lasting status covers it
