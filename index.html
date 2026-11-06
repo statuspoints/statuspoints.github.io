@@ -2301,15 +2301,17 @@ var siteLock = (function () {
     <p class="setup-sub" id="lock-state"></p>
     <form id="lock-form" autocomplete="on">
       <input type="text" name="username" value="Points &amp; Status Tracker" autocomplete="username" hidden>
+      <div id="lock-entry">
       <div class="field"><label for="lock-pass">Password</label><input id="lock-pass" type="password" autocomplete="new-password" minlength="10" required></div>
       <div class="field"><label for="lock-again">Password again</label><input id="lock-again" type="password" autocomplete="new-password" minlength="10" required></div>
       <p class="fine">At least 10 characters; a few unrelated words is best. The site is public, so its lock code can be tried against guesses: a long password is what keeps it safe. Your saved data never leaves your devices either way.</p>
+      </div>
       <p class="cards-status" id="lock-status" role="status"></p>
       <textarea class="lock-code" id="lock-code" readonly hidden aria-label="Lock code"></textarea>
       <div class="sheet-actions">
         <button class="btn-secondary" id="lock-cancel" type="button">Close</button>
         <span class="spacer"></span>
-        <button class="btn-secondary" id="lock-copy" type="button" hidden>Copy code</button>
+        <button class="add" id="lock-copy" type="button" hidden>Copy code</button>
         <button class="add" id="lock-make" type="submit">Make lock code</button>
       </div>
     </form>
@@ -8801,6 +8803,8 @@ var siteLock = (function () {
     $('#lock-form').reset();
     $('#lock-code').hidden = true;
     $('#lock-copy').hidden = true;
+    $('#lock-entry').hidden = false;
+    $('#lock-make').hidden = false;
     $('#lock-status').textContent = '';
     $('#lock-sheet').showModal();
   });
@@ -8815,6 +8819,8 @@ var siteLock = (function () {
       $('#lock-code').value = await siteLock.make(pass);
       $('#lock-code').hidden = false;
       $('#lock-copy').hidden = false;
+      $('#lock-entry').hidden = true; // once the code is made, only it and "Copy code" are left
+      $('#lock-make').hidden = true;
       $('#lock-status').textContent = 'Here’s the lock code. Send it to switch the password on: it isn’t your password, and your password can’t be worked out from it.';
       $('#lock-form').querySelectorAll('input[type=password]').forEach((input) => { input.value = ''; });
     } catch (err) {
