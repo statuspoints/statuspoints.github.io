@@ -3641,13 +3641,19 @@
   // on the next frame for anything that moves after.
   let touched = null; // what was last pressed, and when (see the listener by the credits page's)
   function keepPlace(render) {
+    // Redrawn, the credits are empty for a moment, and Safari pulls the page up to fit the shorter page: holding their
+    // height until they're back keeps it from ever moving.
+    const held = ['#credits-page', '#credits-list'].map((sel) => document.querySelector(sel)).filter((el) => el && !el.hidden);
+    const heights = held.map((el) => el.getBoundingClientRect().height);
+    held.forEach((el, i) => { el.style.minHeight = `${heights[i]}px`; });
     const active = document.activeElement && document.activeElement !== document.body ? document.activeElement : null;
     const recent = touched && Date.now() - touched.at < 3000 ? touched.el : null;
     const anchor = [active, recent].find((el) => el && el.isConnected && el.closest('#credits-page, #credits-section') && focusKey(el));
-    if (!anchor) { render(); return; }
+    if (!anchor) { render(); held.forEach((el) => { el.style.minHeight = ''; }); return; }
     const key = focusKey(anchor);
     const top = anchor.getBoundingClientRect().top;
     render();
+    held.forEach((el) => { el.style.minHeight = ''; });
     const settle = () => {
       const now = document.querySelector(key);
       const shift = now ? now.getBoundingClientRect().top - top : 0;
