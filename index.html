@@ -9,6 +9,10 @@
 <meta name="theme-color" content="#FAFAF7" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0E1420" media="(prefers-color-scheme: dark)">
 <script>/* Apply a chosen Light/Dark theme before first paint. */try{var t=localStorage.getItem('status-tracker-theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>/* The site password: set SITE_LOCK to a lock code made in "Site password" (never the password itself). With one
+   set, the site shows nothing but the password box until it's given, each time it's opened. */
+var SITE_LOCK = null;
+try { if (SITE_LOCK && sessionStorage.getItem('status-tracker-unlocked') !== SITE_LOCK) document.documentElement.classList.add('site-locked'); } catch (e) { if (SITE_LOCK) document.documentElement.classList.add('site-locked'); }</script>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="icon" href="icon-192.png" type="image/png" sizes="192x192">
@@ -294,6 +298,18 @@
     cursor: pointer;
   }
   .pill-btn.on { background: var(--accent); color: var(--on-accent); }
+  /* The site password box: alone on the page until the password is given. */
+  .site-gate { display: none; }
+  html.site-locked body > :not(.site-gate) { display: none !important; }
+  html.site-locked .site-gate { display: grid; min-height: 100vh; min-height: 100dvh; place-items: center; padding: 24px 16px; }
+  .site-gate .gate-card { display: flex; flex-direction: column; gap: 10px; box-sizing: border-box; width: min(360px, 100%); padding: 24px; border: 1px solid var(--line); border-radius: 18px; background: var(--card); box-shadow: var(--shadow); }
+  .gate-card input[hidden] { display: none; }
+  .gate-card h1 { margin: 0 0 6px; font-size: 22px; }
+  .gate-card label { font-size: 13.5px; font-weight: 600; color: var(--muted); }
+  .gate-card input { height: 44px; padding: 0 12px; border: 1px solid var(--field-border); border-radius: 10px; background: var(--field); color: var(--text); font: inherit; font-size: 16px; }
+  .gate-card input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .gate-card .gate-msg { min-height: 1.2em; margin: 0; color: var(--warn); font-size: 13px; }
+  .lock-code { width: 100%; min-height: 76px; padding: 10px; border: 1px solid var(--field-border); border-radius: 10px; background: var(--inset); color: var(--text); font: 13px/1.4 ui-monospace, Menlo, monospace; word-break: break-all; resize: none; }
   .ghost-btn {
     display: inline-flex;
     align-items: center;
@@ -1797,6 +1813,55 @@
 </style>
 </head>
 <body>
+<form class="site-gate" id="site-gate" autocomplete="on">
+  <div class="gate-card">
+    <h1>Points &amp; Status Tracker</h1>
+    <input type="text" name="username" value="Points &amp; Status Tracker" autocomplete="username" hidden>
+    <label for="gate-pass">Password</label>
+    <input id="gate-pass" name="password" type="password" autocomplete="current-password" required>
+    <p class="gate-msg" id="gate-msg" role="alert"></p>
+    <button class="add" id="gate-open" type="submit">Open</button>
+  </div>
+</form>
+<script id="lock-script">/* The site password: a lock code is "v1.<salt>.<key>", the key drawn out of the password by PBKDF2 (SHA-256,
+   310,000 rounds), so the code can be public and the password can't be read back out of it. */
+var siteLock = (function () {
+  var ROUNDS = 310000;
+  var bytes = function (b64) { return Uint8Array.from(atob(b64), function (c) { return c.charCodeAt(0); }); };
+  var text = function (buf) { return btoa(String.fromCharCode.apply(null, new Uint8Array(buf))); };
+  async function keyOf(password, salt) {
+    var raw = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits']);
+    return text(await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: salt, iterations: ROUNDS }, raw, 256));
+  }
+  async function make(password) {
+    var salt = crypto.getRandomValues(new Uint8Array(16));
+    return 'v1.' + text(salt) + '.' + (await keyOf(password, salt));
+  }
+  async function matches(password, code) {
+    var parts = String(code || '').split('.');
+    if (parts.length !== 3 || parts[0] !== 'v1') return false;
+    return (await keyOf(password, bytes(parts[1]))) === parts[2];
+  }
+  var gate = document.getElementById('site-gate');
+  gate.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    var field = document.getElementById('gate-pass');
+    var msg = document.getElementById('gate-msg');
+    var button = document.getElementById('gate-open');
+    button.disabled = true;
+    msg.textContent = '';
+    var ok = false;
+    try { ok = await matches(field.value, SITE_LOCK); } catch (err) { ok = false; }
+    button.disabled = false;
+    if (!ok) { msg.textContent = 'That isn’t the password.'; field.select(); return; }
+    try { sessionStorage.setItem('status-tracker-unlocked', SITE_LOCK); } catch (err) { /* private mode: asks again next time */ }
+    field.value = '';
+    document.documentElement.classList.remove('site-locked');
+  });
+  if (document.documentElement.classList.contains('site-locked')) document.getElementById('gate-pass').focus();
+  return { make: make, matches: matches, ROUNDS: ROUNDS };
+})();
+</script>
 <main>
   <header class="hero">
     <div class="hero-top">
@@ -2002,6 +2067,10 @@
       <button class="ghost-btn" id="people-btn" type="button">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="5.5" r="2.5"/><path d="M1.75 13.5a4.25 4.25 0 0 1 8.5 0M11 3.25a2.5 2.5 0 0 1 0 4.5M12.25 9.5a4.25 4.25 0 0 1 2 4"/></svg>
         <span id="people-btn-label">Add a person</span>
+      </button>
+      <button class="ghost-btn" id="lock-btn" type="button">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg>
+        Site password
       </button>
       <button class="ghost-btn" id="import-btn" type="button">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 10.5v-8M4.5 6L8 2.5 11.5 6M3 13.5h10"/></svg>
@@ -2223,6 +2292,27 @@
       <span class="spacer"></span>
       <button class="add" id="worth-done" type="button">Done</button>
     </div>
+  </div>
+</dialog>
+<dialog class="sheet" id="lock-sheet" aria-labelledby="lock-title">
+  <div class="sheet-body">
+    <div class="grab" aria-hidden="true"></div>
+    <h2 id="lock-title" tabindex="-1" autofocus>Site password</h2>
+    <p class="setup-sub" id="lock-state"></p>
+    <form id="lock-form" autocomplete="on">
+      <input type="text" name="username" value="Points &amp; Status Tracker" autocomplete="username" hidden>
+      <div class="field"><label for="lock-pass">Password</label><input id="lock-pass" type="password" autocomplete="new-password" minlength="10" required></div>
+      <div class="field"><label for="lock-again">Password again</label><input id="lock-again" type="password" autocomplete="new-password" minlength="10" required></div>
+      <p class="fine">At least 10 characters; a few unrelated words is best. The site is public, so its lock code can be tried against guesses: a long password is what keeps it safe. Your saved data never leaves your devices either way.</p>
+      <p class="cards-status" id="lock-status" role="status"></p>
+      <textarea class="lock-code" id="lock-code" readonly hidden aria-label="Lock code"></textarea>
+      <div class="sheet-actions">
+        <button class="btn-secondary" id="lock-cancel" type="button">Close</button>
+        <span class="spacer"></span>
+        <button class="btn-secondary" id="lock-copy" type="button" hidden>Copy code</button>
+        <button class="add" id="lock-make" type="submit">Make lock code</button>
+      </div>
+    </form>
   </div>
 </dialog>
 <dialog class="sheet" id="send-sheet" aria-labelledby="send-title">
@@ -8701,6 +8791,40 @@
     for (const btn of document.querySelectorAll('[data-values]')) btn.setAttribute('aria-pressed', String((btn.dataset.values === 'hide') === state.hideValues));
   }
   $('#worth-btn').addEventListener('click', () => { $('#worth-sheet').showModal(); renderWorth(); });
+
+  // The site password: the code made here is what goes in SITE_LOCK (at the top of the page). The password itself is
+  // never saved or sent anywhere.
+  $('#lock-btn').addEventListener('click', () => {
+    $('#lock-state').textContent = window.SITE_LOCK
+      ? 'The site asks for its password each time it’s opened. To change it, make a new code here; to turn it off, ask for the code to be removed.'
+      : 'Choose a password, then send the code it makes (not the password) to be put on the site. From then on, the site asks for the password each time it’s opened.';
+    $('#lock-form').reset();
+    $('#lock-code').hidden = true;
+    $('#lock-copy').hidden = true;
+    $('#lock-status').textContent = '';
+    $('#lock-sheet').showModal();
+  });
+  $('#lock-cancel').addEventListener('click', () => $('#lock-sheet').close());
+  $('#lock-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const [pass, again] = [$('#lock-pass').value, $('#lock-again').value];
+    if (pass !== again) { $('#lock-status').textContent = 'The two passwords don’t match.'; return; }
+    $('#lock-make').disabled = true;
+    $('#lock-status').textContent = 'Making the code…';
+    try {
+      $('#lock-code').value = await siteLock.make(pass);
+      $('#lock-code').hidden = false;
+      $('#lock-copy').hidden = false;
+      $('#lock-status').textContent = 'Here’s the lock code. Send it to switch the password on: it isn’t your password, and your password can’t be worked out from it.';
+      $('#lock-form').querySelectorAll('input[type=password]').forEach((input) => { input.value = ''; });
+    } catch (err) {
+      $('#lock-status').textContent = 'This browser couldn’t make a code. Try Safari or Chrome.';
+    } finally { $('#lock-make').disabled = false; }
+  });
+  $('#lock-copy').addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText($('#lock-code').value); $('#lock-status').textContent = 'Copied.'; }
+    catch (err) { $('#lock-code').select(); $('#lock-status').textContent = 'Select the code and copy it.'; }
+  });
   $('#worth-done').addEventListener('click', () => $('#worth-sheet').close());
   $('#worth-hide').addEventListener('click', () => { $('#worth-sheet').close(); setHideValues(true); showToast('Dollar values hidden — turn them back on at the bottom', () => setHideValues(false)); });
   $('#worth-sheet').addEventListener('click', (e) => { if (backdropTap(e, $('#worth-sheet'))) $('#worth-sheet').close(); });
