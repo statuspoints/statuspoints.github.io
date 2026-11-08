@@ -117,7 +117,7 @@ setup({ cards: ['double-cash'], balances: { citi: 10000 } });
 check('American page, no-fee Citi: Citi row at 10:7, not “can’t transfer”', [transfers(american).includes('10:7 · 10,000 → 7,000 miles'), transfers(american).includes('your cards can’t transfer here')], [true, false]);
 check('…and Citi’s note says American is included', transfers(american).includes('No-fee Citi cards (Strata, Double Cash, Custom Cash) transfer at 10:7, American included.'), true);
 check('Citi page, no-fee Citi: airlines at 10:7', transfers(citi).includes('10:7 · 10,000 → 7,000 miles'), true);
-check('…and so are the partners listed under Also', transfers(citi).includes('Also: EVA 10:7 · Thai 10:7.'), true);
+check('…and so are the partners listed under Also', transfers(citi).includes('Also: Copa 10:7 · EVA 10:7 · Thai 10:7.'), true);
 // Partners that aren't 1:1: the note gives no no-fee ratio, so the table's (Strata) ratio with a plain caveat,
 // no "→" figure, and no goal advice built on a guess
 setup({ cards: ['double-cash'], balances: { citi: 10000 } });
@@ -140,7 +140,7 @@ setup({ cards: ['double-cash'], balances: { citi: 10000 } });
 check('Citi page, no-fee Citi: a partner under Also that isn’t 1:1 gets the caveat', transfers(citi).includes(`Example Inn 1:2 (${unpriced})`), true);
 app.TRANSFERS.citi.partners.pop();
 setup({ cards: ['strata-premier'], balances: { citi: 10000 } });
-check('Citi page, Strata Premier: Also at the table’s ratios', transfers(citi).includes('Also: EVA 1:1 · Thai 1:1.'), true);
+check('Citi page, Strata Premier: Also at the table’s ratios', transfers(citi).includes('Also: Copa 1:1 · EVA 1:1 · Thai 1:1.'), true);
 check('…and Choice at the table’s 1:1.5', transfers(citi).includes('Choice Privileges1:1.5 · 10,000 → 15,000 points'), true);
 app.TRANSFERS.chase.partners.push(['Example Air', 1, 1]); // Chase has no partner outside the catalog today
 setup({ cards: ['freedom-unlimited'], balances: { chase: 10000 } });

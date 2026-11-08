@@ -170,10 +170,10 @@ function toastApp() {
     // test says it doesn't (renderSafely is false when the saved data was set aside instead).
     let renaming = null;
     let saveTimer = 0;
-    const saveNow = () => {}; const stopScanning = () => {}; const rollOver = () => {}; const scrollTo = () => {};
+    const saveNow = () => {}; const stopScanning = () => {}; const dropTyped = () => {}; const rollOver = () => {}; const scrollTo = () => {};
     const forgetCreditParts = () => {}; const resetCreditsView = () => {}; // the Credits page's memory of a part-used amount, its year and filter
     const state = {};
-    const load = () => ({ programs: [] });
+    const load = () => ({ programs: [] }); const staleCopy = false;
     const renderSafely = () => !app.renderFails;
     let editMode = false; let filter = 'all'; let planOpen = false; let planMqd = 0; let planSpend = 0; let intro = false;
     const picked = new Set(); const pickedCards = new Set();
@@ -181,7 +181,7 @@ function toastApp() {
     ${piece('  let recentRemovals', '  function programCount')}
     ${piece("  // Shows someone else's tracker", '  function saveRename')}
     ${piece("  peopleSheet.addEventListener('click'", "  peopleSheet.addEventListener('keydown'")}
-    globalThis.api = { showToast, hideToast, hideTrackerToast, reloadForUpdate, switchPerson, people, undo: () => undoAction };`, context);
+    globalThis.api = { showToast, hideToast, hideTrackerToast, reloadForUpdate, warnStaleCopy, switchPerson, people, undo: () => undoAction };`, context);
   for (const id of ['a', 'b', 'c', 'd']) localStorage.setItem(`status-tracker-v2:${id}`, `{"programs":[],"who":"${id}"}`);
   app.api = context.api;
   // Tapping a person's remove (×) button on the People sheet.
@@ -274,6 +274,20 @@ now = 0; timers = [];
   app.api.switchPerson('c');
   check('an Undo that belongs to the person being left goes when switching', [app.page.$('#toast-msg').textContent, app.page.$('#toast-undo').hidden],
     ['Showing Cy’s tracker', true]);
+}
+now = 0; timers = [];
+{
+  // Review finding: the Reload warning for a tracker a newer version saved stayed up on the next person's tracker.
+  const app = toastApp();
+  app.keep.focus();
+  app.api.warnStaleCopy();
+  app.api.switchPerson('c');
+  check('a Reload warning about the tracker being left goes when switching', [app.page.$('#toast-msg').textContent, app.page.$('#toast-undo').hidden],
+    ['Showing Cy’s tracker', true]);
+  app.api.showToast('A new version is ready', app.api.reloadForUpdate, 'Reload', 15000);
+  app.api.switchPerson('b');
+  check('…while the offer to load a new version of the app stays', [app.page.$('#toast-msg').textContent, app.page.$('#toast-undo').hidden],
+    ['A new version is ready', false]);
 }
 now = 0; timers = [];
 {
@@ -374,7 +388,7 @@ function filterApp() {
     const medallionProgram = () => null;
     const medallionFor = () => ({ current: null });
     const lineExpired = () => false;
-    const stopScanning = () => {}; const rollOver = () => {}; const saveNow = () => {};
+    const stopScanning = () => {}; const dropTyped = () => {}; const rollOver = () => {}; const saveNow = () => {};
     const forgetCreditParts = () => {}; const resetCreditsView = () => {}; // the Credits page's memory of a part-used amount, its year and filter
     const renderPrograms = () => {};
     const showToast = (message, action) => app.shown.push({ message, action });
@@ -465,9 +479,11 @@ function storageApp() {
     const renderWorth = () => {}; const renderHousehold = () => {};
     // Showing a tracker throws while app.breaks is set and there is one (as an older cached version might).
     const renderAll = () => { app.rendered++; if (app.breaks && state.programs) throw new Error('can’t show this'); };
-    const stopScanning = () => { app.stopped = true; };
+    const stopScanning = () => { app.stopped = true; }; const dropTyped = () => {};
     const forgetCreditParts = () => {}; const resetCreditsView = () => {}; // the Credits page's memory of a part-used amount, its year and filter
     const hideTrackerToast = () => { app.toastHidden = true; };
+    let undoAction = null; const hideToast = () => { undoAction = null; };
+    const savedText = () => JSON.stringify(state); const warnStaleCopy = () => {};
     const showNote = (message) => { app.note = message; };
     const console = { error() {} };
     ${piece('  // The tracker on screen was replaced', '  // Opening flourish')}
@@ -582,7 +598,12 @@ now = 0; timers = [];
   check('…a new version’s Reload stays too', app.shown(), true);
   app.api.showToast('Deleted Hilton', () => {});
   app.api.hideTrackerToast();
-  check('…while the tracker’s own Undo goes', [app.shown(), app.api.undo()], [false, null]);
+  check('…while the tracker’s own Undo goes (and the Reload offer it covered comes back)',
+    [app.shown(), app.api.undo() === app.api.reloadForUpdate], [true, true]);
+  app.api.showToast('Deleted Hilton', () => {});
+  app.api.hideToast();
+  app.api.hideToast();
+  check('…which goes like any toast once it’s had its turn', [app.shown(), app.api.undo()], [false, null]);
 }
 
 console.log(`\n${total - failed}/${total} passed`);

@@ -151,7 +151,7 @@ vm.runInContext(`${fakeDom}
   ${piece('  const MONTH_NAMES', '  /* ---------- Certificates from your cards')}
   ${piece('  // One "Coming up" item as a line', '  // A plain-text summary meant for reading')}
   // The real Coming up (nothing but credits and fee dates in these trackers) and the real switch between people.
-  const lineExpired = () => false; const mergedLines = () => []; const hasStatus = () => false; const dependsOn = () => '';
+  const lineExpired = () => false; const mergedLines = () => []; const hasStatus = () => false; const entryOnly = () => false; const dependsOn = () => '';
   const medallionProgram = () => null; const medallionFor = () => ({ current: null }); const effectiveMedallion = () => null;
   const backupDue = () => null; const renderBackupStatus = () => {}; const updateBadge = () => {};
   const openDetail = () => {}; const addAllToCalendar = () => {}; const backUp = () => {}; let bonusReturn = null;
@@ -159,7 +159,7 @@ vm.runInContext(`${fakeDom}
   ${piece("  $('#upcoming').addEventListener('click'", "  $('#cal-btn').addEventListener")}
   let saveTimer = 0; let editMode = false; let filter = 'all'; let planOpen = false; let planMqd = 0; let planSpend = 0; let intro = false; let renaming = null;
   const picked = new Set(); const pickedCards = new Set();
-  const stopScanning = () => {}; const hideTrackerToast = () => { shown.toasts.length = 0; }; const showNote = () => {}; const renderPeople = () => {};
+  const stopScanning = () => {}; const dropTyped = () => {}; const hideTrackerToast = () => { shown.toasts.length = 0; }; const showNote = () => {}; const renderPeople = () => {};
   const rollOver = () => false;
   const renderSafely = (prepare) => { if (prepare) prepare(); renderUpcoming(); renderCredits(); return true; };
   ${piece('  function switchPerson', '  function saveRename')}
@@ -859,7 +859,7 @@ const used2026 = app.creditsPageModel().used;
 midnight(2027, 1, 1);
 check('Jan 1: the toggle reads 2027 and 2026, showing 2027', [page.querySelector('[data-cp-year="now"]').text, page.querySelector('[data-cp-year="past"]').text, page.querySelector('[data-cp-year="now"]').getAttribute('aria-pressed')], ['2027', '2026', 'true']);
 check('…select hotels (through Dec 31, 2026) has left this year and the main page', [rowOf('sapphire-reserve:select-hotels'), heldOf('sapphire-reserve:select-hotels')], [undefined, undefined]);
-check('…Bilt Cash posted again: a fresh 2027 box, $200 available, last year’s still ticked', [rowOf('bilt-palladium:bilt-cash').current.key, rowOf('bilt-palladium:bilt-cash').left, rowOf('bilt-palladium:bilt-cash', true).boxes[0].full], ['2027', 200, true]);
+check('…Bilt Cash doesn’t post again on Jan 1 (it lasts 12 months now): the 2026 box, ticked, is still the one on, counted toward 2026', [rowOf('bilt-palladium:bilt-cash').current.key, rowOf('bilt-palladium:bilt-cash').left, rowOf('bilt-palladium:bilt-cash', true).boxes[0].full, rowOf('bilt-palladium:bilt-cash').current.counts], ['2026', 0, true, false]);
 check('…half-year: 2027-H1 with nothing used, the $50 stays on 2026-H2', [rowOf('bilt-palladium:hotel').current.key, rowOf('bilt-palladium:hotel').left, rowOf('bilt-palladium:hotel', true).boxes[1].value], ['2027-H1', 200, 50]);
 check('…a card year doesn’t change at New Year', [rowOf('sapphire-reserve:travel').current.key, heldOf('sapphire-reserve:travel').period.key], ['A2026-03-15', 'A2026-03-15']);
 check('…last year’s total is what it was on Dec 31 (the card year counts where most of it falls)', app.creditsPageModel({ past: true }).used, used2026);

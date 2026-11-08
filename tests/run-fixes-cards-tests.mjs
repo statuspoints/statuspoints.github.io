@@ -52,6 +52,7 @@ vm.runInContext(`${fakeDom}\n${head}\n${dates}
   let expEditing = null;
   const game = () => state.game;
   const shown = { toasts: [] };
+  let undoAction = null; // the toast's button (showToast here only lists toasts)
   const showToast = (message, action) => shown.toasts.push({ message, action });
   const scheduleSave = () => {}; const renderPrograms = () => {}; const renderDetailStatus = () => {}; const renderLevels = () => {};
   ${piece('  function mergedLines', '  const lineExpired')}

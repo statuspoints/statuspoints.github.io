@@ -677,6 +677,13 @@ try { if (SITE_LOCK && sessionStorage.getItem('status-tracker-unlocked') !== SIT
   .cp-fee small { display: block; font-size: 12px; font-weight: 400; color: var(--muted); }
   .cp-fee .exp-input { flex: none; width: auto; }
   .cp-rows { margin: 0; padding: 0; list-style: none; }
+  .cp-bilt { display: grid; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .cp-bilt-text { margin: 0; font-size: 13px; color: var(--muted); }
+  .cp-bilt-text b { color: var(--text); font-weight: 650; }
+  .cp-bilt-keep { display: flex; align-items: flex-start; gap: 10px; min-width: 0; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .cp-bilt-keep input { flex: none; width: 18px; height: 18px; margin: 1px 0 0; accent-color: var(--accent); }
+  .cp-bilt-keep span { display: grid; gap: 1px; min-width: 0; }
+  .cp-bilt-keep small { font-size: 12px; font-weight: 400; color: var(--muted); }
   .cp-filter-note { margin: -4px 2px 10px; }
   .cp-others { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
   .cp-others-title { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 8px; margin: 0 0 4px; font-size: 13.5px; font-weight: 700; }
@@ -996,9 +1003,9 @@ try { if (SITE_LOCK && sessionStorage.getItem('status-tracker-unlocked') !== SIT
   .drop-hint { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 24px; background: rgba(10, 18, 30, .55); pointer-events: none; }
   .drop-hint > div { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 32px 40px; border: 2px dashed var(--accent); border-radius: 20px; background: var(--card); color: var(--text); font-size: 17px; font-weight: 650; text-align: center; }
   .drop-hint svg { width: 36px; height: 36px; color: var(--accent); }
-  .scan-paste { margin-top: 12px; font-size: 13.5px; }
-  .scan-paste summary { cursor: pointer; color: var(--accent); font-weight: 600; }
-  .scan-paste textarea { width: 100%; margin: 8px 0; padding: 10px 12px; border: 1px solid var(--field-border); border-radius: 12px; background: var(--field); color: var(--text); font: inherit; font-size: 16px; resize: vertical; }
+  .scan-paste { margin-top: 0; font-size: 13.5px; }
+  .scan-paste summary { padding: 12px 0; cursor: pointer; color: var(--accent); font-weight: 600; } /* a full-height tap target */
+  .scan-paste textarea { width: 100%; margin: 0 0 8px; padding: 10px 12px; border: 1px solid var(--field-border); border-radius: 12px; background: var(--field); color: var(--text); font: inherit; font-size: 16px; resize: vertical; }
   .scan-result { display: grid; gap: 12px; }
   .scan-field { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 6px 10px; }
   .scan-field input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); }
@@ -1020,12 +1027,15 @@ try { if (SITE_LOCK && sessionStorage.getItem('status-tracker-unlocked') !== SIT
   .quick-name small { font-size: 12px; color: var(--muted); }
   .quick-input { width: 120px; height: 40px; padding: 0 10px; border: 1px solid var(--field-border); border-radius: 10px; background: var(--field); color: var(--text); font: inherit; font-size: 16px; font-variant-numeric: tabular-nums; text-align: right; }
   .quick-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .quick-input[aria-invalid="true"] { border-color: var(--danger); }
+  .scan-control input[aria-invalid="true"] { border-color: var(--danger); }
   .quick-unit { width: 44px; font-size: 12px; color: var(--muted); }
   @media (max-width: 379px) {
     .quick-input { width: 96px; }
     .quick-unit { width: auto; }
   }
-  .worth { display: block; margin: 2px 0 0; padding: 0; border: 0; background: none; color: var(--accent); font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; }
+  .worth { position: relative; display: block; margin: 2px 0 0; padding: 0; border: 0; background: none; color: var(--accent); font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; }
+  .worth::after { content: ""; position: absolute; inset: -12px -6px; } /* larger touch target; the text around it isn't tappable */
   .worth-total { margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.02em; }
   .worth-list { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
   .worth-list li { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--line); }
@@ -1140,6 +1150,7 @@ try { if (SITE_LOCK && sessionStorage.getItem('status-tracker-unlocked') !== SIT
   .setup-alt { margin: 0; font-size: 14px; color: var(--muted); text-align: center; }
 
   /* Card tiles (setup + picker sheet) */
+  .fine.cc-issuer-note { margin: -4px 0 10px; }
   .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(136px, 1fr)); gap: 10px; }
   .cc {
     --c1: #3D7CC0;
@@ -1323,13 +1334,19 @@ try { if (SITE_LOCK && sessionStorage.getItem('status-tracker-unlocked') !== SIT
     overflow: auto;
   }
   .sheet::backdrop { background: rgba(8, 13, 22, .5); }
-  .grab { display: none; width: 38px; height: 5px; margin: 0 auto -6px; border-radius: 999px; background: var(--field-line); }
+  .grab { display: none; } /* no swipe-down to close, so no handle that looks like one */
+  .sheet form, .sheet-body { display: grid; gap: 16px; padding: 22px 16px calc(16px + env(safe-area-inset-bottom)); }
   @media (max-width: 560px) {
     .sheet { width: 100%; max-height: 92%; margin: auto 0 0; border-width: 1px 0 0; border-radius: 22px 22px 0 0; }
-    .grab { display: block; }
+    /* Long sheets: Done / Save stay on screen at the bottom while you scroll or type */
+    .sheet > form > .sheet-actions, .sheet > .sheet-body > .sheet-actions {
+      position: sticky; bottom: 0; z-index: 1;
+      margin: 0 -16px calc(-16px - env(safe-area-inset-bottom));
+      padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+      background: var(--card); border-top: 1px solid var(--line);
+    }
+    .sheet > .toast { bottom: calc(76px + env(safe-area-inset-bottom)); } /* a toast in a sheet sits above that row */
   }
-  .sheet form, .sheet-body { display: grid; gap: 16px; padding: 12px 16px calc(16px + env(safe-area-inset-bottom)); }
-  @media (min-width: 561px) { .sheet form, .sheet-body { padding-top: 22px; } }
   .sheet h2 { margin: 0; font-size: 19px; letter-spacing: -0.015em; outline: none; }
   .sheet .setup-sub { margin: -10px 0 0; }
   .check { display: flex; align-items: center; gap: 10px; font-size: 14.5px; cursor: pointer; }
@@ -1910,6 +1927,7 @@ var siteLock = (function () {
     <div class="install-body">
       <strong>New in your tracker</strong>
       <ul class="news-list">
+        <li><b>Bilt’s 2027 changes</b>: on the Credits checklist, Bilt Palladium’s credits follow your card anniversary ($600 Bilt Cash in place of the hotel credit, unless you kept 4% Bilt Cash) and Bilt Cash shows when it really runs out. Bilt Rewards shows Silver, Gold and Platinum, with what each gets you in 2027.</li>
         <li><b>Two of the same card</b>: in the Credits checklist, tap <b>Second card</b> for a second Sapphire Reserve (or any card with credits), with its own boxes to tick.</li>
         <li><b>Credits checklist</b>: right under your programs, a box for every month, quarter or half-year of your card credits — tick each one once you’ve used it.</li>
         <li><b>Made for big screens too</b>: on a laptop or desktop, your programs spread across the page, with what’s coming up, vouchers, and card credits beside them.</li>
@@ -2403,6 +2421,13 @@ var siteLock = (function () {
   'use strict';
 
   const KEY = 'status-tracker-v2';
+  // The shape of saved data, written with every save, backup and send link. Raise it by one whenever normalize()
+  // learns a new stored field, card or program, and never lower it: an older copy of the app (still cached on a
+  // device) that finds a higher number shows the data but never saves over it, and asks for a Reload instead, so
+  // it can't drop what it doesn't know. Data with no number (saved before this) reads as always.
+  const DATA_V = 1;
+  const tooNew = (raw) => !!raw && typeof raw === 'object' && Number(raw.dataV) > DATA_V;
+  let staleCopy = false; // a newer version saved this tracker: this copy must not overwrite it (see saveNow)
   const SAVE_DELAY = 400;
   const SOON_DAYS = 60; // vouchers: flag and remind this many days out
   const STATUS_SOON_DAYS = 90; // statuses: more lead time to requalify or use perks
@@ -2604,7 +2629,8 @@ var siteLock = (function () {
     { issuer: 'Barclays', id: 'wyndham-earner-plus', name: 'Wyndham Earner Plus', tone: 'sapphire', grants: [['wyndham', 'Platinum', 'Diamond for the first 12 months if opened since 6/17/26'], ['national', 'Emerald Club Executive']] },
     { issuer: 'Barclays', id: 'wyndham-earner-business', name: 'Wyndham Earner Business', tone: 'black', grants: [['wyndham', 'Diamond'], ['national', 'Emerald Club Executive']] },
     { issuer: 'Barclays', id: 'wyndham-earner-premier', name: 'Wyndham Earner Premier', tone: 'platinum', grants: [['wyndham', 'Diamond'], ['national', 'Emerald Club Executive']] },
-    // Palladium's Bilt Gold comes from meeting the welcome-offer spend, so it isn't auto-applied.
+    // Palladium's Bilt Gold comes from meeting the welcome-offer spend, so it isn't auto-applied; marking the bonus
+    // earned offers to add it (offerBiltGold).
     { issuer: 'Bilt', id: 'bilt-blue', name: 'Bilt Blue', tone: 'blue', grants: [] },
     { issuer: 'Bilt', id: 'bilt-obsidian', name: 'Bilt Obsidian', tone: 'black', grants: [] },
     { issuer: 'Bilt', id: 'bilt-palladium', name: 'Bilt Palladium', tone: 'platinum', grants: [['lounges', 'Priority Pass']] },
@@ -2687,7 +2713,7 @@ var siteLock = (function () {
     avianca: 'https://www.avianca.com/en/lifemiles/discover-lifemiles/elite-program',
   };
   // Programs checked on a later day than BENEFITS_CHECKED.
-  const CHECKED_ON = { bilt: 'Nov 5, 2026', avianca: 'Oct 14, 2026', iberia: 'Oct 14, 2026', aeromexico: 'Oct 14, 2026', latam: 'Oct 14, 2026', frontier: 'Oct 14, 2026', bestwestern: 'Oct 14, 2026', sonesta: 'Oct 14, 2026', iprefer: 'Oct 14, 2026', shangrila: 'Oct 14, 2026', enterprise: 'Oct 14, 2026', flyingblue: 'Oct 8, 2026', ba: 'Oct 8, 2026', virgin: 'Oct 8, 2026', emirates: 'Oct 8, 2026', singapore: 'Oct 8, 2026', qatar: 'Oct 8, 2026', turkish: 'Oct 8, 2026', jetblue: 'Oct 8, 2026', choice: 'Oct 8, 2026', accor: 'Oct 8, 2026',
+  const CHECKED_ON = { bilt: 'Nov 7, 2026', avianca: 'Oct 14, 2026', iberia: 'Oct 14, 2026', aeromexico: 'Oct 14, 2026', latam: 'Oct 14, 2026', frontier: 'Oct 14, 2026', bestwestern: 'Oct 14, 2026', sonesta: 'Oct 14, 2026', iprefer: 'Oct 14, 2026', shangrila: 'Oct 14, 2026', enterprise: 'Oct 14, 2026', flyingblue: 'Oct 8, 2026', ba: 'Oct 8, 2026', virgin: 'Oct 8, 2026', emirates: 'Oct 8, 2026', singapore: 'Oct 8, 2026', qatar: 'Oct 8, 2026', turkish: 'Oct 8, 2026', jetblue: 'Oct 8, 2026', choice: 'Oct 8, 2026', accor: 'Oct 8, 2026',
     koreanair: 'Oct 10, 2026', lufthansa: 'Oct 10, 2026', cathay: 'Oct 10, 2026', qantas: 'Oct 10, 2026', ana: 'Oct 10, 2026', jal: 'Oct 10, 2026', etihad: 'Oct 10, 2026', aerlingus: 'Oct 10, 2026' };
   // Lifetime status, by each program's own terms (checked Oct 19, 2026 by two reviewers each), with the page it's from.
   const LIFETIME = {
@@ -2976,13 +3002,20 @@ var siteLock = (function () {
 
   // The levels as they stand from Jan 1, 2027 (see on2027Rules), per the airlines' announcements as of November 2026.
   // United keeps its names and perks; only what each takes changes. Southwest's old names stay as aliases, so saved
-  // statuses and old screenshots still read as the level they became.
+  // statuses and old screenshots still read as the level they became. Bilt keeps its levels and what each takes, and
+  // adds the perks it announced on Oct 27, 2026 (rental-car status matches you ask for, points on Home Away From Home
+  // stays) and its new limit of two Bilt Cash hotel redemptions a year.
   const BENEFITS_2027 = {
     united: BENEFITS.united.map(([name, , short, perks], i) => [name, `${['6,000', '12,000', '18,000', '32,000'][i]} PQP a year, with at least 4 flights on United or United Express`, short, perks]),
     southwest: [
       ['Silver', '25 flights or 35,000 tier points a year', ["1st checked bag free", "Seat pick at booking", "Priority lanes"], ['40% bonus points on flights', 'Board in Group 1', 'First checked bag free (the second is $35 through Dec 31, 2027 if you earned A-List in 2026)', 'Pick a Preferred or Standard seat at booking (when available)', 'Priority and Express lanes', 'Free same-day standby, Basic fares too'], ['a list']],
       ['Gold', '50 flights or 65,000 tier points a year', ["2 free checked bags", "Any seat incl. Extra Legroom", "Board before Group 1"], ['60% bonus points on flights (100% through Dec 31, 2027 if you earned A-List Preferred in 2026)', 'Board before Group 1', '2 free checked bags', 'Pick any seat at booking, Extra Legroom too (when available)', 'Up to 2 free premium drinks (select flights)', 'Priority and Express lanes', 'Free same-day standby, Basic fares too'], ['a list preferred']],
       ['Platinum', '100 flights or 140,000 tier points a year', ["Unlimited Companion Pass", "3 free checked bags", "Board before Gold"], ['120% bonus points on flights', 'Unlimited Companion Pass trips', 'Board before Gold and Group 1', '3 free checked bags', 'Pick any seat at booking, Extra Legroom too (when available)', 'Up to 2 free premium drinks (select flights)', 'Priority and Express lanes', 'Free same-day standby, Basic fares too']],
+    ],
+    bilt: [
+      ['Silver', BENEFITS.bilt[0][1], ["Hertz & SIXT status", "Bigger Rent Day bonuses"], ['Hertz Five Star and SIXT ONE Gold status match, when you ask for it', 'Larger transfer bonuses on Rent Day than Blue members get', 'Use Bilt Cash on Bilt Travel hotel stays twice a year']],
+      ['Gold', BENEFITS.bilt[1][1], ["Hertz & SIXT status", "BLADE lounges", "Points on Home Away From Home"], ['Hertz Five Star and SIXT ONE Gold status match, when you ask for it', 'Use Bilt Points on Home Away From Home bookings', 'Larger transfer bonuses on Rent Day', 'BLADE lounge access', 'Use Bilt Cash on Bilt Travel hotel stays twice a year']],
+      ['Platinum', BENEFITS.bilt[2][1], ["Flying Blue Gold", "Hertz & SIXT status", "BLADE lounges"], ['Air France-KLM Flying Blue Gold status match (SkyTeam Elite Plus)', 'Hertz President’s Circle and SIXT ONE Platinum status match, when you ask for it', 'Use Bilt Points on Home Away From Home bookings', 'Larger transfer bonuses on Rent Day', 'BLADE lounge access', 'Use Bilt Cash on Bilt Travel hotel stays twice a year']],
     ],
   };
 
@@ -3045,7 +3078,7 @@ var siteLock = (function () {
     accor: { months: 12, earnOnly: true, note: 'Only earning counts as activity here — redeeming doesn’t reset the clock.' },
     amex: { bank: true }, chase: { bank: true }, capitalone: { bank: true },
     citi: { bank: true, note: 'Points tied to a card expire 60 days after that card closes or is converted — move or use them first.' },
-    bilt: { months: 18, note: 'Paying rent through Bilt or using a Bilt card counts as activity.' },
+    bilt: { months: 18, note: 'Paying rent through Bilt or using a Bilt card counts as activity. Bilt Cash (separate from points) lasts 12 months: to the end of the month it was earned, a year later.' },
   };
 
   // Statement credits per card, as of CREDITS_AS_OF: [id, name, dollars per period, period, resets, note, December
@@ -3206,10 +3239,13 @@ var siteLock = (function () {
       ['inflight', 'Inflight / Admirals Club', 100, 'year', 'calendar', 'AA domestic inflight and Admirals Club food & drink; not day passes'],
     ],
     'bilt-palladium': [
-      // Bilt's 2027 changes: at your first card anniversary in 2027 (unless you keep 4% Bilt Cash) both credits become
-      // one $600 Bilt Cash credit posted after each anniversary; it differs per person, so the notes say so.
-      ['hotel', 'Bilt Travel hotel credit', 200, 'half', 'calendar', '2+ nights through Bilt Travel or the Bilt app; becomes Bilt Cash at your first card anniversary in 2027 unless you keep 4% Bilt Cash'],
-      ['bilt-cash', 'Bilt Cash', 200, 'year', 'calendar', 'posts Jan 1; from your first card anniversary in 2027, $600 posts after each anniversary instead'],
+      // Bilt's 2027 changes (announced Oct 27, 2026) follow each person's own card anniversary (biltSwitch): the hotel
+      // credit ends the day before the first one in 2027 and Anniversary Bilt Cash ($600 a card year) starts on it,
+      // unless you kept 4% Bilt Cash (creditsKeep4). The $200 posted Jan 1, 2026 lasts 12 months (CREDIT_USE_MONTHS)
+      // and is the last one posted on Jan 1. The notes here are for no fee date; biltCreditNote words them per card.
+      ['hotel', 'Bilt Travel hotel credit', 200, 'half', 'calendar', '2+ nights through Bilt Travel or the Bilt app'],
+      ['bilt-cash', 'Bilt Cash', 200, 'year', 'calendar', 'posted Jan 1, 2026; good through Jan 31, 2027 (Bilt Cash now lasts 12 months)'],
+      ['anniversary-cash', 'Anniversary Bilt Cash', 600, 'year', 'card', 'posts after each card anniversary from your first one in 2027; each one is good to the end of that month a year later'],
     ],
     'premium-rewards-elite': [
       ['airline', 'Airline incidentals', 300, 'year', 'calendar', 'bags, seats, lounge day passes'],
@@ -3218,6 +3254,24 @@ var siteLock = (function () {
     'premium-rewards': [['airline', 'Airline incidentals', 100, 'year', 'calendar', 'bags, seats, lounge day passes']],
     'autograph-journey': [['airline', 'Airline credit', 50, 'year', 'card', 'one $50+ airline purchase; your credit year starts the 1st of the month after your annual fee posts']],
   };
+  // Cards whose card-year credits start on the 1st of the month after the annual fee posts (fee Mar 15 → Apr 1), not
+  // on the fee date itself.
+  const CARD_YEAR_NEXT_MONTH = new Set(['autograph-journey']);
+  // The card year holding `date` for a card whose annual fee posts on `feeIso` (month and day repeat): it runs from
+  // one start to the day before the next, and the start itself begins a new one. A Feb 29 start falls on Feb 28 in
+  // other years.
+  function cardYearOf(cardId, feeIso, date) {
+    const fee = parseISODate(feeIso);
+    const nextMonth = CARD_YEAR_NEXT_MONTH.has(baseCardId(cardId));
+    const month = nextMonth ? (fee.getMonth() + 1) % 12 : fee.getMonth();
+    const day = nextMonth ? 1 : fee.getDate();
+    const onYear = (year) => new Date(year, month, Math.min(day, new Date(year, month + 1, 0).getDate()));
+    const today = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    let start = onYear(today.getFullYear());
+    if (start > today) start = onYear(today.getFullYear() - 1);
+    const next = onYear(start.getFullYear() + 1);
+    return { start, end: new Date(next.getFullYear(), next.getMonth(), next.getDate() - 1) };
+  }
   // Credits with no month or year to tick, listed under the card on the checklist and left out of its dollar totals:
   // [id, name, dollars, how it comes, note]. How it comes: months until it can be used again, 'once' (a subscription
   // you activate), or no box at all: 'stay' (each stay or booking) or 'spend' (earned by spending; keep it under Vouchers).
@@ -3325,7 +3379,7 @@ var siteLock = (function () {
 
   // Where each bank's points transfer, as of TRANSFERS_AS_OF: [partner id (or name), bank points, partner points,
   // note]. Ratios are for the issuers' premium cards; `note` covers the exceptions.
-  const TRANSFERS_AS_OF = 'October 2026';
+  const TRANSFERS_AS_OF = 'November 2026';
   const TRANSFERS = {
     amex: {
       partners: [['delta', 1, 1], ['aeroplan', 1, 1], ['flyingblue', 1, 1], ['ba', 1, 1], ['virgin', 1, 1], ['jetblue', 5, 4],
@@ -3342,7 +3396,7 @@ var siteLock = (function () {
     },
     citi: {
       partners: [['american', 1, 1], ['jetblue', 1, 1], ['flyingblue', 1, 1], ['virgin', 1, 1], ['choice', 1, 1.5], ['wyndham', 1, 1],
-        ['accor', 2, 1], ['avianca', 1, 1], ['cathay', 1, 1], ['etihad', 1, 1], ['EVA', 1, 1], ['jal', 1, 1], ['qantas', 1, 1],
+        ['accor', 2, 1], ['avianca', 1, 1], ['cathay', 1, 1], ['Copa', 1, 1], ['etihad', 1, 1], ['EVA', 1, 1], ['jal', 1, 1], ['qantas', 1, 1],
         ['qatar', 1, 1], ['singapore', 1, 1], ['Thai', 1, 1], ['turkish', 1, 1], ['emirates', 5, 4], ['iprefer', 1, 2], ['lhw', 5, 1]],
       note: 'Ratios with Strata Premier or Strata Elite. No-fee Citi cards (Strata, Double Cash, Custom Cash) transfer at 10:7, American included.',
     },
@@ -3350,7 +3404,7 @@ var siteLock = (function () {
       partners: [['aeroplan', 1, 1], ['flyingblue', 1, 1], ['ba', 1, 1], ['virgin', 1, 1], ['jetblue', 5, 3], ['choice', 1, 1],
         ['wyndham', 1, 1], ['accor', 2, 1], ['aeromexico', 1, 1], ['avianca', 1, 1], ['cathay', 1, 1], ['etihad', 1, 1],
         ['Finnair', 1, 1], ['qantas', 1, 1], ['qatar', 1, 1], ['singapore', 1, 1], ['TAP', 1, 1], ['turkish', 1, 1],
-        ['emirates', 2, 1.5], ['EVA', 2, 1.5], ['jal', 2, 1.5], ['iprefer', 1, 2]],
+        ['Copa', 2, 1.5], ['emirates', 2, 1.5], ['EVA', 2, 1.5], ['jal', 2, 1.5], ['iprefer', 1, 2]],
     },
     bilt: {
       partners: [['united', 1, 1], ['southwest', 1, 1], ['alaska', 1, 1], ['jetblue', 1, 1], ['aeroplan', 1, 1], ['flyingblue', 1, 1],
@@ -3452,22 +3506,38 @@ var siteLock = (function () {
   const moneyFmt = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
   const money = (n) => moneyFmt.format(Math.round(n));
 
+  // The last day an elite status with an end date kept the balance from expiring. One that's already over still
+  // counts, so the expiry date isn't backdated to before it ended. null if no status on the list has an end date.
+  function eliteShieldEnd(p) {
+    const ends = p.status.filter((line) => line.tier && line.exp && !entryOnly(p, line)).map((line) => line.exp);
+    const earned = earnedTier(p);
+    if (earned) ends.push(isoOf(earned.thru));
+    return ends.length ? parseISODate(ends.sort().pop()) : null;
+  }
+
   // When a balance runs out if nothing happens: null if it can't (never expires, or you're exempt) or no last
   // activity date is known. `exempt` names what protects it; `empty` means a zero balance, so nothing to lose.
+  // An elite status that ends only holds the clock until then: `shieldEnd` is its last day when that sets the date.
   function pointsExpiry(p) {
     const rule = expiryFor(p);
     if (!rule || !rule.months) return null;
     const card = (rule.cards || []).map((id) => CARD_BY_ID[id]).find((c) => state.cards.includes(c.id));
     if (card) return { rule, exempt: `your ${card.name} card` };
-    if (rule.exemptIfElite && hasStatus(p)) return { rule, exempt: 'your elite status' };
+    const elite = rule.exemptIfElite && hasStatus(p);
+    const shieldEnd = rule.exemptIfElite ? eliteShieldEnd(p) : null;
+    // A status with no end date keeps them from expiring for as long as it lasts.
+    if (elite && (!shieldEnd || p.status.some((line) => line.tier && !line.exp && !entryOnly(p, line)))) return { rule, exempt: 'your elite status' };
     if (state.balances[p.id] === 0) return { rule, empty: true }; // no date: no reminder, calendar event or summary line
     const last = parseISODate(state.activity[p.id]);
-    if (!last) return { rule, date: null };
+    if (!last) return { rule, date: null, shieldEnd: elite ? shieldEnd : null };
     const date = new Date(last.getFullYear(), last.getMonth() + rule.months, last.getDate());
     if (date.getDate() !== last.getDate()) date.setDate(0); // Aug 31 + 18 months → end of Feb, not early March
+    // The clock only runs out once the status is over: the day after it ends at the soonest.
+    const shielded = !!shieldEnd && date <= shieldEnd;
+    if (shielded) date.setFullYear(shieldEnd.getFullYear(), shieldEnd.getMonth(), shieldEnd.getDate() + 1);
     const floor = parseISODate(rule.from);
     const until = floor && floor > date ? floor : date;
-    return { rule, date: until, days: daysUntil(until) };
+    return { rule, date: until, days: daysUntil(until), shieldEnd: shielded && until === date ? shieldEnd : null };
   }
   const tierLabel = (name) => name.replace(/\b(Elite|Medallion|Premier)\b/g, '').replace(/\s+/g, ' ').trim();
 
@@ -3720,6 +3790,23 @@ var siteLock = (function () {
   let pressedOn = null;
   addEventListener('pointerdown', (e) => { pressedOn = e.target; }, true);
   const backdropTap = (e, dialog) => e.target === dialog && pressedOn === dialog;
+
+  // A form sheet you've typed in stays open on a backdrop tap or Escape, so the typing isn't thrown away: it says
+  // to tap Save, and Discard (or Cancel) is how to drop it. formSnap is taken when the sheet opens.
+  const formSnap = (root) => [...root.querySelectorAll('input, select, textarea')]
+    .map((i) => (i.type === 'checkbox' ? i.checked : i.value)).join('\u0001');
+  function guardEdits(dialog) {
+    const dirty = () => dialog._snap != null && formSnap(dialog) !== dialog._snap;
+    const discard = () => dialog.close();
+    const hold = () => {
+      showToast('You have changes that aren’t saved. Tap Save to keep them.', discard, 'Discard');
+      const save = dialog.querySelector('[type=submit]');
+      if (save) save.focus({ preventScroll: true });
+    };
+    dialog.addEventListener('cancel', (e) => { if (dirty()) { e.preventDefault(); hold(); } }); // Escape
+    dialog.addEventListener('close', () => { dialog._snap = null; if (undoAction === discard) hideToast(); }); // saved or cancelled: that's done
+    dialog.addEventListener('click', (e) => { if (!backdropTap(e, dialog)) return; if (dirty()) hold(); else dialog.close(); });
+  }
 
   // Says something to screen readers, from inside whatever sheet is open (content behind a modal sheet is unheard).
   function announce(text) {
@@ -4225,7 +4312,7 @@ var siteLock = (function () {
   // per card, so statuses, bonuses, certificates and transfer partners count it once. The copy lives in cardCopies
   // (base card → { name, first, off }: the names typed for the second and the first, and off once removed, which
   // keeps its name as its ticks are kept) and has an id of its own, "sapphire-reserve~2", used only by credit tracking:
-  // creditsLog, creditsUsed, creditsUsedOn, creditsPartOn, creditsSkipped, renewals and customCredits. The tables of
+  // creditsLog, creditsUsed, creditsUsedOn, creditsPartOn, creditsSkipped, creditsKeep4, renewals and customCredits. The tables of
   // what a card offers (CREDITS, CREDIT_LAST_DAY and so on) and the card itself are looked up by the base id.
   const COPY_NAME_MAX = 24;
   const cardCopyId = (cardId) => `${cardId}~2`;
@@ -4268,6 +4355,47 @@ var siteLock = (function () {
   // file reaches: the earliest written go first, so what you just did survives a reload, and a mark always stays.
   const CREDIT_KEY_RE = /^[a-z0-9-]{1,40}(?:~2)?:[A-Za-z0-9-]{1,40}$/;
   const PERIOD_KEY_RE = /^(\d{4})(-([1-9]|1[0-2]|Q[1-4]|H[12]))?$|^A(\d{4})-\d{2}-\d{2}$/;
+  // Autograph Journey's credit year used to be kept from the fee date ("A2026-03-15"); it starts the 1st of the
+  // month after ("A2026-04-01"). A tick or part-used amount saved the old way moves to the new year holding the day
+  // it was used: the day kept with the mark, else (a mark with no day, saved before days were kept) the year that
+  // fee opened, from the 1st of the month after it (unless that's still to come), else the middle of the old year
+  // so far. Keys already on the 1st of that month stay.
+  function moveCardYearTicks(s) {
+    const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const today = new Date();
+    for (const [cardId, fee] of Object.entries(s.renewals)) {
+      if (!CARD_YEAR_NEXT_MONTH.has(baseCardId(cardId))) continue;
+      const startMonth = (parseISODate(fee).getMonth() + 1) % 12;
+      const isOld = (period) => {
+        const start = typeof period === 'string' && period.startsWith('A') ? parseISODate(period.slice(1)) : null;
+        return !!start && !(start.getMonth() === startMonth && start.getDate() === 1);
+      };
+      const keys = new Set([...Object.keys(s.creditsLog), ...Object.keys(s.creditsUsed)].filter((key) => key.startsWith(`${cardId}:`)));
+      for (const key of keys) {
+        const log = s.creditsLog[key] || {};
+        const mark = s.creditsUsed[key];
+        if (!isOld(mark) && !Object.keys(log).some(isOld)) continue;
+        const dayIn = (period, v) => {
+          const start = parseISODate(period.slice(1));
+          const end = new Date(start.getFullYear() + 1, start.getMonth(), start.getDate() - 1);
+          const last = end < today ? end : today;
+          const known = parseISODate(period === mark ? s.creditsUsedOn[key] : typeof v === 'number' ? s.creditsPartOn[key] : null);
+          if (known && known >= start && known <= last) return known;
+          if (period === mark) { const opened = new Date(start.getFullYear(), start.getMonth() + 1, 1); return opened > today ? start : opened; }
+          return new Date(start.getFullYear(), start.getMonth(), start.getDate() + Math.floor(Math.max(0, Math.round((last - start) / 864e5)) / 2));
+        };
+        const moved = {};
+        const entries = Object.entries(log);
+        if (isOld(mark) && log[mark] == null) entries.push([mark, true]);
+        for (const [period, v] of entries) {
+          const to = isOld(period) ? `A${ymd(cardYearOf(cardId, fee, dayIn(period, v)).start)}` : period;
+          moved[to] = moved[to] === true || v === true ? true : Math.max(moved[to] || 0, v);
+          if (period === mark) s.creditsUsed[key] = to;
+        }
+        if (Object.keys(moved).length) s.creditsLog[key] = moved;
+      }
+    }
+  }
   function cleanCreditsLog(rawLog, used) {
     const oldest = new Date().getFullYear() - 1;
     const keepPeriod = (p) => {
@@ -4315,7 +4443,7 @@ var siteLock = (function () {
   function normalize(raw) {
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
     if (!['programs', 'balances', 'vouchers', 'mqd'].some((k) => k in raw)) return null;
-    const s = { programs: null, view: 'detailed', cards: [], cardSeen: {}, renewals: {}, cardCopies: {}, creditsAddHidden: false, creditsOther: {}, creditsUsed: {}, creditsUsedOn: {}, creditsLog: {}, creditsPartOn: {}, creditsSkipped: {}, customCredits: {}, bonuses: {}, notes: '', memos: {}, balances: {}, history: {}, cpp: {}, hideValues: false, activity: {}, mqd: 0, progress: {}, members: {}, updated: {}, backedUp: '', since: '', changed: '', game: { xp: 0, scans: 0, best: 0, weeks: [], badges: {}, confirmed: {}, log: [] }, goals: {}, vouchers: [] };
+    const s = { programs: null, view: 'detailed', cards: [], cardSeen: {}, renewals: {}, cardCopies: {}, creditsAddHidden: false, creditsOther: {}, creditsUsed: {}, creditsUsedOn: {}, creditsLog: {}, creditsPartOn: {}, creditsSkipped: {}, creditsKeep4: {}, customCredits: {}, bonuses: {}, notes: '', memos: {}, balances: {}, history: {}, cpp: {}, hideValues: false, activity: {}, mqd: 0, progress: {}, members: {}, updated: {}, backedUp: '', since: '', changed: '', game: { xp: 0, scans: 0, best: 0, weeks: [], badges: {}, confirmed: {}, log: [] }, goals: {}, vouchers: [] };
     if (raw.balances && typeof raw.balances === 'object') {
       for (const [id, v] of ownEntries(raw.balances)) if (isCount(v)) s.balances[id] = Math.min(Math.floor(v), MAX_VALUE); // no more than you can type
     }
@@ -4353,6 +4481,9 @@ var siteLock = (function () {
     }
     if (raw.creditsSkipped && typeof raw.creditsSkipped === 'object') { // credits you've chosen not to track
       for (const [k, v] of ownEntries(raw.creditsSkipped)) if (v === true && creditKeyKnown(k)) s.creditsSkipped[k] = true;
+    }
+    if (raw.creditsKeep4 && typeof raw.creditsKeep4 === 'object') { // Bilt Palladium (or its second copy): kept 4% Bilt Cash
+      for (const [k, v] of ownEntries(raw.creditsKeep4)) if (v === true && baseCardId(k) === 'bilt-palladium' && creditCardKnown(k)) s.creditsKeep4[k] = true;
     }
     if (raw.customCredits && typeof raw.customCredits === 'object') { // credits you added: card → [[id, name, $, period]]
       const dollars = (amount) => Math.round(Math.min(amount, 100000) * 100) / 100; // under half a cent is $0, so it goes
@@ -4449,6 +4580,7 @@ var siteLock = (function () {
         // after you remove a card, like its credits, so it's still there if you add the card back
         for (const [id, v] of ownEntries(raw.renewals)) if (creditCardKnown(id) && parseISODate(v)) s.renewals[id] = v;
       }
+      moveCardYearTicks(s);
       if (raw.bonuses && typeof raw.bonuses === 'object') { // welcome bonus per card you hold: points, spend, deadline
         for (const [id, b] of ownEntries(raw.bonuses)) {
           const clean = s.cards.includes(id) && cleanBonus(id, b);
@@ -4570,9 +4702,12 @@ var siteLock = (function () {
 
   function load() {
     let raw = null;
+    staleCopy = false; // it describes the tracker loaded now (another person's may be a newer version's, or not)
     try {
       raw = localStorage.getItem(storageKey());
-      const s = normalize(JSON.parse(raw || 'null'));
+      const parsed = JSON.parse(raw || 'null');
+      if (tooNew(parsed)) staleCopy = true; // shown, but left as it is in storage until this copy is updated
+      const s = normalize(parsed);
       if (s) return s;
     } catch (e) {
       // Saved data this version can't read: keep an untouched copy before starting fresh, so nothing is lost.
@@ -4582,7 +4717,7 @@ var siteLock = (function () {
     return blankState(); // null programs → first-run setup
   }
   function blankState() {
-    return { programs: null, view: 'detailed', cards: [], cardSeen: {}, renewals: {}, cardCopies: {}, creditsAddHidden: false, creditsOther: {}, creditsUsed: {}, creditsUsedOn: {}, creditsLog: {}, creditsPartOn: {}, creditsSkipped: {}, customCredits: {}, bonuses: {}, notes: '', memos: {}, balances: {}, history: {}, cpp: {}, hideValues: false, activity: {}, mqd: 0, progress: {}, members: {}, updated: {}, backedUp: '', since: '', changed: '', game: { xp: 0, scans: 0, best: 0, weeks: [], badges: {}, confirmed: {}, log: [] }, goals: {}, vouchers: [] };
+    return { programs: null, view: 'detailed', cards: [], cardSeen: {}, renewals: {}, cardCopies: {}, creditsAddHidden: false, creditsOther: {}, creditsUsed: {}, creditsUsedOn: {}, creditsLog: {}, creditsPartOn: {}, creditsSkipped: {}, creditsKeep4: {}, customCredits: {}, bonuses: {}, notes: '', memos: {}, balances: {}, history: {}, cpp: {}, hideValues: false, activity: {}, mqd: 0, progress: {}, members: {}, updated: {}, backedUp: '', since: '', changed: '', game: { xp: 0, scans: 0, best: 0, weeks: [], badges: {}, confirmed: {}, log: [] }, goals: {}, vouchers: [] };
   }
 
   const state = load();
@@ -4602,11 +4737,15 @@ var siteLock = (function () {
     saveTimer = setTimeout(saveNow, SAVE_DELAY);
   }
 
+  // What a save writes, with the data's shape number.
+  const savedText = () => JSON.stringify({ ...state, dataV: DATA_V });
+
   function saveNow() {
     clearTimeout(saveTimer);
     saveTimer = 0;
+    if (staleCopy) { warnStaleCopy(); return; } // would trim what a newer version saved
     try {
-      if (state.programs) localStorage.setItem(storageKey(), JSON.stringify(state));
+      if (state.programs) localStorage.setItem(storageKey(), savedText());
       else localStorage.removeItem(storageKey()); // not set up yet
     } catch (e) {
       showToast('Couldn’t save — browser storage is unavailable');
@@ -4634,10 +4773,11 @@ var siteLock = (function () {
       if (state.programs && detail.open && detailProgram()) renderHousehold(detailProgram());
       return;
     }
-    if (e.key !== storageKey() || e.newValue === JSON.stringify(state.programs ? state : null)) return;
+    if (e.key !== storageKey() || e.newValue === (state.programs ? savedText() : 'null')) return;
     clearTimeout(saveTimer);
     saveTimer = 0;
-    const next = load();
+    if (undoAction && undoAction.snapshot) hideToast(); // its Undo would write this window's old copy over that save
+    const next = load(); // saved by a newer version: shown, never saved over (staleCopy)
     for (const key of Object.keys(state)) delete state[key];
     Object.assign(state, next);
     forgetCreditParts();
@@ -4650,6 +4790,7 @@ var siteLock = (function () {
       if (sheet.open && sheetId && !state.programs.some((p) => p.id === sheetId)) sheet.close();
     }
     renderSafely();
+    if (staleCopy) warnStaleCopy();
   });
 
   // Flush a pending save if the app is backgrounded or closed inside the debounce window.
@@ -4691,6 +4832,11 @@ var siteLock = (function () {
     }
     refreshDay();
     checkForUpdate();
+    // A Reload offer that timed out comes back each time the app is resumed (after any Undo that's up).
+    if (updateReady && !updateShowing()) {
+      if ($('#toast').classList.contains('show')) updateCovered = true;
+      else offerUpdate();
+    }
   });
 
   /* ---------- Editable numbers ---------- */
@@ -4746,11 +4892,14 @@ var siteLock = (function () {
 
   // Empty input clears the value. Otherwise one number: "84,500", "84 500", "84.500", "$1,234", "1.5k", "2M",
   // "84,500 miles". Anything else (a date, a minus sign, two numbers, "abc") returns null and changes nothing.
-  function parseEntry(raw) {
+  // Points and miles are whole numbers, so a fraction counts only before k/m ("1.5k", "2,25m"), on a $ amount, or
+  // where the field is dollars (`dollars`, e.g. MQDs): "212,50" is a dropped digit, not 212.5, so it isn't read.
+  function parseEntry(raw, dollars = false) {
     const text = String(raw).normalize('NFKC').trim();
     if (text === '') return { value: null };
     const m = /^\$?\s*(\d{1,3}(?:[,. \u00a0\u202f]\d{3})+|\d+)(?:[.,](\d{1,2}))?\s*([km])?\s*(?:miles?|points?|pts|avios|mi|mqds?)?\.?$/i.exec(text);
     if (!m) return null;
+    if (m[2] && !m[3] && !dollars && !text.startsWith('$')) return null;
     let value = Number(m[1].replace(/\D/g, '')) + (m[2] ? Number(`0.${m[2]}`) : 0);
     if (m[3]) value *= /k/i.test(m[3]) ? 1e3 : 1e6;
     return { value: Math.min(Math.round(value), MAX_VALUE) };
@@ -4823,7 +4972,7 @@ var siteLock = (function () {
       // year's figure belongs to last year (kept as a status if it earned one), so it isn't saved as this year's.
       const rolled = commit && rollOver();
       if (commit) {
-        const parsed = parseEntry(input.value);
+        const parsed = parseEntry(input.value, field === 'mqd'); // MQDs are dollars: "4,512.37" is fine there
         if (parsed && parsed.value !== before) {
           if (countYear(field) === year) setField(field, parsed.value);
           else showToast('New qualifying year: counts start over, so that number wasn’t saved');
@@ -8203,7 +8352,7 @@ var siteLock = (function () {
     lastCollectAt = 0;
     Object.assign(state, before);
     if (state.programs) saveNow();
-    else try { localStorage.removeItem(storageKey()); } catch (e) { /* private mode */ }
+    else if (!staleCopy) try { localStorage.removeItem(storageKey()); } catch (e) { /* private mode */ }
     renderSafely();
   }
 
@@ -8318,7 +8467,7 @@ var siteLock = (function () {
   // The review form's choices, in the same shape a scan collects: undefined leaves a field alone.
   function formVals() {
     const use = (key) => { const box = $(`#scan-use-${key}`); return box && box.checked; };
-    const num = (key) => { const v = parseEntry($(`#scan-${key}`).value); return v && v.value != null ? v.value : undefined; }; // blank = leave it
+    const num = (key) => { const v = parseEntry($(`#scan-${key}`).value, key === 'mqd'); return v && v.value != null ? v.value : undefined; }; // blank = leave it
     const vals = {};
     for (const key of ['balance', 'mqd', 'progress', 'alt']) if (use(key) && num(key) !== undefined) vals[key] = num(key);
     if (use('member') && $('#scan-member').value.trim()) vals.member = str($('#scan-member').value, 40);
@@ -8331,6 +8480,19 @@ var siteLock = (function () {
   function applyScan() {
     const choice = $('#scan-program').value;
     if (!choice) { $('#scan-program').focus(); return; }
+    // A ticked number that can't be read ("212,50", a missed zero) keeps the sheet open on it, as in the quick sheet.
+    const rows = ['balance', 'progress', 'alt', 'mqd'].map((key) => [key, $(`#scan-${key}`), $(`#scan-use-${key}`)]).filter(([, input]) => input);
+    const bad = rows.filter(([key, input, box]) => box && box.checked && !parseEntry(input.value, key === 'mqd')).map(([, input]) => input);
+    for (const [, input] of rows) {
+      if (bad.includes(input)) input.setAttribute('aria-invalid', 'true');
+      else input.removeAttribute('aria-invalid');
+    }
+    if (bad.length) {
+      showToast(bad.length > 1 ? `Couldn’t read ${bad.length} of the numbers. Type whole numbers, then tap Update.`
+        : `Couldn’t read “${bad[0].value.trim()}”. Type the whole number, then tap Update.`);
+      bad[0].focus();
+      return;
+    }
     const vals = formVals();
     if (choice.startsWith('new:') && scanned && scanned.found.name) vals.who = scanned.found.name; // the greeting names the second account
     const years = scanned && scanned.years;
@@ -8643,16 +8805,37 @@ var siteLock = (function () {
     e.preventDefault(); // otherwise the browser opens the image in place of the app
     const ok = !otherSheetOpen();
     e.dataTransfer.dropEffect = ok ? 'copy' : 'none';
-    $('#drop-hint').hidden = !ok || scanSheet.open || play.open;
+    $('#drop-hint').hidden = !ok || siteLocked() || scanSheet.open || play.open;
     clearTimeout(dropHintTimer);
     dropHintTimer = setTimeout(hideDropHint, 500);
   });
   addEventListener('dragleave', (e) => { if (e.clientX <= 0 || e.clientY <= 0 || e.clientX >= innerWidth || e.clientY >= innerHeight) hideDropHint(); });
+  // While the site password is showing, screenshots dropped or pasted wait, and open together once it's given.
+  let waitingShots = null;
+  const scanOnceUnlocked = (list) => {
+    const first = !waitingShots;
+    waitingShots = [...(waitingShots || []), ...[...list].filter((f) => /^image\//.test(f.type))];
+    $('#gate-msg').textContent = waitingShots.length > 1 ? `Your ${waitingShots.length} screenshots will open once you’re in.` : 'Your screenshot will open once you’re in.';
+    if (!first) return;
+    siteUnlocked().then(() => {
+      const shots = waitingShots;
+      waitingShots = null;
+      if (otherSheetOpen()) return;
+      pickHint = null;
+      replacePick = false;
+      scanFiles(shots);
+    });
+  };
   addEventListener('drop', (e) => {
     if (!draggingFiles(e)) return;
     e.preventDefault();
     hideDropHint();
     if (otherSheetOpen()) return;
+    if (siteLocked()) {
+      if (imageIn(e.dataTransfer.files)) scanOnceUnlocked(e.dataTransfer.files);
+      else $('#gate-msg').textContent = 'That isn’t a picture — drop a screenshot (PNG or JPG)';
+      return;
+    }
     pickHint = null;
     replacePick = false;
     if (!scanFiles(e.dataTransfer.files)) showToast('That isn’t a picture — drop a screenshot (PNG or JPG)');
@@ -8661,6 +8844,7 @@ var siteLock = (function () {
     const files = e.clipboardData && e.clipboardData.files;
     if (!imageIn(files) || otherSheetOpen()) return;
     e.preventDefault();
+    if (siteLocked()) { scanOnceUnlocked(files); return; }
     pickHint = null;
     replacePick = false;
     scanFiles(files);
@@ -8679,6 +8863,7 @@ var siteLock = (function () {
   // Typing a value or choosing a level means using it: its row's box ticks (unticking a box by hand still works).
   for (const type of ['input', 'change']) {
     $('#scan-result').addEventListener(type, (e) => {
+      if (e.target.matches('.scan-control input')) e.target.removeAttribute('aria-invalid');
       const row = e.target.closest('.scan-field');
       const box = row && row.querySelector('input[type="checkbox"]');
       if (box && box !== e.target) box.checked = true;
@@ -8705,6 +8890,7 @@ var siteLock = (function () {
     if (medallion && !medallion.unit) rows.push(quickRow(medallion, 'mqd', `MQDs ${mqdYear()}`, 'MQDs', state.mqd, state.updated.mqd));
     $('#quick-list').replaceChildren(...rows);
     quickSheet.showModal();
+    quickSheet._snap = formSnap(quickSheet);
     const first = $('#quick-list input');
     if (first) { first.focus(); first.select(); }
   }
@@ -8717,7 +8903,8 @@ var siteLock = (function () {
   }
   $('#quick-btn').addEventListener('click', openQuick);
   $('#quick-cancel').addEventListener('click', () => quickSheet.close());
-  quickSheet.addEventListener('click', (e) => { if (backdropTap(e, quickSheet)) quickSheet.close(); });
+  guardEdits(quickSheet); // a backdrop tap or Escape doesn't throw away what you typed
+  quickSheet.addEventListener('input', (e) => { if (e.target.matches('.quick-input')) e.target.removeAttribute('aria-invalid'); });
   quickSheet.addEventListener('focusin', (e) => { if (e.target.matches('.quick-input')) e.target.select(); });
   quickSheet.addEventListener('keydown', (e) => { // Enter moves down the list; Save on the last one
     if (e.key !== 'Enter' || !e.target.matches('.quick-input')) return;
@@ -8727,17 +8914,29 @@ var siteLock = (function () {
   });
   $('#quick-form').addEventListener('submit', (e) => {
     e.preventDefault();
+    // A number that can't be read ("212,50", a missed zero) keeps the sheet open on it, and nothing is saved yet.
+    const rows = [...quickSheet.querySelectorAll('[data-quick]')];
+    const bad = rows.filter((input) => !parseEntry(input.value, input.dataset.quick === 'mqd'));
+    for (const input of rows) {
+      if (bad.includes(input)) input.setAttribute('aria-invalid', 'true');
+      else input.removeAttribute('aria-invalid');
+    }
+    if (bad.length) {
+      const name = (bad[0].getAttribute('aria-label') || '').replace(/ \S+$/, '');
+      showToast(bad.length > 1 ? `Couldn’t read ${bad.length} of the numbers. Type whole numbers, then tap Save.`
+        : `Couldn’t read “${bad[0].value.trim()}”${name ? ` for ${name}` : ''}. Type the whole number, then tap Save.`);
+      bad[0].focus();
+      return;
+    }
     // A new qualifying year began while the sheet was open: roll over before reading any row. An MQD row filled
     // in last year holds last year's count (now kept as a status), so it's left out rather than counted again.
     const rolled = rollOver();
     let changed = 0;
-    let unreadable = 0;
     let stale = 0; // an MQD count typed into last year's row
     const balancesBefore = { ...state.balances };
-    for (const input of quickSheet.querySelectorAll('[data-quick]')) {
+    for (const input of rows) {
       const field = input.dataset.quick;
-      const parsed = parseEntry(input.value);
-      if (!parsed) { unreadable++; continue; } // not a number: leave it as it was, and say so
+      const parsed = parseEntry(input.value, field === 'mqd');
       if (field === 'mqd' && quickYear !== mqdYear()) {
         if ((parsed.value ?? 0) !== quickMqd) stale++; // changed, so say it wasn't saved
         continue;
@@ -8751,9 +8950,8 @@ var siteLock = (function () {
     quickSheet.close();
     if (rolled) renderAll(); // kept statuses and this year's counts
     const said = rolled && rolled.length; // the roll-over's message about kept levels stays up
-    if (unreadable) showToast(`Couldn’t read ${plural(unreadable, 'number')}, so ${unreadable === 1 ? 'it was' : 'they were'} left as before`);
     if (stale) showToast('New qualifying year: counts start over, so that number wasn’t saved');
-    if (!changed) { if (!unreadable && !said && !stale) showToast('No changes'); return; }
+    if (!changed) { if (!said && !stale) showToast('No changes'); return; }
     saveNow();
     renderPrograms();
     renderUpcoming();
@@ -9132,7 +9330,8 @@ var siteLock = (function () {
   let sheetId = null; // program being edited; null when adding
 
   function statusEditorRow(line, p) {
-    return h('div', { class: 'sl', 'data-card': line.card || null, 'data-cleared': line.exp === '' ? 'yes' : null }, // you cleared its "thru" date
+    return h('div', { class: 'sl', 'data-card': line.card || null, 'data-typed': line.card && line.typed ? 'yes' : null, // you typed it before the card linked it
+      'data-cleared': line.exp === '' ? 'yes' : null }, // you cleared its "thru" date
       h('input', { type: 'text', class: 'sl-tier', maxlength: '120', placeholder: 'Gold', 'aria-label': 'Status level', value: p ? shownTier(p, line.tier, line.exp) : line.tier }),
       h('input', { type: 'text', class: 'sl-via', maxlength: '120', placeholder: 'e.g. a card', 'aria-label': 'Where the status comes from (optional)', value: line.via }),
       h('button', { type: 'button', class: 'icon-btn sl-del', 'aria-label': 'Remove this status' }, svgIcon(ICON.x)),
@@ -9159,11 +9358,13 @@ var siteLock = (function () {
     $('#p-delete').hidden = !id;
     syncMedallionToggle();
     sheet.showModal();
+    sheet._snap = formSnap(sheet); // what it opened with, so a backdrop tap knows if anything was changed
     if (!id) $('#p-name').focus();
   }
 
   function newProgramId(name) {
     const taken = new Set(state.programs.map((p) => p.id));
+    if (undoAction && undoAction.holdsId) taken.add(undoAction.holdsId); // a removed program whose Undo is still up
     const match = catalogByName(name);
     if (match && !taken.has(match.id)) return match.id;
     let id;
@@ -9202,7 +9403,10 @@ var siteLock = (function () {
     const status = [...$('#p-status').querySelectorAll('.sl')]
       .map((row) => {
         const line = { tier: row.querySelector('.sl-tier').value.trim(), via: row.querySelector('.sl-via').value.trim() };
-        if (row.dataset.card && cardGives(row.dataset.card, line)) line.card = row.dataset.card; // reworded: yours now
+        if (row.dataset.card && cardGives(row.dataset.card, line)) { // reworded: yours now
+          line.card = row.dataset.card;
+          if (row.dataset.typed) line.typed = true; // you typed it first: removing the card still leaves it
+        }
         const date = row.querySelector('.sl-date');
         const via = row.querySelector('.sl-via');
         const fromText = thruDate(line.via);
@@ -9265,7 +9469,10 @@ var siteLock = (function () {
     sheet.close();
     scheduleSave();
     renderPrograms();
-    showToast(`Removed “${removed.name}”`, () => {
+    const undoDelete = () => {
+      // Added again since another way (a card, a screenshot) under the same id: this one comes back as its own row.
+      const id = state.programs.some((p) => p.id === removed.id) ? newProgramId(removed.name) : removed.id;
+      removed.id = id;
       state.programs.splice(Math.min(index, state.programs.length), 0, removed);
       if (saved.balance != null) state.balances[id] = saved.balance;
       if (saved.member) state.members[id] = saved.member;
@@ -9281,11 +9488,13 @@ var siteLock = (function () {
       if (saved.cpp != null) state.cpp[id] = saved.cpp;
       scheduleSave();
       renderPrograms();
-    });
+    };
+    undoDelete.holdsId = id; // comes back on Undo: a program added meanwhile gets another id (newProgramId)
+    showToast(`Removed “${removed.name}”`, undoDelete);
   });
 
   $('#p-cancel').addEventListener('click', () => sheet.close());
-  sheet.addEventListener('click', (e) => { if (backdropTap(e, sheet)) sheet.close(); }); // tap on the backdrop
+  guardEdits(sheet); // a tap on the backdrop or Escape closes it, unless you've changed something
 
   /* ---------- Program detail sheet: perks, member number, every level ---------- */
 
@@ -9294,7 +9503,7 @@ var siteLock = (function () {
   let memberShown = false;
   let expEditing = null; // index of the status whose expiration date is being edited
 
-  const detailProgram = () => state.programs.find((p) => p.id === detailId);
+  const detailProgram = () => (state.programs || []).find((p) => p.id === detailId); // none: another window started over
   const maskNumber = (n) => (n.length <= 4 ? n : `•••• ${n.slice(-4)}`);
   const spaceNumber = (n) => n.replace(/\s+/g, '').replace(/(.{4})(?=.)/g, '$1 ');
 
@@ -9311,6 +9520,7 @@ var siteLock = (function () {
   function openDetail(id) {
     const p = state.programs.find((x) => x.id === id);
     if (!p) return;
+    if (detail.open) keepTyped(); // going to another program from this sheet
     detailId = id;
     memberShown = false;
     expEditing = null;
@@ -9356,12 +9566,14 @@ var siteLock = (function () {
   function expiryVerdict(p) {
     const info = pointsExpiry(p);
     const reset = info.rule.earnOnly ? 'earn any amount' : 'earn or redeem any amount';
+    // An elite status that ends holds the clock until then; say so, so the date makes sense.
+    const kept = info.shieldEnd ? `Your elite status ${daysUntil(info.shieldEnd) < 0 ? 'kept' : 'keeps'} them safe through ${dateFmt.format(info.shieldEnd)}. ` : '';
     const text = info.empty ? ['exp-text', 'Nothing to expire at a zero balance.']
       : !info.date ? ['exp-text', 'Add your last activity date for a reminder before they expire.']
       : info.days < 0 ? ['exp-text danger', `Expired ${dateFmt.format(info.date)} — contact the program; some reinstate points.`]
         : info.days <= STATUS_SOON_DAYS ? ['exp-text warn', `Expire ${dateFmt.format(info.date)} · ${plural(info.days, 'day')} left — ${reset} to reset the clock`]
           : ['exp-text', `Safe until ${dateFmt.format(info.date)} · ${plural(info.days, 'day')} left`];
-    return h('span', { class: text[0], id: 'd-expiry-verdict', 'aria-live': 'polite' }, text[1]);
+    return h('span', { class: text[0], id: 'd-expiry-verdict', 'aria-live': 'polite' }, `${kept}${text[1]}`);
   }
 
   // A small line of the balance over time, with the change since the first entry ("+12,000 since Mar 2").
@@ -9449,7 +9661,7 @@ var siteLock = (function () {
     }
     const balance = state.balances[p.id] || 0;
     const left = Math.max(goal.target - balance, 0);
-    const pct = Math.min(100, Math.round((balance / goal.target) * 100));
+    const pct = goalPct(balance, goal.target);
     const change = h('button', { type: 'button', class: 'link' }, 'Change');
     const remove = h('button', { type: 'button', class: 'link' }, 'Remove');
     change.addEventListener('click', () => renderGoal(p, true));
@@ -9512,12 +9724,16 @@ var siteLock = (function () {
     return [a, b];
   }
 
+  // How far a balance is toward its goal, in whole percent: 100 only once it covers the goal, so 109,500 of 110,000
+  // is 99%, not a rounded-up 100.
+  const goalPct = (balance, target) => (balance >= target ? 100 : Math.min(99, Math.floor((balance / target) * 100)));
   // On a program's row: "ANA First: 75%" with a thin bar.
   function goalMini(p) {
     const goal = p.unit && state.goals[p.id];
     if (!goal) return null;
-    const pct = Math.min(100, Math.round(((state.balances[p.id] || 0) / goal.target) * 100));
-    return h('div', { class: 'goal-mini' }, h('span', null, `${goal.label || 'Goal'}: ${pct >= 100 ? 'reached' : `${pct}%`}`),
+    const balance = state.balances[p.id] || 0;
+    const pct = goalPct(balance, goal.target);
+    return h('div', { class: 'goal-mini' }, h('span', null, `${goal.label || 'Goal'}: ${balance >= goal.target ? 'reached' : `${pct}%`}`),
       h('div', { class: 'mini-bar', 'aria-hidden': 'true' }, h('i', { style: `width:${pct}%` })));
   }
 
@@ -9706,6 +9922,7 @@ var siteLock = (function () {
         'aria-label': `${nameOf(p)} member number`,
       });
       input.value = number;
+      input.dataset.was = number; // what it opened with: closing the sheet saves only what you changed here
       $('#d-member').replaceChildren(label, h('div', { class: 'member-edit' },
         input,
         h('button', { type: 'button', class: 'add sm', id: 'd-member-save' }, 'Save'),
@@ -9754,6 +9971,7 @@ var siteLock = (function () {
     if (expEditing === index) {
       const input = h('input', { type: 'date', class: 'exp-input', id: 'd-exp-input', 'aria-label': 'Status expiration date' });
       input.value = group.exp || '';
+      input.dataset.was = group.exp || ''; // what it opened with: closing the sheet keeps only a date you changed
       return h('div', { class: 'exp-row editing' },
         input,
         h('button', { type: 'button', class: 'add sm', 'data-exp-save': String(index) }, 'Save'),
@@ -9887,7 +10105,7 @@ var siteLock = (function () {
   }
 
   detail.addEventListener('click', (e) => {
-    if (backdropTap(e, detail)) { detail.close(); return; } // tap on the backdrop
+    if (backdropTap(e, detail)) { closeDetail(); return; } // tap on the backdrop
     const restore = e.target.closest('[data-restore]');
     if (restore) {
       const p = detailProgram();
@@ -9934,8 +10152,8 @@ var siteLock = (function () {
       return;
     }
     switch (btn.id) {
-      case 'd-done': detail.close(); break;
-      case 'd-edit': detail.close(); openSheet(p.id); break;
+      case 'd-done': closeDetail(); break;
+      case 'd-edit': closeDetail(); openSheet(p.id); break;
       case 'd-member-save': saveMember(); break;
       case 'd-member-cancel': renderMember(p, false); break;
       case 'd-member-edit': renderMember(p, true); break;
@@ -9983,11 +10201,52 @@ var siteLock = (function () {
       e.preventDefault();
       saveMember();
     }
+    // Escape while changing the member number or an end date cancels just that edit (the sheet stays open), and
+    // puts you back on its button. With no number saved yet the box is all there is: Escape empties what you typed
+    // there, and once it's empty Escape closes the sheet.
+    if (e.key === 'Escape' && e.target.id === 'd-member-input' && state.members[detailId]) {
+      e.preventDefault(); // stops the sheet's own Escape closing it
+      renderMemberNow(detailProgram(), false);
+      $('#d-member-edit').focus();
+    } else if (e.key === 'Escape' && e.target.id === 'd-member-input' && e.target.value !== (e.target.dataset.was || '')) {
+      e.preventDefault();
+      e.target.value = e.target.dataset.was || '';
+    }
+    if (e.key === 'Escape' && e.target.id === 'd-exp-input') {
+      e.preventDefault();
+      const index = expEditing;
+      expEditing = null;
+      renderDetailStatus(detailProgram()); // same as its Cancel
+      const back = $(`[data-exp-edit="${index}"]`);
+      if (back) back.focus();
+    }
     if (e.key === 'Enter' && e.target.id === 'd-exp-input') {
       e.preventDefault();
       setStatusExp(detailProgram(), expEditing, e.target.value);
     }
   });
+
+  // Done, a backdrop tap, Escape or another program keep a member number or end date you typed but didn't Save,
+  // like every other field in this sheet. An emptied box or date is left alone: only Save on an empty box or Clear
+  // removes a saved one. A box left as it opened changes nothing, so a number saved in another window stays.
+  function keepTyped() {
+    const p = detailProgram();
+    if (!p) return;
+    const member = $('#d-member-input');
+    const typed = member ? member.value.trim().slice(0, 40) : '';
+    if (typed && typed !== (member.dataset.was || '') && typed !== (state.members[p.id] || '')) saveMember();
+    const date = $('#d-exp-input');
+    if (date && expEditing != null && parseISODate(date.value) && date.value !== (date.dataset.was || '')) setStatusExp(p, expEditing, date.value);
+  }
+  // Another tracker is about to be shown (another person, a backup or link, or another window started over): what
+  // was typed here belongs to the one being left, so closing the sheet mustn't save it into the new one.
+  function dropTyped() {
+    const member = $('#d-member-input');
+    if (member) member.value = member.dataset.was || '';
+    expEditing = null;
+  }
+  function closeDetail() { keepTyped(); detail.close(); }
+  detail.addEventListener('close', keepTyped); // Escape (the rest already kept it, so this finds nothing new)
 
   /* ---------- "Your perks": every benefit you hold, grouped by what you'd look for ---------- */
 
@@ -10472,6 +10731,9 @@ var siteLock = (function () {
     ? [...new Set(card.grants.map(([id]) => PERK_SHORT[id] || CATALOG_BY_ID[id].name.split(' ')[0]))].join(' · ')
     : 'No elite status');
 
+  // A line under an issuer's name in the card picker, for something true of all its cards.
+  const CARD_ISSUER_NOTES = { Bilt: 'The 4% Bilt Cash option is only for Bilt cards opened by Dec 31, 2026.' };
+
   function cardPicker(selected) {
     const groups = [];
     for (const card of CARDS) {
@@ -10481,6 +10743,7 @@ var siteLock = (function () {
     }
     return groups.map((g) => h('div', { class: 'cat-group', role: 'group', 'aria-label': g.issuer },
       h('h3', { class: 'cat-title' }, g.issuer),
+      CARD_ISSUER_NOTES[g.issuer] ? h('p', { class: 'fine cc-issuer-note' }, CARD_ISSUER_NOTES[g.issuer]) : null,
       h('div', { class: 'cards-grid' }, g.cards.map((c) => h('button', {
         type: 'button',
         class: `cc tone-${c.tone}`,
@@ -10820,7 +11083,7 @@ var siteLock = (function () {
     } else if (key === 'by') {
       b.by = parseISODate(input.value) ? input.value : '';
     } else {
-      const parsed = parseEntry(key === 'points' ? input.value : input.value.replace(/\.\d*$/, '')); // whole dollars
+      const parsed = parseEntry(key === 'points' ? input.value : input.value.replace(/\.\d*$/, ''), key !== 'points'); // whole dollars
       if (!parsed) return; // no digits: leave it as it was
       b[key] = parsed.value ?? 0;
     }
@@ -10928,12 +11191,12 @@ var siteLock = (function () {
     return bonusLeft(b) ? `${money(bonusLeft(b))} left for bonus` : 'bonus open';
   }
 
-  // The bonus posted: a "Bonus earned" banner with confetti, the "Bonus banked" badge the first time, and Undo.
+  // The bonus posted: a "Bonus earned" banner with confetti, the "Bonus banked" badge the first time, and Undo. Undo
+  // takes back just that (the date, the badge and its XP), so anything changed while its toast is up stays.
   function markBonusEarned(cardId) {
     const b = bonuses()[cardId];
     const card = CARD_BY_ID[cardId];
     if (!b || !card || b.landed || !bonusFilled(b) || !state.cards.includes(cardId)) return;
-    const previous = clone(state);
     const who = people.active;
     b.landed = todayISO(); // spent so far stays as typed, so "Not earned yet" brings back the real amount left
     const g = game();
@@ -10950,14 +11213,57 @@ var siteLock = (function () {
     focusBonus(cardId);
     queueAchievements({ levelUp: after.index > before.index ? after : null,
       unlocked: [{ kind: 'Bonus earned', name: b.points ? `${card.name} · ${fmt(b.points)} ${bonusUnit(b)}` : card.name, color: '#15803D' }, ...unlocked] });
+    const badgeIds = unlocked.map((x) => x.id);
+    const xpGained = unlocked.length * BADGE_XP;
     showToast(`${card.name} bonus marked earned${unlocked.length ? ` · +${BADGE_XP} XP` : ''}`, () => {
       if (who !== people.active) return;
-      Object.assign(state, previous);
+      const now = bonuses()[cardId];
+      if (now) now.landed = ''; // as "Not earned yet" does: spent so far stays as typed
+      const g2 = game();
+      for (const id of badgeIds) delete g2.badges[id];
+      g2.xp = Math.max(0, g2.xp - xpGained);
+      markChanged();
       saveNow();
       renderAll();
       if (cardsSheet.open) renderRenewals();
       focusBonus(cardId);
     });
+    if (cardId === 'bilt-palladium') offerBiltGold(who);
+  }
+
+  // Palladium's welcome offer comes with Bilt Gold (for the rest of this year and next). Once the "bonus marked earned"
+  // toast and its Undo are gone, offer to add it, unless Bilt Rewards already shows Gold or higher. It isn't added on
+  // its own: the bonus may have been marked earned by mistake, or the status may already be under another name.
+  // One offer waits at a time: marking it earned again (after an Undo) starts over rather than adding a second.
+  let biltGoldTimer = 0;
+  function offerBiltGold(who) {
+    clearTimeout(biltGoldTimer);
+    const hasGold = () => {
+      const p = state.programs && findProgram(state, 'bilt');
+      const tiers = p && benefitsFor(p);
+      return !!(p && tiers && p.status.some((l) => findTier(tiers, l.tier) >= 1 && !lineExpired(l)));
+    };
+    const offer = () => {
+      if ($('#toast').classList.contains('show')) { biltGoldTimer = setTimeout(offer, 1000); return; } // wait out the Undo (10 s or more)
+      const b = bonuses()['bilt-palladium'];
+      if (who !== people.active || !state.programs || !b || !b.landed || !state.cards.includes('bilt-palladium') || hasGold()) return;
+      showToast('Add Bilt Gold from your Palladium bonus?', () => {
+        if (who !== people.active || hasGold()) return;
+        let p = findProgram(state, 'bilt');
+        if (!p) {
+          p = programFromCatalog(CATALOG_BY_ID.bilt);
+          const at = state.programs.findIndex((x) => catalogRank(x) !== Infinity && catalogRank(x) > catalogRank(p));
+          if (at < 0) state.programs.push(p); else state.programs.splice(at, 0, p);
+        }
+        const through = parseISODate(b.landed).getFullYear() + 1;
+        p.status.push({ tier: 'Gold', via: 'Bilt Palladium welcome offer', exp: `${through}-12-31` });
+        markChanged();
+        saveNow();
+        renderAll();
+        showToast(`Added Bilt Gold to Bilt Rewards, good through Dec 31, ${through}`);
+      }, 'Add', 10000);
+    };
+    offer();
   }
 
   // A balance that just jumped by about an open bonus's size: offer to mark it earned. It waits out any toast already
@@ -11112,6 +11418,23 @@ var siteLock = (function () {
     renderStats();
   }
 
+  // Coming up (far above) changes height when a voucher inside its window comes or goes. Safari doesn't hold your
+  // place, so the Vouchers heading is put back where it was on screen, and once more on the next frame. Only when the
+  // top of Coming up (where it shows up, if it has no rows yet) is above the screen, though, so the change happens out
+  // of sight: on a wide screen Coming up sits right above the vouchers, and at the top of the page you see it change
+  // there. Scrolling then would move the whole page, the header and programs too.
+  function holdVouchers(render) {
+    const head = $('#h-vouchers');
+    const top = head.getBoundingClientRect().top;
+    const up = $('#upcoming');
+    const outOfSight = (up.hidden ? $('.side-top').getBoundingClientRect().bottom : up.getBoundingClientRect().top) < 0;
+    render();
+    if (top > innerHeight || !outOfSight) return; // you can see what changed: leave the page be
+    const settle = () => { const shift = head.getBoundingClientRect().top - top; if (Math.abs(shift) > 1) scrollBy(0, shift); };
+    settle();
+    requestAnimationFrame(settle);
+  }
+
   $('#vform').addEventListener('submit', (e) => {
     e.preventDefault();
     const nameEl = $('#vname');
@@ -11124,11 +11447,14 @@ var siteLock = (function () {
     state.vouchers.push(voucher);
     sortVouchers();
     scheduleSave();
-    renderVouchers(voucher);
+    holdVouchers(() => renderVouchers(voucher));
     e.target.reset();
-    // Keep the keyboard flow on desktop; don't pop the on-screen keyboard back up on phones.
-    if (matchMedia('(pointer: fine)').matches) nameEl.focus();
-    else document.activeElement.blur();
+    // Keep the keyboard flow on desktop; don't pop the on-screen keyboard back up on phones. Plain focus() would scroll
+    // the field to the middle of the screen if Coming up growing pushed it below; bring it up only as far as needed.
+    if (matchMedia('(pointer: fine)').matches) {
+      nameEl.focus({ preventScroll: true });
+      nameEl.scrollIntoView({ block: 'nearest' });
+    } else document.activeElement.blur();
   });
 
   $('#vlist').addEventListener('click', (e) => {
@@ -11138,16 +11464,16 @@ var siteLock = (function () {
     const [removed] = state.vouchers.splice(index, 1);
     if (!removed) return;
     scheduleSave();
-    renderVouchers();
+    holdVouchers(() => renderVouchers());
 
     const remaining = document.querySelectorAll('.v-del');
-    (remaining[Math.min(index, remaining.length - 1)] || $('#vempty')).focus();
+    (remaining[Math.min(index, remaining.length - 1)] || $('#vempty')).focus({ preventScroll: true });
 
     showToast(`Deleted “${removed.name}”`, () => {
       state.vouchers.splice(Math.min(index, state.vouchers.length), 0, removed);
       sortVouchers();
       scheduleSave();
-      renderVouchers(removed);
+      holdVouchers(() => renderVouchers(removed));
     });
   });
 
@@ -11297,8 +11623,9 @@ var siteLock = (function () {
   });
 
   async function backUp() {
+    if (staleCopy) { warnStaleExport('back up'); return; } // it would pass on only what this older copy understands
     const today = todayISO();
-    const json = JSON.stringify({ app: 'points-status-tracker', exportedAt: new Date().toISOString(), data: { ...state, backedUp: today, changed: '' } }, null, 2);
+    const json = JSON.stringify({ app: 'points-status-tracker', exportedAt: new Date().toISOString(), data: { ...state, dataV: DATA_V, backedUp: today, changed: '' } }, null, 2);
     if (!(await saveFile(`points-status-backup-${fileTag()}${today}.json`, json, 'application/json'))) return; // share sheet dismissed
     state.backedUp = today;
     state.changed = ''; // everything so far is in the file
@@ -11332,7 +11659,9 @@ var siteLock = (function () {
     let next = null;
     try {
       const parsed = JSON.parse(await file.text());
-      next = normalize(parsed && parsed.data && typeof parsed.data === 'object' ? parsed.data : parsed);
+      const raw = parsed && parsed.data && typeof parsed.data === 'object' ? parsed.data : parsed;
+      if (tooNew(raw)) { showToast('That backup is from a newer version. Reload, then restore it again', reloadForUpdate, 'Reload', 15000); return; }
+      next = normalize(raw);
     } catch (err) { /* not JSON */ }
     if (!next) {
       showToast('That file isn’t a Points & Status backup');
@@ -11343,8 +11672,10 @@ var siteLock = (function () {
 
   // Swaps in another tracker for whoever is showing, with Undo.
   function replaceTracker(next, message) {
+    if (staleCopy) { warnStaleCopy(); return; } // it couldn't be saved
     const previous = clone(state);
     stopScanning();
+    dropTyped();
     Object.assign(state, next);
     forgetCreditParts();
     resetCreditsView();
@@ -11364,12 +11695,13 @@ var siteLock = (function () {
       return;
     }
     saveNow();
-    showToast(message, () => {
+    // It puts the whole tracker back, so a later change hides it (scheduleSave, or a save in another window).
+    showToast(message, Object.assign(() => {
       Object.assign(state, previous);
       forgetCreditParts();
       saveNow();
       renderAll();
-    });
+    }, { snapshot: true }));
   }
 
   /* ---------- Send to another device: the tracker travels in the link's #fragment, never to a server ---------- */
@@ -11402,7 +11734,7 @@ var siteLock = (function () {
 
   // "z…" = deflate-compressed JSON (most browsers), "j…" = plain JSON where compression isn't available.
   async function trackerLink() {
-    const payload = { app: 'points-status-tracker', v: 1, name: activePerson().name, data: state };
+    const payload = { app: 'points-status-tracker', v: 1, name: activePerson().name, data: { ...state, dataV: DATA_V } };
     const bytes = new TextEncoder().encode(JSON.stringify(payload));
     let packed = `j${toB64url(bytes)}`;
     try { packed = `z${toB64url(await pipeBytes(bytes, new CompressionStream('deflate-raw')))}`; } catch (err) { /* older browser: plain link */ }
@@ -11414,6 +11746,7 @@ var siteLock = (function () {
     if (bytes.length > LINK_MAX_BYTES) throw new Error('link too large');
     const json = packed[0] === 'z' ? await inflateCapped(bytes) : bytes;
     const payload = JSON.parse(new TextDecoder().decode(json));
+    if (payload && payload.app === 'points-status-tracker' && tooNew(payload.data)) return { tooNew: true };
     const data = payload && payload.app === 'points-status-tracker' ? normalize(payload.data) : null;
     return data && data.programs ? { data, name: str(payload.name, 30) } : null;
   }
@@ -11422,6 +11755,7 @@ var siteLock = (function () {
   let sendUrl = '';
   $('#send-btn').addEventListener('click', async () => {
     if (!state.programs) { showToast('Set up your tracker first'); return; }
+    if (staleCopy) { warnStaleExport('send the link'); return; } // the link would carry a cut-down copy
     sendUrl = '';
     $('#send-copy').disabled = true;
     $('#send-share').disabled = true;
@@ -11463,12 +11797,26 @@ var siteLock = (function () {
   let received = null;
   // Some browsers have DecompressionStream but not the 'deflate-raw' format links use (Chromium before 103).
   const canInflate = () => { try { new DecompressionStream('deflate-raw'); return true; } catch (err) { return false; } };
+  // While the site password is showing, nothing behind it opens: a sheet there would be hidden yet block the box.
+  const siteLocked = () => document.documentElement.classList.contains('site-locked');
+  const siteUnlocked = () => new Promise((ok) => {
+    if (!siteLocked()) return ok();
+    const watch = new MutationObserver(() => { if (!siteLocked()) { watch.disconnect(); ok(); } });
+    watch.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+  });
   async function receiveFromLink() {
     const match = /^#import=([zj][A-Za-z0-9_-]+)$/.exec(location.hash);
     if (!match) return;
-    history.replaceState(null, '', location.pathname + location.search); // a reload won't ask again
-    if (match[1][0] === 'z' && !canInflate()) { showToast('This browser is too old to open that link — update it, or use a backup file'); return; }
+    await siteUnlocked(); // the link waits for the password (a reload before then still has it)
+    const forget = () => history.replaceState(null, '', location.pathname + location.search); // a reload won't ask again
+    if (match[1][0] === 'z' && !canInflate()) { forget(); showToast('This browser is too old to open that link — update it, or use a backup file'); return; }
     try { received = await readTrackerLink(match[1]); } catch (err) { received = null; }
+    if (received && received.tooNew) { // the link stays in the address bar, so the updated app opens it after Reload
+      received = null;
+      showToast('That link is from a newer version. Reload to open it', reloadForUpdate, 'Reload', 15000);
+      return;
+    }
+    forget();
     if (!received) { showToast('That link couldn’t be read — it may have been cut off'); return; }
     if (people.list.length === 1 && !state.programs) {
       replaceTracker(received.data, 'Tracker copied to this device');
@@ -11498,7 +11846,7 @@ var siteLock = (function () {
     const taken = new Set(people.list.map((person) => person.id));
     let id;
     do { id = `u${Math.random().toString(36).slice(2, 8)}`; } while (taken.has(id));
-    try { localStorage.setItem(storageKey(id), JSON.stringify(received.data)); } catch (err) { showToast('Not enough storage on this device'); return; }
+    try { localStorage.setItem(storageKey(id), JSON.stringify({ ...received.data, dataV: DATA_V })); } catch (err) { showToast('Not enough storage on this device'); return; }
     people.list.push({ id, name: received.name || 'Imported' });
     received = null;
     switchPerson(id);
@@ -11511,6 +11859,8 @@ var siteLock = (function () {
   let toastTimer = 0;
   let undoAction = null;
   let heldNote = null; // see showNote()
+  let updateReady = false; // the service worker has saved a newer copy: Reload is offered until it's used
+  let updateCovered = false; // another toast went over the Reload offer: it comes back when that one goes
 
   // Open sheets sit in the browser's top layer, so toasts and confetti go inside the open one to stay visible.
   function topLayer() {
@@ -11519,6 +11869,10 @@ var siteLock = (function () {
 
   // `onUndo` adds a button (labeled `actionLabel`, "Undo" by default); `ms` is how long the toast stays up.
   function showToast(message, onUndo, actionLabel = 'Undo', ms = 5000) {
+    // Only the new-version offer comes back once covered (not the Reload toasts about data from a newer version).
+    const offer = onUndo === reloadForUpdate && message === UPDATE_NOTE;
+    if (updateShowing() && !offer) updateCovered = true;
+    if (offer) updateCovered = false;
     const host = topLayer();
     if ($('#toast').parentNode !== host) host.append($('#toast'));
     $('#toast-msg').textContent = message;
@@ -11557,13 +11911,15 @@ var siteLock = (function () {
     const note = heldNote;
     heldNote = null;
     if (note) showToast(note);
+    else if (updateCovered) offerUpdate();
   }
 
   // The toast for a tracker that's been replaced: it goes, unless its button isn't that tracker's. Undo for
   // removed people (their trackers are already out of storage, so it's their only way back) and Reload for a new
-  // version stay.
+  // version stay (but not the Reload that warnStaleCopy offers: it's about that tracker).
   function hideTrackerToast() {
-    if (undoAction !== undoRemovals && undoAction !== reloadForUpdate) hideToast();
+    const staleWarning = undoAction === reloadForUpdate && $('#toast-msg').textContent === STALE_NOTE;
+    if (staleWarning || (undoAction !== undoRemovals && undoAction !== reloadForUpdate)) hideToast();
   }
 
   // A plain note (no button) that waits for those two to go rather than cover them; the newest note waits.
@@ -11576,6 +11932,20 @@ var siteLock = (function () {
   function reloadForUpdate() {
     if (saveTimer) saveNow();
     location.reload();
+  }
+  const UPDATE_NOTE = 'A new version is ready';
+  const offerUpdate = () => showToast(UPDATE_NOTE, reloadForUpdate, 'Reload', 15000);
+  const updateShowing = () => undoAction === reloadForUpdate && $('#toast-msg').textContent === UPDATE_NOTE;
+
+  // This copy of the app is older than the one that last saved this tracker (staleCopy): say so, with Reload.
+  // It shows again on each edit, and that edit is dropped (Reload loads what the newer version saved): say so.
+  const STALE_NOTE = 'Changes here can’t be saved. Reload to get the newer version';
+  function warnStaleCopy() {
+    showToast(STALE_NOTE, reloadForUpdate, 'Reload', 15000);
+  }
+  // A backup or link from here would leave out what the newer version added, so those wait for Reload.
+  function warnStaleExport(what) {
+    showToast(`Reload to get the newest version first, then ${what}`, reloadForUpdate, 'Reload', 15000);
   }
 
   // A closed sheet is hidden along with everything in it: a toast still inside (and its Undo or Reload) moves to
@@ -11673,6 +12043,7 @@ var siteLock = (function () {
     people.active = id;
     savePeople();
     const next = load();
+    dropTyped();
     for (const key of Object.keys(state)) delete state[key];
     Object.assign(state, next);
     forgetCreditParts();
@@ -11688,7 +12059,8 @@ var siteLock = (function () {
     intro = true;
     const shown = renderSafely(rollOver); // if not, their saved tracker was set aside, and openFresh said so
     scrollTo(0, 0);
-    if (shown) showNote(state.programs ? `Showing ${whose(activePerson())} tracker` : `Let’s set up ${whose(activePerson())} tracker`);
+    if (shown && staleCopy) warnStaleCopy(); // saved by a newer version: say so now, not on the first edit
+    else if (shown) showNote(state.programs ? `Showing ${whose(activePerson())} tracker` : `Let’s set up ${whose(activePerson())} tracker`);
   }
 
   function saveRename(id) {
@@ -11698,6 +12070,12 @@ var siteLock = (function () {
     renaming = null;
     savePeople();
     renderPeople();
+    focusRename(id);
+  }
+  // Back on the person's pencil after a rename is saved or cancelled, so a keyboard or VoiceOver keeps its place.
+  function focusRename(id) {
+    const pencil = peopleSheet.querySelector(`[data-rename="${CSS.escape(id)}"]`);
+    if (pencil) pencil.focus();
   }
 
   $('#people-btn').addEventListener('click', openPeople);
@@ -11745,7 +12123,7 @@ var siteLock = (function () {
     const input = e.target.closest('[data-rename-input]');
     if (!input) return;
     if (e.key === 'Enter') { e.preventDefault(); saveRename(input.dataset.renameInput); }
-    else if (e.key === 'Escape') { e.preventDefault(); renaming = null; renderPeople(); }
+    else if (e.key === 'Escape') { e.preventDefault(); renaming = null; renderPeople(); focusRename(input.dataset.renameInput); }
   });
 
   /* ---------- Appearance ---------- */
@@ -11785,13 +12163,8 @@ var siteLock = (function () {
     const y = date.getFullYear();
     const m = date.getMonth();
     if (resets === 'card' && period === 'year' && state.renewals[cardId]) {
-      // The card year runs from one fee date to the day before the next; the fee date itself starts a new one.
-      const fee = parseISODate(state.renewals[cardId]);
-      const onYear = (year) => new Date(year, fee.getMonth(), Math.min(fee.getDate(), new Date(year, fee.getMonth() + 1, 0).getDate()));
-      let next = nextRenewal(state.renewals[cardId], date);
-      if (isoOf(next) === isoOf(date)) next = onYear(next.getFullYear() + 1);
-      const start = onYear(next.getFullYear() - 1);
-      const end = new Date(next.getFullYear(), next.getMonth(), next.getDate() - 1);
+      // The card year runs from one fee date to the day before the next (Autograph Journey: from the 1st after it).
+      const { start, end } = cardYearOf(cardId, state.renewals[cardId], date);
       return { key: `A${isoOf(start)}`, label: `card year to ${dateFmt.format(end)}`, start, end };
     }
     if (period === 'month') return { key: `${y}-${m + 1}`, label: MONTH_NAMES[m], start: new Date(y, m, 1), end: new Date(y, m + 1, 0) };
@@ -11814,10 +12187,88 @@ var siteLock = (function () {
     'sapphire-reserve:lyft': '2027-09-30', 'sapphire-reserve:stubhub': '2027-12-31',
     'sapphire-reserve:peloton': '2027-12-31', 'sapphire-reserve-business:google': '2027-12-31',
     'ihg-premier-select:airline': '2027-12-31', 'ihg-premier:airline': '2027-12-31', 'ihg-premier-business:airline': '2027-12-31',
-    'aadvantage-executive:grubhub': '2027-08-31' };
+    'aadvantage-executive:grubhub': '2027-08-31', 'bilt-palladium:bilt-cash': '2026-12-31' };
+  // Credits that started partway through (select hotels in 2026): no boxes before this day, so last year doesn't list them.
+  const CREDIT_FIRST_DAY = { 'sapphire-reserve:select-hotels': '2026-01-01', 'sapphire-reserve-business:select-hotels': '2026-01-01',
+    'bilt-palladium:bilt-cash': '2026-01-01' };
+  // Credits that last a set number of months from the day they post, not to the end of their period: Bilt Cash lasts
+  // to the end of the month it posted, a year on (so the $200 from Jan 1, 2026 is good through Jan 31, 2027, and the
+  // Anniversary Bilt Cash from a Mar 10 anniversary through Mar 31 the next year). For these, CREDIT_LAST_DAY is the
+  // last day one posts, and last period's can still be in use this one.
+  const CREDIT_USE_MONTHS = { 'bilt-palladium:bilt-cash': 12, 'bilt-palladium:anniversary-cash': 12 };
+
+  // Bilt Palladium's 2027 change, from your annual fee date: the first card anniversary on or after Jan 1, 2027 (the
+  // day the hotel credit ends and Anniversary Bilt Cash starts), and whether you kept 4% Bilt Cash, which keeps the
+  // hotel credit and makes it $200 Bilt Cash after each anniversary instead of $600 (Bilt's app has the final word on
+  // when it posts). With no fee date it's null: the hotel credit carries on and the notes ask for the date.
+  const BILT_SWITCH_CARD = 'bilt-palladium';
+  function biltSwitch(cardId) {
+    if (baseCardId(cardId) !== BILT_SWITCH_CARD || !state.renewals[cardId]) return null;
+    return { day: nextRenewal(state.renewals[cardId], new Date(2027, 0, 1)), keep4: !!(state.creditsKeep4 || {})[cardId] };
+  }
+  const dayBefore = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate() - 1);
+  // The last day a credit counts (or, for CREDIT_USE_MONTHS, the last day one posts) and the first, for this card.
+  function creditLastDay(cardId, id) {
+    const s = id === 'hotel' && biltSwitch(cardId);
+    return s && !s.keep4 ? isoOf(dayBefore(s.day)) : CREDIT_LAST_DAY[creditId(baseCardId(cardId), id)];
+  }
+  function creditFirstDay(cardId, id) {
+    if (baseCardId(cardId) === BILT_SWITCH_CARD && id === 'anniversary-cash') { const s = biltSwitch(cardId); return s ? isoOf(s.day) : '9999-12-31'; }
+    return CREDIT_FIRST_DAY[creditId(baseCardId(cardId), id)];
+  }
+  // Bilt Palladium's notes, in words for your own card: when the hotel credit ends, and what replaces it.
+  function biltCreditNote(cardId, id, note) {
+    const s = biltSwitch(cardId);
+    const on = s && dateFmt.format(s.day);
+    if (id === 'hotel') {
+      if (!s) return `${note}. At your first card anniversary in 2027 it becomes Bilt Cash, unless you kept 4% Bilt Cash: add your annual fee date to see when`;
+      return s.keep4 ? `${note}; it stays, since you kept 4% Bilt Cash` : `${note}; ends at your card anniversary (${on}), and any of it not used by then is lost. Opened this card in 2027? You get the $600 only, so stop tracking this one`;
+    }
+    if (id === 'bilt-cash') return s ? note : `${note}. From 2027 it posts after your card anniversary instead: add your annual fee date to track it`;
+    if (id === 'anniversary-cash' && s) {
+      return s.keep4 ? `$200 after each card anniversary from ${on}, since you kept 4% Bilt Cash (check the Bilt app for when it posts); each one is good to the end of that month a year later`
+        : `posts after each card anniversary from ${on}, in place of the hotel credit and the $200 Bilt Cash; each one is good to the end of that month a year later`;
+    }
+    return note;
+  }
+  // A period as a credit really has it, or null when the credit doesn't count in it: it can't start after the
+  // credit's last day or end before its first, and stops at that last day; a CREDIT_USE_MONTHS credit runs from the
+  // day it posts for its months instead.
+  function fitCreditPeriod(cardId, credit, p) {
+    const months = CREDIT_USE_MONTHS[creditId(baseCardId(cardId), credit.id)];
+    const last = creditLastDay(cardId, credit.id);
+    const first = creditFirstDay(cardId, credit.id);
+    if ((last && isoOf(p.start) > last) || (first && isoOf(months ? p.start : p.end) < first)) return null;
+    if (months) {
+      const end = new Date(p.start.getFullYear(), p.start.getMonth() + months + 1, 0);
+      if (!p.key.startsWith('A')) return { ...p, end };
+      const label = `card year from ${dateFmt.format(p.start)}, good through ${dateFmt.format(end)}`; // not "card year to Mar 9"
+      return { ...p, end, label, ...(p.short ? { short: `${dateFmt.format(p.start)} – ${dateFmt.format(end)}`, long: `the card year from ${dateFmt.format(p.start)}` } : {}) };
+    }
+    if (!last || isoOf(p.end) <= last) return p;
+    const end = parseISODate(last); // ends partway (Bilt's hotel credit at your anniversary): "Jan–Mar 9"
+    const mon = MONTH_NAMES[p.start.getMonth()].slice(0, 3); // ends in its first month: "Jan 1–31", or just "Jan 1"
+    const label = end.getMonth() !== p.start.getMonth() ? `${mon}–${MONTH_NAMES[end.getMonth()].slice(0, 3)} ${end.getDate()}`
+      : end.getDate() === p.start.getDate() ? `${mon} ${end.getDate()}` : `${mon} ${p.start.getDate()}–${end.getDate()}`;
+    return { ...p, end, label, ...(p.short ? { short: label, long: label } : {}) };
+  }
+  // The period a credit is in today, as fitCreditPeriod has it (for a CREDIT_USE_MONTHS credit, last period's while
+  // it lasts, as it runs out first: Anniversary Bilt Cash from last card year is good for weeks after the next posts),
+  // or null when it doesn't count today.
+  function creditPeriodNow(cardId, credit, date = new Date()) {
+    const p = creditPeriod(cardId, credit.period, credit.resets, date);
+    const day = isoOf(date);
+    const on = (fit) => (fit && isoOf(fit.start) <= day && isoOf(fit.end) >= day ? fit : null);
+    const prev = CREDIT_USE_MONTHS[creditId(baseCardId(cardId), credit.id)] && on(fitCreditPeriod(cardId, credit, creditPeriod(cardId, credit.period, credit.resets, dayBefore(p.start))));
+    return prev || on(fitCreditPeriod(cardId, credit, p));
+  }
   // A card's credits as listed: presets (with their December amount, `dec`, kept apart) plus ones you've added.
+  // Bilt Palladium's Anniversary Bilt Cash is $200 for someone who kept 4% Bilt Cash.
   function cardCreditDefs(cardId) {
-    const preset = (CREDITS[baseCardId(cardId)] || []).map(([id, name, amount, period, resets, note, dec]) => ({ id, name, amount, period, resets, note, dec }));
+    const bilt = baseCardId(cardId) === BILT_SWITCH_CARD;
+    const keep4 = bilt && !!(state.creditsKeep4 || {})[cardId];
+    const preset = (CREDITS[baseCardId(cardId)] || []).map(([id, name, amount, period, resets, note, dec]) => ({ id, name,
+      amount: keep4 && id === 'anniversary-cash' ? 200 : amount, period, resets, note: bilt ? biltCreditNote(cardId, id, note) : note, dec }));
     const custom = (state.customCredits[cardId] || []).map(([id, name, amount, period]) => ({ id, name, amount, period, resets: 'calendar', custom: true }));
     return [...preset, ...custom];
   }
@@ -11828,9 +12279,8 @@ var siteLock = (function () {
       const credits = cardCreditDefs(cardId).map(({ id, name, amount, period, resets, note, dec, custom }) => (custom
         ? { id, name, amount, period, resets, custom }
         : { id, name, amount: december && dec ? dec : amount, period, resets, note, december: Boolean(december && dec) }));
-      return credits.filter((credit) => !(isoOf(new Date()) > CREDIT_LAST_DAY[creditId(baseCardId(cardId), credit.id)])).map((credit) => {
+      return credits.map((credit) => [credit, creditPeriodNow(cardId, credit)]).filter(([, period]) => period).map(([credit, period]) => {
         const key = creditId(cardId, credit.id);
-        const period = creditPeriod(cardId, credit.period, credit.resets);
         // A card-year credit without your fee date has no known reset, so it never counts as "soon".
         const dated = !(credit.resets === 'card' && credit.period === 'year' && !state.renewals[cardId]);
         // This period's box on the Credits page says it all: ticked or all of it typed is used, part of it typed
@@ -11868,7 +12318,7 @@ var siteLock = (function () {
     if (value !== true && marked) { delete state.creditsUsed[key]; delete state.creditsUsedOn[key]; }
     const [cardId, id] = key.split(/:(.*)/s);
     const credit = cardCreditDefs(cardId).find((c) => c.id === id);
-    const period = credit && creditPeriod(cardId, credit.period, credit.resets);
+    const period = credit && creditPeriodNow(cardId, credit);
     if (!period || period.key !== periodKey) return;
     // The day it was used, as best known: kept from before, today for the main page's Mark used, or for a card-year
     // credit ticked on the Credits page (`late`: often after the fact) halfway from the card year's start to today,
@@ -12048,8 +12498,6 @@ var siteLock = (function () {
   const PERIOD_STARTS = { month: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], quarter: [0, 3, 6, 9], half: [0, 6], year: [0] }; // months
   const isCardYear = (cardId, credit) => credit.resets === 'card' && credit.period === 'year' && !!state.renewals[cardId];
   const CREDIT_LATE_DAYS = 31; // last year's boxes can still be ticked this long after they end (December, in January)
-  // Credits that started partway through (select hotels in 2026): no boxes before this day, so last year doesn't list them.
-  const CREDIT_FIRST_DAY = { 'sapphire-reserve:select-hotels': '2026-01-01', 'sapphire-reserve-business:select-hotels': '2026-01-01' };
   // Credits whose amount changed: [first day of the new amount, dollars before it]. Sapphire Reserve's DoorDash was $5.
   const CREDIT_AMOUNT_BEFORE = { 'sapphire-reserve:doordash': ['2026-10-01', 5] };
 
@@ -12066,8 +12514,6 @@ var siteLock = (function () {
     const today = todayISO();
     const thisYear = new Date().getFullYear();
     const log = state.creditsLog[key] || {};
-    const last = CREDIT_LAST_DAY[offered];
-    const first = CREDIT_FIRST_DAY[offered];
     const before = CREDIT_AMOUNT_BEFORE[offered];
     let periods;
     if (isCardYear(cardId, credit)) {
@@ -12084,8 +12530,13 @@ var siteLock = (function () {
         const [short, long] = { month: [MONTH_NAMES[m].slice(0, 3), MONTH_NAMES[m]], quarter: [q, `${q} (${p.label})`], half: [p.label, p.label] }[credit.period] || [String(year), String(year)];
         return { ...p, short, long };
       });
+      // Bilt Cash posted last year that's still good into this one: its box, counted toward last year.
+      if (CREDIT_USE_MONTHS[offered]) {
+        const p = creditPeriod(cardId, credit.period, credit.resets, new Date(year, 0, 0));
+        periods.unshift({ ...p, short: p.label, long: p.label, belongs: year - 1 });
+      }
     }
-    return periods.filter((p) => !(last && isoOf(p.start) > last) && !(first && isoOf(p.end) < first)).map((p) => {
+    return periods.map((p) => fitCreditPeriod(cardId, credit, p)).filter((p) => p && p.end >= new Date(year, 0, 1)).map((p) => {
       const amount = before && isoOf(p.start) < before[0] ? before[1]
         : credit.period === 'month' && p.start.getMonth() === 11 && credit.dec ? credit.dec : credit.amount;
       const phase = isoOf(p.end) < today ? 'past' : isoOf(p.start) > today ? 'future' : 'current';
@@ -12138,13 +12589,14 @@ var siteLock = (function () {
         return { key, cardId, credit, boxes, current, left: current ? cents(current.amount - current.used) : 0,
           // A card-year credit without your fee date has no known reset, so it never counts as ending soon.
           dated: !(credit.resets === 'card' && credit.period === 'year' && !state.renewals[cardId]),
-          cardYear: isCardYear(cardId, credit), last: CREDIT_LAST_DAY[creditId(baseCardId(cardId), credit.id)] || null, skipped: !!state.creditsSkipped[key] };
+          cardYear: isCardYear(cardId, credit), last: CREDIT_USE_MONTHS[creditId(baseCardId(cardId), credit.id)] ? null : creditLastDay(cardId, credit.id) || null,
+          skipped: !!state.creditsSkipped[key] };
       }).filter((row) => row.boxes.length);
       const tracked = rows.filter((row) => !row.skipped);
       const sum = (f) => cents(tracked.reduce((n, row) => n + row.boxes.reduce((m, b) => m + (b.counts ? f(b) : 0), 0), 0));
       return { card: creditCard(cardId), rows: tracked, skipped: rows.filter((row) => row.skipped),
         used: sum((b) => b.used), total: sum((b) => b.amount), missed: sum((b) => (b.phase === 'past' ? b.amount - b.used : 0)),
-        feeDate: rows.some((row) => row.credit.resets === 'card' && row.credit.period === 'year') };
+        feeDate: cardCreditDefs(cardId).some((credit) => credit.resets === 'card' && credit.period === 'year') }; // Bilt Palladium's too, before its card-year credit starts
     }).filter((c) => c.rows.length || c.skipped.length || (hasCardCopy(baseCardId(c.card.id)) && !past)); // two of a card with only your own credits: both stay
     const all = cards.flatMap((c) => c.rows);
     const suggest = keepSuggest || !CREDITS_PAGE_CARDS.some((id) => state.cards.includes(id)) ? CREDITS_PAGE_CARDS : [];
@@ -12341,6 +12793,21 @@ var siteLock = (function () {
         partial ? h('label', { class: 'cp-amt' }, 'Used $', amountInput, ` of ${creditMoney(current.amount)} so far`) : null);
     };
 
+    // Bilt Palladium: what its 2027 change means for this card, and "I kept 4% Bilt Cash".
+    const biltPanel = (cardId) => {
+      if (baseCardId(cardId) !== BILT_SWITCH_CARD) return null;
+      const s = biltSwitch(cardId);
+      const on = s && dateFmt.format(s.day);
+      const text = !s ? 'Add your annual fee date above: at your first card anniversary in 2027, Bilt swaps the hotel credit and $200 Bilt Cash for $600 Bilt Cash a card year. Cards opened from Jan 1, 2027 get the $600 only.'
+        : s.keep4 ? `You kept 4% Bilt Cash, so the $200 hotel credit each half-year stays, and $200 Bilt Cash posts after each card anniversary from ${on}. Check the Bilt app for when yours posts.`
+          : `From ${on}, your card anniversary: $600 Bilt Cash each card year, in place of the hotel credit and $200 Bilt Cash. Hotel credit not used by ${dateFmt.format(dayBefore(s.day))} is lost. Opened this card in 2027? You get the $600 only, so stop tracking the hotel credit (tap ✕ on it).`;
+      const box = h('input', { type: 'checkbox', 'data-cp-keep4': cardId, 'aria-label': `${creditCard(cardId).name}: I kept 4% Bilt Cash` });
+      box.checked = !!(state.creditsKeep4 || {})[cardId];
+      return h('div', { class: 'cp-bilt' },
+        h('p', { class: 'cp-bilt-text' }, h('b', null, 'Bilt’s 2027 change'), ' ', text),
+        h('label', { class: 'cp-bilt-keep' }, box, h('span', null, 'I kept 4% Bilt Cash',
+          h('small', null, 'Chosen in the Bilt app before your first card anniversary in 2027; it can’t be changed after. Only for cards opened by Dec 31, 2026.'))));
+    };
     const otherCredits = (c) => {
       const list = (CREDIT_OTHERS[baseCardId(c.card.id)] || []).map((o) => otherCredit(c.card.id, o));
       if (!list.length || m.past || m.filter !== 'all') return null;
@@ -12369,6 +12836,7 @@ var siteLock = (function () {
         if (input !== typing) input.value = state.renewals[c.card.id] || '';
         fee = h('label', { class: 'cp-fee' }, h('span', null, 'Annual fee date', h('small', null, 'Card-year credits reset on it')), input);
       }
+      const bilt = m.past ? null : biltPanel(c.card.id);
       // Last year: only what was ticked (the list of credits is this year's, so "of $Y" and the bar would be off).
       const sum = m.past ? (c.rows.length ? `${money(c.used)} used in ${m.year}` : null) : c.total ? `${money(c.used)} used of ${money(c.total)} this year` : null;
       // This card's name while there are two, and adding or removing the second copy.
@@ -12394,6 +12862,7 @@ var siteLock = (function () {
         c.total && !m.past ? h('div', { class: 'cp-bar', role: 'progressbar', 'aria-label': `${c.card.name} credits used this year`, 'aria-valuemin': '0',
           'aria-valuemax': String(c.total), 'aria-valuenow': String(c.used) }, h('i', { style: `width:${pct}%` })) : null, // nothing tracked: no $0 of $0
         fee,
+        bilt,
         c.shown.length ? h('ul', { class: 'cp-rows' }, c.shown.map(creditRow))
           : h('p', { class: 'cp-none' }, c.rows.length ? (m.filter === 'month' ? 'Nothing due this month.' : 'Everything’s used for now.')
             : c.skipped.length ? 'Every credit here is hidden.' : 'No credits listed for this card yet: add any it gets under Card credits, further down.'),
@@ -12608,6 +13077,18 @@ var siteLock = (function () {
     }
   });
 
+  // "I kept 4% Bilt Cash" ticked or cleared: the hotel credit stays (or ends at the anniversary) and Anniversary Bilt
+  // Cash is $200 (or $600).
+  function setKeep4(cardId, on) {
+    if (baseCardId(cardId) !== BILT_SWITCH_CARD) return;
+    const kept = state.creditsKeep4 || (state.creditsKeep4 = {});
+    if (on) kept[cardId] = true;
+    else delete kept[cardId];
+    scheduleSave();
+    renderCredits();
+    renderUpcoming();
+  }
+
   // Choose cards from the page: once the sheet closes, focus goes back to the link (the page may have been redrawn
   // with a card you picked, so the sheet's own return target is gone).
   function chooseCardsFromPage() {
@@ -12629,6 +13110,7 @@ var siteLock = (function () {
     const t = e.target;
     const d = t.dataset || {};
     if (d.cpRenewal) { setRenewal(d.cpRenewal, t.value); return; }
+    if (d.cpKeep4) { setKeep4(d.cpKeep4, t.checked); return; }
     if (d.cpCopyName) { setCopyName(d.cpCopyName, t.value); return; }
     if (d.cpOther) { setOtherCredit(d.cpOther, t.checked ? todayISO() : null); return; }
     if (d.cpOtherDate) { // a day ahead of today, or none: keep the day it has
@@ -12731,7 +13213,7 @@ var siteLock = (function () {
 
   // A one-time card listing new features for people who already use the app; new setups skip it.
   const NEWS_KEY = 'status-tracker-news';
-  const NEWS_ID = '2026-11b';
+  const NEWS_ID = '2026-11c';
   const newsSeen = () => { try { return localStorage.getItem(NEWS_KEY) === NEWS_ID; } catch (e) { return true; } };
   const markNewsSeen = () => { try { localStorage.setItem(NEWS_KEY, NEWS_ID); } catch (e) { /* private mode */ } };
   // The card is one for the whole device: a new setup skips it only when no one else here already uses the app
@@ -12823,6 +13305,7 @@ var siteLock = (function () {
   function leaveTracker() {
     hideTrackerToast(); // an Undo for the tracker that's gone
     stopScanning(); // or closing the scan sheet would move on to the next screenshot
+    dropTyped();
     for (const open of document.querySelectorAll('dialog[open]')) open.close();
   }
 
@@ -12849,7 +13332,8 @@ var siteLock = (function () {
     Object.assign(state, blankState());
     leaveTracker(); // its sheets' buttons would act on the tracker just set aside
     renderAll();
-    showNote(`Couldn’t show ${whose(activePerson())} saved tracker — it’s kept aside on this device, not deleted`);
+    if (staleCopy) warnStaleCopy(); // a newer version's data, still saved as it was: the update can show it
+    else showNote(`Couldn’t show ${whose(activePerson())} saved tracker — it’s kept aside on this device, not deleted`);
   }
 
   // Opening flourish (app launch, finishing setup, restoring a backup): rows ease in, numbers count up.
@@ -12864,6 +13348,7 @@ var siteLock = (function () {
   $('#catalog-names').replaceChildren(...CATALOG_ITEMS.map((c) => h('option', { value: c.name })));
   renderToday();
   renderSafely(rollOver);
+  if (staleCopy) warnStaleCopy();
   receiveFromLink();
   syncCreditsRoute(); // opened at …/#credits
 
@@ -12881,7 +13366,8 @@ var siteLock = (function () {
     // The service worker fetched a newer version in the background: offer it now rather than next launch.
     navigator.serviceWorker.addEventListener('message', (e) => {
       if (!e.data || e.data.type !== 'updated') return;
-      showToast('A new version is ready', reloadForUpdate, 'Reload', 15000);
+      updateReady = true;
+      offerUpdate();
     });
   }
 })();

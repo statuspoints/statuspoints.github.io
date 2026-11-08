@@ -30,6 +30,7 @@ const setNow = (y, m, d) => { now = new Date(y, m - 1, d, 12).getTime(); };
 const element = (tag) => ({
   tag, attrs: {}, dataset: {}, kids: [], className: '', value: '', handlers: {},
   setAttribute(k, v) { this.attrs[k] = v; if (k.startsWith('data-')) this.dataset[k.slice(5)] = v; },
+  getAttribute(k) { return this.attrs[k] ?? null; }, removeAttribute(k) { delete this.attrs[k]; },
   append(...kids) { this.kids.push(...kids); }, replaceChildren(...kids) { this.kids = kids; },
   replaceWith() {}, focus() {}, select() {}, setSelectionRange() {},
   addEventListener(type, fn) { this.handlers[type] = fn; },
@@ -259,6 +260,30 @@ typeQuick('mqd', '4,000');
 setNow(2027, 3, 1);
 saveQuick();
 check('…American’s year (from March 1) turning over while the sheet is open doesn’t drop a typed MQD count', [s.mqd, s.updated.mqd, s.progress.american], [4000, '2027-03-01', undefined]);
+
+// A dropped digit ("212,50" for 212,500) isn't read as 212.5 and rounded to 213: the sheet stays open on that row,
+// nothing is saved yet, and it says which number it couldn't read. MQDs are dollars, so cents are fine there.
+setNow(2027, 3, 2);
+s = tracker(['hilton', 'marriott', 'delta'], { balances: { hilton: 212500, marriott: 150000, delta: 84210 }, mqd: 3000 });
+api.openQuick();
+typeQuick('bal:hilton', '212,50');
+typeQuick('bal:marriott', '160000');
+toastsBefore = api.shown.toasts.length;
+saveQuick();
+const hiltonRow = inputsIn(page['#quick-list']).find((input) => input.dataset.quick === 'bal:hilton');
+check('“212,50” in Update balances: nothing saved, the sheet stays open', [s.balances.hilton, s.balances.marriott, page['#quick-sheet'].open], [212500, 150000, true]);
+check('…that row is marked, and the toast names it', [hiltonRow.attrs['aria-invalid'], api.shown.toasts.slice(toastsBefore)],
+  ['true', ['Couldn’t read “212,50” for Hilton Honors. Type the whole number, then tap Save.']]);
+typeQuick('bal:hilton', '212,500');
+typeQuick('mqd', '$4,512.37');
+toastsBefore = api.shown.toasts.length;
+saveQuick();
+check('…fixed, it saves (and $4,512.37 MQDs is read as 4,512)', [s.balances.hilton, s.balances.marriott, s.mqd, page['#quick-sheet'].open, hiltonRow.attrs['aria-invalid']],
+  [212500, 160000, 4512, false, undefined]);
+api.openQuick();
+typeQuick('mqd', '4600.50');
+saveQuick();
+check('…typed MQDs with cents are fine too', s.mqd, 4601);
 
 setNow(2027, 3, 1);
 s = tracker(['delta'], { mqd: 3000, balances: { delta: 50000 }, updated: { mqd: '2027-02-01', delta: '2027-02-01' } });

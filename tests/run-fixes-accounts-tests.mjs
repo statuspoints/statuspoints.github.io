@@ -117,7 +117,7 @@ vm.runInContext(`${base}${fakeDom}
   const game = () => state.game;
   const topLayer = () => body;
   const showToast = (message, onUndo) => { shown.toasts.push(message); shown.undo = onUndo || null; };
-  const hideToast = () => {}; const showNote = (m) => shown.toasts.push(m);
+  const hideToast = () => {}; const showNote = (m) => shown.toasts.push(m); let undoAction = null;
   const renderAll = () => {}; const renderPrograms = () => {}; const renderSafely = () => {}; const rollOver = () => false;
   const saveNow = () => {}; const markChanged = () => {}; const scheduleSave = () => {}; const skipNewsForNewSetup = () => {};
   const award = () => ({ xp: 0, unlocked: [] }); const offerBonusLanding = () => {}; const matchesFilter = () => true; let filter = 'all';

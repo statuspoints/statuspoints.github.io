@@ -529,7 +529,7 @@ check('Delta Gold money', table('delta-gold'), [['stays', 100, 'year', 'calendar
 const note = (cardId, id) => app.CREDITS[cardId].find((c) => c[0] === id)[5];
 check('Select hotels: prepaid, two-night minimum', note(SR, 'select-hotels'), 'IHG, Montage, Pendry, Omni and more via Chase Travel; prepaid, 2+ nights');
 check('Lyft: its exclusions', note(SR, 'lyft'), 'in the Lyft app; not Wait & Save, bikes or scooters; through 9/30/27');
-check('New in your tracker says so, and comes up again for those who saw the last one', [/<b>Two of the same card<\/b>: in the Credits checklist/.test(html), /const NEWS_ID = '2026-11b'/.test(html)], [true, true]);
+check('New in your tracker says so, and comes up again for those who saw the last one', [/<b>Two of the same card<\/b>: in the Credits checklist/.test(html), /const NEWS_ID = '2026-11c'/.test(html)], [true, true]);
 
 // 9. On the first page: going back to the checklist, and the row's ✕
 setup({ cards: [SR] });

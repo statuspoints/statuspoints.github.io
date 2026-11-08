@@ -121,7 +121,7 @@ vm.runInContext(`${base}${quietDom}\n${head}\n${piece('  function parseISODate',
   const showToast = (message) => shown.toasts.push(message);
   const renderAll = () => {}; const rollOver = () => false; const saveNow = () => {}; const markChanged = () => {};
   const award = () => ({ xp: 0, unlocked: [] }); const celebrate = () => {}; const offerBonusLanding = () => {}; const matchesFilter = () => true; let filter = 'all';
-  const skipNewsForNewSetup = () => {}; const todayISO = () => '2026-10-20'; const undoTo = () => {};
+  const skipNewsForNewSetup = () => {}; const todayISO = () => '2026-10-20'; const undoTo = () => {}; let undoAction = null;
   const setField = (k, v) => { const [a, id] = k.split(':'); if (a === 'bal') state.balances[id] = v; };
   let batch = null; const finishOne = () => { shown.finished++; }; const nextInQueue = () => {}; const setTimeout = (f) => f();
   const mqdYear = () => new Date().getFullYear();

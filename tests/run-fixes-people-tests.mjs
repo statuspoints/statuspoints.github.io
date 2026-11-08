@@ -45,6 +45,7 @@ function app(store, globals = {}) {
   el('#receive-replace').textContent = 'Replace the tracker on this device'; // as the page has it
   const docListeners = {};
   const document = { querySelector: el, querySelectorAll: () => [], visibilityState: 'visible',
+    documentElement: { classList: { contains: () => false } }, // no site password showing
     addEventListener: (type, fn) => { (docListeners[type] = docListeners[type] || []).push(fn); },
     createElement: () => ({ setAttribute() {}, append() {}, content: { firstChild: null } }) };
   const listeners = {};
@@ -76,9 +77,12 @@ function app(store, globals = {}) {
   let sheetId = null;
   ${piece('  // Something in the tracker changed: dated for the backup nudge', '  function scheduleSave')}
   const saveNow = () => { if (state.programs) localStorage.setItem(storageKey(), JSON.stringify(state)); else localStorage.removeItem(storageKey()); };
-  const stopScanning = () => {};
+  const stopScanning = () => {}; const dropTyped = () => {};
   const forgetCreditParts = () => {}; const resetCreditsView = () => {}; // the Credits page's memory of a part-used amount, its year and filter
-  const hideToast = () => {}; const hideTrackerToast = () => {};
+  const hideToast = () => {}; const hideTrackerToast = () => {}; let undoAction = null;
+  const savedText = () => JSON.stringify(state); // what saveNow above writes
+  const reloadForUpdate = () => {}; const warnStaleCopy = () => toasts.push('stale copy: reload');
+  const updateReady = false; // no new version waiting
   const scrollTo = () => {};
   const rollOver = () => (globalThis.rollOverHook ? globalThis.rollOverHook(state) : false);
   const renderToday = () => {};
