@@ -29,7 +29,7 @@ const pieces = ['parseISODate', 'daysUntil', 'isoOf', 'todayISO', 'mergedLines',
   'entryOnly', 'hasStatus', 'mqdYear', 'medallionThrough', 'effectiveMedallion', 'medallionFor', 'relativeDay', 'bonuses',
   'bonusText', 'statusItem', 'upcomingItems', 'nextRenewal', 'pointsExpiry', 'expiryVerdict', 'goalPct', 'goalMini', 'renderGoal',
   'sortVouchers', 'MONTH_NAMES', 'creditId', 'CREDIT_LAST_DAY', 'creditMoney', 'cents', 'creditPeriod', 'cardCreditDefs', 'heldCredits',
-  'CREDIT_USE_MONTHS', 'BILT_SWITCH_CARD', 'biltSwitch', 'dayBefore', 'creditLastDay', 'creditFirstDay', 'biltCreditNote', 'fitCreditPeriod', 'creditPeriodNow', 'CREDIT_FIRST_DAY']
+  'CREDIT_USE_MONTHS', 'BILT_SWITCH_CARD', 'biltSwitch', 'dayBefore', 'creditLastDay', 'creditFirstDay', 'biltCreditNote', 'fitCreditPeriod', 'creditPeriodNow', 'CREDIT_FIRST_DAY', 'CREDIT_AMOUNT_BEFORE']
   .filter((name) => !inHead(name) && lines.some((l) => defines(name).test(l)));
 
 // A small fake page: elements remember what's set on them, and $ finds them by selector.

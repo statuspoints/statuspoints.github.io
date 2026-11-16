@@ -271,7 +271,7 @@ typeQuick('bal:marriott', '160000');
 toastsBefore = api.shown.toasts.length;
 saveQuick();
 const hiltonRow = inputsIn(page['#quick-list']).find((input) => input.dataset.quick === 'bal:hilton');
-check('“212,50” in Update balances: nothing saved, the sheet stays open', [s.balances.hilton, s.balances.marriott, page['#quick-sheet'].open], [212500, 150000, true]);
+check('“212,50” in Type balances: nothing saved, the sheet stays open', [s.balances.hilton, s.balances.marriott, page['#quick-sheet'].open], [212500, 150000, true]);
 check('…that row is marked, and the toast names it', [hiltonRow.attrs['aria-invalid'], api.shown.toasts.slice(toastsBefore)],
   ['true', ['Couldn’t read “212,50” for Hilton Honors. Type the whole number, then tap Save.']]);
 typeQuick('bal:hilton', '212,500');

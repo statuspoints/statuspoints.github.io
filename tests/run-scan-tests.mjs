@@ -378,6 +378,53 @@ const bigChecks = [];
   const scan = slice('  async function playScan', '  // The screenshot as large as fits');
   bigChecks.push(['a decode failure is told apart from a blurry picture, naming HEIC; the other messages stay',
     [/err\.decode/.test(scan), /HEIC/.test(scan), /sharper screenshot/.test(scan), /internet connection/.test(scan)], [true, true, true, true]]);
+  // The reader not loading while the phone counts as online (jsDelivr blocked, a hotel Wi-Fi sign-in page, a download
+  // that drops): said so, not blamed on the picture. A picture the reader can't make out never gets here (it's read as
+  // nothing found), and an error once the reader is running isn't marked.
+  const reader = slice('  const OCR_BASE', '  // Screenshots read best large');
+  const loadFails = (Tesseract) => {
+    const sandbox = vm.createContext({ Promise, Error, String, setTimeout, clearTimeout, window: { Tesseract },
+      document: { createElement: () => ({ remove() {} }), head: { append: (s) => s.onerror() } } });
+    vm.runInContext(`${reader}\nglobalThis.loadOCR = loadOCR;`, sandbox);
+    return sandbox.loadOCR().then(() => null, (e) => e);
+  };
+  const noScript = await loadFails(undefined);
+  const noCore = await loadFails({ createWorker: () => Promise.reject('NetworkError: failed to fetch the core') });
+  bigChecks.push(['a reader that can’t download fails as a load error (its script, or its core and language files)',
+    [noScript && noScript.load, noCore && noCore.load, noCore instanceof Error], [true, true, true]]);
+  bigChecks.push(['…and says so: after the offline message, before “Try a sharper screenshot”',
+    [scan.indexOf('navigator.onLine === false ?') < scan.indexOf('Couldn’t load the scanner'), scan.indexOf('Couldn’t load the scanner') < scan.indexOf('sharper screenshot'), /err\.load/.test(scan), /Couldn’t load the scanner\. Check your connection and try again, or paste the text instead\./.test(scan)], [true, true, true, true]]);
+  // When the scanner couldn't load, the button under the message tries the same screenshot again ("Try again"), with no
+  // picking it a second time; every other failure keeps "Try another", which picks a new picture.
+  const playOnce = async (errors) => {
+    const els = {};
+    const el = (sel) => els[sel] || (els[sel] = { textContent: '', className: '', hidden: false, complete: true, open: false, src: '',
+      replaceChildren() {}, append() {}, addEventListener() {}, showModal() { this.open = true; } });
+    const sandbox = vm.createContext({ Promise, Error, String, Math, Date, RegExp, navigator: { onLine: true }, URL: { createObjectURL: () => 'blob:x', revokeObjectURL() {} },
+      $: el, isoOf: () => '2026-11-15', announce() {}, wait: () => Promise.resolve(), sizeShot() {}, renderPlayCount() {}, stopCountdown() {},
+      showLoot: (read) => { sandbox.shown.push(read); }, closePlay() {}, openScan() {}, picks: 0, shown: [], reads: [], actions: null,
+      setActions: (list) => { sandbox.actions = list; }, scanSheet: { open: false, close() {} } });
+    sandbox.ocrImage = (file) => { sandbox.reads.push(file); const e = errors.shift(); return e ? Promise.reject(e) : Promise.resolve('read'); };
+    vm.runInContext(`const play = $('#play'); let playRun = 0; let playing = null; let quietClose = false; let ocrProgress = () => {};
+      const pickAnother = () => { picks++; };
+      ${slice('  async function playScan', '  // The screenshot as large as fits')}
+      globalThis.playScan = playScan;`, sandbox);
+    const shot = { name: 'shot.png', type: 'image/png' };
+    await sandbox.playScan(shot, { id: 'chase' });
+    return { sandbox, shot, title: el('#play-title').textContent, labels: sandbox.actions.map((a) => a[0]) };
+  };
+  const loadErr = Object.assign(new Error('could not load the text reader'), { load: true });
+  const failedLoad = await playOnce([loadErr]);
+  const tryAgain = failedLoad.sandbox.actions.find((a) => a[0] === 'Try again');
+  if (tryAgain) await tryAgain[2]();
+  bigChecks.push(['the scanner didn’t load: “Try again” reads the same screenshot again, without picking one',
+    [failedLoad.labels, failedLoad.sandbox.reads.length === 2 && failedLoad.sandbox.reads[1] === failedLoad.shot, failedLoad.sandbox.picks, failedLoad.sandbox.shown],
+    [['Paste text instead', 'Try again'], true, 0, ['read']]]);
+  const blurry = await playOnce([new Error('recognize failed')]);
+  const decode = await playOnce([Object.assign(new Error('bad'), { decode: true })]);
+  blurry.sandbox.actions.find((a) => a[0] === 'Try another')[2]();
+  bigChecks.push(['…any other failure keeps “Try another”, which picks a new picture',
+    [blurry.labels, decode.labels, blurry.sandbox.picks, /sharper screenshot/.test(blurry.title)], [['Paste text instead', 'Try another'], ['Paste text instead', 'Try another'], 1, true]]);
   const accept = (/id="scan-file"[^>]*accept="([^"]*)"/.exec(html) || [])[1] || '';
   bigChecks.push(['the file picker offers picture types every browser opens (PNG, JPG), not any image (which invites HEIC)',
     [/image\/\*/.test(accept), /image\/png/.test(accept), /image\/jpeg/.test(accept)], [false, true, true]]);

@@ -91,7 +91,7 @@ guard.guardEdits(dlg);
 dlg._snap = guard.formSnap(dlg);
 dlg.inputs[0].value = '90000';
 backdrop(dlg);
-check('typed in Update balances, then a backdrop tap: the sheet stays open', dlg.open, true);
+check('typed in Type balances, then a backdrop tap: the sheet stays open', dlg.open, true);
 check('…and it says to tap Save, with Discard to drop it, and Save gets focus',
   [guard.toasts.at(-1).message, guard.toasts.at(-1).label, dlg.save.focused], ['You have changes that aren’t saved. Tap Save to keep them.', 'Discard', true]);
 const esc = escape(dlg);

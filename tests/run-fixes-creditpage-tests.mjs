@@ -221,8 +221,11 @@ openPage();
 check('on the first page: shown, with the tracker still there, and nothing in the address', [app.location.hash, page.hidden, app.tracker.hidden], ['', false, false]);
 check('it starts on All, so no credit is out of sight', startedOn, 'true');
 check('going to it scrolls there rather than changing page', shown.scrolled.at(-1) === page, true);
-check('a box is a checkbox labeled with the credit, period and dollars', pageBox('amex-platinum:uber', '2026-10').getAttribute('aria-label'), 'Uber Cash, October, $15');
-check('…a past one left unticked says missed', pageBox('amex-platinum:uber', '2026-9').getAttribute('aria-label'), 'Uber Cash, September, $15, missed');
+check('a box is a checkbox labeled with the credit, period and dollars', pageBox('amex-platinum:uber', '2026-10').getAttribute('aria-label'), 'Uber Cash on Amex Platinum, October, $15');
+check('…a past one left unticked says missed', pageBox('amex-platinum:uber', '2026-9').getAttribute('aria-label'), 'Uber Cash on Amex Platinum, September, $15, missed');
+check('…Gold’s Uber Cash says which card too, and a credit only one card has keeps its plain name',
+  [pageBox('amex-gold:uber', '2026-10').getAttribute('aria-label'), pageBox('amex-gold:dunkin', '2026-10').getAttribute('aria-label')],
+  ['Uber Cash on Amex Gold, October, $10', 'Dunkin’, October, $7']);
 check('…and looks it', pageBox('amex-platinum:uber', '2026-9').parentNode.classList.contains('cp-missed'), true);
 check('…this month is highlighted', pageBox('amex-platinum:uber', '2026-10').parentNode.classList.contains('cp-current'), true);
 check('…future months are disabled', [pageBox('amex-platinum:uber', '2026-11').disabled, pageBox('amex-platinum:uber', '2026-10').disabled], [true, false]);
@@ -233,12 +236,12 @@ check('…saved', app.saves() > 0, true);
 check('…and the box is ticked after the page redraws', pageBox('amex-platinum:uber', '2026-10').checked, true);
 tick('amex-platinum:uber', '2026-10', false);
 check('unticking: gone from both', ['amex-platinum:uber' in state().creditsLog, 'amex-platinum:uber' in state().creditsUsed, 'amex-platinum:uber' in state().creditsUsedOn], [false, false, false]);
-check('…with Undo', [shown.toasts.at(-1).message, typeof shown.toasts.at(-1).undo], ['Unchecked Uber Cash for October', 'function']);
+check('…with Undo', [shown.toasts.at(-1).message, typeof shown.toasts.at(-1).undo], ['Unchecked Uber Cash on Amex Platinum for October', 'function']);
 shown.toasts.at(-1).undo();
 check('Undo: ticked again, in both', [state().creditsLog['amex-platinum:uber'], state().creditsUsed['amex-platinum:uber']], [{ '2026-10': true }, '2026-10']);
 tick('amex-platinum:uber', '2026-9');
 check('ticking September (past): kept, Mark used still means October', [state().creditsLog['amex-platinum:uber'], state().creditsUsed['amex-platinum:uber']], [{ '2026-10': true, '2026-9': true }, '2026-10']);
-check('…no longer missed', pageBox('amex-platinum:uber', '2026-9').getAttribute('aria-label'), 'Uber Cash, September, $15');
+check('…no longer missed', pageBox('amex-platinum:uber', '2026-9').getAttribute('aria-label'), 'Uber Cash on Amex Platinum, September, $15');
 const future = pageBox('amex-platinum:uber', '2026-12');
 future.checked = true; future.dispatch('change');
 check('a future box can’t be ticked', '2026-12' in state().creditsLog['amex-platinum:uber'], false);

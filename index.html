@@ -264,8 +264,8 @@ try { if (SITE_LOCK && sessionStorage.getItem('status-tracker-unlocked') !== SIT
     .stat-v.tier { font-size: 13px; letter-spacing: -0.03em; }
   }
   .ring .prog { transition: stroke-dashoffset .8s cubic-bezier(.2, .7, .2, 1); }
-  .stat-l { display: block; margin-top: 3px; font-size: 11.5px; line-height: 1.25; color: rgba(244, 247, 251, .9); }
-  .stat-l.warn { color: #FFD9A8; font-weight: 650; }
+  .stat-l { display: block; margin-top: 3px; font-size: 11.5px; line-height: 1.25; color: #F4F7FB; }
+  .stat-l.warn { color: #FFF1DE; font-weight: 650; }
 
   /* Sections */
   .sec-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 28px 2px 10px; }
@@ -426,7 +426,7 @@ try { if (SITE_LOCK && sessionStorage.getItem('status-tracker-unlocked') !== SIT
   .sline.expired .pill { background: var(--chip-bg); color: var(--muted); text-decoration: line-through; }
   .via .nw { white-space: nowrap; } /* keep "Sapphire Reserve", "thru 12/31/27" whole; wrap between them */
   .no-status { margin-top: 3px; font-size: 13px; color: var(--muted); }
-  .acct { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px; background: var(--chip-bg); color: var(--muted); font-size: 11.5px; font-weight: 650; vertical-align: 1px; white-space: nowrap; }
+  .acct { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px; background: var(--chip-bg); color: var(--muted); font-size: 11.5px; font-weight: 650; vertical-align: 1px; overflow-wrap: anywhere; }
   .bal { flex: 0 1 auto; min-width: 0; max-width: 46%; text-align: right; }
   .bal .unit { overflow-wrap: anywhere; }
   .unit { margin-top: 2px; font-size: 11.5px; color: var(--muted); }
@@ -649,7 +649,7 @@ try { if (SITE_LOCK && sessionStorage.getItem('status-tracker-unlocked') !== SIT
   .cp-soon-when { color: var(--muted); font-variant-numeric: tabular-nums; }
   .cp-soon-when.warn { color: var(--warn); font-weight: 600; }
   .cp-panel { margin-bottom: 14px; padding: 14px 16px; }
-  .cp-panel h2 { margin: 0 0 4px; font-size: 16px; }
+  .cp-panel h3 { margin: 0 0 4px; font-size: 16px; }
   .cp-panel p { margin: 0 0 6px; }
   .cp-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 14px; }
   .cp-chips .cp-added { opacity: .7; cursor: default; }
@@ -668,7 +668,7 @@ try { if (SITE_LOCK && sessionStorage.getItem('status-tracker-unlocked') !== SIT
   .cp-cards { display: grid; gap: 14px; align-items: start; }
   .cp-card { padding: 14px 16px 4px; container-type: inline-size; scroll-margin-top: 12px; }
   .cp-card-head { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
-  .cp-card-head h2 { flex: 1; min-width: 0; margin: 0; font-size: 16.5px; font-weight: 720; letter-spacing: -0.01em; overflow-wrap: anywhere; }
+  .cp-card-head h3 { flex: 1; min-width: 0; margin: 0; font-size: 16.5px; font-weight: 720; letter-spacing: -0.01em; overflow-wrap: anywhere; }
   .cp-swatch { flex: none; width: 26px; height: 18px; border-radius: 4px; background: linear-gradient(135deg, var(--c1), var(--c2)); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .14); }
   .cp-card-sum { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
   .cp-bar { height: 4px; margin: 10px 0 4px; overflow: hidden; border-radius: 999px; background: var(--track); }
@@ -1023,7 +1023,7 @@ try { if (SITE_LOCK && sessionStorage.getItem('status-tracker-unlocked') !== SIT
   .quick-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); }
   .quick-row .av { width: 32px; height: 32px; font-size: 11px; }
   .quick-name { display: grid; flex: 1; min-width: 0; }
-  .quick-name span { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .quick-name span { font-weight: 600; overflow-wrap: anywhere; line-height: 1.25; }
   .quick-name small { font-size: 12px; color: var(--muted); }
   .quick-input { width: 120px; height: 40px; padding: 0 10px; border: 1px solid var(--field-border); border-radius: 10px; background: var(--field); color: var(--text); font: inherit; font-size: 16px; font-variant-numeric: tabular-nums; text-align: right; }
   .quick-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
@@ -1229,7 +1229,7 @@ try { if (SITE_LOCK && sessionStorage.getItem('status-tracker-unlocked') !== SIT
   .v-note { font-size: 13.5px; color: var(--muted); overflow-wrap: anywhere; }
   .v-exp { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin-top: 6px; font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
   .tag { display: inline-flex; align-items: center; min-height: 20px; padding: 1px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 700; }
-  .tag.warn { background: var(--warn-soft); color: var(--warn); }
+  .tag.warn { background: var(--warn-soft); color: var(--warn-ink); }
   .tag.danger { background: var(--danger-soft); color: var(--danger); letter-spacing: .05em; }
   .v-del {
     flex: none;
@@ -1555,6 +1555,7 @@ try { if (SITE_LOCK && sessionStorage.getItem('status-tracker-unlocked') !== SIT
   .d-head .av { width: 48px; height: 48px; border-radius: 14px; font-size: 15px; }
   .d-head .av.x3 { font-size: 12.5px; }
   .d-title { flex: 1; min-width: 0; }
+  #d-name { overflow-wrap: anywhere; }
   .d-sub { margin: 2px 0 0; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
   .d-sec { display: grid; gap: 10px; }
   .exp-ok { display: flex; align-items: flex-start; gap: 8px; margin: 0; font-size: 14px; }
@@ -1945,7 +1946,7 @@ var siteLock = (function () {
       <h2 class="up-title-main" id="up-title">Coming up <span id="up-count"></span></h2>
       <button class="pill-btn sm" id="up-cal" type="button">Add to calendar</button>
     </div>
-    <ul class="up-list" id="up-list"></ul>
+    <ul class="up-list" id="up-list" role="list"></ul>
   </section>
   </div>
 
@@ -2001,7 +2002,7 @@ var siteLock = (function () {
       <span class="scan-cta-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="M20.5 15.5l-4.8-4.6-8.7 8.6"/></svg></span>
       <span class="scan-cta-text">
         <strong>Update from a screenshot</strong>
-        <span class="scan-cta-sub"><span class="touch-only">Screenshot your airline, hotel, or card account, then collect your points and status.</span><span class="desk-only">Drop or paste a screenshot of your airline, hotel, or card account anywhere on this page, or click to choose one.</span></span>
+        <span class="scan-cta-sub"><span class="touch-only">Screenshot your airline, hotel, or card account to update your points and status.</span><span class="desk-only">Drop or paste a screenshot of your airline, hotel, or card account anywhere on this page, or click to choose one.</span></span>
       </span>
       <svg class="scan-cta-go" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5L10.5 8 6 12.5"/></svg>
     </button>
@@ -2017,7 +2018,7 @@ var siteLock = (function () {
         <button class="pill-btn" id="quick-btn" type="button">Type balances</button>
       </span>
     </div>
-    <ul class="card programs" id="programs"></ul>
+    <ul class="card programs" id="programs" role="list"></ul>
     <div class="cards-edit" id="cards-edit" hidden>
       <span>Your cards<strong id="cards-summary">none</strong></span>
       <button class="pill-btn" id="cards-change" type="button">Choose cards</button>
@@ -2041,7 +2042,7 @@ var siteLock = (function () {
       <span class="sec-meta" id="v-meta"></span>
     </div>
     <div class="card">
-      <ul class="vlist" id="vlist"></ul>
+      <ul class="vlist" id="vlist" role="list"></ul>
       <p class="empty" id="vempty" tabindex="-1">No vouchers yet — add your first one below.</p>
       <form class="vform" id="vform" autocomplete="off">
         <div class="field f-name">
@@ -2148,7 +2149,7 @@ var siteLock = (function () {
       <label for="p-who">Whose account (optional)</label>
       <input id="p-who" maxlength="30" autocomplete="off" placeholder="e.g. Ms. Lee (a 2nd account)">
     </div>
-    <label class="check" id="p-medallion-wrap"><input type="checkbox" id="p-medallion"> Show Delta Medallion progress (MQDs)</label>
+    <label class="check" id="p-medallion-wrap"><input type="checkbox" id="p-medallion"> Show Delta Medallion progress (Medallion Qualifying Dollars, or MQDs)</label>
     <fieldset class="field status-edit">
       <legend>Status</legend>
       <div class="sl-head" aria-hidden="true"><span>Level</span><span>From (optional)</span><span></span></div>
@@ -2250,9 +2251,9 @@ var siteLock = (function () {
     <h3 class="d-label">Badges <span id="game-badge-count"></span></h3>
     <ul class="badges" id="game-badges"></ul>
     <p class="game-sound"><button class="pill-btn sm" id="game-sound" type="button" aria-pressed="true">Sounds &amp; vibration: on</button>
-      <button class="pill-btn sm" id="game-auto" type="button" aria-pressed="true">Auto-collect: on</button>
+      <button class="pill-btn sm" id="game-auto" type="button" aria-pressed="true">Auto-update after a scan: on</button>
       <button class="pill-btn sm" id="game-remind" type="button">Remind me weekly</button></p>
-    <p class="fine">Each screenshot you collect earns XP, more for several in a row (a combo), and each badge 50 more. Up to date means updated in the last 30 days. It all stays on this device.</p>
+    <p class="fine">Each screenshot you use earns XP, more for several in a row (a combo), and each badge 50 more. Up to date means updated in the last 30 days. It all stays on this device.</p>
     <div class="sheet-actions">
       <button class="btn-secondary" id="game-scan" type="button">Update from a screenshot</button>
       <span class="spacer"></span>
@@ -2260,7 +2261,7 @@ var siteLock = (function () {
     </div>
   </div>
 </dialog>
-<div class="drop-hint" id="drop-hint" hidden aria-hidden="true"><div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="M20.5 15.5l-4.8-4.6-8.7 8.6"/></svg>Drop it to scan &amp; collect</div></div>
+<div class="drop-hint" id="drop-hint" hidden aria-hidden="true"><div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="M20.5 15.5l-4.8-4.6-8.7 8.6"/></svg>Drop it to scan</div></div>
 <dialog class="sheet" id="scan-sheet" aria-labelledby="scan-title">
   <div class="sheet-body">
     <div class="grab" aria-hidden="true"></div>
@@ -2269,7 +2270,7 @@ var siteLock = (function () {
       <ol class="scan-steps">
         <li>Open your airline, hotel, or card app or website to the page that shows your points and status.</li>
         <li>Take a screenshot. Got several accounts? Screenshot them all.</li>
-        <li>Choose them here (one or many). Watch each one scan, then collect your points and status.</li>
+        <li>Choose them here (one or many). Watch each one scan, then update your points and status.</li>
       </ol>
       <button class="add scan-pick" id="scan-pick" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="M20.5 15.5l-4.8-4.6-8.7 8.6"/></svg>Choose screenshot</button>
       <p class="scan-drop-note desk-only">Or drop or paste a screenshot anywhere on this page.</p>
@@ -2298,9 +2299,9 @@ var siteLock = (function () {
 <dialog class="sheet" id="quick-sheet" aria-labelledby="quick-title">
   <form id="quick-form" autocomplete="off">
     <div class="grab" aria-hidden="true"></div>
-    <h2 id="quick-title" tabindex="-1">Update balances</h2>
+    <h2 id="quick-title" tabindex="-1">Type balances</h2>
     <p class="setup-sub">Type today’s numbers from each app or statement, then Save once. A blank field clears that balance. <button class="link" id="quick-scan" type="button">Have a screenshot? Use it instead</button></p>
-    <ul class="quick-list" id="quick-list"></ul>
+    <ul class="quick-list" id="quick-list" role="list"></ul>
     <div class="sheet-actions">
       <button class="btn-secondary" id="quick-cancel" type="button">Cancel</button>
       <span class="spacer"></span>
@@ -2333,7 +2334,7 @@ var siteLock = (function () {
       <div id="lock-entry">
       <div class="field"><label for="lock-pass">Password</label><input id="lock-pass" type="password" autocomplete="new-password" minlength="10" required></div>
       <div class="field"><label for="lock-again">Password again</label><input id="lock-again" type="password" autocomplete="new-password" minlength="10" required></div>
-      <p class="fine">At least 10 characters; a few unrelated words is best. The site is public, so its lock code can be tried against guesses: a long password is what keeps it safe. Your saved data never leaves your devices either way.</p>
+      <p class="fine">At least 10 characters; a few unrelated words is best. Anyone can see the lock code and try guessing passwords against it, so a long password is what keeps it safe. Your saved data never leaves your devices either way.</p>
       </div>
       <p class="cards-status" id="lock-status" role="status"></p>
       <textarea class="lock-code" id="lock-code" readonly hidden aria-label="Lock code"></textarea>
@@ -2371,7 +2372,7 @@ var siteLock = (function () {
       <button class="btn-secondary" id="receive-replace" type="button">Replace the tracker on this device</button>
       <button class="link" id="receive-cancel" type="button">Cancel</button>
     </div>
-    <p class="fine">Replacing can be undone right after. Adding a person keeps everyone's tracker separate — switch with the name at the top.</p>
+    <p class="fine">Replacing can be undone right after. Adding a person keeps everyone’s tracker separate — switch with the name at the top.</p>
   </div>
 </dialog>
 <dialog class="sheet" id="people-sheet" aria-labelledby="people-title">
@@ -2379,12 +2380,12 @@ var siteLock = (function () {
     <div class="grab" aria-hidden="true"></div>
     <h2 id="people-title" tabindex="-1" autofocus>People on this device</h2>
     <p class="setup-sub">Everyone gets their own tracker — programs, statuses, balances, and reminders stay separate. Switch anytime with the name at the top.</p>
-    <ul class="people" id="people-list"></ul>
+    <ul class="people" id="people-list" role="list"></ul>
     <form class="people-add" id="people-add" autocomplete="off">
       <input type="text" class="member-input name-input" id="people-name" maxlength="30" placeholder="Add someone (e.g. Alex)" aria-label="Name of the person to add" enterkeyhint="done">
       <button class="add sm" type="submit">Add</button>
     </form>
-    <p class="fine">Each person's data stays in this browser on this device. Back up each tracker separately (switch to them, then Back up data).</p>
+    <p class="fine">Each person’s data stays in this browser on this device. Back up each tracker separately (switch to them, then Back up data).</p>
     <div class="sheet-actions">
       <span class="spacer"></span>
       <button class="add" id="people-done" type="button">Done</button>
@@ -2584,6 +2585,8 @@ var siteLock = (function () {
     { issuer: 'Chase', id: 'southwest-priority', name: 'Southwest Priority', tone: 'sapphire', grants: [] },
     { issuer: 'Chase', id: 'southwest-plus', name: 'Southwest Plus', tone: 'blue', grants: [] },
     // Oct 1, 2026 refresh: Premier now comes with Gold (Platinum takes $15,000 of spend); Premier Select is new.
+    // Premier cardmembers from before the refresh keep Platinum through Dec 31, 2027: IHG's Platinum Elite level says
+    // so (BENEFITS.ihg). A grant's words are part of the remembered card line, so they stay put (see syncCards).
     { issuer: 'Chase', id: 'ihg-premier-select', name: 'IHG Premier Select', tone: 'black', grants: [['ihg', 'Platinum Elite']] },
     { issuer: 'Chase', id: 'ihg-premier', name: 'IHG Premier', tone: 'black', grants: [['ihg', 'Gold Elite', 'Platinum with $15,000 spend a year']] },
     { issuer: 'Chase', id: 'ihg-premier-business', name: 'IHG One Rewards Business', label: 'IHG One Rewards Business (was Premier Business)', tone: 'black', grants: [['ihg', 'Platinum Elite']] },
@@ -2735,13 +2738,13 @@ var siteLock = (function () {
   };
   const BENEFITS = {
     delta: [
-      ['Silver Medallion', '$5,000 MQDs in a calendar year', ["Free upgrades", "Free Preferred seats", "1 free bag"], ['7 miles per $1 spent (2 bonus)', 'Complimentary upgrades, clearing 1 day out', 'Free Preferred seats', 'First checked bag free', 'SkyTeam Elite']],
-      ['Gold Medallion', '$10,000 MQDs in a calendar year', ["Sky Priority", "Partner lounges abroad", "2 free bags"], ['8 miles per $1 spent (3 bonus)', 'Upgrades clearing 3 days out', 'Sky Priority check-in, security, and boarding', '2 free checked bags', 'SkyTeam Elite Plus: partner lounges on international trips']],
-      ['Platinum Medallion', '$15,000 MQDs in a calendar year', ["Upgrades 5 days out", "Choice Benefit", "3 free bags"], ['9 miles per $1 spent (4 bonus)', 'Upgrades clearing 5 days out', '1 Choice Benefit (like upgrade certificates, 35,000 miles, or gifting Silver Medallion to 4 people)', '3 free checked bags', 'Sky Priority check-in, security, and boarding', 'SkyTeam Elite Plus: partner lounges on international trips']],
-      ['Diamond Medallion', '$28,000 MQDs in a calendar year', ["Top upgrade priority", "3 Choice Benefits", "Sky Club option"], ['11 miles per $1 spent (6 bonus)', 'Top upgrade priority, clearing 5 days out', '3 Choice Benefits (options include a Sky Club membership or gifting Gold Medallion to 4 people)', '3 free checked bags', 'Sky Priority and SkyTeam Elite Plus: partner lounges on international trips', 'Diamond service line']],
+      ['Silver Medallion', '$5,000 in Medallion Qualifying Dollars (MQDs) in a calendar year', ["Free upgrades", "Free Preferred seats", "1 free bag"], ['7 miles per $1 spent (2 bonus)', 'Complimentary upgrades as early as 1 day before the flight', 'Free Preferred seats', 'First checked bag free', 'SkyTeam Elite']],
+      ['Gold Medallion', '$10,000 MQDs in a calendar year', ["Sky Priority", "Partner lounges abroad", "2 free bags"], ['8 miles per $1 spent (3 bonus)', 'Upgrades as early as 3 days before the flight', 'Sky Priority check-in, security, and boarding', '2 free checked bags', 'SkyTeam Elite Plus: partner lounges on international trips']],
+      ['Platinum Medallion', '$15,000 MQDs in a calendar year', ["Upgrades 5 days out", "Choice Benefit", "3 free bags"], ['9 miles per $1 spent (4 bonus)', 'Upgrades as early as 5 days before the flight', '1 Choice Benefit (like upgrade certificates, 35,000 miles, or gifting Silver Medallion to 4 people)', '3 free checked bags', 'Sky Priority check-in, security, and boarding', 'SkyTeam Elite Plus: partner lounges on international trips']],
+      ['Diamond Medallion', '$28,000 MQDs in a calendar year', ["Top upgrade priority", "3 Choice Benefits", "Sky Club option"], ['11 miles per $1 spent (6 bonus)', 'Top upgrade priority, as early as 5 days before the flight', '3 Choice Benefits (options include a Sky Club membership or gifting Gold Medallion to 4 people)', '3 free checked bags', 'Sky Priority and SkyTeam Elite Plus: partner lounges on international trips', 'Diamond service line']],
     ],
     united: [
-      ['Premier Silver', '6,000 PQP, or 5,000 PQP + 15 flights', ["Free upgrades", "Economy Plus at check-in", "1 free bag"], ['5 miles per $1 spent (8 as the primary United cardholder; Gateway card only after $10,000 spend in a year)', 'Complimentary upgrades on eligible flights', 'Economy Plus seats at check-in', 'First checked bag free', 'Star Alliance Silver']],
+      ['Premier Silver', '6,000 Premier qualifying points (PQP), or 5,000 PQP + 15 flights', ["Free upgrades", "Economy Plus at check-in", "1 free bag"], ['5 miles per $1 spent (8 as the primary United cardholder; Gateway card only after $10,000 spend in a year)', 'Complimentary upgrades on eligible flights', 'Economy Plus seats at check-in', 'First checked bag free', 'Star Alliance Silver']],
       ['Premier Gold', '12,000 PQP, or 10,000 PQP + 30 flights', ["Star Alliance lounges", "Economy Plus", "2 free bags"], ['6 miles per $1 spent (9 as the primary United cardholder; Gateway card only after $10,000 spend in a year)', 'Star Alliance Gold: partner lounges on international trips', 'Economy Plus seats at booking', '2 free checked bags', 'Higher upgrade priority']],
       ['Premier Platinum', '18,000 PQP, or 15,000 PQP + 45 flights', ["40 PlusPoints", "Upgrade priority", "3 free bags"], ['7 miles per $1 spent (10 as the primary United cardholder; Gateway card only after $10,000 spend in a year)', '40 PlusPoints a year for upgrades', '3 free checked bags', 'Higher upgrade priority']],
       ['Premier 1K', '28,000 PQP, or 22,000 PQP + 60 flights', ["280 PlusPoints", "Top upgrade priority", "1K service line"], ['9 miles per $1 spent (12 as the primary United cardholder; Gateway card only after $10,000 spend in a year)', '280 PlusPoints a year for upgrades', 'Top upgrade priority', 'Dedicated 1K service line']],
@@ -2763,7 +2766,7 @@ var siteLock = (function () {
       ['Titanium', '135,000 status points a year', ["150% bonus", "Free economy meal", "Long-haul upgrades"], ['150% bonus points on flights', 'Free meal in economy', 'Upgrades on select long-haul routes', 'oneworld Emerald']],
     ],
     aeroplan: [
-      ['25K', '25,000 Status Qualifying Credits a year, or 100,000 everyday-partner points (EDQ) (automatic with the Chase Air Canada Aeroplan card)', ["Priority check-in", "Zone 2 boarding", "Free checked bag"], ['Priority check-in and Zone 2 boarding', 'Free checked bag on Air Canada', 'Star Alliance Silver', '5 eUpgrade credits a year']],
+      ['25K', '25,000 Status Qualifying Credits a year, or 100,000 everyday-partner points (automatic with the Chase Air Canada Aeroplan card)', ["Priority check-in", "Zone 2 boarding", "Free checked bag"], ['Priority check-in and Zone 2 boarding', 'Free checked bag on Air Canada', 'Star Alliance Silver', '5 eUpgrade credits a year']],
       ['35K', '35,000 SQC a year (or $75,000 a year on the Chase Air Canada Aeroplan card)', ["3 free bags", "10 eUpgrades", "Upgrade priority"], ['3 free checked bags on Air Canada', '10 eUpgrade credits a year', 'Higher priority for upgrades and standby', 'Star Alliance Silver']],
       ['50K', '50,000 SQC a year', ["Maple Leaf Lounges", "Star Alliance Gold", "15 eUpgrades"], ['Maple Leaf Lounge and Air Canada Café access', '15 eUpgrade credits a year', 'Star Alliance Gold: partner lounges and priority', '3 free checked bags', 'Higher upgrade priority']],
       ['75K', '75,000 SQC a year', ["20 eUpgrades", "Free Preferred seats", "3 free bags"], ['20 eUpgrade credits a year', 'Free Preferred seats on all but Basic fares', '3 free checked bags', 'Maple Leaf Lounge access', 'Star Alliance Gold']],
@@ -2771,8 +2774,8 @@ var siteLock = (function () {
     ],
     hilton: [
       ['Silver', '10 nights, 4 stays, or $2,500 on stays a year', ["20% bonus", "5th night free", "Bottled water"], ['20% bonus points on stays', '5th night free on standard-room reward stays', 'Complimentary bottled water']],
-      ['Gold', '25 nights, 15 stays, or $6,000 on stays a year', ["Breakfast / F&B credit", "Room upgrades", "80% bonus"], ['80% bonus points on stays', 'Daily food & beverage credit in the U.S. (continental breakfast elsewhere)', 'Space-available room upgrades', '5th night free on reward stays']],
-      ['Diamond', '50 nights, 25 stays, or $11,500 on stays a year', ["Breakfast / F&B credit", "Executive lounge", "Suite upgrades"], ['100% bonus points on stays', 'Daily food & beverage credit or breakfast', 'Executive lounge access', 'Space-available upgrades up to a one-bedroom suite', '48-hour room guarantee']],
+      ['Gold', '25 nights, 15 stays, or $6,000 on stays a year', ["Breakfast or food credit", "Room upgrades", "80% bonus"], ['80% bonus points on stays', 'Daily food & beverage credit in the U.S. (continental breakfast elsewhere)', 'Room upgrades (when available)', '5th night free on reward stays']],
+      ['Diamond', '50 nights, 25 stays, or $11,500 on stays a year', ["Breakfast or food credit", "Executive lounge", "Suite upgrades"], ['100% bonus points on stays', 'Daily food & beverage credit or breakfast', 'Executive lounge access', 'Upgrades up to a one-bedroom suite (when available)', '48-hour room guarantee']],
       ['Diamond Reserve', '80 nights or 40 stays, plus $18,000 on stays a year', ["Confirmed upgrade", "4 p.m. checkout", "120% bonus"], ['A Confirmable Upgrade Reward to lock in a better room (up to a one-bedroom suite) when you book', 'Guaranteed 4 p.m. late checkout', '120% bonus points on stays', 'Premium Club and executive lounge access', 'Upgrades confirmed up to 3 days before arrival, ahead of Diamond', '24/7 dedicated service line', 'Everything in Diamond']],
     ],
     marriott: [
@@ -2785,7 +2788,7 @@ var siteLock = (function () {
     ihg: [
       ['Silver Elite', '10 nights a year', ["20% bonus", "Milestone Rewards"], ['20% bonus points', 'Milestone Rewards once you pass 20 nights']],
       ['Gold Elite', '20 nights or 40,000 qualifying points a year', ["40% bonus", "Late checkout"], ['40% bonus points', 'Late checkout (when available)', 'Milestone Rewards at 20+ nights']],
-      ['Platinum Elite', '40 nights or 60,000 qualifying points a year', ["Room & suite upgrades", "Early check-in", "Welcome amenity"], ['60% bonus points', 'Room upgrades, including select suites (when available)', 'Early check-in (when available)', 'Welcome amenity', '72-hour room guarantee']],
+      ['Platinum Elite', '40 nights or 60,000 qualifying points a year. Until Dec 31, 2027, IHG Premier cardmembers from before Chase’s Oct 2026 card refresh keep Platinum with the card', ["Room & suite upgrades", "Early check-in", "Welcome amenity"], ['60% bonus points', 'Room upgrades, including select suites (when available)', 'Early check-in (when available)', 'Welcome amenity', '72-hour room guarantee']],
       ['Diamond Elite', '70 nights or 120,000 qualifying points a year', ["Breakfast option", "Suite upgrades", "100% bonus"], ['100% bonus points', 'Welcome amenity (breakfast is an option at many hotels)', 'Upgrades including suites (when available)', 'Early check-in and late checkout', 'Dedicated Diamond support']],
     ],
     hyatt: [
@@ -2828,7 +2831,7 @@ var siteLock = (function () {
       ["Silver", "100 XP within a 12-month qualification period (100 XP each period keeps it)", ["Priority check-in", "Free standard seats", "1 extra free bag"], ["6 Miles per €1 spent on tickets", "Priority check-in and bag drop", "Free standard seat selection", "Some free Seat Options from 24 hours before departure", "1 extra free checked bag on SkyTeam flights"]],
       ["Gold", "180 XP within a 12-month qualification period after reaching Silver (180 XP each period keeps it)", ["SkyPriority", "Lounges + 1 guest", "1 extra free bag"], ["7 Miles per €1 spent on tickets", "SkyPriority: priority check-in, bag drop, and boarding", "SkyTeam lounge access worldwide with 1 guest on the same flight (conditions apply)", "Free standard seats, plus some free Seat Options from 72 hours before departure", "1 extra free checked bag on SkyTeam flights"]],
       ["Platinum", "300 XP within a 12-month qualification period after reaching Gold (300 XP each period keeps it)", ["Free seats at booking", "2 extra free bags", "24/7 Platinum line"], ["8 Miles per €1 spent on tickets", "Free standard seats at booking, plus some free Seat Options", "Lounge access worldwide with 1 guest (conditions apply)", "SkyPriority at the airport", "2 extra free checked bags on Air France and KLM (1 on other SkyTeam airlines)", "24/7 Platinum Service Line"]],
-      ["Ultimate", "900 UXP within a 12-month qualification period as a Platinum member (UXP is earned only on Air France or KLM flight numbers and SAF purchases)", ["4 upgrade vouchers", "Lounges + 8 guests", "Gift Platinum status"], ["9 Miles per €1 spent on tickets", "4 one-cabin upgrade vouchers per membership year", "Air France and KLM lounges with up to 8 companions, and SkyPriority for them too", "2 extra free checked bags on Air France and KLM (1 on other SkyTeam airlines)", "24/7 Ultimate Assistant", "A Flying Blue Platinum card for one travel companion", "Hertz Platinum card"]],
+      ["Ultimate", "900 UXP within a 12-month qualification period as a Platinum member (UXP is earned only on Air France or KLM flight numbers and sustainable aviation fuel purchases)", ["4 upgrade vouchers", "Lounges + 8 guests", "Gift Platinum status"], ["9 Miles per €1 spent on tickets", "4 one-cabin upgrade vouchers per membership year", "Air France and KLM lounges with up to 8 companions, and SkyPriority for them too", "2 extra free checked bags on Air France and KLM (1 on other SkyTeam airlines)", "24/7 Ultimate Assistant", "A Flying Blue Platinum card for one travel companion", "Hertz Platinum card"]],
     ],
     ba: [
       ["Blue", "Free to join", ["Collect Avios", "Free Wi-Fi messaging", "Member offers"], ["6 Avios per £1 spent on British Airways and American Airlines flights", "Earn tier points toward Bronze, Silver, and Gold", "Free Wi-Fi messaging onboard", "Pool Avios with up to 6 other people in a household account", "Priority over non-members on standby and waitlists", "Member-only offers"]],
@@ -2844,14 +2847,14 @@ var siteLock = (function () {
     ],
     emirates: [
       ["Blue", "Free to join; no Tier Miles needed", ["Miles upgrades", "Waitlist priority", "Free inflight messaging"], ["Earn Skywards Miles on Emirates, flydubai, and partners", "Instant upgrades with Miles at check-in or on board, for you and companions on the same flight", "Waitlist priority", "Free Wi-Fi in First and Business Class; free unlimited messaging in Premium Economy and Economy"]],
-      ["Silver", "25,000 Tier Miles or 25 qualifying flights in 12 months", ["30% bonus Miles", "Dubai lounge access", "Priority boarding"], ["30% bonus Miles on Emirates and flydubai flights", "Emirates Business Class Lounge access in Dubai (just you)", "Priority boarding on Emirates flights", "Business Class check-in counters outside Dubai, for you and up to 4 guests", "Free Regular seat selection in Economy (just you)", "12 kg extra baggage on weight-concept routes (no extra bag on piece-concept routes like the US)", "Can book First Class Classic Rewards with Miles"]],
-      ["Gold", "50,000 Tier Miles or 50 qualifying flights in 12 months", ["75% bonus Miles", "Worldwide lounges + guest", "Extra checked bag"], ["75% bonus Miles on Emirates and flydubai flights", "Emirates Business Class lounges in Dubai and worldwide, plus 1 guest on your flight", "Free Regular and Preferred Economy seats for everyone in your booking", "1 extra checked bag on piece-concept routes like the US (23 kg in Economy, 32 kg in Business/First); 16 kg extra on weight-concept routes", "Business Class check-in counters and priority bag tagging", "Priority boarding", "Booking priority on sold-out flights for top Economy Flex Plus fares (call 48+ hours ahead)"]],
-      ["Platinum", "150,000 Tier Miles plus at least 1 Business or First Class flight in 12 months", ["100% bonus Miles", "First Class lounges", "Gold for a partner"], ["100% bonus Miles on Emirates and flydubai flights", "Emirates First and Business Class lounges in Dubai and Emirates lounges worldwide, plus 1 adult and 2 children as guests", "First Class check-in for you and up to 4 guests, any cabin", "Free Economy seat selection incl. Extra Legroom (Regular, Preferred, and Twin free for others in your booking)", "1 extra checked bag on piece-concept routes like the US (23 kg in Economy, 32 kg in Business/First); 20 kg extra on weight-concept routes", "Gold Partner membership to give a spouse, partner, or friend", "Miles don’t expire while you stay Platinum; free home check-in in Dubai"]],
+      ["Silver", "25,000 Tier Miles or 25 qualifying flights in 12 months", ["30% bonus Miles", "Dubai lounge access", "Priority boarding"], ["30% bonus Miles on Emirates and flydubai flights", "Emirates Business Class Lounge access in Dubai (just you)", "Priority boarding on Emirates flights", "Business Class check-in counters outside Dubai, for you and up to 4 guests", "Free Regular seat selection in Economy (just you)", "12 kg extra baggage on routes with a weight allowance (no extra bag on routes with a bag-count allowance, like the US)", "Can book First Class Classic Rewards with Miles"]],
+      ["Gold", "50,000 Tier Miles or 50 qualifying flights in 12 months", ["75% bonus Miles", "Worldwide lounges + guest", "Extra checked bag"], ["75% bonus Miles on Emirates and flydubai flights", "Emirates Business Class lounges in Dubai and worldwide, plus 1 guest on your flight", "Free Regular and Preferred Economy seats for everyone in your booking", "1 extra checked bag on routes with a bag-count allowance, like the US (23 kg in Economy, 32 kg in Business/First); 16 kg extra on routes with a weight allowance", "Business Class check-in counters and priority bag tagging", "Priority boarding", "Booking priority on sold-out flights for top Economy Flex Plus fares (call 48+ hours ahead)"]],
+      ["Platinum", "150,000 Tier Miles plus at least 1 Business or First Class flight in 12 months", ["100% bonus Miles", "First Class lounges", "Gold for a partner"], ["100% bonus Miles on Emirates and flydubai flights", "Emirates First and Business Class lounges in Dubai and Emirates lounges worldwide, plus 1 adult and 2 children as guests", "First Class check-in for you and up to 4 guests, any cabin", "Free Economy seat selection incl. Extra Legroom (Regular, Preferred, and Twin free for others in your booking)", "1 extra checked bag on routes with a bag-count allowance, like the US (23 kg in Economy, 32 kg in Business/First); 20 kg extra on routes with a weight allowance", "Gold Partner membership to give a spouse, partner, or friend", "Miles don’t expire while you stay Platinum; free home check-in in Dubai"]],
     ],
     singapore: [
       ["Elite Silver", "25,000 Elite miles in 12 consecutive months", ["25% bonus miles", "Free Standard seats", "Extra checked bag"], ["25% bonus miles on Singapore Airlines and Scoot flights (not on the cheapest Economy fares: Q, N, V, K, G)", "Free Standard Seat selection in Economy on any fare", "Priority check-in and boarding on Singapore Airlines", "1 extra checked bag on US and Canada flights (10kg extra elsewhere)", "Priority waitlist and airport standby", "Star Alliance Silver", "Discounts on extra baggage and KrisFlyer service fees"]],
       ["Elite Gold", "50,000 Elite miles in 12 consecutive months", ["Lounge access", "Star Alliance Gold", "Extra checked bag"], ["Lounge access in any cabin, plus a guest: KrisFlyer Gold and SilverKris lounges, Star Alliance Gold lounges (1,000+ lounges worldwide)", "Star Alliance Gold: priority check-in, boarding, and Gold Track security at select airports", "Free Forward Zone or Standard seats in Economy on Singapore Airlines", "1 extra checked bag on US and Canada flights (20kg extra elsewhere)", "Priority baggage handling", "Marriott Bonvoy Gold Elite status match", "Everything in Elite Silver, including 25% bonus miles"]],
-      ["PPS Club", "25,000 PPS Value (roughly S$1 per S$1 of Singapore Airlines Business, First, or Suites fares) in 12 consecutive months", ["Miles never expire", "Business lounges", "2 extra bags"], ["KrisFlyer miles never expire while you are a member", "25% bonus miles on Singapore Airlines flights", "Business Class SilverKris and Star Alliance Gold lounges, plus a guest", "2 extra checked bags on US and Canada flights (double allowance elsewhere)", "Free Extra Legroom, Forward Zone, or Standard seats in Economy and Premium Economy", "Guaranteed Economy seat (full Y fare, booked 24+ hours out) and first priority for Saver award seats", "Star Alliance Gold"]],
+      ["PPS Club", "25,000 PPS Value (roughly S$1 per S$1 of Singapore Airlines Business, First, or Suites fares) in 12 consecutive months", ["Miles never expire", "Business lounges", "2 extra bags"], ["KrisFlyer miles never expire while you are a member", "25% bonus miles on Singapore Airlines flights", "Business Class SilverKris and Star Alliance Gold lounges, plus a guest", "2 extra checked bags on US and Canada flights (double allowance elsewhere)", "Free Extra Legroom, Forward Zone, or Standard seats in Economy and Premium Economy", "Guaranteed Economy seat on a full-fare Economy ticket booked 24+ hours ahead, and first priority for Saver award seats", "Star Alliance Gold"]],
       ["Solitaire PPS Club", "50,000 PPS Value within one PPS Club membership year (renew with 50,000 a year)", ["First Class lounges", "First Class check-in", "Supplementary card"], ["First Class area of SilverKris lounges, plus a guest", "First Class check-in when flying any cabin on Singapore Airlines (spouse and children too)", "A Supplementary card that shares many of your perks with someone, even when flying separately", "Among the first on waitlists and airport standby", "Membership gift on each upgrade or renewal", "Everything in PPS Club"]],
     ],
     qatar: [
@@ -2862,7 +2865,7 @@ var siteLock = (function () {
     ],
     turkish: [
       ["Classic", "Free to join (starting level)", ["Earn & redeem miles", "Free Wi-Fi messaging", "1,000 welcome miles"], ["1,000 welcome miles after your first flight", "Earn miles on Turkish Airlines and Star Alliance flights", "Award tickets and cabin upgrades with miles", "Free unlimited messaging on Wi-Fi-equipped international flights", "Up to 1.5x miles and Status Miles on international Business Class", "Meal preference and a birthday or anniversary celebration cake"]],
-      ["Classic Plus", "25,000 Status Miles (or 40 paid flights) in any 12 months", ["Domestic lounges", "10 kg extra bags", "Star Alliance Silver"], ["Star Alliance Silver", "Lounge access on Turkish Airlines domestic flights (member only)", "Business Class check-in on domestic flights", "10 kg extra checked baggage (not on piece-concept routes)", "250 MB free Wi-Fi plus unlimited messaging", "25% extra Status Miles on Business Class (up to 1.75x)", "Free Hold the Price on fares"]],
+      ["Classic Plus", "25,000 Status Miles (or 40 paid flights) in any 12 months", ["Domestic lounges", "10 kg extra bags", "Star Alliance Silver"], ["Star Alliance Silver", "Lounge access on Turkish Airlines domestic flights (member only)", "Business Class check-in on domestic flights", "10 kg extra checked baggage (not on routes with a bag-count allowance)", "250 MB free Wi-Fi plus unlimited messaging", "25% extra Status Miles on Business Class (up to 1.75x)", "Free Hold the Price on fares"]],
       ["Elite", "40,000 Status Miles in any 12 months", ["Star Alliance Gold", "Lounges + 1 guest", "Extra bag"], ["Star Alliance Gold: partner lounges, priority check-in, and Fast Track where offered", "Turkish Airlines lounges on domestic and international flights, with family or 1 guest", "Extra 20 kg or 1 extra piece of checked baggage (23 kg Economy, 32 kg Business)", "Free standard and front-row seats, including companions on your booking", "Priority boarding and priority baggage delivery", "400 MB free Wi-Fi in Economy, unlimited in Business", "Borrow up to 10,000 miles for award tickets"]],
       ["Elite Plus", "80,000 Status Miles in any 12 months", ["2 cabin upgrades", "Guaranteed seat", "25 kg extra bags"], ["All Elite perks, including Star Alliance Gold and lounges with family or 1 guest", "2 free cabin upgrade vouchers per 12-month period, plus top upgrade priority", "Guaranteed seat on request for bookings made 72+ hours before departure (subject to availability)", "Extra 25 kg or 1 extra piece of checked baggage (23 kg Economy, 32 kg Business)", "Gift Elite status to 3 people (one time only, 40,000 miles each)", "Borrow up to 15,000 miles for award tickets", "Top standby priority"]],
     ],
@@ -2873,10 +2876,10 @@ var siteLock = (function () {
       ["Mosaic 4", "250 tiles in a calendar year", ["BlueHouse lounge access", "8 Mint upgrades", "11 points per $1"], ["5 bonus points per $1 on JetBlue flights (11 per $1 when booked on jetblue.com or the app)", "Free BlueHouse lounge access (JFK Terminal 5, Boston Terminal C) for you + 1 guest (not Main Base or EvenMore Base fares)", "4 more Move to Mint certificates (8 total), plus 2 more for every 100 tiles past 250", "Gift Mosaic 1 status to another TrueBlue member", "Free EvenMore extra-legroom seats at booking for you + 4 companions", "Another Mosaic Perk You Pick", "Everything in Mosaic 3"]],
     ],
     choice: [
-      ["Gold", "5 nights or 10,000 elite credits (about $1,000 on stays) a year", ["10% bonus", "Late checkout", "Welcome gift"], ["10% bonus points on stays", "Early check-in up to 2 hours early and late checkout until 2 p.m. (when available)", "Welcome gift of bonus points or a snack and drink at check-in", "Space-available room upgrades at Cambria, Ascend and Radisson-brand hotels", "Points never expire while you hold status", "Elite reserved parking and a dedicated elite service line"]],
-      ["Platinum", "15 nights or 30,000 elite credits (about $3,000 on stays) a year", ["25% bonus", "Late checkout", "Welcome gift"], ["25% bonus points on stays", "Early check-in up to 2 hours early and late checkout until 2 p.m. (when available)", "Welcome gift of bonus points or a snack and drink at check-in", "Space-available room upgrades at Cambria, Ascend and Radisson-brand hotels", "Points never expire while you hold status", "Elite reserved parking and a dedicated elite service line"]],
-      ["Diamond", "35 nights or 70,000 elite credits (about $7,000 on stays) a year", ["50% bonus", "Free Radisson breakfast", "Room guarantee"], ["50% bonus points on stays", "Free breakfast for you and a guest at Radisson-brand hotels in the Americas", "Guaranteed room when booked 48 hours ahead at Cambria, Ascend and Radisson-brand hotels", "Space-available room upgrades at Cambria, Ascend and Radisson-brand hotels", "Early check-in and late checkout until 2 p.m. (when available)", "Welcome gift, elite parking, and points that never expire"]],
-      ["Titanium", "55 nights or 110,000 elite credits (about $11,000 on stays) a year", ["Half-price award stay", "50% bonus", "Free Radisson breakfast"], ["Titanium Travel Award: once a year, book a reward stay (1 room, up to 7 nights) for half the points at select hotels", "50% bonus points on stays", "Free breakfast for you and a guest at Radisson-brand hotels in the Americas", "Guaranteed room when booked 48 hours ahead at Cambria, Ascend and Radisson-brand hotels", "Space-available room upgrades, early check-in and late checkout (when available)", "Everything in Diamond"]],
+      ["Gold", "5 nights or 10,000 elite credits (about $1,000 on stays) a year", ["10% bonus", "Late checkout", "Welcome gift"], ["10% bonus points on stays", "Early check-in up to 2 hours early and late checkout until 2 p.m. (when available)", "Welcome gift of bonus points or a snack and drink at check-in", "Room upgrades at Cambria, Ascend and Radisson-brand hotels (when available)", "Points never expire while you hold status", "Elite reserved parking and a dedicated elite service line"]],
+      ["Platinum", "15 nights or 30,000 elite credits (about $3,000 on stays) a year", ["25% bonus", "Late checkout", "Welcome gift"], ["25% bonus points on stays", "Early check-in up to 2 hours early and late checkout until 2 p.m. (when available)", "Welcome gift of bonus points or a snack and drink at check-in", "Room upgrades at Cambria, Ascend and Radisson-brand hotels (when available)", "Points never expire while you hold status", "Elite reserved parking and a dedicated elite service line"]],
+      ["Diamond", "35 nights or 70,000 elite credits (about $7,000 on stays) a year", ["50% bonus", "Free Radisson breakfast", "Room guarantee"], ["50% bonus points on stays", "Free breakfast for you and a guest at Radisson-brand hotels in the Americas", "Guaranteed room when booked 48 hours ahead at Cambria, Ascend and Radisson-brand hotels", "Room upgrades at Cambria, Ascend and Radisson-brand hotels (when available)", "Early check-in and late checkout until 2 p.m. (when available)", "Welcome gift, elite parking, and points that never expire"]],
+      ["Titanium", "55 nights or 110,000 elite credits (about $11,000 on stays) a year", ["Half-price award stay", "50% bonus", "Free Radisson breakfast"], ["Titanium Travel Award: once a year, book a reward stay (1 room, up to 7 nights) for half the points at select hotels", "50% bonus points on stays", "Free breakfast for you and a guest at Radisson-brand hotels in the Americas", "Guaranteed room when booked 48 hours ahead at Cambria, Ascend and Radisson-brand hotels", "Room upgrades, early check-in and late checkout (when available)", "Everything in Diamond"]],
     ],
     accor: [
       ["Classic", "Free to join", ["Member rates", "Premium Wi-Fi", "Earn Reward points"], ["Member rate: 2% to 10% off public rates", "Premium Wi-Fi", "Earn Reward points on stays (25 per €10 at most brands)", "Free health club access where the hotel charges for it", "Partner perks, like up to 15% off car rentals"]],
@@ -2898,9 +2901,9 @@ var siteLock = (function () {
       ["HON Circle Member", "6,000 HON Circle Points in a calendar year (earned on Business and First Class flights with Lufthansa Group and partner airlines)", ["First Class lounges", "4 upgrade vouchers", "Chauffeur service"], ["Lufthansa First Class, SWISS First, and Austrian HON Circle lounges, with a companion plus your spouse or partner", "Lufthansa First Class Terminal in Frankfurt in any cabin", "4 upgrade eVouchers when you qualify and with every renewal", "Free advance seat selection for you and companions on the same booking (not on Light or Basic fares)", "Priority boarding (Group 1), First Class check-in, and fast lane", "Chauffeur and transfer service, plus personal HON Circle service", "Highest waitlist priority, booking guarantee up to 24 hours before departure, and a Senator partner card"], ["hon circle"]],
     ],
     cathay: [
-      ["Green", "Free to join (you become a lifetime Green member)", ["48-hr online check-in", "24-hr free cancellation", "Lounge pass at 200 pts"], ["Earn Asia Miles and Status Points on Cathay Pacific and oneworld flights", "Priority online check-in up to 48 hours before departure (add your membership number when you book)", "24-hour free cancellation on bookings made on Cathay’s website or app (not when the first flight is within 8 days)", "Use Asia Miles for extra-legroom seats and extra baggage", "1 Business class lounge pass when you reach 200 Status Points"]],
+      ["Green", "Free to join (you become a lifetime Green member)", ["48-hr online check-in", "24-hr free cancellation", "Lounge pass at 200 Status Points"], ["Earn Asia Miles and Status Points on Cathay Pacific and oneworld flights", "Priority online check-in up to 48 hours before departure (add your membership number when you book)", "24-hour free cancellation on bookings made on Cathay’s website or app (not when the first flight is within 8 days)", "Use Asia Miles for extra-legroom seats and extra baggage", "1 Business class lounge pass when you reach 200 Status Points"]],
       ["Silver", "300 Status Points in a membership year, plus at least 1 eligible Cathay Pacific flight (2027 status is based on Status Points earned Jan 1–Dec 31, 2026)", ["Business lounges", "Business check-in", "Priority boarding"], ["Cathay Pacific Business class lounges when you fly Cathay Pacific (just you)", "Business class check-in and priority group boarding, for you and your travel companions", "Priority baggage handling and a 10 kg cabin bag allowance on Cathay Pacific flights", "Advance seat reservation and priority waitlisting on paid tickets", "2 Business class lounge passes for companions when you reach 450 Status Points", "oneworld Ruby"]],
-      ["Gold", "600 Status Points in a membership year, plus at least 1 eligible Cathay Pacific flight (2027 status is based on Status Points earned Jan 1–Dec 31, 2026)", ["Lounges + 1 guest", "Extra checked bag", "Free inflight Wi-Fi"], ["Business class lounges on Cathay Pacific and oneworld flights, plus 1 guest", "1 extra checked bag (varies by where your flight starts) and a 10 kg cabin bag allowance on Cathay Pacific", "Free inflight Wi-Fi on Cathay Pacific", "Extra-legroom and preferred seats when you book; a guaranteed Economy seat (Y fare) up to 72 hours before departure", "Business class check-in, priority boarding, and priority baggage handling", "2 lounge passes at 800 Status Points and 4 bookable upgrades at 1,000 Status Points", "oneworld Sapphire"]],
+      ["Gold", "600 Status Points in a membership year, plus at least 1 eligible Cathay Pacific flight (2027 status is based on Status Points earned Jan 1–Dec 31, 2026)", ["Lounges + 1 guest", "Extra checked bag", "Free inflight Wi-Fi"], ["Business class lounges on Cathay Pacific and oneworld flights, plus 1 guest", "1 extra checked bag (varies by where your flight starts) and a 10 kg cabin bag allowance on Cathay Pacific", "Free inflight Wi-Fi on Cathay Pacific", "Extra-legroom and preferred seats when you book; a guaranteed seat on a full-fare Economy ticket up to 72 hours before departure", "Business class check-in, priority boarding, and priority baggage handling", "2 lounge passes at 800 Status Points and 4 bookable upgrades at 1,000 Status Points", "oneworld Sapphire"]],
       ["Diamond", "1,200 Status Points in a membership year, plus at least 1 eligible Cathay Pacific flight (2027 status is based on Status Points earned Jan 1–Dec 31, 2026, and needs at least 2 eligible Cathay Pacific-marketed flights)", ["First class lounges", "Guaranteed Business seat", "Lounges + 2 guests"], ["Cathay Pacific First and Business class lounges on Cathay Pacific and oneworld flights, plus up to 2 guests (1 at partner lounges)", "First or Business class check-in, priority boarding, and priority baggage handling", "1 extra checked bag (varies by where your flight starts) and a 15 kg cabin bag allowance on Cathay Pacific", "Guaranteed Economy, Premium Economy, and Business seats (Y, W, J fares) up to 24 hours before departure (Business excludes the A321neo)", "Free inflight Wi-Fi, plus 10% off miles on Cathay Pacific award flights booked with Miles Plus Cash", "2 lounge passes at 1,400 Status Points, 4 bookable upgrades at 1,600, and a Gold membership to gift at 1,800", "oneworld Emerald"]],
     ],
     qantas: [
@@ -2926,7 +2929,7 @@ var siteLock = (function () {
       ["Silver", "25,000 Tier Miles in a rolling 12 months, including 10,000 from flying (18,750 and 7,500 through Mar 31, 2027). Renew with 20,000, including 10,000 from flying", ["25% bonus miles", "Guaranteed Economy seat", "Pick 2 extra perks"], ["25% bonus miles on Etihad flights (also on Virgin Australia, Saudia, Gulf Air, and Air Serbia)", "Guaranteed Economy seat up to 48 hours before departure, on Deluxe fares", "Dedicated check-in counters in Abu Dhabi", "Free onboard Wi-Fi for chat", "Pick 2 extra perks: Abu Dhabi Business lounge access for you, free Standard Economy seat selection for you, up to 10% off extra bags, or 2 Reward Shop vouchers", "30% off AWNIC insurance; UAE co-brand cardholders can buy back their tier with 75,000 miles"]],
       ["Gold", "50,000 Tier Miles in a rolling 12 months, including 20,000 from flying. Renew with 40,000, including 20,000 from flying. Until Mar 31, 2027, members who held a tier on Mar 17, 2026 need 25% less: 37,500 to qualify and 30,000 to renew, with 15,000 from flying", ["50% bonus miles", "Priority boarding", "Pick 4 extra perks"], ["50% bonus miles on Etihad and select partner flights", "Business Class check-in, priority boarding, priority bags, and fast-track immigration at select airports", "Free Standard seat selection for you and 1 companion", "24/7 dedicated contact center", "Pick 4 extra perks, such as Business lounge access for you and 1 guest, up to 15 kg extra baggage, an Etihad chauffeur in the UAE, or a free Promo award refund", "Up to 10% off Promo award seats", "At 75,000 Tier Miles, pick 2 more: 2 Business lounge passes, a Silver status nomination, or 10,000 bonus miles"]],
       ["Platinum", "125,000 Tier Miles in a rolling 12 months, including 40,000 from flying (93,750 and 30,000 through Mar 31, 2027). Renew with 100,000, including 40,000 from flying (75,000 and 30,000 through Mar 31, 2027)", ["100% bonus miles", "Lounges + 1 guest", "Gift Gold status"], ["100% bonus miles on Etihad flights, and your miles never expire", "Business lounge access for you and 1 guest on Etihad-operated flights", "First Class check-in, priority boarding, priority bags, and fast-track immigration", "Guaranteed Business seat up to 48 hours before departure on Deluxe fares; free Standard seats for you and 3 companions", "Free onboard Wi-Fi, a Gold status nomination, and a one-time 6-month tier extension", "Pick 5 extra perks, such as First lounge access plus 1 guest, same-day flight changes, up to 20 kg extra baggage, or 2 upgrades on select routes", "At 175,000 Tier Miles, pick 2 more: 3 Business lounge passes, 3 Priority access passes, or 20,000 bonus miles"]],
-      ["Emerald", "USD 150,000 spent on Etihad flights (excluding taxes) in a rolling 12 months; renew with the same spend (not part of the 25% reduction)", ["Guaranteed award seats", "100% bonus miles", "All Platinum perks"], ["100% bonus miles, and your miles never expire", "Guaranteed Business Promo award seat (not on restricted or overbooked flights)", "Up to 10% off Promo award seats", "Platinum-level benefits, including Business lounge access plus 1 guest, First Class check-in, and fast-track immigration", "15 minutes of free spa time at Abu Dhabi’s Zayed International Airport"]],
+      ["Emerald", "USD 150,000 spent on Etihad flights (excluding taxes) in a rolling 12 months; renew with the same spend (the 25% reduction to Mar 31, 2027 doesn’t apply)", ["Guaranteed award seats", "100% bonus miles", "All Platinum perks"], ["100% bonus miles, and your miles never expire", "Guaranteed Business Promo award seat (not on restricted or overbooked flights)", "Up to 10% off Promo award seats", "Platinum-level benefits, including Business lounge access plus 1 guest, First Class check-in, and fast-track immigration", "15 minutes of free spa time at Abu Dhabi’s Zayed International Airport"]],
     ],
     aerlingus: [
       ["Green", "Free to join (entry level). Earn 301 Tier Credits and fly at least 2 Aer Lingus flights between April 1 and March 31 to move up to Silver", ["Collect Avios", "Earn Tier Credits", "Member offers"], ["Collect Avios on Aer Lingus and selected partner airline flights", "Collect Avios with shopping, hotel, car hire and other partners, including the Avios eStore", "Spend Avios on Reward Flights with Aer Lingus and selected partners, or use Pay with Avios", "Earn Tier Credits on Aer Lingus and partner flights toward Silver", "Member-only offers on collecting and spending Avios"]],
@@ -2946,9 +2949,9 @@ var siteLock = (function () {
     aeromexico: [
       ["Classic", "Free to join (entry level). Earn 25,000 qualifying points or 25 qualifying flights from January 1 to December 31 to move up to Silver", ["8 points per $1", "Points never expire", "Redeem for flights"], ["8 Aeromexico Rewards Points per $1 spent on Aeromexico flights", "Points never expire once they are in your account", "Up to 9 months after a flight to claim missing points", "Redeem points for flights, extra bags, seats, and trip extras"]],
       ["Silver", "25,000 qualifying points or 25 qualifying flights from January 1 to December 31 (Basic/V fares don’t count)", ["1 free checked bag", "Free seats 24 hrs out", "SkyTeam Elite"], ["2 extra points per $1 on Aeromexico flights (10 in all)", "Free preferred, exit-row, and economy seats from 24 hours before departure (not Basic fares)", "First extra checked bag free (up to 25 kg)", "Complimentary Premier upgrades on domestic routes, at the gate (when available; member only)", "SkyPriority check-in and Zone 3 boarding", "SkyTeam Elite", "Priority phone line"]],
-      ["Gold", "50,000 qualifying points or 50 qualifying flights from January 1 to December 31 (Basic/V fares don’t count)", ["Upgrades 24 hrs out", "Zone 2 boarding", "1 free bag"], ["3 extra points per $1 on Aeromexico flights (11 in all)", "Complimentary Premier upgrades for you and 1 companion, clearing 24 hours out (when available)", "Free preferred, exit-row, and economy seats 48 hours out (AM Plus 24 hours out)", "First extra checked bag free (up to 25 kg)", "SkyPriority check-in and Zone 2 boarding", "SkyTeam Elite", "Priority phone line"]],
-      ["Platinum", "80,000 qualifying points or 80 qualifying flights from January 1 to December 31 (Basic/V fares don’t count)", ["Intl lounges + 1 guest", "Upgrades 72 hrs out", "Free seats at booking"], ["5 extra points per $1 on Aeromexico flights (13 in all)", "Complimentary Premier upgrades for you and 1 companion, clearing 72 hours out (when available)", "Aeromexico Premier Lounges and SkyTeam lounges with 1 guest on the same itinerary, only when flying internationally (domestic-only trips within Mexico don’t qualify)", "Free seat selection at booking, including AM Plus", "First extra checked bag free (up to 25 kg), with priority baggage delivery", "SkyTeam Elite Plus, SkyPriority, and Zone 2 boarding", "Dedicated customer service line"]],
-      ["Titanium", "100,000 qualifying points or 100 qualifying flights from January 1 to December 31 (Basic/V fares don’t count)", ["Upgrades 5 days out", "Intl lounges + 2 guests", "Guaranteed award seat"], ["8 extra points per $1 on Aeromexico flights (16 in all)", "Complimentary Premier upgrades for you and 1 companion, clearing 120 hours (5 days) out, plus on some Delta flights (when available)", "Aeromexico Premier Lounges with 2 guests and SkyTeam lounges with 1 guest, only when flying internationally (domestic-only trips within Mexico don’t qualify)", "Free seat selection at booking, including AM Plus", "First extra checked bag free (up to 25 kg); can swap it for sports equipment (not on Basic fares or in US/Canada markets)", "Zone 1 boarding, an exclusive Mexico City airport line, and SkyTeam Elite Plus", "Once a year: an award ticket with no service charge, and an award seat guaranteed if there’s physical space on the plane"]],
+      ["Gold", "50,000 qualifying points or 50 qualifying flights from January 1 to December 31 (Basic/V fares don’t count)", ["Upgrades 24 hrs out", "Zone 2 boarding", "1 free bag"], ["3 extra points per $1 on Aeromexico flights (11 in all)", "Complimentary Premier upgrades for you and 1 companion, as early as 24 hours before the flight (when available)", "Free preferred, exit-row, and economy seats 48 hours out (AM Plus 24 hours out)", "First extra checked bag free (up to 25 kg)", "SkyPriority check-in and Zone 2 boarding", "SkyTeam Elite", "Priority phone line"]],
+      ["Platinum", "80,000 qualifying points or 80 qualifying flights from January 1 to December 31 (Basic/V fares don’t count)", ["Intl lounges + 1 guest", "Upgrades 72 hrs out", "Free seats at booking"], ["5 extra points per $1 on Aeromexico flights (13 in all)", "Complimentary Premier upgrades for you and 1 companion, as early as 72 hours before the flight (when available)", "Aeromexico Premier Lounges and SkyTeam lounges with 1 guest on the same itinerary, only when flying internationally (domestic-only trips within Mexico don’t qualify)", "Free seat selection at booking, including AM Plus", "First extra checked bag free (up to 25 kg), with priority baggage delivery", "SkyTeam Elite Plus, SkyPriority, and Zone 2 boarding", "Dedicated customer service line"]],
+      ["Titanium", "100,000 qualifying points or 100 qualifying flights from January 1 to December 31 (Basic/V fares don’t count)", ["Upgrades 5 days out", "Intl lounges + 2 guests", "Guaranteed award seat"], ["8 extra points per $1 on Aeromexico flights (16 in all)", "Complimentary Premier upgrades for you and 1 companion, as early as 120 hours (5 days) before the flight, plus on some Delta flights (when available)", "Aeromexico Premier Lounges with 2 guests and SkyTeam lounges with 1 guest, only when flying internationally (domestic-only trips within Mexico don’t qualify)", "Free seat selection at booking, including AM Plus", "First extra checked bag free (up to 25 kg); can swap it for sports equipment (not on Basic fares or in US/Canada markets)", "Zone 1 boarding, an exclusive Mexico City airport line, and SkyTeam Elite Plus", "Once a year: an award ticket with no service charge, and an award seat guaranteed if there’s physical space on the plane"]],
     ],
     latam: [
       ["Gold", "12,000 Qualifying Points in a calendar year (Jan 1–Dec 31)", ["20% bonus miles", "Premium check-in", "4 upgrade segments"], ["20% bonus LATAM Pass Miles on international LATAM flights (33% on domestic flights)", "Premium check-in and Premium Boarding on LATAM flights", "Free standard seat selection on LATAM flights (Light fare and up)", "4 complimentary upgrade segments within South America, shared with a travel companion", "50% off LATAM+ extra-legroom seats on domestic flights", "Priority baggage handling and priority customer service", "Your LATAM Pass Miles don’t expire while you hold Elite status"]],
@@ -3006,7 +3009,7 @@ var siteLock = (function () {
   // adds the perks it announced on Oct 27, 2026 (rental-car status matches you ask for, points on Home Away From Home
   // stays) and its new limit of two Bilt Cash hotel redemptions a year.
   const BENEFITS_2027 = {
-    united: BENEFITS.united.map(([name, , short, perks], i) => [name, `${['6,000', '12,000', '18,000', '32,000'][i]} PQP a year, with at least 4 flights on United or United Express`, short, perks]),
+    united: BENEFITS.united.map(([name, , short, perks], i) => [name, `${['6,000 Premier qualifying points (PQP)', '12,000 PQP', '18,000 PQP', '32,000 PQP'][i]} a year, with at least 4 flights on United or United Express`, short, perks]),
     southwest: [
       ['Silver', '25 flights or 35,000 tier points a year', ["1st checked bag free", "Seat pick at booking", "Priority lanes"], ['40% bonus points on flights', 'Board in Group 1', 'First checked bag free (the second is $35 through Dec 31, 2027 if you earned A-List in 2026)', 'Pick a Preferred or Standard seat at booking (when available)', 'Priority and Express lanes', 'Free same-day standby, Basic fares too'], ['a list']],
       ['Gold', '50 flights or 65,000 tier points a year', ["2 free checked bags", "Any seat incl. Extra Legroom", "Board before Group 1"], ['60% bonus points on flights (100% through Dec 31, 2027 if you earned A-List Preferred in 2026)', 'Board before Group 1', '2 free checked bags', 'Pick any seat at booking, Extra Legroom too (when available)', 'Up to 2 free premium drinks (select flights)', 'Priority and Express lanes', 'Free same-day standby, Basic fares too'], ['a list preferred']],
@@ -3017,6 +3020,12 @@ var siteLock = (function () {
       ['Gold', BENEFITS.bilt[1][1], ["Hertz & SIXT status", "BLADE lounges", "Points on Home Away From Home"], ['Hertz Five Star and SIXT ONE Gold status match, when you ask for it', 'Use Bilt Points on Home Away From Home bookings', 'Larger transfer bonuses on Rent Day', 'BLADE lounge access', 'Use Bilt Cash on Bilt Travel hotel stays twice a year']],
       ['Platinum', BENEFITS.bilt[2][1], ["Flying Blue Gold", "Hertz & SIXT status", "BLADE lounges"], ['Air France-KLM Flying Blue Gold status match (SkyTeam Elite Plus)', 'Hertz President’s Circle and SIXT ONE Platinum status match, when you ask for it', 'Use Bilt Points on Home Away From Home bookings', 'Larger transfer bonuses on Rent Day', 'BLADE lounge access', 'Use Bilt Cash on Bilt Travel hotel stays twice a year']],
     ],
+    // JetBlue: every Mosaic level gets BlueFirst upgrades (from its first BlueFirst plane); from Feb 1, 2027 the pet fee
+    // waiver is a Mosaic 2 perk and the Perks You Pick lists are shorter (2026's picks can be used through Jan 31, 2027).
+    jetblue: BENEFITS.jetblue.map(([name, earn, short, perks], i) => [name, earn, short, [
+      'Free space-available upgrades to BlueFirst, JetBlue’s new first class, for you + 1 companion on the same booking, on planes that have it (not Main Base or EvenMore Base fares)',
+      ...perks.map((x) => x.replace('A Mosaic Perk You Pick, like IHG Platinum Elite status, a pet fee waiver, or 15,000 points', 'A Mosaic Perk You Pick (a shorter list from Feb 1, 2027; see JetBlue’s site)')),
+      ...(i === 1 ? ['Pet fee waived from Feb 1, 2027'] : [])]]),
   };
 
   // Progress toward each level this qualifying year: the metric and one threshold per BENEFITS tier (same order).
@@ -3031,7 +3040,7 @@ var siteLock = (function () {
     ihg: { unit: 'nights', steps: [10, 20, 40, 70], alt: { unit: 'qualifying points', steps: [null, 40000, 60000, 120000] }, thru: endOf(1, 12), note: 'Qualifying nights (nights past the Gold, Platinum, or Diamond mark roll over to next year), or qualifying points from Gold up.' },
     hyatt: { unit: 'nights', steps: [10, 30, 60], alt: { unit: 'base points', steps: [25000, 50000, 100000] }, thru: endOf(2, 2), note: 'Qualifying nights, or base points.' },
     wyndham: { unit: 'nights', steps: [5, 15, 40], thru: endOf(1, 12), note: 'Qualifying nights. Nights beyond your level roll over and don’t expire, so add any banked rollover nights to this year’s count.' },
-    united: { unit: 'PQP', steps: [6000, 12000, 18000, 28000], alt: { unit: 'flights', steps: [15, 30, 45, 60], with: [5000, 10000, 15000, 22000] }, thru: endOf(2, 1), note: 'PQP alone, or fewer PQP plus Premier qualifying flights (15/30/45/60 flights with 5,000/10,000/15,000/22,000 PQP). Either way, you need at least 4 paid flights on United or United Express that year. Announced for 2027 (status for 2028): PQP only — flights no longer count — and Premier 1K needs 32,000 PQP.' },
+    united: { unit: 'PQP', steps: [6000, 12000, 18000, 28000], alt: { unit: 'flights', steps: [15, 30, 45, 60], with: [5000, 10000, 15000, 22000] }, thru: endOf(2, 1), note: 'Premier qualifying points (PQP) alone, or fewer PQP plus Premier qualifying flights (15/30/45/60 flights with 5,000/10,000/15,000/22,000 PQP). Either way, you need at least 4 paid flights on United or United Express that year. Announced for 2027 (status for 2028): PQP only — flights no longer count — and Premier 1K needs 32,000 PQP.' },
     american: { unit: 'Loyalty Points', steps: [40000, 75000, 125000, 200000], starts: 3, thru: endOf(2, 3), note: 'American’s qualifying year runs March 1 through the end of February.' },
     southwest: { unit: 'tier points', steps: [35000, 70000], alt: { unit: 'flights', steps: [20, 40] }, thru: endOf(1, 12), note: 'Tier qualifying points, or qualifying one-way flights. Announced for Jan 1, 2027: A-List becomes Silver and A-List Preferred becomes Gold, with a new Platinum level above them.' },
     alaska: { unit: 'status points', steps: [20000, 40000, 80000, 135000], thru: endOf(2, 1), note: 'Status points this calendar year.' },
@@ -3044,7 +3053,7 @@ var siteLock = (function () {
   const SWITCH_2027 = new Date(2027, 0, 1);
   const on2027Rules = (d = new Date()) => d >= SWITCH_2027;
   const TRACKS_2027 = {
-    united: { unit: 'PQP', steps: [6000, 12000, 18000, 32000], thru: TRACKS.united.thru, note: 'PQP only: flights no longer count, and Premier 1K needs 32,000 PQP. You still need at least 4 flights on United or United Express that year.' },
+    united: { unit: 'PQP', steps: [6000, 12000, 18000, 32000], thru: TRACKS.united.thru, note: 'Premier qualifying points (PQP) only: flights no longer count, and Premier 1K needs 32,000 PQP. You still need at least 4 flights on United or United Express that year.' },
     southwest: { unit: 'tier points', steps: [35000, 65000, 140000], alt: { unit: 'flights', steps: [25, 50, 100] }, thru: TRACKS.southwest.thru, note: 'Tier qualifying points, or qualifying one-way flights. Every Rapid Rewards credit card earns 1 tier point per $1 spent. A-List is now Silver and A-List Preferred is now Gold.' },
   };
   const trackById = (id, d) => (on2027Rules(d) && TRACKS_2027[id]) || TRACKS[id];
@@ -3089,7 +3098,7 @@ var siteLock = (function () {
   const FHR = 'prepaid Fine Hotels + Resorts or The Hotel Collection via Amex Travel';
   const CREDITS = {
     'amex-platinum': [
-      ['hotel', 'Lodging credit', 300, 'half', 'calendar', 'prepaid Fine Hotels + Resorts, The Hotel Collection or Airbnb Luxe via Amex Travel; 2+ nights from Jan 2027'],
+      ['hotel', 'Lodging credit', 300, 'half', 'calendar', 'prepaid Fine Hotels + Resorts, The Hotel Collection or Airbnb Luxe via Amex Travel; 2+ nights (one-night Fine Hotels + Resorts stays count only through 2026)'],
       ['airbnb-experiences', 'Airbnb Experiences', 250, 'year', 'calendar', 'bought directly on Airbnb; unlocked each year by a prepaid Airbnb Luxe stay booked via Amex Travel'],
       ['airline', 'Airline fee credit', 200, 'year', 'calendar', 'incidental fees on the airline you pick'],
       ['resy', 'Resy / Tock dining', 100, 'quarter', 'calendar', 'U.S. Resy or Tock restaurants; enroll'],
@@ -3120,7 +3129,7 @@ var siteLock = (function () {
       ['dunkin', 'Dunkin’', 7, 'month', 'calendar', 'enroll'],
     ],
     'hilton-aspire': [
-      ['resort', 'Hilton Resorts credit', 200, 'half', 'calendar', 'charged directly by participating Hilton Resorts; not Advance Purchase/non-refundable rates or SLH'],
+      ['resort', 'Hilton Resorts credit', 200, 'half', 'calendar', 'charged directly by participating Hilton Resorts; not Advance Purchase or non-refundable rates, or Small Luxury Hotels (SLH)'],
       ['flight', 'Flight credit', 50, 'quarter', 'calendar', 'booked directly with an airline or via Amex Travel'],
       ['clear', 'CLEAR+', 219, 'year', 'calendar', ''],
     ],
@@ -3139,7 +3148,7 @@ var siteLock = (function () {
     ],
     'delta-gold': [
       ['stays', 'Delta Stays', 100, 'year', 'calendar', 'prepaid hotels or vacation rentals on delta.com'],
-      ['rideshare', 'Rideshare', 10, 'month', 'calendar', 'Uber, Lyft, Curb, Alto; starts at your first card renewal (right away once you’ve had the card a year); enroll'],
+      ['rideshare', 'Rideshare', 10, 'month', 'calendar', 'Uber, Lyft, Curb, Alto; starts once you’ve had the card a year; enroll'],
     ],
     'delta-reserve-business': [
       ['stays', 'Delta Stays', 250, 'year', 'calendar', 'prepaid hotels on delta.com'],
@@ -3153,7 +3162,7 @@ var siteLock = (function () {
     ],
     'delta-gold-business': [
       ['stays', 'Delta Stays', 150, 'year', 'calendar', 'prepaid hotels on delta.com'],
-      ['rideshare', 'Rideshare', 10, 'month', 'calendar', 'Uber, Lyft, Curb, Alto; available 12 months after account opening; enroll'],
+      ['rideshare', 'Rideshare', 10, 'month', 'calendar', 'Uber, Lyft, Curb, Alto; starts once you’ve had the card a year; enroll'],
     ],
     'sapphire-reserve': [
       ['travel', 'Travel credit', 300, 'year', 'card', 'any travel purchase'],
@@ -3168,7 +3177,7 @@ var siteLock = (function () {
     ],
     'sapphire-reserve-business': [
       ['travel', 'Travel credit', 300, 'year', 'card', 'any travel purchase'],
-      ['edit', 'The Edit hotel credit', 500, 'year', 'calendar', 'two $250 prepaid 2+ night stays'],
+      ['edit', 'The Edit hotel credit', 1000, 'year', 'calendar', 'up to $250 per prepaid 2+ night stay: four a year from 2027 (two in 2026)'],
       ['select-hotels', 'Select hotels credit (2026)', 250, 'year', 'calendar', 'IHG, Montage, Pendry, Omni and more via Chase Travel'],
       ['ziprecruiter', 'ZipRecruiter', 200, 'half', 'calendar', ''],
       ['google', 'Google Workspace', 200, 'year', 'calendar', 'bought directly from Google Workspace; through 12/31/27'],
@@ -3236,7 +3245,7 @@ var siteLock = (function () {
       ['avis', 'Avis / Budget', 120, 'year', 'calendar', 'prepaid on avis.com or budget.com'],
       ['lyft', 'Lyft', 15, 'month', 'calendar', 'after 3 rides that month'],
       ['grubhub', 'Grubhub', 10, 'month', 'calendar', 'eligible Grubhub orders; accounts opened before Aug 23, 2026 keep it through Aug 31, 2027'],
-      ['inflight', 'Inflight / Admirals Club', 100, 'year', 'calendar', 'AA domestic inflight and Admirals Club food & drink; not day passes'],
+      ['inflight', 'Inflight / Admirals Club', 100, 'year', 'calendar', 'Food and drink on American Airlines domestic flights and in Admirals Club lounges; not day passes'],
     ],
     'bilt-palladium': [
       // Bilt's 2027 changes (announced Oct 27, 2026) follow each person's own card anniversary (biltSwitch): the hotel
@@ -3326,7 +3335,7 @@ var siteLock = (function () {
     ],
     'ihg-premier': [['anniversary night', 'Up to 50,000 points a night (raised Oct 2026; for existing cardmembers, nights issued before the effective date in Chase’s October notice are capped at 40,000); you can add points for pricier hotels', 12, 'each card anniversary']],
     'ihg-premier-business': [
-      ['anniversary night', 'Up to 40,000 points a night (50,000 for nights issued from 2027); you can add points', 12, 'each card anniversary'],
+      ['anniversary night', 'Up to 50,000 points a night for nights issued from 2027 (40,000 before); you can add points', 12, 'each card anniversary'],
       ['free night (spend bonus)', 'Up to 50,000 points a night; you can add points', 12, 'after $60,000 spend in a calendar year'],
     ],
     'hyatt-card': [['Category 1–4 free night', HYATT_NIGHT, 12, 'each card anniversary'], ['Category 1–4 free night (spend bonus)', HYATT_NIGHT, 12, 'after $15,000 spend in a calendar year']],
@@ -3386,6 +3395,7 @@ var siteLock = (function () {
         ['hilton', 1, 2], ['marriott', 1, 1], ['choice', 1, 1], ['lhw', 4, 1],
         ['aerlingus', 1, 1], ['ana', 1, 1], ['avianca', 1, 1], ['iberia', 1, 1], ['qantas', 1, 1], ['qatar', 1, 1],
         ['singapore', 1, 1], ['aeromexico', 1, 1.6], ['emirates', 5, 4], ['cathay', 5, 4]],
+      noteFor: ['delta', 'jetblue'], // the fee note is only for these partners' pages (and Amex's own)
       note: 'Transfers to U.S. airlines (Delta, JetBlue) add an excise tax offset fee of $0.0006 per point, up to $99, charged to your card or paid with points.',
     },
     chase: {
@@ -3469,7 +3479,9 @@ var siteLock = (function () {
         const bare = FULL_TIER_NAMES.has(id) ? full : full.replace(TIER_FILLER, ' ').replace(/\s+/g, ' ').trim();
         // A free entry level (Flying Blue Explorer, BA Blue) is where everyone starts, not a status to earn.
         const base = /^Free to join\b/.test(earn);
-        return { name, earn, short, perks, base, aliases: [...new Set([full, bare, ...also].filter(Boolean))] };
+        // A bare "80% bonus" chip says bonus what: "80% bonus points" (or the program's own unit).
+        const chips = short.map((s) => (/^\d+% bonus$/.test(s) ? `${s} ${(CATALOG_BY_ID[id] && CATALOG_BY_ID[id].unit) || 'points'}` : s));
+        return { name, earn, short: chips, perks, base, aliases: [...new Set([full, bare, ...also].filter(Boolean))] };
       });
     }
   }
@@ -3477,6 +3489,13 @@ var siteLock = (function () {
   const catalogFor = (p) => CATALOG_BY_ID[p.id] || catalogByName(p.name);
   const tiersById = (id) => (on2027Rules() && BENEFITS_2027[id]) || BENEFITS[id];
   const benefitsFor = (p) => { const c = catalogFor(p); return (c && tiersById(c.id)) || null; };
+  // A level's terms without the parts that have ended: " (135 through Nov 30, 2026)" once that day has passed, and
+  // Etihad's closing ". Until Mar 31, 2027, …" sentence. Asks the clock each time, so it changes at midnight.
+  const MON3 = 'JanFebMarAprMayJunJulAugSepOctNovDec';
+  const dayPassed = (m, d, y) => { const i = MON3.indexOf(m); return i >= 0 && i % 3 === 0 && isoOf(new Date(+y, i / 3, +d)) < todayISO(); };
+  const earnNow = (t) => t
+    .replace(/ \([^()]*? through (\w{3}) (\d{1,2}), (\d{4})\)/g, (all, m, d, y) => (dayPassed(m, d, y) ? '' : all))
+    .replace(/\. Until (\w{3}) (\d{1,2}), (\d{4}), [^.]*$/, (all, m, d, y) => (dayPassed(m, d, y) ? '' : all));
   // The rules as of today, or as of date `d`.
   const trackFor = (p, d) => { const c = catalogFor(p); return (c && trackById(c.id, d)) || null; };
   // A level that ended before the switch was never renamed, and its terms never changed.
@@ -3793,7 +3812,12 @@ var siteLock = (function () {
 
   // A form sheet you've typed in stays open on a backdrop tap or Escape, so the typing isn't thrown away: it says
   // to tap Save, and Discard (or Cancel) is how to drop it. formSnap is taken when the sheet opens.
-  const formSnap = (root) => [...root.querySelectorAll('input, select, textarea')]
+  // A status row with no level or "from" typed isn't a change: Save drops it.
+  const blankStatus = (i) => {
+    const row = i.closest && i.closest('.sl');
+    return !!row && !row.querySelector('.sl-tier').value.trim() && !row.querySelector('.sl-via').value.trim();
+  };
+  const formSnap = (root) => [...root.querySelectorAll('input, select, textarea')].filter((i) => !blankStatus(i))
     .map((i) => (i.type === 'checkbox' ? i.checked : i.value)).join('\u0001');
   function guardEdits(dialog) {
     const dirty = () => dialog._snap != null && formSnap(dialog) !== dialog._snap;
@@ -4338,7 +4362,9 @@ var siteLock = (function () {
     return { ...card, id, name, label: name, grants: second ? [] : card.grants };
   }
   // A credit's name in messages and for screen readers, saying which copy while there are two: "Lyft on Sapphire Reserve 2".
-  const onCard = (cardId, name) => (hasCardCopy(baseCardId(cardId)) ? `${name} on ${creditCard(cardId).name}` : name);
+  // Also while another card has a credit of the same name: "Uber Cash on Amex Gold".
+  const onCard = (cardId, name) => (hasCardCopy(baseCardId(cardId))
+    || creditCardIds().some((id) => id !== cardId && cardCreditDefs(id).some((c) => sameText(c.name, name))) ? `${name} on ${creditCard(cardId).name}` : name);
   // Where every card is listed together, the card beside a name you typed: "Sapphire Reserve · Biz".
   function creditCardFullName(id) {
     const { name } = creditCard(id);
@@ -4894,11 +4920,17 @@ var siteLock = (function () {
   // "84,500 miles". Anything else (a date, a minus sign, two numbers, "abc") returns null and changes nothing.
   // Points and miles are whole numbers, so a fraction counts only before k/m ("1.5k", "2,25m"), on a $ amount, or
   // where the field is dollars (`dollars`, e.g. MQDs): "212,50" is a dropped digit, not 212.5, so it isn't read.
+  // "2.125m" is 2,125,000; "2,125m" isn't read (2.125 or 2,125 million?).
   function parseEntry(raw, dollars = false) {
     const text = String(raw).normalize('NFKC').trim();
     if (text === '') return { value: null };
     const m = /^\$?\s*(\d{1,3}(?:[,. \u00a0\u202f]\d{3})+|\d+)(?:[.,](\d{1,2}))?\s*([km])?\s*(?:miles?|points?|pts|avios|mi|mqds?)?\.?$/i.exec(text);
     if (!m) return null;
+    // Before k or m, "2.125" is a decimal (2.125m is 2,125,000). "2,125m" could be 2.125 or 2,125 million: not read.
+    if (m[3] && !m[2] && /^\d{1,3}[.,]\d{3}$/.test(m[1])) {
+      if (m[1].includes(',')) return null;
+      return { value: Math.min(Math.round(Number(m[1]) * (/k/i.test(m[3]) ? 1e3 : 1e6)), MAX_VALUE) };
+    }
     if (m[2] && !m[3] && !dollars && !text.startsWith('$')) return null;
     let value = Number(m[1].replace(/\D/g, '')) + (m[2] ? Number(`0.${m[2]}`) : 0);
     if (m[3]) value *= /k/i.test(m[3]) ? 1e3 : 1e6;
@@ -5213,11 +5245,11 @@ var siteLock = (function () {
     else if (goal) {
       result = [`${fmt(total)} MQDs — still `, h('strong', null, `${fmt(goal.tier.min - total)} short`), ` of ${goal.keep ? 'keeping ' : ''}${goal.tier.name}.`];
     }
-    else result = [`${fmt(total)} MQDs — you'd keep `, h('strong', null, 'Diamond'), '.'];
+    else result = [`${fmt(total)} MQDs — you’d keep `, h('strong', null, 'Diamond'), '.'];
     $('#plan-result').replaceChildren(...result);
   }
 
-  // "✓ Breakfast / F&B credit · Room upgrades · 80% bonus" under the status. The Delta row's is filled in by
+  // "✓ Breakfast or food credit · Room upgrades · 80% bonus points" under the status. The Delta row's is filled in by
   // updateMedallion(), since it changes as MQDs are edited.
   function perkLine(p, withMedallion) {
     if (withMedallion) return h('div', { class: 'perk-line', id: 'medallion-perks', hidden: '' });
@@ -5586,7 +5618,7 @@ var siteLock = (function () {
       .replace(/\bpremier[ \t]*[il1|!][ \t]*k\b/gi, 'Premier 1K')
       // Captions at small sizes, as the reader garbles them.
       .replace(/\bloyaty\b/gi, 'Loyalty').replace(/\bqualifying rights\b/gi, 'Qualifying nights').replace(/\bqualifying pants\b/gi, 'Qualifying points')
-      .replace(/\b(?:award|foward)[ \t]+mies\b/gi, 'Award miles').replace(/\b(?:ufetime|lfetime)\b/gi, 'Lifetime').replace(/\bbalance[ \t]+s[oa]c\b/gi, 'balance SQC')
+      .replace(/\b(?:award|foward)[ \t]+mies\b/gi, 'Award miles').replace(/\b(?:ufetime|lfetime)\b/gi, 'Lifetime').replace(/\bava(?:il|li|i|l)able\b/gi, 'Available').replace(/\bbalance[ \t]+s[oa]c\b/gi, 'balance SQC')
       // A card's masked last four ("(...4417)", "•••• 1009", "xxxx7731") read as "ending 4417", never a balance.
       .replace(/(?:(?:[•●*]{2,}|\b[xX]{2,})[•●*xX \t]*|(?:\.{2,}|…)[•●*xX]*)(\d{4})(?![\d,])/g, 'ending $1')
       // A thousands comma misread as a mark ("128 »400", "57’900"): a comma again.
@@ -6807,7 +6839,9 @@ var siteLock = (function () {
         settled = true;
         clearTimeout(timer);
         if (window.caches) caches.delete(OCR_CACHE).catch(() => {}); // a bad cached copy mustn't stick
-        reject(err);
+        const e = err instanceof Error ? err : new Error(String(err)); // Tesseract's errorHandler passes a string
+        e.load = true; // the reader didn't load: not a bad picture (see playScan)
+        reject(e);
       };
       const timer = setTimeout(() => fail(new Error('the text reader took too long to load')), 120000);
       const start = () => window.Tesseract.createWorker('eng', 1, {
@@ -7398,18 +7432,18 @@ var siteLock = (function () {
   const signed = (n, format = fmt) => `${n < 0 ? '−' : '+'}${format(Math.abs(n))}`;
   const totalPoints = () => (state.programs || []).reduce((sum, p) => sum + (p.unit && state.balances[p.id] || 0), 0);
 
-  // Checked after each screenshot you collect (`r` is what it changed).
+  // Checked after each screenshot you use (`r` is what it changed).
   const BADGES = [
-    { id: 'first', name: 'First scan', how: 'Collect a screenshot', color: '#5B8DEF', test: () => game().scans >= 1 },
-    { id: 'five', name: 'Scanner', how: 'Collect 5 screenshots', color: '#1FA89A', test: () => game().scans >= 5 },
-    { id: 'twenty', name: 'Scan master', how: 'Collect 20 screenshots', color: '#0E7490', test: () => game().scans >= 20 },
+    { id: 'first', name: 'First scan', how: 'Update from a screenshot', color: '#5B8DEF', test: () => game().scans >= 1 },
+    { id: 'five', name: 'Scanner', how: 'Update from 5 screenshots', color: '#1FA89A', test: () => game().scans >= 5 },
+    { id: 'twenty', name: 'Scan master', how: 'Update from 20 screenshots', color: '#0E7490', test: () => game().scans >= 20 },
     { id: 'status', name: 'Moving up', how: 'Scan a screen with a new status', color: '#9B6BE0', test: (r) => !!(r && r.statusNew) },
     { id: 'elite3', name: 'Elite trio', how: 'Elite status in 3 programs', color: '#7C3AED', test: () => (state.programs || []).filter(hasStatus).length >= 3 },
     { id: 'six', name: 'Six figures', how: '100,000+ in one program', color: '#E0A82E', test: () => (state.programs || []).some((p) => p.unit && (state.balances[p.id] || 0) >= 100000) },
     { id: 'million', name: 'Millionaire', how: '1,000,000 points & miles in all', color: '#C2410C', test: () => totalPoints() >= 1e6 },
     { id: 'fresh', name: 'All caught up', how: 'Every balance updated this month (3+)', color: '#16A34A', test: () => { const f = freshness(); return f.total >= 3 && f.fresh === f.total; } },
     { id: 'streak4', name: 'On a roll', how: 'Update 4 weeks in a row', color: '#DC2626', test: () => streakWeeks() >= 4 },
-    { id: 'combo5', name: 'Combo ×5', how: 'Collect 5 screenshots in a row', color: '#DB2777', test: (r) => !!(r && r.combo >= 5) },
+    { id: 'combo5', name: 'Combo ×5', how: 'Update from 5 screenshots in a row', color: '#DB2777', test: (r) => !!(r && r.combo >= 5) },
     { id: 'goal', name: 'Goal getter', how: 'Reach a savings goal', color: '#15803D',
       test: () => (state.programs || []).some((p) => state.goals && state.goals[p.id] && (state.balances[p.id] || 0) >= state.goals[p.id].target) },
     { id: 'bonus', name: 'Bonus banked', how: 'Mark a card’s welcome bonus earned', color: '#A16207',
@@ -7501,7 +7535,7 @@ var siteLock = (function () {
         h('span', { class: 'lv-next' }, lv.next ? `${fmt(g.xp)} XP · ${fmt(lv.next - g.xp)} more to ${lv.nextName}` : `${fmt(g.xp)} XP · the top level`)));
     const stat = (n, label) => h('div', null, h('b', null, n), h('span', null, label));
     $('#game-stats').replaceChildren(
-      stat(fmt(g.scans), g.scans === 1 ? 'screenshot collected' : 'screenshots collected'),
+      stat(fmt(g.scans), g.scans === 1 ? 'screenshot used' : 'screenshots used'),
       stat(String(streak), `week streak${streak && !g.weeks.includes(weekNo()) ? ', update by Sunday' : g.best > streak ? ` (best ${g.best})` : ''}`),
       stat(fresh.total ? `${fresh.fresh}/${fresh.total}` : '—', 'balances up to date'));
     const gain = recentGain();
@@ -7578,7 +7612,7 @@ var siteLock = (function () {
     $('#game-sound').setAttribute('aria-pressed', String(!soundOff));
     $('#game-sound').textContent = `Sounds & vibration: ${soundOff ? 'off' : 'on'}`;
     $('#game-auto').setAttribute('aria-pressed', String(autoCollect));
-    $('#game-auto').textContent = `Auto-collect: ${autoCollect ? 'on' : 'off'}`;
+    $('#game-auto').textContent = `Auto-update after a scan: ${autoCollect ? 'on' : 'off'}`;
   }
 
   /* ---------- Scan & collect: the screenshot on a card, what it found, then its points fly into your list ---------- */
@@ -7633,12 +7667,16 @@ var siteLock = (function () {
       $('#play-shot').className = 'play-shot';
       // A picture the browser can't open (HEIC in Chrome or Edge) isn't a blurry one: say what to use instead.
       const heic = /hei[cf]/i.test(file.type || '') || /\.hei[cf]$/i.test(file.name || '');
+      // The scanner didn't load (online, but the download failed): the picture was fine, so try it again as it is.
+      const unloaded = !(err && err.decode) && navigator.onLine !== false && !!(err && err.load);
       $('#play-title').textContent = err && err.decode
         ? (heic ? 'This browser can’t open HEIC photos. Use a screenshot (PNG) or export the photo as a JPG.' : 'This browser can’t open that picture. Use a PNG or JPG screenshot.')
         : navigator.onLine === false ? 'The scanner needs an internet connection the first time.'
+        : unloaded ? 'Couldn’t load the scanner. Check your connection and try again, or paste the text instead.'
         : 'Couldn’t read that image. Try a sharper screenshot.';
       announce($('#play-title').textContent);
-      setActions([['Paste text instead', false, () => { closePlay(); openScan(); $('.scan-paste').open = true; }], ['Try another', true, pickAnother]]);
+      setActions([['Paste text instead', false, () => { closePlay(); openScan(); $('.scan-paste').open = true; }],
+        unloaded ? ['Try again', true, () => playScan(file, hint)] : ['Try another', true, pickAnother]]);
     }
   }
 
@@ -8583,7 +8621,7 @@ var siteLock = (function () {
   function collect(choice, vals, from, years) {
     // A new qualifying year began after the screen was read (the card or review sheet stayed open over New Year):
     // roll over first, and leave out last year's counts (kept as a status if they earned one), like the number
-    // editor and Update balances do.
+    // editor and Type balances do.
     if (rollOver()) renderAll();
     // The chosen program as things stand now: another window may have removed it (it isn't brought back), or added
     // the one you chose to add (that one is updated, not added twice).
@@ -8685,7 +8723,7 @@ var siteLock = (function () {
   const achievements = [];
   let achieving = false;
   function queueAchievements(reward) {
-    if (reward.levelUp) achievements.push(['Level up', `Lv ${reward.levelUp.n} · ${reward.levelUp.name}`, '#5B8DEF']);
+    if (reward.levelUp) achievements.push(['Level up', `Level ${reward.levelUp.n} · ${reward.levelUp.name}`, '#5B8DEF']);
     for (const b of reward.unlocked) achievements.push([b.kind || 'Badge unlocked', b.name, b.color]);
     if (!achieving) nextAchievement();
   }
@@ -9007,8 +9045,8 @@ var siteLock = (function () {
   // never saved or sent anywhere.
   $('#lock-btn').addEventListener('click', () => {
     $('#lock-state').textContent = window.SITE_LOCK
-      ? 'The site asks for its password each time it’s opened. To change it, make a new code here; to turn it off, ask for the code to be removed.'
-      : 'Choose a password, then send the code it makes (not the password) to be put on the site. From then on, the site asks for the password each time it’s opened.';
+      ? 'The site asks for its password each time it’s opened. To change it, make a new code here and send it the same way; to turn it off, ask whoever looks after the site to remove the code.'
+      : 'Choose a password, then send the lock code it makes (not the password) to whoever looks after this site. Once the code is added, the site asks for the password each time it’s opened.';
     $('#lock-form').reset();
     $('#lock-code').hidden = true;
     $('#lock-copy').hidden = true;
@@ -9837,12 +9875,12 @@ var siteLock = (function () {
             return row(CATALOG_BY_ID[bankId], a, b, note, mine ? state.balances[mine.id] : null, p.unit || 'points', cardRatio(bankId, c.id, a, b));
           })));
         // Which cards a bank's ratios are for, as on the bank's own page.
-        for (const [bankId] of sources) if (TRANSFERS[bankId].note) parts.push(h('p', { class: 'fine' }, TRANSFERS[bankId].note));
+        for (const [bankId] of sources) { const t = TRANSFERS[bankId]; if (t.note && (!t.noteFor || t.noteFor.includes(c.id))) parts.push(h('p', { class: 'fine' }, t.note)); }
       }
     }
     box.hidden = !parts.length;
     if (!parts.length) return;
-    parts.push(h('p', { class: 'fine' }, `Ratios are card points to partner points, as of ${TRANSFERS_AS_OF}. Transfers are usually instant and can’t be undone — confirm award space first.`));
+    parts.push(h('p', { class: 'fine' }, `Ratios are card points to partner points, as of ${TRANSFERS_AS_OF}. Transfers are usually instant and can’t be undone — first check that the flight or room you want can be booked with points.`));
     box.replaceChildren(...parts);
   }
 
@@ -10023,7 +10061,7 @@ var siteLock = (function () {
     for (const tier of tiers) {
       if (tiers.length > 1) block.append(h('p', { class: 'earn' }, tier.name));
       block.append(h('ul', { class: 'perks' }, tier.perks.map((perk) => h('li', null, perk))));
-      if (tier.earn) block.append(h('p', { class: 'earn' }, `Normally requires ${tier.earn}`));
+      if (tier.earn) block.append(h('p', { class: 'earn' }, `Normally requires ${earnNow(tier.earn)}`));
     }
     if (!tiers.length && parts.length && p.id !== 'lounges' && !(group && outlasted(p, group))) {
       block.append(h('p', { class: 'no-perks' }, 'No perk details for this level yet — check the program’s site.'));
@@ -10094,7 +10132,7 @@ var siteLock = (function () {
           pill(tier.name),
           held.has(i) ? h('span', { class: 'tag you' }, 'You') : null,
           isNext ? h('span', { class: 'tag next' }, top < 0 ? 'First level' : 'Next level') : null,
-          tier.earn ? h('span', { class: 'level-earn' }, tier.earn) : null),
+          tier.earn ? h('span', { class: 'level-earn' }, earnNow(tier.earn)) : null),
         h('ul', { class: 'perks' }, tier.perks.map((perk) => h('li', null, perk))));
     });
     $('#d-levels').replaceChildren(
@@ -10345,7 +10383,7 @@ var siteLock = (function () {
         const list = found.filter((it) => it.types.includes(t.id));
         return h('section', { class: 'perk-cat', 'aria-label': t.label },
           h('h3', { class: 'perk-cat-title' }, h('span', { class: 'perk-ico' }, svgIcon(t.icon)), t.label, h('span', { class: 'n' }, String(list.length))),
-          h('ul', { class: 'perk-items' }, list.map((it) => h('li', { class: 'perk-item' },
+          h('ul', { class: 'perk-items', role: 'list' }, list.map((it) => h('li', { class: 'perk-item' },
             h('span', { class: 'perk-text' }, it.perk),
             h('button', { type: 'button', class: 'perk-src', 'data-open': it.p.id, 'aria-label': `${it.p.name}${it.tierName ? ` ${it.tierName}` : ''}${it.via ? `, from ${it.via}` : ''}. Open program` },
               avatar(it.p),
@@ -10590,7 +10628,7 @@ var siteLock = (function () {
         subject = tier ? `${nameOf(item.p)} ${tier}` : nameOf(item.p);
         description = [
           item.group.via && (/^earned\b/i.test(item.group.via) ? `Earned ${item.group.via.slice(7)}.` : `From ${splitParts(item.group.via).join(' · ')}.`),
-          info && info.earn && `To requalify: ${info.earn}.`,
+          info && info.earn && `To requalify: ${earnNow(info.earn)}.`,
           'Reminder from Points & Status Tracker.',
         ].filter(Boolean).join('\n');
       } else if (item.kind === 'points') {
@@ -11256,7 +11294,7 @@ var siteLock = (function () {
           if (at < 0) state.programs.push(p); else state.programs.splice(at, 0, p);
         }
         const through = parseISODate(b.landed).getFullYear() + 1;
-        p.status.push({ tier: 'Gold', via: 'Bilt Palladium welcome offer', exp: `${through}-12-31` });
+        p.status.push({ tier: 'Gold', via: 'Bilt Palladium welcome bonus', exp: `${through}-12-31` });
         markChanged();
         saveNow();
         renderAll();
@@ -11474,6 +11512,8 @@ var siteLock = (function () {
       sortVouchers();
       scheduleSave();
       holdVouchers(() => renderVouchers(removed));
+      if (document.activeElement === $('#vempty')) document.activeElement.blur(); // hidden again now
+      focusAfterUndo(`#vlist .v-del[data-index="${state.vouchers.indexOf(removed)}"]`, '#vlist .v-del'); // its ✕ again
     });
   });
 
@@ -11554,6 +11594,11 @@ var siteLock = (function () {
       else out.push(`${nameOf(p)} — ${balance == null ? 'no balance entered' : `${fmt(balance)} ${p.unit}${!state.hideValues && valueOf(p) ? ` (≈ ${money(valueOf(p))})` : ''}${updated}`}`);
       if (state.members[p.id]) out.push(`  Member #: ${state.members[p.id]}`);
       if (state.memos[p.id]) out.push(...state.memos[p.id].trim().split('\n').map((line) => `  Note: ${line}`));
+      const goal = p.unit && state.goals[p.id];
+      if (goal) { // as on its row: "Maldives: 85%"
+        const have = state.balances[p.id] || 0;
+        out.push(`  Goal: ${goal.label ? `${goal.label} — ` : ''}${fmt(goal.target)} ${p.unit} (${have >= goal.target ? 'reached' : `${goalPct(have, goal.target)}%`})`);
+      }
       const expiry = pointsExpiry(p);
       if (expiry && expiry.date) {
         out.push(`  ${p.unit.charAt(0).toUpperCase()}${p.unit.slice(1)} ${expiry.days < 0 ? 'expired' : 'expire'} ${dateFmt.format(expiry.date)} without activity (last activity ${dateFmt.format(parseISODate(state.activity[p.id]))})`);
@@ -11601,12 +11646,15 @@ var siteLock = (function () {
 
     if (state.cards.length) {
       const credits = heldCredits().filter((x) => !x.skipped);
+      // "(2027; add your annual fee date…)", not brackets in brackets; and Bilt Cash's "2026" is good through Jan 31,
+      // 2027: a period that runs past its label's year says so (card years already carry their dates).
+      const periodText = (p) => `${p.label.replace(' (', '; ').replace(/\)$/, '')}${p.key.startsWith('A') || p.end.getFullYear() === p.start.getFullYear() ? '' : `, good through ${dateFmt.format(p.end)}`}`;
       out.push('', 'CARDS', '', ...creditCardIds().flatMap((id) => {
         const iso = state.renewals[id];
         const b = bonuses()[id] && cleanBonus(id, bonuses()[id]);
         return [`${creditCard(id).name}${iso ? ` — annual fee around ${dateFmt.format(nextRenewal(iso))}` : ''}`,
           ...(b ? [`  - Welcome bonus: ${b.points ? `${fmt(b.points)} ${bonusUnit(b)}` : 'size not entered'}${b.spend ? ` for ${money(b.spend)} spend` : ''}${b.by ? ` by ${dateFmt.format(parseISODate(b.by))}` : ''} — ${bonusText(b)}`] : []),
-          ...credits.filter((x) => x.card.id === id).map((x) => `  - ${x.credit.name}: ${creditRate(x.credit)} — ${creditStatusText(x)} (${x.period.label})`)];
+          ...credits.filter((x) => x.card.id === id).map((x) => `  - ${x.credit.name}: ${creditRate(x.credit)} — ${creditStatusText(x)} (${periodText(x.period)})`)];
       }), '');
     }
     if (state.notes.trim()) out.push('', 'NOTE', '', state.notes.trim(), '');
@@ -11805,10 +11853,12 @@ var siteLock = (function () {
     watch.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
   });
   async function receiveFromLink() {
-    const match = /^#import=([zj][A-Za-z0-9_-]+)$/.exec(location.hash);
-    if (!match) return;
+    if (!location.hash.startsWith('#import=')) return;
     await siteUnlocked(); // the link waits for the password (a reload before then still has it)
     const forget = () => history.replaceState(null, '', location.pathname + location.search); // a reload won't ask again
+    // The data is base64url, so anything after it (a "." or ")" pasted with the link) isn't part of it.
+    const match = /^#import=([zj][A-Za-z0-9_-]+)/.exec(location.hash);
+    if (!match) { forget(); showToast('That link couldn’t be read — it may have been cut off'); return; }
     if (match[1][0] === 'z' && !canInflate()) { forget(); showToast('This browser is too old to open that link — update it, or use a backup file'); return; }
     try { received = await readTrackerLink(match[1]); } catch (err) { received = null; }
     if (received && received.tooNew) { // the link stays in the address bar, so the updated app opens it after Reload
@@ -11866,9 +11916,19 @@ var siteLock = (function () {
   function topLayer() {
     return document.querySelector('dialog[open]') || document.body;
   }
+  // The toast is up where you can see it (not left behind a sheet opened since).
+  function toastInView() {
+    return $('#toast').classList.contains('show') && $('#toast').parentNode === topLayer();
+  }
 
   // `onUndo` adds a button (labeled `actionLabel`, "Undo" by default); `ms` is how long the toast stays up.
   function showToast(message, onUndo, actionLabel = 'Undo', ms = 5000) {
+    // This copy can't save (staleCopy) and just said so: what the edit says next ("Updated…") isn't true, so the
+    // warning stays. Reload offers, Undo for removed people (their only way back), the unsaved-changes Discard and
+    // a number that couldn't be read (nothing changed: type it again) and errors from things that never save (a wrong
+    // file, a cut-off or unreadable link, a full device) still show.
+    if (staleCopy && staleWarningUp() && onUndo !== reloadForUpdate && onUndo !== undoRemovals && actionLabel !== 'Discard'
+      && !/^(Couldn’t|That (file|link) |This browser|Not enough storage)/.test(message)) return;
     // Only the new-version offer comes back once covered (not the Reload toasts about data from a newer version).
     const offer = onUndo === reloadForUpdate && message === UPDATE_NOTE;
     if (updateShowing() && !offer) updateCovered = true;
@@ -11880,6 +11940,7 @@ var siteLock = (function () {
     heldNote = null; // a note waiting for the toast this one replaces would come up out of place later
     $('#toast-undo').hidden = !onUndo;
     $('#toast-undo').textContent = actionLabel;
+    $('#toast-undo').ariaKeyShortcuts = onUndo && actionLabel === 'Undo' ? 'Meta+Z Control+Z' : null; // the keydown below
     $('#toast').classList.add('show');
     toastMs = onUndo ? Math.max(ms, 10000) : ms;
     clearTimeout(toastTimer);
@@ -11943,6 +12004,9 @@ var siteLock = (function () {
   function warnStaleCopy() {
     showToast(STALE_NOTE, reloadForUpdate, 'Reload', 15000);
   }
+  function staleWarningUp() {
+    return undoAction === reloadForUpdate && toastInView() && $('#toast-msg').textContent === STALE_NOTE;
+  }
   // A backup or link from here would leave out what the newer version added, so those wait for Reload.
   function warnStaleExport(what) {
     showToast(`Reload to get the newest version first, then ${what}`, reloadForUpdate, 'Reload', 15000);
@@ -11959,6 +12023,18 @@ var siteLock = (function () {
     const action = undoAction;
     hideToast();
     if (action) action();
+  });
+  // Cmd/Ctrl+Z runs the toast's Undo while you can see it, wherever focus is, so a keyboard needn't reach the toast.
+  // Not in a field you type in (that keeps its own undo), and only for Undo, never Reload, Add or Discard. A toast
+  // held back by the "can't be saved" warning never showed, so there's nothing for it to undo.
+  document.addEventListener('keydown', (e) => {
+    if (String(e.key).toLowerCase() !== 'z' || !(e.metaKey || e.ctrlKey) || e.shiftKey || e.altKey || e.repeat || e.defaultPrevented) return;
+    const undo = $('#toast-undo');
+    if (!toastInView() || undo.hidden || !undoAction || undoAction === reloadForUpdate || undo.textContent !== 'Undo') return;
+    const t = e.target;
+    if (t.isContentEditable || (t.matches && t.matches('textarea, select, input:not([type=checkbox], [type=radio], [type=range], [type=button], [type=submit], [type=reset], [type=file], [type=color])'))) return;
+    e.preventDefault();
+    undo.click();
   });
 
   /* ---------- People on this device ---------- */
@@ -12188,14 +12264,18 @@ var siteLock = (function () {
     'sapphire-reserve:peloton': '2027-12-31', 'sapphire-reserve-business:google': '2027-12-31',
     'ihg-premier-select:airline': '2027-12-31', 'ihg-premier:airline': '2027-12-31', 'ihg-premier-business:airline': '2027-12-31',
     'aadvantage-executive:grubhub': '2027-08-31', 'bilt-palladium:bilt-cash': '2026-12-31' };
-  // Credits that started partway through (select hotels in 2026): no boxes before this day, so last year doesn't list them.
+  // Credits that started partway through (select hotels in 2026, Bilt Palladium's from 2026): no boxes before this day,
+  // so last year doesn't list them.
   const CREDIT_FIRST_DAY = { 'sapphire-reserve:select-hotels': '2026-01-01', 'sapphire-reserve-business:select-hotels': '2026-01-01',
-    'bilt-palladium:bilt-cash': '2026-01-01' };
+    'bilt-palladium:bilt-cash': '2026-01-01', 'bilt-palladium:hotel': '2026-01-01' };
   // Credits that last a set number of months from the day they post, not to the end of their period: Bilt Cash lasts
   // to the end of the month it posted, a year on (so the $200 from Jan 1, 2026 is good through Jan 31, 2027, and the
   // Anniversary Bilt Cash from a Mar 10 anniversary through Mar 31 the next year). For these, CREDIT_LAST_DAY is the
   // last day one posts, and last period's can still be in use this one.
   const CREDIT_USE_MONTHS = { 'bilt-palladium:bilt-cash': 12, 'bilt-palladium:anniversary-cash': 12 };
+  // Credits whose amount changed: [first day of the new amount, dollars before it]. Sapphire Reserve's DoorDash was $5;
+  // Sapphire Reserve for Business's The Edit was $500 a year (two $250 stays) before 2027.
+  const CREDIT_AMOUNT_BEFORE = { 'sapphire-reserve:doordash': ['2026-10-01', 5], 'sapphire-reserve-business:edit': ['2027-01-01', 500] };
 
   // Bilt Palladium's 2027 change, from your annual fee date: the first card anniversary on or after Jan 1, 2027 (the
   // day the hotel credit ends and Anniversary Bilt Cash starts), and whether you kept 4% Bilt Cash, which keeps the
@@ -12221,7 +12301,8 @@ var siteLock = (function () {
     const s = biltSwitch(cardId);
     const on = s && dateFmt.format(s.day);
     if (id === 'hotel') {
-      if (!s) return `${note}. At your first card anniversary in 2027 it becomes Bilt Cash, unless you kept 4% Bilt Cash: add your annual fee date to see when`;
+      if (!s) return (state.creditsKeep4 || {})[cardId] ? `${note}; it stays, since you kept 4% Bilt Cash`
+        : `${note}. At your first card anniversary in 2027 it becomes Bilt Cash, unless you kept 4% Bilt Cash: add your annual fee date to see when`;
       return s.keep4 ? `${note}; it stays, since you kept 4% Bilt Cash` : `${note}; ends at your card anniversary (${on}), and any of it not used by then is lost. Opened this card in 2027? You get the $600 only, so stop tracking this one`;
     }
     if (id === 'bilt-cash') return s ? note : `${note}. From 2027 it posts after your card anniversary instead: add your annual fee date to track it`;
@@ -12280,6 +12361,9 @@ var siteLock = (function () {
         ? { id, name, amount, period, resets, custom }
         : { id, name, amount: december && dec ? dec : amount, period, resets, note, december: Boolean(december && dec) }));
       return credits.map((credit) => [credit, creditPeriodNow(cardId, credit)]).filter(([, period]) => period).map(([credit, period]) => {
+        // A period before the credit's amount changed is worth the old amount (as on the Credits page).
+        const before = !credit.custom && CREDIT_AMOUNT_BEFORE[creditId(baseCardId(cardId), credit.id)];
+        if (before && isoOf(period.start) < before[0]) credit = { ...credit, amount: before[1] };
         const key = creditId(cardId, credit.id);
         // A card-year credit without your fee date has no known reset, so it never counts as "soon".
         const dated = !(credit.resets === 'card' && credit.period === 'year' && !state.renewals[cardId]);
@@ -12498,8 +12582,6 @@ var siteLock = (function () {
   const PERIOD_STARTS = { month: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], quarter: [0, 3, 6, 9], half: [0, 6], year: [0] }; // months
   const isCardYear = (cardId, credit) => credit.resets === 'card' && credit.period === 'year' && !!state.renewals[cardId];
   const CREDIT_LATE_DAYS = 31; // last year's boxes can still be ticked this long after they end (December, in January)
-  // Credits whose amount changed: [first day of the new amount, dollars before it]. Sapphire Reserve's DoorDash was $5.
-  const CREDIT_AMOUNT_BEFORE = { 'sapphire-reserve:doordash': ['2026-10-01', 5] };
 
   // A credit's boxes for `year` (this year or last): each period's key, labels, dollars (December's bigger amount in
   // December), what's recorded, and whether it's past, current or not started. A card-year credit with a fee date
@@ -12517,7 +12599,7 @@ var siteLock = (function () {
     const before = CREDIT_AMOUNT_BEFORE[offered];
     let periods;
     if (isCardYear(cardId, credit)) {
-      const first = creditPeriod(cardId, 'year', 'card', new Date(year, 0, 1));
+      const first = creditPeriod(cardId, 'year', 'card', new Date(year, 0, CREDIT_USE_MONTHS[offered] ? 0 : 1)); // from Dec 31: last card year's Bilt Cash, still good in January
       const last = creditPeriod(cardId, 'year', 'card', new Date(year, 11, 31));
       periods = (first.key === last.key ? [first] : [first, last]).map((p) => {
         const middle = new Date(p.start.getFullYear(), p.start.getMonth(), p.start.getDate() + 182);
@@ -12723,7 +12805,7 @@ var siteLock = (function () {
         : h('button', { type: 'button', class: 'cert-chip', 'data-cp-add-copy': m.second }, `+ ${name}`);
     };
     const add = m.suggest.length ? h('div', { class: 'card cp-panel cp-add' },
-      h('h2', null, 'Add your cards'),
+      h('h3', null, 'Add your cards'),
       h('p', { class: 'fine' }, 'Tap the cards you have to see their credits. Each goes on Your cards with its statuses, as if you picked it there.'),
       h('div', { class: 'cp-chips' }, m.suggest.map((id) => (state.cards.includes(id)
         ? h('button', { type: 'button', class: 'cert-chip cp-added', 'data-cp-add-card': id, 'aria-disabled': 'true' }, `✓ ${CARD_BY_ID[id].name} added`)
@@ -12746,7 +12828,9 @@ var siteLock = (function () {
 
     const creditRow = (row) => {
       const { credit, current } = row;
-      const rate = [`${creditMoney(credit.amount)} ${CREDIT_PERIODS[credit.period]}`, credit.dec ? `${creditMoney(credit.dec)} in December` : null,
+      // A yearly credit's amount for the year on screen ($500 for 2026 when it's $1,000 from 2027).
+      const yearly = credit.period === 'year' && row.boxes.length === 1 ? row.boxes[0].amount : credit.amount;
+      const rate = [`${creditMoney(yearly)} ${CREDIT_PERIODS[credit.period]}`, credit.dec ? `${creditMoney(credit.dec)} in December` : null,
         row.last ? `through ${dateFmt.format(parseISODate(row.last))}` : null].filter(Boolean).join(' · ');
       const note = (credit.note || '').replace(/^\$[\d.]+ in December(; )?/, '') // already in the rate
         .replace(row.last ? /(?:^|;\s*)through \d{1,2}\/\d{1,2}\/\d{2,4}(?=;|$)/ : /$^/, '').replace(/^;\s*/, '');
@@ -12798,11 +12882,14 @@ var siteLock = (function () {
       if (baseCardId(cardId) !== BILT_SWITCH_CARD) return null;
       const s = biltSwitch(cardId);
       const on = s && dateFmt.format(s.day);
-      const text = !s ? 'Add your annual fee date above: at your first card anniversary in 2027, Bilt swaps the hotel credit and $200 Bilt Cash for $600 Bilt Cash a card year. Cards opened from Jan 1, 2027 get the $600 only.'
+      const keep4 = !!(state.creditsKeep4 || {})[cardId];
+      // What changes for the card; each credit's own note (just below) has the rest, such as when hotel credit is lost.
+      const text = !s ? (keep4 ? 'You kept 4% Bilt Cash, so the $200 hotel credit each half-year stays. Add your annual fee date above to track the $200 Bilt Cash that posts after each card anniversary from 2027.'
+        : 'Add your annual fee date above: at your first card anniversary in 2027, Bilt swaps the hotel credit and $200 Bilt Cash for $600 Bilt Cash a card year. Cards opened from Jan 1, 2027 get the $600 only.')
         : s.keep4 ? `You kept 4% Bilt Cash, so the $200 hotel credit each half-year stays, and $200 Bilt Cash posts after each card anniversary from ${on}. Check the Bilt app for when yours posts.`
-          : `From ${on}, your card anniversary: $600 Bilt Cash each card year, in place of the hotel credit and $200 Bilt Cash. Hotel credit not used by ${dateFmt.format(dayBefore(s.day))} is lost. Opened this card in 2027? You get the $600 only, so stop tracking the hotel credit (tap ✕ on it).`;
+          : `From ${on}, your card anniversary: $600 Bilt Cash each card year, in place of the hotel credit and $200 Bilt Cash.`;
       const box = h('input', { type: 'checkbox', 'data-cp-keep4': cardId, 'aria-label': `${creditCard(cardId).name}: I kept 4% Bilt Cash` });
-      box.checked = !!(state.creditsKeep4 || {})[cardId];
+      box.checked = keep4;
       return h('div', { class: 'cp-bilt' },
         h('p', { class: 'cp-bilt-text' }, h('b', null, 'Bilt’s 2027 change'), ' ', text),
         h('label', { class: 'cp-bilt-keep' }, box, h('span', null, 'I kept 4% Bilt Cash',
@@ -12815,7 +12902,7 @@ var siteLock = (function () {
       const when = (o) => (o.how === 'once' ? `Activated ${dateFmt.format(parseISODate(o.on))}`
         : o.done ? `Used ${dateFmt.format(parseISODate(o.on))} · again from ${dateFmt.format(o.again)}` : `Last used ${dateFmt.format(parseISODate(o.on))}`);
       return h('div', { class: 'cp-others' },
-        h('h3', { class: 'cp-others-title' }, 'Also on this card', h('small', null, 'not in the totals above')),
+        h('h4', { class: 'cp-others-title' }, 'Also on this card', h('small', null, 'not in the totals above')),
         h('ul', null, list.map((o) => {
           const text = h('span', { class: 'cp-other-text' }, h('b', null, o.name), h('small', null, `${rate(o)} · ${o.note}`), o.on ? h('small', { class: o.done ? 'cp-other-when done' : 'cp-other-when' }, when(o)) : null);
           if (o.how === 'stay' || o.how === 'spend') return h('li', { 'data-cp-other-row': o.key }, text);
@@ -12856,7 +12943,7 @@ var siteLock = (function () {
       return h('section', { class: 'card cp-card', 'data-cp-card': c.card.id, 'aria-label': c.card.name, tabindex: '-1' }, // focus lands here when nothing nearer is left
         h('div', { class: 'cp-card-head' },
           h('span', { class: `cp-swatch tone-${c.card.tone}`, 'aria-hidden': 'true' }),
-          h('h2', null, c.card.label || c.card.name),
+          h('h3', null, c.card.label || c.card.name),
           sum ? h('span', { class: 'cp-card-sum' }, sum) : null),
         copyName,
         c.total && !m.past ? h('div', { class: 'cp-bar', role: 'progressbar', 'aria-label': `${c.card.name} credits used this year`, 'aria-valuemin': '0',
@@ -13006,7 +13093,7 @@ var siteLock = (function () {
         const section = creditsPage.querySelector(`[data-cp-card="${CSS.escape(copy)}"]`);
         if (!section) continue;
         section.setAttribute('aria-label', creditCard(copy).name);
-        section.querySelector('h2').replaceChildren(creditCard(copy).name);
+        section.querySelector('h3').replaceChildren(creditCard(copy).name);
       }
       return;
     }

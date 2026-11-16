@@ -173,7 +173,7 @@ const updatePage = () => {
   const doc = { visibilityState: 'visible', body, activeElement: null, querySelector: () => null, addEventListener: (t, f) => { docListeners[t] = f; } };
   const ctx = vm.createContext({
     $, document: doc, setTimeout: fakeSetTimeout, clearTimeout: fakeClearTimeout, Math, Date: { now: () => now },
-    saveTimer: 0, saveNow() {}, refreshDay() {}, fetch: () => Promise.resolve(), reloads: 0,
+    saveTimer: 0, saveNow() {}, refreshDay() {}, fetch: () => Promise.resolve(), reloads: 0, staleCopy: false, undoRemovals() {},
     location: { reload() { ctx.reloads++; } },
     navigator: { serviceWorker: { controller: null, addEventListener: (t, f) => { swMessage = f; } } },
   });

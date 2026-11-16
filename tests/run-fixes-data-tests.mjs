@@ -375,6 +375,34 @@ const lastToast = (a) => a.toasts[a.toasts.length - 1] || '';
   check('…a link with no shape number opens as always (and leaves the address bar)', [c.toasts, c.location.hash], [['Tracker copied to this device'], '']);
 }
 
+// A send link pasted with something after it (a "." or ")" from the sentence around it) still opens; one that can't be
+// read at all (split by a space, or nothing after #import=) says it may have been cut off and leaves the address bar.
+{
+  const link = await app(device({ [KEY]: JSON.stringify(tracker()) })).trackerLink();
+  const hash = link.slice(link.indexOf('#'));
+  for (const [what, tail] of [['a trailing “.”', '.'], ['a trailing “)”', ')']]) {
+    const b = app(device());
+    b.location.hash = hash + tail;
+    await b.receiveFromLink();
+    check(`a send link with ${what}, on a device with nothing set up: copied in, address bar cleared`, [b.toasts, b.state.balances.hilton, b.location.hash], [['Tracker copied to this device'], 1000, '']);
+    const c = app(device({ [KEY]: JSON.stringify(tracker({ balances: { hilton: 5 } })) }));
+    c.location.hash = hash + tail;
+    await c.receiveFromLink();
+    check(`…on a device with a tracker: it asks what to do with it`, [c.el('#receive-sheet').opened, c.toasts, c.location.hash], [1, [], '']);
+  }
+  for (const [what, bad] of [['split by a space (%20)', `${hash.slice(0, 20)}%20${hash.slice(20)}`], ['with nothing after #import=', '#import='], ['with something that isn’t a link', '#import=%E2%80%A6']]) {
+    const b = app(device({ [KEY]: JSON.stringify(tracker()) }));
+    b.location.hash = bad;
+    await b.receiveFromLink();
+    check(`a send link ${what}: “cut off”, address bar cleared, nothing replaced`, [b.toasts, b.location.hash, b.state.balances.hilton, b.el('#receive-sheet').opened],
+      [['That link couldn’t be read — it may have been cut off'], '', 1000, 0]);
+  }
+  const d = app(device());
+  d.location.hash = '#credits';
+  await d.receiveFromLink();
+  check('another address (#credits): left alone', [d.toasts, d.location.hash], [[], '#credits']);
+}
+
 // An older copy showing a newer version's data can't pass on a cut-down copy: Back up and Send a link ask to Reload.
 {
   const newer = JSON.stringify(tracker({ dataV: 99, laterField: { kept: true } }));

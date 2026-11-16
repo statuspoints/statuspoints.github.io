@@ -30,7 +30,7 @@ const pieces = ['parseISODate', 'daysUntil', 'isoOf', 'todayISO', 'mergedLines',
   'bonusText', 'creditMoney', 'sortVouchers', 'slugify', 'statusItem', 'upcomingItems', 'renderUpcoming', 'updateBadge', 'icsText',
   'utf8Size', 'icsFold', 'uidPart', 'icsDate', 'buildICS', 'addAllToCalendar', 'nextRenewal', 'cardGrantsText',
   'dependsOn', 'comingUpLine', 'summaryText', 'fileTag', 'backupDue', 'renderBackupStatus', 'backUp', 'scheduleSave',
-  'markChanged', 'pointsExpiry', 'expiryVerdict', 'bonusFilled', 'markBonusEarned'].filter((name) => lines.some((l) => new RegExp(`^  (?:async )?function ${name}\\(|^  (?:const|let) ${name} = `).test(l)));
+  'markChanged', 'pointsExpiry', 'expiryVerdict', 'bonusFilled', 'markBonusEarned', 'goalPct'].filter((name) => lines.some((l) => new RegExp(`^  (?:async )?function ${name}\\(|^  (?:const|let) ${name} = `).test(l)));
 
 // A small fake page: elements remember what's set on them, and $ finds them by selector.
 const stubs = `
@@ -232,6 +232,17 @@ check('a status with no end date: perks listed', after(summaryOf([{ tier: 'Gold'
   check('text export: each account’s line says whose it is', out.filter((l) => /^Hilton Honors/.test(l)).map((l) => l.replace(/ \(≈.*$/, '')), ['Hilton Honors — 1,200 points', 'Hilton Honors (Ms. Lee) — 300 points']);
   check('text export: Coming up names the account whose status ends', out.filter((l) => /^- (Gold|Diamond) \(/.test(l)).map((l) => l.slice(0, l.indexOf(') ') + 1)), ['- Gold (Hilton Honors)', '- Diamond (Hilton Honors (Ms. Lee))']);
   check('calendar: each account’s event says whose it is', summaries(api.buildICS(api.upcomingItems({ future: true }))), ['Hilton Honors Gold expires', 'Hilton Honors (Ms. Lee) Diamond expires']);
+}
+
+// Text export: savings goals, as their rows show them ("Maldives: 85%")
+{
+  const goalLines = (balance, goal) => {
+    api.setState(tracker({ programs: [program('hilton')], balances: { hilton: balance }, goals: { hilton: goal } }));
+    return api.summaryText().split('\n').filter((l) => l.startsWith('  Goal:'));
+  };
+  check('text export: a goal with its name, target and how far along', goalLines(212500, { target: 250000, label: 'Maldives' }), ['  Goal: Maldives — 250,000 points (85%)']);
+  check('…reached', goalLines(260000, { target: 250000, label: 'Maldives' }), ['  Goal: Maldives — 250,000 points (reached)']);
+  check('…with no name', goalLines(1000, { target: 250000 }), ['  Goal: 250,000 points (0%)']);
 }
 
 console.log(`\n${total - failed}/${total} passed`);

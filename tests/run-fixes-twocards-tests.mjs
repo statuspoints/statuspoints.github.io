@@ -319,12 +319,12 @@ check('each card section offers a Second card', [page.querySelector(`[data-cp-se
 const statusesBefore = JSON.stringify(state().programs);
 const cardsBefore = JSON.stringify(state().cards);
 click(`[data-cp-second="${SR}"]`);
-check('tapping it: a second section, the names change, stored once', [section(SR2) != null, section(SR).querySelector('h2').text, section(SR2).querySelector('h2').text, state().cardCopies[SR]], [true, 'Sapphire Reserve 1', 'Sapphire Reserve 2', { name: '' }]);
+check('tapping it: a second section, the names change, stored once', [section(SR2) != null, section(SR).querySelector('h3').text, section(SR2).querySelector('h3').text, state().cardCopies[SR]], [true, 'Sapphire Reserve 1', 'Sapphire Reserve 2', { name: '' }]);
 check('…focus on the new section', app.document.activeElement === section(SR2), true);
 check('…state.cards and statuses unchanged', [JSON.stringify(state().cards), JSON.stringify(state().programs)], [cardsBefore, statusesBefore]);
 check('…no Second card left on either copy, and a remove on the second only', [page.querySelector(`[data-cp-second="${SR}"]`), section(SR).querySelector('[data-cp-remove-copy]'), section(SR2).querySelector('[data-cp-remove-copy]') != null], [null, null, true]);
 shown.toasts.at(-1).undo();
-check('Undo: gone again, back to one name', [section(SR2), section(SR).querySelector('h2').text, SR in state().cardCopies], [null, 'Sapphire Reserve', false]);
+check('Undo: gone again, back to one name', [section(SR2), section(SR).querySelector('h3').text, SR in state().cardCopies], [null, 'Sapphire Reserve', false]);
 click(`[data-cp-second="${SR}"]`);
 app.setCreditBox(`${SR2}:lyft`, '2026-11', true);
 app.setRenewal(SR2, '2026-03-15');
@@ -332,29 +332,29 @@ const typeName = (id, value) => { const el = page.querySelector(`[data-cp-copy-n
 typeName(SR2, `   ${'x'.repeat(40)} `);
 check('a typed name is trimmed and capped', state().cardCopies[SR].name, 'x'.repeat(24));
 typeName(SR2, 'Travel');
-check('…and shows as the section’s name', [state().cardCopies[SR].name, section(SR2).querySelector('h2').text], ['Travel', 'Travel']);
+check('…and shows as the section’s name', [state().cardCopies[SR].name, section(SR2).querySelector('h3').text], ['Travel', 'Travel']);
 check('…the first copy has its own field', section(SR).querySelector(`[data-cp-copy-name="${SR}"]`) != null, true);
 typeName(SR, 'Everyday');
-check('…kept apart', [state().cardCopies[SR].first, section(SR).querySelector('h2').text], ['Everyday', 'Everyday']);
+check('…kept apart', [state().cardCopies[SR].first, section(SR).querySelector('h3').text], ['Everyday', 'Everyday']);
 typeName(SR, '');
-check('…cleared: back to the number', section(SR).querySelector('h2').text, 'Sapphire Reserve 1');
+check('…cleared: back to the number', section(SR).querySelector('h3').text, 'Sapphire Reserve 1');
 const logged = JSON.stringify(state().creditsLog[`${SR2}:lyft`]);
 click(`[data-cp-remove-copy="${SR}"]`);
-check('remove: the section goes, one name again, with Undo', [section(SR2), section(SR).querySelector('h2').text, shown.toasts.at(-1).message, typeof shown.toasts.at(-1).undo], [null, 'Sapphire Reserve', 'Removed Travel', 'function']);
+check('remove: the section goes, one name again, with Undo', [section(SR2), section(SR).querySelector('h3').text, shown.toasts.at(-1).message, typeof shown.toasts.at(-1).undo], [null, 'Sapphire Reserve', 'Removed Travel', 'function']);
 check('…its saved ticks, fee date and name stay, as a removed card’s do', [JSON.stringify(state().creditsLog[`${SR2}:lyft`]), state().renewals[SR2], state().cardCopies[SR].name], [logged, '2026-03-15', 'Travel']);
 check('…focus on the card’s Second card', app.document.activeElement === page.querySelector(`[data-cp-second="${SR}"]`), true);
 check('…not in the totals or anywhere else', [app.heldCredits().some((x) => x.card.id === SR2), app.creditsPageModel().cards.some((c) => c.card.id === SR2)], [false, false]);
 shown.toasts.at(-1).undo();
-check('Undo: back with its ticks', [section(SR2) != null, pageBox(`${SR2}:lyft`, '2026-11').checked, section(SR2).querySelector('h2').text], [true, true, 'Travel']);
+check('Undo: back with its ticks', [section(SR2) != null, pageBox(`${SR2}:lyft`, '2026-11').checked, section(SR2).querySelector('h3').text], [true, true, 'Travel']);
 click(`[data-cp-remove-copy="${SR}"]`);
 click(`[data-cp-second="${SR}"]`);
-check('Second card again later: its ticks, date and name come back', [pageBox(`${SR2}:lyft`, '2026-11').checked, state().renewals[SR2], section(SR2).querySelector('h2').text], [true, '2026-03-15', 'Travel']);
+check('Second card again later: its ticks, date and name come back', [pageBox(`${SR2}:lyft`, '2026-11').checked, state().renewals[SR2], section(SR2).querySelector('h3').text], [true, '2026-03-15', 'Travel']);
 
 // Other cards can have one, even one with only a credit you added
 setup({ cards: ['amex-gold'], creditsAddHidden: true });
 open();
 click('[data-cp-second="amex-gold"]');
-check('Amex Gold’s second card: its credits and names', [section('amex-gold~2').querySelector('h2').text, app.creditsPageModel().cards[1].rows.map((r) => r.credit.id)], ['Amex Gold 2', ['resy', 'dining', 'uber', 'dunkin']]);
+check('Amex Gold’s second card: its credits and names', [section('amex-gold~2').querySelector('h3').text, app.creditsPageModel().cards[1].rows.map((r) => r.credit.id)], ['Amex Gold 2', ['resy', 'dining', 'uber', 'dunkin']]);
 setup({ cards: ['freedom-flex'], customCredits: { 'freedom-flex': [['c1', 'Made-up', 5, 'month']] }, creditsAddHidden: true });
 open();
 click('[data-cp-second="freedom-flex"]');
@@ -639,19 +639,19 @@ click('[data-cp-filter="all"]');
 app.fire('mousedown');
 const dateField = page.querySelector(`[data-cp-copy-name="${SR}"]`);
 dateField.value = 'Everyday'; dateField.dispatch('change');
-const stale = section(SR).querySelector('h2').text;
+const stale = section(SR).querySelector('h3').text;
 check('during a press: saved at once, drawn after', [state().cardCopies[SR].first, stale], ['Everyday', 'Sapphire Reserve 1']);
 app.fire('mouseup');
 runTimers();
-check('…a press that lands on nothing still redraws', section(SR).querySelector('h2').text, 'Everyday');
+check('…a press that lands on nothing still redraws', section(SR).querySelector('h3').text, 'Everyday');
 app.fire('mousedown');
 page.querySelector(`[data-cp-copy-name="${SR}"]`).value = 'Daily';
 page.querySelector(`[data-cp-copy-name="${SR}"]`).dispatch('change');
 runTimers();
-check('…and one that never ends (a scrollbar) doesn’t hold it back', section(SR).querySelector('h2').text, 'Daily');
+check('…and one that never ends (a scrollbar) doesn’t hold it back', section(SR).querySelector('h3').text, 'Daily');
 const quiet = page.querySelector(`[data-cp-copy-name="${SR}"]`);
 quiet.value = 'Later'; quiet.dispatch('change');
-check('…nor the next change', section(SR).querySelector('h2').text, 'Later');
+check('…nor the next change', section(SR).querySelector('h3').text, 'Later');
 const lyftNow = pageBox(`${SR}:lyft`, '2026-11');
 lyftNow.checked = true; lyftNow.dispatch('change');
 check('no press at all: drawn straight away', pageBox(`${SR}:lyft`, '2026-11').checked, true);
@@ -665,9 +665,9 @@ check('the name field is right under the heading, above the rows', [at('cp-card-
 check('…labelled for what it is', [section(SR2).querySelector('.cp-copy-name').text.startsWith('Card name'), label(`[data-cp-copy-name="${SR2}"]`)], [true, 'Card name for Sapphire Reserve 2']);
 const live = page.querySelector(`[data-cp-copy-name="${SR2}"]`);
 live.value = 'Biz'; live.dispatch('input');
-check('…the heading follows as you type, same field, still focused', [section(SR2).querySelector('h2').text, page.querySelector(`[data-cp-copy-name="${SR2}"]`) === live, state().cardCopies[SR].name], ['Biz', true, 'Biz']);
+check('…the heading follows as you type, same field, still focused', [section(SR2).querySelector('h3').text, page.querySelector(`[data-cp-copy-name="${SR2}"]`) === live, state().cardCopies[SR].name], ['Biz', true, 'Biz']);
 live.value = 'Sapphire Reserve 1'; live.dispatch('input');
-check('…a clash shows as you type too', section(SR2).querySelector('h2').text, 'Sapphire Reserve 1 2');
+check('…a clash shows as you type too', section(SR2).querySelector('h3').text, 'Sapphire Reserve 1 2');
 live.value = 'Biz'; live.dispatch('input');
 live.dispatch('change');
 app.renderRenewals();
@@ -733,8 +733,15 @@ click('[data-cp-add-card="amex-gold"]');
 click('[data-cp-add-card="amex-gold"]');
 check('the Add your cards panel’s chips stay as they were', state().cards, ['amex-gold']);
 
+// Headings nest under "Credits checklist" (h2): each card an h3, "Also on this card" an h4
+four();
+open();
+check('Credits checklist: its title is the only h2, with an h3 per card under it',
+  [page.querySelectorAll('h2').map((el) => el.id), page.querySelectorAll('[data-cp-card] h2').length, page.querySelectorAll('[data-cp-card] h3').map((el) => el.text).filter((t) => /Sapphire|Gold/.test(t)).length >= 4],
+  [['cp-title'], 0, true]);
+
 // Long names without a space wrap, and a new copy's heading comes into view
-check('long names wrap in the card headings and Coming up', [/\.cp-card-head h2 \{[^}]*overflow-wrap: anywhere/.test(css), /\.credit-head h3 \{[^}]*overflow-wrap: anywhere/.test(css), /\.up-body \{[^}]*overflow-wrap: anywhere/.test(css)], [true, true, true]);
+check('long names wrap in the card headings and Coming up', [/\.cp-card-head h3 \{[^}]*overflow-wrap: anywhere/.test(css), /\.credit-head h3 \{[^}]*overflow-wrap: anywhere/.test(css), /\.up-body \{[^}]*overflow-wrap: anywhere/.test(css)], [true, true, true]);
 setup({ cards: [SR], creditsAddHidden: true });
 open();
 shown.scrolled.length = 0;

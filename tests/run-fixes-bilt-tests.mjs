@@ -149,7 +149,7 @@ vm.runInContext(`${fakeDom}
   ${piece('  function renewalText', '  /* ---------- Welcome bonuses')}
   ${piece('  // Puts a card on your list', "  $('#cards-picker').addEventListener('click'")}
   ${piece('  const MONTH_NAMES', '  /* ---------- Certificates from your cards')}
-  ${piece('  // One "Coming up" item as a line', '  // A plain-text summary meant for reading')}
+  ${piece('  // One "Coming up" item as a line', '  // "alex-" in file names')}
   // The real Coming up (nothing but credits and fee dates in these trackers) and the real switch between people.
   const lineExpired = () => false; const mergedLines = () => []; const hasStatus = () => false; const dependsOn = () => '';
   const medallionProgram = () => null; const medallionFor = () => ({ current: null }); const effectiveMedallion = () => null;
@@ -169,7 +169,7 @@ vm.runInContext(`${fakeDom}
   globalThis.ui = { refreshDay, shown, stored, storageKey, people, switchPerson, renderUpcoming, removeCard, addHeldCard, creditRate, isoOf, cents, money, normalize, comingUpLine, document, setRenewal, forgetCreditParts: typeof forgetCreditParts !== 'undefined' ? forgetCreditParts : () => {},
     creditUseText: typeof creditUseText !== 'undefined' ? creditUseText : null, creditStatusText: typeof creditStatusText !== 'undefined' ? creditStatusText : null, heldCredits, creditBoxes, cardCreditDefs, creditsPageModel, setCreditBox, renderCredits, openCreditsPage, closeCreditsPage: () => { resetCreditsView(); },
     syncCreditsRoute, fire, page, tracker, location, body, CREDITS_PAGE_CARDS,
-    getState: () => state, setState: (s) => { state = s; }, saves: () => saves };`, ctx);
+    summaryText, getState: () => state, setState: (s) => { state = s; }, saves: () => saves };`, ctx);
 const app = ctx.ui;
 const { shown, page } = app;
 
@@ -215,6 +215,16 @@ check('Jan 15, 2027: in its last three weeks, it’s on Coming up', comingUp().i
 at(2027, 2, 1);
 check('Feb 1, 2027: gone from the main page', heldOf(CASH), undefined);
 check('…and on the checklist it’s past, not missed (it counts toward 2026)', rowOf(CASH).boxes.map((b) => [b.phase, b.counts]), [['past', false]]);
+// The text export: the 2026 Bilt Cash says it's still good in January 2027.
+at(2027, 1, 5);
+open({ cards: [BP, 'amex-platinum'], renewals: { [BP]: '2026-03-10' }, creditsLog: { [CASH]: { 2026: 50 } } });
+const exported = (start) => app.summaryText().split('\n').filter((l) => l.startsWith(start));
+check('Jan 5, 2027, text export: “(2026, good through Jan 31, 2027)”', exported('  - Bilt Cash:'), ['  - Bilt Cash: $200 a year — $50 of $200 used (2026, good through Jan 31, 2027)']);
+check('…a monthly credit and the hotel credit don’t get one', [...exported('  - Uber Cash:'), ...exported('  - Bilt Travel hotel credit:')], ['  - Uber Cash: $15 a month — not used yet (January)', '  - Bilt Travel hotel credit: $200 every 6 months — not used yet (Jan–Mar 9)']);
+at(2027, 4, 15);
+open({ cards: [BP, 'venture-x'], renewals: { [BP]: '2026-03-10' } });
+check('…nor a card year (its label has its dates)', exported('  - Anniversary Bilt Cash:'), ['  - Anniversary Bilt Cash: $600 a year — not used yet (card year from Mar 10, 2027, good through Mar 31, 2028)']);
+check('…a card-year credit with no fee date: “(2027; add your annual fee date…)”, not brackets in brackets', exported('  - Capital One Travel credit:'), ['  - Capital One Travel credit: $300 a year — not used yet (2027; add your annual fee date for your card year)']);
 at(2026, 11, 7);
 open({ cards: [BP] });
 check('2026’s checklist: one 2026 box, no phantom 2025 one carried in', keys(boxes(BP, 'bilt-cash', 2026)), [['2026', '2027-01-31', true]]);
@@ -229,7 +239,8 @@ at(2026, 11, 7);
 open({ cards: [BP], renewals: FEE });
 check('Nov 7, 2026 (fee date Mar 10): hotel credit for Jul–Dec as before, no $600 yet', [ends(heldOf(HOTEL)), heldOf(ANNIV)], [['2026-H2', '2026-12-31', 200], undefined]);
 check('…the hotel note says when it ends and that what’s left then is lost', [/Mar 10, 2027/.test(heldOf(HOTEL).credit.note), /lost/.test(heldOf(HOTEL).credit.note)], [true, true]);
-check('…the Bilt section says what changes on that day', [/From Mar 10, 2027/.test(panel().text), /\$600 Bilt Cash/.test(panel().text), /not used by Mar 9, 2027 is lost/.test(panel().text)], [true, true, true]);
+check('…the Bilt section says what changes on that day', [/From Mar 10, 2027/.test(panel().text), /\$600 Bilt Cash/.test(panel().text)], [true, true]);
+check('…and doesn’t repeat the hotel credit’s note just below it (what’s lost, cards opened in 2027)', [/lost/.test(panel().text), /Opened this card in 2027/.test(panel().text)], [false, false]);
 check('…its annual fee date can be changed right there', !!page.querySelector(`[data-cp-renewal="${BP}"]`), true);
 at(2027, 1, 15);
 check('Jan 15, 2027: Jan–Jun’s hotel credit stops at Mar 9', [ends(heldOf(HOTEL)), heldOf(HOTEL).period.label], [['2027-H1', '2027-03-09', 200], 'Jan–Mar 9']);
@@ -279,11 +290,30 @@ check('…a Mar 10 fee date still reads “Jan–Mar 9”', (open({ cards: [BP],
 // No opening date is kept, so a card opened in 2027 (fee date Mar 5, 2028) looks like an old one: the words say what to do.
 at(2027, 4, 1);
 open({ cards: [BP], renewals: { [BP]: '2028-03-05' } });
-check('Opened in 2027: the Bilt section says 2027 cards get the $600 only, and to stop tracking the hotel credit', [/Opened this card in 2027\? You get the \$600 only/.test(panel().text), /stop tracking the hotel credit/.test(panel().text)], [true, true]);
-check('…and so does the hotel credit’s note', /Opened this card in 2027\? You get the \$600 only/.test(def(BP, 'hotel').note), true);
+check('Opened in 2027: the hotel credit’s note says 2027 cards get the $600 only, and to stop tracking it; the Bilt section doesn’t repeat it', [/Opened this card in 2027\? You get the \$600 only/.test(def(BP, 'hotel').note), /stop tracking this one/.test(def(BP, 'hotel').note), /Opened this card in 2027/.test(panel().text)], [true, true, false]);
 check('…before they do, its Jan–Mar 4 shows as missed', app.creditsPageModel().cards.find((c) => c.card.id === BP).missed, 200);
 page.querySelector(`[data-cp-skip="${HOTEL}"]`).dispatch('click');
 check('…after ✕ on it: not counted, nothing missed, just the $600', (({ total, missed }) => [total, missed])(app.creditsPageModel().cards.find((c) => c.card.id === BP)), [600, 0]);
+
+// A Jan 1 fee date: in January, last card year's $600 (good through Jan 31) is on this year's checklist too.
+at(2028, 1, 15);
+open({ cards: [BP], renewals: { [BP]: '2026-01-01' } });
+check('fee date Jan 1: in January the checklist has last card year’s $600 (good to Jan 31, counts toward 2027) and this one', keys(boxes(BP, 'anniversary-cash')), [['A2027-01-01', '2028-01-31', false], ['A2028-01-01', '2029-01-31', true]]);
+check('…last year’s is the current one', rowOf(ANNIV).current.key, 'A2027-01-01');
+app.document.querySelector(`#credits-list [data-credit-use="${ANNIV}"]`).dispatch('click');
+check('…and Mark used on the main page ticks it', boxes(BP, 'anniversary-cash').map((b) => [b.key, b.used]), [['A2027-01-01', 600], ['A2028-01-01', 0]]);
+at(2028, 6, 1);
+check('…the same shape as a Jan 2 fee date’s', keys(boxes(BP, 'anniversary-cash')).map(([k, end, counts]) => [k.slice(0, 5), end.slice(0, 7), counts]),
+  (open({ cards: [BP], renewals: { [BP]: '2026-01-02' } }), keys(boxes(BP, 'anniversary-cash')).map(([k, end, counts]) => [k.slice(0, 5), end.slice(0, 7), counts])));
+at(2027, 1, 15);
+open({ cards: [BP], renewals: { [BP]: '2026-01-01' } });
+check('…and in January 2027 (before any $600) just the first one', keys(boxes(BP, 'anniversary-cash')), [['A2027-01-01', '2028-01-31', true]]);
+
+// The Palladium and its hotel credit began in 2026: nothing for 2025.
+at(2026, 11, 11);
+open({ cards: [BP], renewals: { [BP]: '2026-03-10' } });
+check('2025, before the Palladium: no hotel credit boxes, nothing to look back on', [keys(boxes(BP, 'hotel', 2025)), app.creditsPageModel({ past: true }).cards.length], [[], 0]);
+check('…2026’s are still there', keys(boxes(BP, 'hotel', 2026)), [['2026-H1', '2026-06-30', true], ['2026-H2', '2026-12-31', true]]);
 
 /* ---------- 3. "I kept 4% Bilt Cash" ---------- */
 
@@ -316,6 +346,16 @@ check('…with the fee date box right there', !!page.querySelector(`[data-cp-ren
 page.querySelector(`[data-cp-renewal="${BP}"]`).value = '2026-03-10';
 page.querySelector(`[data-cp-renewal="${BP}"]`).dispatch('change');
 check('…typing it in: the hotel credit is gone (it ended Mar 9) and the $600 is on', [heldOf(HOTEL), ends(heldOf(ANNIV))], [undefined, ['A2027-03-10', '2028-03-31', 600]]);
+
+// Kept 4% Bilt Cash but no fee date yet: the Bilt section and the hotel note say the hotel credit stays.
+at(2027, 4, 15);
+open({ cards: [BP] });
+keep4Box().checked = true;
+keep4Box().dispatch('change');
+check('kept 4% with no fee date: the Bilt section and the hotel note say the hotel credit stays, and ask for the date for the $200', [/You kept 4% Bilt Cash, so the \$200 hotel credit each half-year stays/.test(panel().text), /Add your annual fee date/.test(panel().text), /swaps the hotel credit/.test(panel().text), heldOf(HOTEL).credit.note.endsWith('it stays, since you kept 4% Bilt Cash'), /becomes Bilt Cash/.test(heldOf(HOTEL).credit.note)], [true, true, false, true, false]);
+keep4Box().checked = false;
+keep4Box().dispatch('change');
+check('…unticked: back to the swap', [/swaps the hotel credit/.test(panel().text), /becomes Bilt Cash/.test(heldOf(HOTEL).credit.note)], [true, true]);
 
 /* ---------- 5. The choice goes with saves, backups, links, second cards and each person ---------- */
 
@@ -429,7 +469,7 @@ runTimers();
 check('once it’s gone: “Add Bilt Gold from your Palladium bonus?”, with Add', [bz.toasts[1].message, bz.toasts[1].label], ['Add Bilt Gold from your Palladium bonus?', 'Add']);
 check('…nothing added until you tap it', biltLines(), []);
 bz.toasts[1].action();
-check('Add: Bilt Gold on Bilt Rewards, through the end of next year', biltLines(), [['Gold', 'Bilt Palladium welcome offer', '2027-12-31']]);
+check('Add: Bilt Gold on Bilt Rewards, through the end of next year', biltLines(), [['Gold', 'Bilt Palladium welcome bonus', '2027-12-31']]);
 check('…and it says so', bz.toasts[2].message, 'Added Bilt Gold to Bilt Rewards, good through Dec 31, 2027');
 bz.toasts[1].action();
 check('…tapping Add twice doesn’t add it twice', biltLines().length, 1);
