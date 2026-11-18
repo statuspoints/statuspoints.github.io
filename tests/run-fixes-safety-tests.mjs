@@ -47,7 +47,7 @@ const receivePage = ({ locked, setUp = true, people = 2 }) => {
     history: { replaceState: (a, b, url) => { location.hash = url.includes('#') ? url.slice(url.indexOf('#')) : ''; } },
     $: (sel) => (sel === '#receive-sheet' ? { showModal: () => { got.modal++; }, close() {} } : (els[sel] || (els[sel] = el()))),
     readTrackerLink: async () => ({ name: 'Robin Test', data: { programs: [{ id: 'delta' }], cards: [], updated: {} } }),
-    people: { list: Array.from({ length: people }, (_, i) => ({ id: `p${i}` })) },
+    people: { list: Array.from({ length: people }, (_, i) => ({ id: `p${i}`, name: '' })) }, // as readPeople() makes them
     state: { programs: setUp ? [] : null },
     replaceTracker: () => { got.replaced++; },
     showToast: (m) => got.toasts.push(m),

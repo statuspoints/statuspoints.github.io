@@ -197,7 +197,7 @@ try { if (SITE_LOCK && sessionStorage.getItem('status-tracker-unlocked') !== SIT
       calc(40px + env(safe-area-inset-bottom))
       max(16px, env(safe-area-inset-left));
   }
-  button { touch-action: manipulation; }
+  button, summary, label, input[type="checkbox"], input[type="radio"], [role="button"] { touch-action: manipulation; } /* no double-tap zoom on a quick tick and untick; panning and pinch-zoom still work */
   [hidden] { display: none !important; }
 
   /* Hero */
@@ -314,7 +314,8 @@ try { if (SITE_LOCK && sessionStorage.getItem('status-tracker-unlocked') !== SIT
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    height: 34px;
+    min-height: 34px;
+    max-width: 100%;
     padding: 0 14px;
     border: 1px solid var(--field-line);
     border-radius: 999px;
@@ -418,6 +419,7 @@ try { if (SITE_LOCK && sessionStorage.getItem('status-tracker-unlocked') !== SIT
     white-space: nowrap;
   }
   .pill.long { white-space: normal; }
+  .row-main:has(.num-input) .pill { white-space: normal; }
   .pill.t-silver { background: var(--t-silver-bg); color: var(--t-silver-fg); }
   .pill.t-gold { background: var(--t-gold-bg); color: var(--t-gold-fg); }
   .pill.t-plat { background: var(--t-plat-bg); color: var(--t-plat-fg); }
@@ -497,7 +499,7 @@ try { if (SITE_LOCK && sessionStorage.getItem('status-tracker-unlocked') !== SIT
     .num:hover { background: var(--hover); text-decoration-color: var(--accent); }
   }
   .num-input {
-    width: 8em;
+    width: 6.5em;
     margin: -4px -9px;
     padding: 3px 8px;
     border: 1.5px solid var(--accent);
@@ -626,7 +628,7 @@ try { if (SITE_LOCK && sessionStorage.getItem('status-tracker-unlocked') !== SIT
     font-weight: 600;
     cursor: pointer;
   }
-  .hero-link:hover { background: rgba(255, 255, 255, .18); }
+  @media (hover: hover) { .hero-link:hover { background: rgba(255, 255, 255, .18); } } /* a tap on a phone doesn't leave it looking pressed */
   .hero-link:focus-visible { outline: 2px solid #FFFFFF; outline-offset: 2px; }
   .hero-link:not([hidden]) + .person-chip { margin-left: 8px; }
   .cpage { scroll-margin-top: 12px; }
@@ -668,8 +670,9 @@ try { if (SITE_LOCK && sessionStorage.getItem('status-tracker-unlocked') !== SIT
   .cp-cards { display: grid; gap: 14px; align-items: start; }
   .cp-card { padding: 14px 16px 4px; container-type: inline-size; scroll-margin-top: 12px; }
   .cp-card-head { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
-  .cp-card-head h3 { flex: 1; min-width: 0; margin: 0; font-size: 16.5px; font-weight: 720; letter-spacing: -0.01em; overflow-wrap: anywhere; }
-  .cp-swatch { flex: none; width: 26px; height: 18px; border-radius: 4px; background: linear-gradient(135deg, var(--c1), var(--c2)); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .14); }
+  .cp-card-head h3 { flex: 1 1 auto; min-width: 0; margin: 0; font-size: 16.5px; font-weight: 720; letter-spacing: -0.01em; overflow-wrap: anywhere; }
+  .cp-swatch { position: relative; flex: none; width: 26px; height: 18px; border-radius: 4px; background: linear-gradient(135deg, var(--c1), var(--c2)); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .14); }
+  .cp-swatch::after { content: ''; position: absolute; left: 4px; top: 5px; width: 7px; height: 6px; border-radius: 1.5px; background: linear-gradient(135deg, #F1DFA6, #B9974F); } /* a card's chip: reads as a card, not a tick box */
   .cp-card-sum { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
   .cp-bar { height: 4px; margin: 10px 0 4px; overflow: hidden; border-radius: 999px; background: var(--track); }
   .cp-bar i { display: block; height: 100%; border-radius: inherit; background: var(--good); }
@@ -697,7 +700,7 @@ try { if (SITE_LOCK && sessionStorage.getItem('status-tracker-unlocked') !== SIT
   .cp-other-text small { font-size: 12.5px; color: var(--muted); }
   .cp-other-text .cp-other-when { font-weight: 600; color: var(--text); }
   .cp-other-text .cp-other-when.done { color: var(--good); }
-  .cp-others .cp-other-date { flex: 0 0 150px; width: 150px; min-width: 150px; max-width: 150px; height: 32px; margin-left: 28px; font-size: 13px; }
+  .cp-others .cp-other-date { flex: 0 0 150px; width: 150px; min-width: 150px; max-width: 150px; height: 32px; margin-left: 28px; font-size: 16px; } /* 16px+ keeps iOS from zooming on focus */
   .cp-row { padding: 12px 0; border-top: 1px solid var(--line); outline: none; }
   .cp-row:first-child { border-top: 0; }
   .cp-row-head { display: flex; align-items: flex-start; gap: 8px; }
@@ -866,9 +869,12 @@ try { if (SITE_LOCK && sessionStorage.getItem('status-tracker-unlocked') !== SIT
   dialog.play::backdrop { background: rgba(8, 14, 24, .62); }
   .play-card { position: relative; padding: 16px 16px 14px; }
   .play-close { position: absolute; top: 8px; right: 8px; }
-  .play-top { display: flex; align-items: center; gap: 10px; margin: 0 40px 6px 2px; }
+  .play-top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; row-gap: 4px; margin: 0 40px 6px 2px; } /* 'Skip this one' moves under the count rather than under the close button */
   .play-top:has(> :not([hidden])) { min-height: 24px; }
   .play-count { padding: 2px 9px; border-radius: 999px; background: var(--chip-bg); color: var(--muted); font-size: 11.5px; font-weight: 750; }
+  .play-count, #play-skip { white-space: nowrap; } /* each stays on one line on a 320px phone */
+  #play-skip { font-size: 14px; }
+  @media (max-width: 359px) { .play-top { column-gap: 8px; margin-right: 30px; } } /* room for both on one row at 320; the close button starts 2px further right */
   .play-pick { padding: 6px !important; }
   .play-loot .loot-warn { background: var(--warn-soft); }
   .loot-warn .loot-main small { color: var(--warn-ink); }
@@ -1006,8 +1012,8 @@ try { if (SITE_LOCK && sessionStorage.getItem('status-tracker-unlocked') !== SIT
   .scan-paste { margin-top: 0; font-size: 13.5px; }
   .scan-paste summary { padding: 12px 0; cursor: pointer; color: var(--accent); font-weight: 600; } /* a full-height tap target */
   .scan-paste textarea { width: 100%; margin: 0 0 8px; padding: 10px 12px; border: 1px solid var(--field-border); border-radius: 12px; background: var(--field); color: var(--text); font: inherit; font-size: 16px; resize: vertical; }
-  .scan-result { display: grid; gap: 12px; }
-  .scan-field { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 6px 10px; }
+  .scan-result { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .scan-field { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 6px 10px; }
   .scan-field input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); }
   .scan-field label { font-size: 14px; font-weight: 600; }
   .scan-field .scan-control { grid-column: 2; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
@@ -1025,16 +1031,20 @@ try { if (SITE_LOCK && sessionStorage.getItem('status-tracker-unlocked') !== SIT
   .quick-name { display: grid; flex: 1; min-width: 0; }
   .quick-name span { font-weight: 600; overflow-wrap: anywhere; line-height: 1.25; }
   .quick-name small { font-size: 12px; color: var(--muted); }
-  .quick-input { width: 120px; height: 40px; padding: 0 10px; border: 1px solid var(--field-border); border-radius: 10px; background: var(--field); color: var(--text); font: inherit; font-size: 16px; font-variant-numeric: tabular-nums; text-align: right; }
+  .quick-input { width: 7.5em; height: 40px; padding: 0 10px; border: 1px solid var(--field-border); border-radius: 10px; background: var(--field); color: var(--text); font: inherit; font-size: 16px; font-variant-numeric: tabular-nums; text-align: right; }
   .quick-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
   .quick-input[aria-invalid="true"] { border-color: var(--danger); }
   .scan-control input[aria-invalid="true"] { border-color: var(--danger); }
+  .quick-field { display: flex; align-items: center; gap: 10px; margin-left: auto; } /* the number box and its unit stay together */
   .quick-unit { width: 44px; font-size: 12px; color: var(--muted); }
   @media (max-width: 379px) {
-    .quick-input { width: 96px; }
+    .quick-input { width: 7em; padding: 0 8px; } /* 8 digits with commas still show whole */
+    .quick-row { flex-wrap: wrap; gap: 8px; } /* with larger text the field moves under the name instead of off the screen */
+    .quick-name { min-width: 4.5em; }
+    .quick-field { gap: 8px; }
     .quick-unit { width: auto; }
   }
-  .worth { position: relative; display: block; margin: 2px 0 0; padding: 0; border: 0; background: none; color: var(--accent); font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; }
+  .worth { position: relative; display: block; text-align: left; margin: 2px 0 0; padding: 0; border: 0; background: none; color: var(--accent); font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; }
   .worth::after { content: ""; position: absolute; inset: -12px -6px; } /* larger touch target; the text around it isn't tappable */
   .worth-total { margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.02em; }
   .worth-list { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
@@ -1146,8 +1156,19 @@ try { if (SITE_LOCK && sessionStorage.getItem('status-tracker-unlocked') !== SIT
   .setup-cards h3 span { font-weight: 400; color: var(--muted); }
   .setup-cards .setup-sub { margin: 2px 0 16px; font-size: 13.5px; }
   .setup-actions { display: grid; justify-items: center; gap: 14px; margin-top: 26px; }
-  .setup-actions .add { width: 100%; }
+  .setup-actions .add { grid-area: auto; width: 100%; } /* not .add's own "add" area: that made a second, empty column */
   .setup-alt { margin: 0; font-size: 14px; color: var(--muted); text-align: center; }
+  .setup-scan + .setup-alt { margin-top: 12px; }
+  @media (max-width: 700px), (max-height: 500px) {
+    /* Phones (upright or on their side): Start stays on screen at the bottom while you pick (clip, not hidden, so the
+       card isn't a scroll box) */
+    .setup-card { overflow: clip; }
+    .setup-actions {
+      position: sticky; bottom: 0; z-index: 2;
+      margin: 26px -18px -22px; padding: 12px 18px calc(12px + env(safe-area-inset-bottom));
+      background: var(--card); border-top: 1px solid var(--line);
+    }
+  }
 
   /* Card tiles (setup + picker sheet) */
   .fine.cc-issuer-note { margin: -4px 0 10px; }
@@ -1160,7 +1181,7 @@ try { if (SITE_LOCK && sessionStorage.getItem('status-tracker-unlocked') !== SIT
     flex-direction: column;
     justify-content: space-between;
     min-width: 0;
-    height: 92px;
+    min-height: 92px;
     padding: 10px 11px 9px;
     border: 0;
     border-radius: 12px;
@@ -1182,7 +1203,7 @@ try { if (SITE_LOCK && sessionStorage.getItem('status-tracker-unlocked') !== SIT
   .cc-check { display: none; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--card); color: var(--accent); box-shadow: 0 1px 3px rgba(0, 0, 0, .3); }
   .cc-check svg { width: 12px; height: 12px; }
   .cc[aria-pressed="true"] .cc-check { display: grid; }
-  .cc-name { display: -webkit-box; overflow: hidden; font-size: 12.5px; font-weight: 700; line-height: 1.2; letter-spacing: -0.005em; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+  .cc-name { display: -webkit-box; overflow: hidden; font-size: 12.5px; font-weight: 700; line-height: 1.2; letter-spacing: -0.005em; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
   .cc { overflow: hidden; }
   .cc > span:last-child { display: block; min-width: 0; width: 100%; max-width: 100%; } /* WebKit sizes a flex button's child to its text, so the perks line ran past the tile */
   .cc-perks { display: block; overflow: hidden; margin-top: 2px; font-size: 11.5px; line-height: 1.25; white-space: nowrap; text-overflow: ellipsis; }
@@ -1335,17 +1356,30 @@ try { if (SITE_LOCK && sessionStorage.getItem('status-tracker-unlocked') !== SIT
   }
   .sheet::backdrop { background: rgba(8, 13, 22, .5); }
   .grab { display: none; } /* no swipe-down to close, so no handle that looks like one */
-  .sheet form, .sheet-body { display: grid; gap: 16px; padding: 22px 16px calc(16px + env(safe-area-inset-bottom)); }
+  .sheet form, .sheet-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; padding: 22px 16px calc(16px + env(safe-area-inset-bottom)); }
+  .sheet #lock-form { padding: 0; } /* nested in .sheet-body, which already pads it */
+  #lock-entry { display: grid; gap: 16px; }
   @media (max-width: 560px) {
     .sheet { width: 100%; max-height: 92%; margin: auto 0 0; border-width: 1px 0 0; border-radius: 22px 22px 0 0; }
-    /* Long sheets: Done / Save stay on screen at the bottom while you scroll or type */
-    .sheet > form > .sheet-actions, .sheet > .sheet-body > .sheet-actions {
+  }
+  /* A phone held sideways (short touch screen): the card keeps its width, clear of the notch, but sits on the bottom edge */
+  @media (min-width: 561px) and (max-height: 500px) and (pointer: coarse) {
+    .sheet { max-height: calc(100% - 16px); margin-bottom: 0; border-bottom-width: 0; border-radius: 20px 20px 0 0; }
+  }
+  @media (max-width: 560px), (max-height: 500px) and (pointer: coarse) {
+    /* Long sheets: Done / Save stay on screen at the bottom while you scroll (phones, either way up).
+       While the on-screen keyboard is open it covers them; they show again when it closes. */
+    .sheet > form > .sheet-actions, .sheet > .sheet-body > .sheet-actions, .sheet > .sheet-body > form > .sheet-actions {
       position: sticky; bottom: 0; z-index: 1;
       margin: 0 -16px calc(-16px - env(safe-area-inset-bottom));
       padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
       background: var(--card); border-top: 1px solid var(--line);
     }
     .sheet > .toast { bottom: calc(76px + env(safe-area-inset-bottom)); } /* a toast in a sheet sits above that row */
+    .sheet { scroll-padding-bottom: calc(80px + env(safe-area-inset-bottom)); } /* a field that gets focus stops above the Save/Done row */
+  }
+  @media (min-width: 561px) and (max-height: 500px) and (pointer: coarse) {
+    .sheet { scroll-padding-bottom: calc(100px + env(safe-area-inset-bottom)); } /* sideways, Safari only scrolls to a field (Notes) when more of it is hidden, so ask for a bit more room */
   }
   .sheet h2 { margin: 0; font-size: 19px; letter-spacing: -0.015em; outline: none; }
   .sheet .setup-sub { margin: -10px 0 0; }
@@ -1356,16 +1390,20 @@ try { if (SITE_LOCK && sessionStorage.getItem('status-tracker-unlocked') !== SIT
   .sl { grid-template-areas: "tier via del" "exp exp exp"; row-gap: 6px; }
   .sl-tier { grid-area: tier; }
   .sl-via { grid-area: via; }
+  .sl-tier, .sl-via { text-overflow: ellipsis; } /* a name too long for the narrow phone column ends in … instead of mid-letter */
   .sl-del { grid-area: del; }
   .sl-exp { grid-area: exp; display: flex; align-items: center; gap: 8px; margin: 0 0 0 2px; font-size: 12px; color: var(--muted); }
   .field .sl-exp input { flex: 1; width: auto; max-width: 200px; height: 38px; }
   .sl-head { margin: 0 2px 4px; font-size: 11.5px; color: var(--muted); }
   .sl + .sl { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line); }
   .status-edit .add-line { display: inline-block; margin: 6px -4px -6px; }
-  .sheet-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; row-gap: 10px; margin-top: 4px; }
+  .sheet-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 10px; row-gap: 10px; margin-top: 4px; } /* a button that wraps to a second row stays on the right */
   .sheet-actions .add, .sheet-actions .btn-secondary { height: auto; min-height: 44px; padding-block: 8px; line-height: 1.25; }
   .sheet-actions .spacer { flex: 1; }
+  @media (max-width: 374px) { .sheet-actions { gap: 8px; } .sheet-actions .add, .sheet-actions .btn-secondary { padding-inline: 12px; } } /* one row on a 320px phone */
   .fine { margin: 0; font-size: 12px; color: var(--muted); }
+  .fine a { color: var(--accent); text-underline-offset: 2px; } /* one color visited or not, in both themes */
+  .fine a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
   .cards-status { min-height: 1.45em; margin: 0; font-size: 13.5px; font-weight: 600; color: var(--accent); }
   .cards-renewals { display: grid; gap: 6px; padding-top: 14px; border-top: 1px solid var(--line); }
   .cards-renewals .cat-title { margin: 0; }
@@ -1403,7 +1441,8 @@ try { if (SITE_LOCK && sessionStorage.getItem('status-tracker-unlocked') !== SIT
   .perk-line > span { min-width: 0; }
   .perk-line .nw { display: inline-block; max-width: 100%; } /* a perk moves to the next line whole, and wraps only if it alone is wider than the column */
   .perk-line svg { flex: none; width: 13px; height: 13px; margin-top: 2px; color: var(--accent); }
-  .sec-actions { display: flex; flex: none; gap: 8px; }
+  .sec-actions { display: flex; flex: 0 1 auto; min-width: 0; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+  .sec-row > :first-child { flex: 1 1 0; } /* the title side takes what's left; the actions keep one line unless the title's longest word needs the room */
   .pill-btn svg { width: 14px; height: 14px; margin: 0 5px -2px -2px; }
 
   /* "Your perks" sheet */
@@ -1470,6 +1509,8 @@ try { if (SITE_LOCK && sessionStorage.getItem('status-tracker-unlocked') !== SIT
   .up-head svg { flex: none; width: 18px; height: 18px; color: var(--warn); }
   .up-title-main { flex: 1; min-width: 0; margin: 0; font-size: 15.5px; font-weight: 700; letter-spacing: -0.01em; }
   .up-title-main span { font-weight: 500; color: var(--muted); font-size: 13px; }
+  #up-count { white-space: nowrap; }
+  @media (max-width: 359px) { .up-head { gap: 8px; } .up-head .pill-btn { padding: 0 10px; } } /* the count stays beside 'Coming up' */
   .up-list { list-style: none; margin: 0; padding: 0 8px 8px; }
   .up-item {
     display: flex;
@@ -1557,7 +1598,7 @@ try { if (SITE_LOCK && sessionStorage.getItem('status-tracker-unlocked') !== SIT
   .d-title { flex: 1; min-width: 0; }
   #d-name { overflow-wrap: anywhere; }
   .d-sub { margin: 2px 0 0; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
-  .d-sec { display: grid; gap: 10px; }
+  .d-sec { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
   .exp-ok { display: flex; align-items: flex-start; gap: 8px; margin: 0; font-size: 14px; }
   .exp-ok svg { flex: none; width: 14px; height: 14px; margin-top: 3px; color: var(--accent); }
   .exp-rule { margin: 0; font-size: 14px; }
@@ -1575,7 +1616,7 @@ try { if (SITE_LOCK && sessionStorage.getItem('status-tracker-unlocked') !== SIT
     overflow-wrap: anywhere;
   }
   .pill-btn.sm { height: 32px; padding: 0 12px; font-size: 13px; }
-  .member-edit { display: flex; gap: 8px; }
+  .member-edit { display: flex; gap: 8px; min-width: 0; }
   .member-input {
     flex: 1;
     min-width: 0;
@@ -1589,6 +1630,7 @@ try { if (SITE_LOCK && sessionStorage.getItem('status-tracker-unlocked') !== SIT
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     font-size: 16px; /* 16px+ keeps iOS from zooming on focus */
     letter-spacing: .03em;
+    text-overflow: ellipsis; /* the placeholder ends in … on a narrow screen */
   }
   .member-input::placeholder { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; letter-spacing: 0; color: var(--faint); }
   .member-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
@@ -1626,7 +1668,7 @@ try { if (SITE_LOCK && sessionStorage.getItem('status-tracker-unlocked') !== SIT
     font-weight: 600;
     cursor: pointer;
   }
-  .person-chip:hover { background: rgba(255, 255, 255, .18); }
+  @media (hover: hover) { .person-chip:hover { background: rgba(255, 255, 255, .18); } }
   .person-chip svg { flex: none; width: 11px; height: 11px; opacity: .8; }
   .person-chip-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .person-dot {
@@ -1665,7 +1707,7 @@ try { if (SITE_LOCK && sessionStorage.getItem('status-tracker-unlocked') !== SIT
   .person-name { overflow: hidden; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
   .person-body small { font-size: 12.5px; color: var(--muted); }
   .sheet .people-add { display: flex; gap: 8px; padding: 0; }
-  .theme-pick { display: flex; align-items: center; justify-content: center; gap: 4px; margin: 14px 0 4px; font-size: 13px; color: var(--muted); }
+  .theme-pick { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px 4px; margin: 14px 0 4px; font-size: 13px; color: var(--muted); } /* wrapped rows leave room for the touch areas */
   .theme-pick span { margin-right: 6px; }
   .theme-pick button {
     min-height: 32px;
@@ -1681,13 +1723,21 @@ try { if (SITE_LOCK && sessionStorage.getItem('status-tracker-unlocked') !== SIT
   .stale { color: var(--warn); }
   .icon-spacer { flex: none; width: 36px; }
   .receive-options { display: grid; gap: 10px; }
+  .receive-name { display: grid; gap: 6px; margin: 14px 0 16px; }
+  .receive-name .member-input { width: 100%; }
   .receive-options .add, .receive-options .btn-secondary { width: 100%; }
+  .receive-options .add { grid-area: auto; } /* one column: .add's own "add" area made a second one */
+  .p-suggest { justify-self: start; margin-top: 6px; text-align: left; } /* Edit program: "Use United MileagePlus…" */
   @media (max-width: 480px) { /* the switcher sits under the date instead of squeezing the title */
     .hero-top { flex-wrap: wrap; row-gap: 10px; }
     .hero-top > div { flex: 1 1 200px; min-width: 0; }
     .person-chip, .hero-link:not([hidden]) + .person-chip { order: 3; max-width: calc(100% - 52px); margin-left: 52px; }
     .hero-link { order: 3; margin-left: 52px; } /* Credits under the date too, the switcher beside it */
     .hero-link:not([hidden]) + .person-chip { max-width: calc(100% - 160px); margin-left: 8px; }
+  }
+  @media (max-width: 374px) { /* Credits lines up with the logo, so the switcher has room for a name */
+    .hero-link { margin-left: 0; }
+    .hero-link:not([hidden]) + .person-chip { max-width: calc(100% - 108px); }
   }
   .add.sm, .btn-secondary.sm { flex: none; padding: 0 16px; }
   .perk-block { padding: 12px 14px; border-radius: 14px; background: var(--inset); }
@@ -1733,7 +1783,8 @@ try { if (SITE_LOCK && sessionStorage.getItem('status-tracker-unlocked') !== SIT
   .level .perks { margin: 0; padding: 0 14px 13px 12px; }
   .tag.you { background: var(--accent); color: var(--on-accent); }
   .tag.next { background: var(--accent-soft); color: var(--accent); }
-  .d-actions { flex-wrap: wrap; }
+  .d-actions { flex-wrap: nowrap; } /* a long website name is cut short instead of pushing Done to a second row */
+  #d-site { display: block; flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 32px; }
   a.ghost-btn { text-decoration: none; }
 
   /* Footer */
@@ -1764,7 +1815,7 @@ try { if (SITE_LOCK && sessionStorage.getItem('status-tracker-unlocked') !== SIT
     transition: opacity .18s, transform .18s, visibility 0s .18s;
   }
   .toast.show { opacity: 1; visibility: visible; transform: translate(-50%, 0); transition: opacity .18s, transform .18s; }
-  .toast-msg { min-width: 0; padding: 6px 0; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
+  .toast-msg { min-width: 0; padding: 6px 0; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; line-clamp: 4; }
   .toast button {
     flex: none;
     padding: 6px 10px;
@@ -1834,6 +1885,12 @@ try { if (SITE_LOCK && sessionStorage.getItem('status-tracker-unlocked') !== SIT
     /* Columns rather than grid rows, so a short card doesn't leave a gap under it beside a long one */
     .cp-cards { display: block; columns: 420px 3; column-gap: 14px; }
     .cp-card { break-inside: avoid; margin-bottom: 14px; }
+  }
+
+  @media (pointer: coarse) { /* the 30-32px buttons get a 44px tall touch area; side by side buttons keep their own width */
+    .pill-btn, .view-pick button, .theme-pick button, .cp-skip, #toast-undo { position: relative; }
+    .pill-btn::after, .view-pick button::after, .theme-pick button::after, #toast-undo::after { content: ""; position: absolute; inset: -6px 0; }
+    .cp-skip::after { content: ""; position: absolute; inset: -6px; }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -1961,9 +2018,14 @@ var siteLock = (function () {
         </span>
         <svg class="scan-cta-go" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5L10.5 8 6 12.5"/></svg>
       </button>
+      <p class="setup-alt">
+        <button class="link" id="setup-example" type="button">Use the example setup</button>
+        <span aria-hidden="true">·</span>
+        <button class="link" id="setup-restore" type="button">Restore a backup</button>
+      </p>
       <p class="setup-or">or pick your programs</p>
       <p class="setup-sub">You can add your status levels, rename, reorder, or add any other program later with Edit.</p>
-      <input class="card-search program-search" id="program-search" type="search" placeholder="Search programs (e.g. Emirates, Hyatt)" aria-label="Search programs" autocomplete="off">
+      <input class="card-search program-search" id="program-search" type="search" placeholder="Search, e.g. Hyatt or Emirates" aria-label="Search programs" autocomplete="off">
       <div id="catalog"></div>
       <p class="no-match" id="program-no-match" role="status" hidden>No program by that name — you can add any program later with Edit.</p>
       <div class="setup-cards">
@@ -1974,11 +2036,6 @@ var siteLock = (function () {
       </div>
       <div class="setup-actions">
         <button class="add" id="setup-start" type="button" disabled>Pick a program or card</button>
-        <p class="setup-alt">
-          <button class="link" id="setup-example" type="button">Use the example setup</button>
-          <span aria-hidden="true">·</span>
-          <button class="link" id="setup-restore" type="button">Restore a backup</button>
-        </p>
       </div>
     </div>
   </section>
@@ -2047,11 +2104,11 @@ var siteLock = (function () {
       <form class="vform" id="vform" autocomplete="off">
         <div class="field f-name">
           <label for="vname">Voucher</label>
-          <input id="vname" name="name" required maxlength="80" placeholder="e.g. Delta companion certificate">
+          <input id="vname" name="name" required maxlength="80" enterkeyhint="next" placeholder="e.g. Delta companion certificate">
         </div>
         <div class="field f-note">
           <label for="vnote">Value / note</label>
-          <input id="vnote" name="note" maxlength="120" placeholder="e.g. $250 eCredit or 1 free night">
+          <input id="vnote" name="note" maxlength="120" enterkeyhint="next" placeholder="e.g. $250 eCredit or 1 free night">
         </div>
         <div class="field f-exp">
           <label for="vexp">Expires</label>
@@ -2131,6 +2188,7 @@ var siteLock = (function () {
     <div class="field">
       <label for="p-name">Name</label>
       <input id="p-name" required maxlength="60" list="catalog-names" placeholder="e.g. United MileagePlus">
+      <button class="link p-suggest" id="p-suggest" type="button" hidden></button>
     </div>
     <div class="field">
       <label for="p-unit">Balance</label>
@@ -2143,7 +2201,7 @@ var siteLock = (function () {
     </div>
     <div class="field">
       <label for="p-member">Member number (optional)</label>
-      <input id="p-member" maxlength="40" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="e.g. 123456789">
+      <input id="p-member" maxlength="40" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" placeholder="e.g. 123456789">
     </div>
     <div class="field">
       <label for="p-who">Whose account (optional)</label>
@@ -2367,8 +2425,13 @@ var siteLock = (function () {
     <div class="grab" aria-hidden="true"></div>
     <h2 id="receive-title" tabindex="-1" autofocus>Copy this tracker here?</h2>
     <p class="setup-sub" id="receive-summary"></p>
+    <div class="receive-name" id="receive-name-wrap" hidden>
+      <label class="d-label" for="receive-name">Whose tracker is this?</label>
+      <input type="text" class="member-input name-input" id="receive-name" maxlength="30" placeholder="e.g. Alex" autocomplete="off" enterkeyhint="done">
+    </div>
     <div class="receive-options">
       <button class="add" id="receive-person" type="button">Add as another person</button>
+      <button class="btn-secondary" id="receive-update" type="button" hidden></button>
       <button class="btn-secondary" id="receive-replace" type="button">Replace the tracker on this device</button>
       <button class="link" id="receive-cancel" type="button">Cancel</button>
     </div>
@@ -2516,6 +2579,13 @@ var siteLock = (function () {
   const byId = (list) => Object.assign(Object.create(null), Object.fromEntries(list.map((c) => [c.id, c])));
   const CATALOG_BY_ID = byId(CATALOG_ITEMS);
   const catalogByName = (name) => CATALOG_ITEMS.find((c) => c.name.toLowerCase() === name.trim().toLowerCase());
+  // A short name for one known program ("United", "Hyatt", "Bonvoy"): matched at the start of a word in its full name.
+  const catalogLoose = (name) => {
+    const q = name.trim().toLowerCase();
+    if (q.length < 3) return null;
+    const hits = CATALOG_ITEMS.filter((c) => c.name.toLowerCase().split(/[\s-]+/).some((w) => w.startsWith(q)) || c.name.toLowerCase().startsWith(q));
+    return hits.length === 1 ? hits[0] : null;
+  };
   // A program's name with whose account it is, when that's set: "Leading Hotels of the World (Ms. Lee)".
   const nameOf = (p) => (p.who ? `${p.name} (${p.who})` : p.name);
 
@@ -4502,7 +4572,7 @@ var siteLock = (function () {
       for (const [k, v] of ownEntries(raw.creditsOther)) {
         const [card, id] = k.split(/:(.*)/s);
         const row = (CREDIT_OTHERS[baseCardId(card)] || []).find((o) => o[0] === id);
-        if (row && (typeof row[3] === 'number' || row[3] === 'once') && typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(parseISODate(v).getTime()) && v <= todayISO()) s.creditsOther[k] = v;
+        if (row && (typeof row[3] === 'number' || row[3] === 'once') && typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(parseISODate(v).getTime()) && v <= latestTodayISO()) s.creditsOther[k] = v; // a day ahead here can be today where it was ticked
       }
     }
     if (raw.creditsSkipped && typeof raw.creditsSkipped === 'object') { // credits you've chosen not to track
@@ -4884,8 +4954,10 @@ var siteLock = (function () {
     // The first change also keeps the balance it replaced, dated when it was entered.
     if (!list.length && previous != null && state.updated[id] && state.updated[id] < today) list.push([state.updated[id], previous]);
     const last = list[list.length - 1];
-    if (last && last[0] === today) list[list.length - 1] = [today, value, source, last.length > 3 ? last[3] : activityBefore]; // the day's first
-    else list.push([today, value, source, activityBefore]);
+    // A day after today already there was saved where it's later (a trip west): still today, so the list stays in order.
+    const day = last && last[0] > today && last[0] <= latestTodayISO() ? last[0] : today;
+    if (last && last[0] === day) list[list.length - 1] = [day, value, source, last.length > 3 ? last[3] : activityBefore]; // the day's first
+    else list.push([day, value, source, activityBefore]);
     if (list.length > HISTORY_MAX) list.splice(0, list.length - HISTORY_MAX);
   }
 
@@ -6828,6 +6900,11 @@ var siteLock = (function () {
   let ocrProgress = () => {}; // set by the scan in progress
   let ocrPass = { at: 0, of: 1, quiet: false }; // which reading of the screenshot is running, so progress goes once from 0 to 100%
   const OCR_CACHE = 'status-tracker-ocr-v2'; // same name as in sw.js
+  let ocrSaved = false; // the reader's language file (the big download) is already on this device
+  try { // where Cache Storage is blocked (a sandboxed frame), even reading window.caches throws
+    if (window.caches) caches.match(`${OCR_BASE}@tesseract.js-data/eng@1.0.0/4.0.0_best_int/eng.traineddata.gz`, { cacheName: OCR_CACHE, ignoreVary: true })
+      .then((file) => { ocrSaved = !!file; }, () => {});
+  } catch { /* no saved reader here */ }
   // Gives up after 2 minutes (a stalled download) so the next scan can try again; a reader that finishes starting
   // after that is shut down rather than left running beside the next one.
   function loadOCR() {
@@ -6839,6 +6916,7 @@ var siteLock = (function () {
         settled = true;
         clearTimeout(timer);
         if (window.caches) caches.delete(OCR_CACHE).catch(() => {}); // a bad cached copy mustn't stick
+        ocrSaved = false;
         const e = err instanceof Error ? err : new Error(String(err)); // Tesseract's errorHandler passes a string
         e.load = true; // the reader didn't load: not a bad picture (see playScan)
         reject(e);
@@ -7653,7 +7731,7 @@ var siteLock = (function () {
     let stage = '';
     ocrProgress = (m) => { // the percentage is shown; only a change of stage is announced
       if (run !== playRun) return;
-      const now = m.status === 'recognizing text' ? 'Scanning…' : /load/.test(m.status) ? 'Warming up the scanner (first time only)…' : null;
+      const now = m.status === 'recognizing text' ? 'Scanning…' : /load/.test(m.status) ? (ocrSaved ? 'Warming up the scanner…' : 'Warming up the scanner (first time only)…') : null;
       if (!now) return;
       $('#play-title').textContent = `${now} ${Math.round((m.progress || 0) * 100)}%`;
       if (now !== stage) { stage = now; announce(now); }
@@ -8279,7 +8357,7 @@ var siteLock = (function () {
       h('li', { class: 'loot-warn' }, lootIcon('warn', '#B45309'), h('div', { class: 'loot-main' }, h('b', null, 'Check this first'),
         h('small', null, (member ? `the member number on this screen (•••• ${member.slice(-4)}) isn’t one you’ve saved for ${name}.` : `you track ${rows.length} ${name} accounts, and this screen doesn’t show a member number.`) + says))),
       h('li', { class: 'play-pick' }, select));
-    setActions([later, ['Read it', true, () => showLoot(read, select.value)]]);
+    setActions([later, ['Use this account', true, () => showLoot(read, select.value)]]);
     select.focus();
   }
 
@@ -8288,7 +8366,7 @@ var siteLock = (function () {
     $('#play-title').textContent = 'Which program is this?';
     const select = h('select', { id: 'play-program', 'aria-label': 'Program' }, programOptions(null));
     $('#play-loot').replaceChildren(h('li', { class: 'play-pick' }, select));
-    setActions([later, ['Read it', true, () => {
+    setActions([later, ['Use this program', true, () => {
       if (!select.value) { select.focus(); return; }
       showLoot(read, select.value);
     }]]);
@@ -8495,7 +8573,7 @@ var siteLock = (function () {
       }
     }
     if (found.member) {
-      const i = h('input', { id: 'scan-member', autocomplete: 'off', 'aria-label': 'Member number' });
+      const i = h('input', { id: 'scan-member', autocomplete: 'off', autocapitalize: 'characters', autocorrect: 'off', spellcheck: 'false', 'aria-label': 'Member number' });
       i.value = found.member;
       out.push(field('member', 'Member number', i, !(p && state.members[p.id]), p && state.members[p.id] ? 'You already have one saved' : null));
     }
@@ -8927,6 +9005,8 @@ var siteLock = (function () {
     }
     if (medallion && !medallion.unit) rows.push(quickRow(medallion, 'mqd', `MQDs ${mqdYear()}`, 'MQDs', state.mqd, state.updated.mqd));
     $('#quick-list').replaceChildren(...rows);
+    const inputs = quickSheet.querySelectorAll('.quick-input');
+    if (inputs.length) inputs[inputs.length - 1].setAttribute('enterkeyhint', 'done'); // the last row's key saves
     quickSheet.showModal();
     quickSheet._snap = formSnap(quickSheet);
     const first = $('#quick-list input');
@@ -8937,13 +9017,13 @@ var siteLock = (function () {
     input.value = value == null ? '' : fmt(value);
     return h('li', { class: 'quick-row' }, avatar(p),
       h('span', { class: 'quick-name' }, h('span', null, name), updated || value == null ? h('small', null, updated ? `updated ${relativeDay(updated)}` : 'not entered yet') : null),
-      input, h('span', { class: 'quick-unit' }, unit));
+      h('span', { class: 'quick-field' }, input, h('span', { class: 'quick-unit' }, unit)));
   }
   $('#quick-btn').addEventListener('click', openQuick);
   $('#quick-cancel').addEventListener('click', () => quickSheet.close());
   guardEdits(quickSheet); // a backdrop tap or Escape doesn't throw away what you typed
   quickSheet.addEventListener('input', (e) => { if (e.target.matches('.quick-input')) e.target.removeAttribute('aria-invalid'); });
-  quickSheet.addEventListener('focusin', (e) => { if (e.target.matches('.quick-input')) e.target.select(); });
+  quickSheet.addEventListener('focusin', (e) => { if (e.target.matches('.quick-input')) { e.target.select(); e.target.scrollIntoView({ block: 'nearest' }); } }); // select() stops Safari's own scroll to the field, so bring it into view here
   quickSheet.addEventListener('keydown', (e) => { // Enter moves down the list; Save on the last one
     if (e.key !== 'Enter' || !e.target.matches('.quick-input')) return;
     const inputs = [...quickSheet.querySelectorAll('.quick-input')];
@@ -9003,7 +9083,7 @@ var siteLock = (function () {
     const valued = (state.programs || []).filter((p) => valueOf(p));
     const total = valued.reduce((sum, p) => sum + valueOf(p), 0);
     $('#worth-btn').hidden = state.hideValues || editMode || !valued.length;
-    $('#worth-btn').textContent = `≈ ${money(total)} in points & miles ›`;
+    $('#worth-btn').textContent = `≈ ${money(total)} in points & miles\u00a0›`;
     syncValuesPick();
     if (!$('#worth-sheet').open) return;
     // With more than one person, say whose these are: the household total below is everyone's.
@@ -9395,6 +9475,7 @@ var siteLock = (function () {
     $('#p-status').replaceChildren(...lines.map((line) => statusEditorRow(line, p)));
     $('#p-delete').hidden = !id;
     syncMedallionToggle();
+    syncSuggest();
     sheet.showModal();
     sheet._snap = formSnap(sheet); // what it opened with, so a backdrop tap knows if anything was changed
     if (!id) $('#p-name').focus();
@@ -9410,8 +9491,26 @@ var siteLock = (function () {
     return id;
   }
 
+  // Typed a short name for a known program that isn't on your list yet: offer the full one, with its levels and perks.
+  function syncSuggest() {
+    const typed = $('#p-name').value;
+    const editing = sheetId && state.programs.find((p) => p.id === sheetId);
+    const match = !catalogByName(typed) && !(editing && catalogFor(editing)) && catalogLoose(typed);
+    const free = match && !state.programs.some((p) => p !== editing && catalogFor(p) && catalogFor(p).id === match.id);
+    $('#p-suggest').hidden = !free;
+    if (free) { $('#p-suggest').textContent = `Use ${match.name} (with its levels and perks)`; $('#p-suggest').dataset.id = match.id; }
+  }
+  $('#p-suggest').addEventListener('click', () => {
+    const match = CATALOG_BY_ID[$('#p-suggest').dataset.id];
+    if (!match) return;
+    $('#p-name').value = match.name;
+    $('#p-unit').value = match.unit;
+    $('#p-name').dispatchEvent(new Event('input'));
+    $('#p-name').focus();
+  });
   $('#p-name').addEventListener('input', () => {
     syncMedallionToggle();
+    syncSuggest();
     if (sheetId) return;
     const match = catalogByName($('#p-name').value); // picked a known program: fill in its balance type
     if (match) {
@@ -9569,6 +9668,7 @@ var siteLock = (function () {
     if (site) {
       $('#d-site').href = `https://${site}/`;
       $('#d-site').textContent = `${site.replace(/^www\./, '')} ↗`;
+      $('#d-site').title = site.replace(/^www\./, ''); // the whole name, when the button cuts it short
     }
     renderDetail();
     detail.showModal();
@@ -9587,6 +9687,9 @@ var siteLock = (function () {
       sub.push('Status program');
     }
     $('#d-sub').textContent = sub.join(' · ');
+    if (p.unit) {
+      $('#d-sub').append(' ', h('button', { type: 'button', class: 'link d-bal', id: 'd-bal' }, state.balances[p.id] == null ? 'Add balance' : 'Change'));
+    }
     renderTrend(p);
     renderGoal(p);
     renderMember(p, false);
@@ -9954,6 +10057,7 @@ var siteLock = (function () {
         maxlength: '40',
         autocomplete: 'off',
         autocapitalize: 'characters',
+        autocorrect: 'off',
         spellcheck: 'false',
         enterkeyhint: 'done',
         placeholder: 'Add your member number',
@@ -10227,11 +10331,34 @@ var siteLock = (function () {
   detail.addEventListener('change', (e) => {
     if (e.target.id !== 'd-activity') return;
     const p = detailProgram();
+    // A day ahead isn't saved: a typo like 2062 would push the expiry out for years. Typed on a keyboard, each part of
+    // the date is a change (month first, "12" can be a December still to come), so it's put back only when you leave.
+    if (parseISODate(e.target.value) && e.target.value > latestTodayISO()) return;
     if (parseISODate(e.target.value)) state.activity[p.id] = e.target.value;
     else delete state.activity[p.id];
     scheduleSave();
     $('#d-expiry-verdict').replaceWith(expiryVerdict(p)); // the input stays put, so typing a date isn't interrupted
     renderUpcoming();
+  });
+  // The date it had when you went into the field ("focus", not "focusin": Safari can send focusin after a change).
+  detail.addEventListener('focus', (e) => {
+    if (e.target.id !== 'd-activity') return;
+    e.target.dataset.was = e.target.value;
+    e.target.dataset.pid = (detailProgram() || {}).id || '';
+  }, true);
+  detail.addEventListener('focusout', (e) => { // a date still ahead when you leave the field goes back to the one it had
+    if (e.target.id !== 'd-activity' || !(parseISODate(e.target.value) && e.target.value > latestTodayISO())) return;
+    const p = detailProgram();
+    // Another program is open now: nothing was saved for the one you were typing in (a change skips a day ahead).
+    if (!p || (e.target.dataset.pid && p.id !== e.target.dataset.pid) || e.target.isConnected === false) return;
+    const was = e.target.dataset.was || '';
+    e.target.value = was > latestTodayISO() ? state.activity[p.id] || '' : was; // never one ahead (a change saves none)
+    if (parseISODate(e.target.value)) state.activity[p.id] = e.target.value;
+    else delete state.activity[p.id];
+    scheduleSave();
+    $('#d-expiry-verdict').replaceWith(expiryVerdict(p));
+    renderUpcoming();
+    showToast('That date hasn’t happened yet, so Last activity wasn’t changed');
   });
 
   detail.addEventListener('keydown', (e) => {
@@ -10284,6 +10411,15 @@ var siteLock = (function () {
     expEditing = null;
   }
   function closeDetail() { keepTyped(); detail.close(); }
+  // "Add balance" in a program's details: the row's own number editor (or Type balances when the row is filtered out).
+  detail.addEventListener('click', (e) => {
+    if (!e.target.closest('#d-bal')) return;
+    const p = detailProgram();
+    if (!p) return;
+    closeDetail();
+    const num = document.querySelector(`#programs [data-field="bal:${CSS.escape(p.id)}"]`);
+    if (num && num.getClientRects().length) { num.scrollIntoView({ block: 'center' }); startEdit(num); } else openQuick();
+  });
   detail.addEventListener('close', keepTyped); // Escape (the rest already kept it, so this finds nothing new)
 
   /* ---------- "Your perks": every benefit you hold, grouped by what you'd look for ---------- */
@@ -10902,7 +11038,16 @@ var siteLock = (function () {
     finishSetup(setup);
     showToast(setup.cards.length ? 'Your cards’ statuses are filled in — tap Edit to adjust' : 'Tip: tap Edit to add your status levels');
   });
-  $('#setup-example').addEventListener('click', () => finishSetup(exampleSetup()));
+  $('#setup-example').addEventListener('click', () => {
+    const before = clone(state);
+    finishSetup(exampleSetup());
+    showToast('Example setup added — Undo to start fresh instead', Object.assign(() => {
+      Object.assign(state, before);
+      saveNow(); // no programs: clears the saved copy, so the setup screen comes back after a reload too
+      renderAll();
+      scrollTo(0, 0);
+    }, { snapshot: true }), 'Undo', 15000);
+  });
   $('#setup-restore').addEventListener('click', () => $('#import-file').click());
 
   /* ---------- Card presets sheet ---------- */
@@ -11000,7 +11145,7 @@ var siteLock = (function () {
         const end = isoOf(from.startsWith('A') ? new Date(start.getFullYear() + 1, start.getMonth(), start.getDate() - 1) : new Date(start.getFullYear(), 11, 31));
         const known = from === mark ? state.creditsUsedOn[key] : typeof v === 'number' && from === oldNow ? state.creditsPartOn[key] : null;
         const last = parseISODate([end, today].sort()[0]);
-        const day = known && known >= isoOf(start) && known <= isoOf(last) ? parseISODate(known)
+        const day = known && known >= isoOf(start) && known <= end && known <= latestTodayISO() ? parseISODate(known)
           : from === mark ? start : middleDay(start, last);
         return { v, mark: from === mark, on: from === mark ? state.creditsUsedOn[key] : undefined, start, last, middle: day };
       }).filter(Boolean));
@@ -11494,6 +11639,10 @@ var siteLock = (function () {
       nameEl.scrollIntoView({ block: 'nearest' });
     } else document.activeElement.blur();
   });
+  $('#vform').addEventListener('keydown', (e) => { // Return walks Voucher -> Value / note -> Expires until a date is set
+    if (e.key !== 'Enter' || e.isComposing || e.keyCode === 229 || $('#vexp').value || !['vname', 'vnote'].includes(e.target.id)) return;
+    e.preventDefault(); $(e.target.id === 'vname' ? '#vnote' : '#vexp').focus();
+  });
 
   $('#vlist').addEventListener('click', (e) => {
     const btn = e.target.closest('.v-del');
@@ -11525,6 +11674,13 @@ var siteLock = (function () {
 
   function todayISO() {
     return isoOf(new Date());
+  }
+  // The latest "today" anywhere (UTC−12 to UTC+14 is 26 hours apart): a day saved where it's already later (on a
+  // trip, or a backup opened on a device further west) can be up to two days past this device's today. A date past
+  // this one is a wrong clock or a damaged file.
+  function latestTodayISO() {
+    const now = new Date();
+    return isoOf(new Date(now.getFullYear(), now.getMonth(), now.getDate() + 2));
   }
 
   // Phones: hand the file to the share sheet (Save to Files, Notes, AirDrop, email). Elsewhere: download it.
@@ -11722,6 +11878,7 @@ var siteLock = (function () {
   function replaceTracker(next, message) {
     if (staleCopy) { warnStaleCopy(); return; } // it couldn't be saved
     const previous = clone(state);
+    if (!previous.programs) skipNewsForNewSetup(); // a tracker arriving on a device that wasn't set up: nothing is news
     stopScanning();
     dropTyped();
     Object.assign(state, next);
@@ -11843,6 +12000,21 @@ var siteLock = (function () {
   // yet (a person just added, not set up, still gets the choice of adding the link's tracker as its own person).
   const receiveSheet = $('#receive-sheet');
   let received = null;
+  let receivedPacked = ''; // the link's data, put back in the address if Update has to wait for a Reload
+  let receivedFrom = ''; // the one other person here with the link's name, whose copy Update replaces
+  // The name the link carries or that you typed ("김민지" in one Unicode form, however it was typed); '' if neither.
+  const givenName = () => ((received && received.name) || str($('#receive-name').value, 30)).normalize('NFC');
+  const receivedName = () => givenName() || 'Imported';
+  const sameName = (a, b) => a.normalize('NFC').toLowerCase() === b.normalize('NFC').toLowerCase();
+  // A newer link from someone already added here: update their copy (with Undo) instead of adding them again. Only
+  // for a real name: never "Imported", the name every unnamed link was given, which says nothing about whose it is.
+  function syncReceiveUpdate() {
+    const named = givenName();
+    const same = named && !sameName(named, 'Imported') ? people.list.filter((x) => x.id !== people.active && sameName(x.name, named)) : [];
+    receivedFrom = same.length === 1 ? same[0].id : '';
+    $('#receive-update').hidden = !receivedFrom;
+    if (receivedFrom) $('#receive-update').textContent = `Update ${whose(same[0])} tracker`;
+  }
   // Some browsers have DecompressionStream but not the 'deflate-raw' format links use (Chromium before 103).
   const canInflate = () => { try { new DecompressionStream('deflate-raw'); return true; } catch (err) { return false; } };
   // While the site password is showing, nothing behind it opens: a sheet there would be hidden yet block the box.
@@ -11861,6 +12033,7 @@ var siteLock = (function () {
     if (!match) { forget(); showToast('That link couldn’t be read — it may have been cut off'); return; }
     if (match[1][0] === 'z' && !canInflate()) { forget(); showToast('This browser is too old to open that link — update it, or use a backup file'); return; }
     try { received = await readTrackerLink(match[1]); } catch (err) { received = null; }
+    receivedPacked = match[1];
     if (received && received.tooNew) { // the link stays in the address bar, so the updated app opens it after Reload
       received = null;
       showToast('That link is from a newer version. Reload to open it', reloadForUpdate, 'Reload', 15000);
@@ -11883,6 +12056,9 @@ var siteLock = (function () {
     ].filter(Boolean).join(' ');
     // Replacing swaps only whoever is showing: with several people, say whose.
     $('#receive-replace').textContent = people.list.length > 1 ? `Replace ${whose(activePerson())} tracker` : 'Replace the tracker on this device';
+    $('#receive-name-wrap').hidden = !!name; // a link from someone never named: you say whose it is
+    $('#receive-name').value = '';
+    syncReceiveUpdate();
     receiveSheet.showModal();
   }
   $('#receive-replace').addEventListener('click', () => {
@@ -11897,9 +12073,28 @@ var siteLock = (function () {
     let id;
     do { id = `u${Math.random().toString(36).slice(2, 8)}`; } while (taken.has(id));
     try { localStorage.setItem(storageKey(id), JSON.stringify({ ...received.data, dataV: DATA_V })); } catch (err) { showToast('Not enough storage on this device'); return; }
-    people.list.push({ id, name: received.name || 'Imported' });
+    people.list.push({ id, name: receivedName() });
     received = null;
     switchPerson(id);
+  });
+  $('#receive-name').addEventListener('input', syncReceiveUpdate);
+  $('#receive-update').addEventListener('click', () => {
+    receiveSheet.close();
+    const link = received;
+    received = null;
+    const person = people.list.find((x) => x.id === receivedFrom);
+    if (!link || !person) return;
+    // Their copy was saved by a newer version: this one can't write it. Nothing changes; the link goes back in the
+    // address, so the updated app opens it again after Reload.
+    let saved = null;
+    try { saved = JSON.parse(localStorage.getItem(storageKey(person.id)) || 'null'); } catch (err) { /* unreadable: switching sets it aside */ }
+    if (tooNew(saved)) {
+      history.replaceState(null, '', `${location.pathname}${location.search}#import=${receivedPacked}`);
+      showToast(`${whose(person)} tracker was saved by a newer version. Reload to update it from this link`, reloadForUpdate, 'Reload', 15000);
+      return;
+    }
+    switchPerson(person.id);
+    if (people.active === person.id) replaceTracker(link.data, `Updated ${whose(person)} tracker`);
   });
   $('#receive-cancel').addEventListener('click', () => { receiveSheet.close(); received = null; });
   addEventListener('hashchange', receiveFromLink);
@@ -13331,7 +13526,7 @@ var siteLock = (function () {
     $('#install-btn').hidden = !installPrompt;
     $('#install-text').textContent = installPrompt
       ? 'Install it to open like an app — it works offline too.'
-      : 'Tap the Share button, then “Add to Home Screen”, to open it like an app — it works offline too.';
+      : 'Tap Share (or ••• then Share), then “Add to Home Screen”. It opens like an app, works offline, and Safari is less likely to clear your data.';
   }
 
   addEventListener('beforeinstallprompt', (e) => {

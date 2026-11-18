@@ -381,10 +381,10 @@ check('after adding a voucher, focus goes back to the name field without a jump:
 
 /* ---------- Styles: phone sheets, the grab bar, tap targets ---------- */
 
-const phone = css.slice(css.indexOf('@media (max-width: 560px) {\n    .sheet {'));
+const phone = css.slice(css.indexOf('@media (max-width: 560px), (max-height: 500px) and (pointer: coarse) {')); // phones, either way up
 const phoneBlock = phone.slice(0, phone.indexOf('\n  }\n'));
 check('on a phone, a sheet’s Done/Save row sticks to the bottom of the sheet', [
-  /\.sheet > form > \.sheet-actions, \.sheet > \.sheet-body > \.sheet-actions \{[^}]*position: sticky; bottom: 0;/.test(phoneBlock),
+  /\.sheet > form > \.sheet-actions, \.sheet > \.sheet-body > \.sheet-actions(, [^{]*)? \{[^}]*position: sticky; bottom: 0;/.test(phoneBlock),
   /\.sheet-actions \{[^}]*background: var\(--card\)/.test(phoneBlock),
 ], [true, true]);
 check('…and a toast inside a phone sheet sits above that row, not over Save', /\.sheet > \.toast \{ bottom: calc\(76px \+ env\(safe-area-inset-bottom\)\); \}/.test(phoneBlock), true);

@@ -283,7 +283,7 @@ check('lists without bullets keep their list role (Safari drops it otherwise)', 
 check('Credits checklist: cards are h3 under it, “Also on this card” h4, and renaming a second card retitles the h3', [
   js.includes("h('h3', null, c.card.label || c.card.name)"), js.includes("h('h3', null, 'Add your cards')"),
   js.includes("h('h4', { class: 'cp-others-title' }, 'Also on this card'"), js.includes("section.querySelector('h3').replaceChildren(creditCard(copy).name);"),
-  /\.cp-panel h3 \{ margin: 0 0 4px; font-size: 16px; \}/.test(css), /\.cp-card-head h3 \{ flex: 1;/.test(css), /\.cp-(panel|card-head) h2/.test(css),
+  /\.cp-panel h3 \{ margin: 0 0 4px; font-size: 16px; \}/.test(css), /\.cp-card-head h3 \{ flex: 1 1 auto;/.test(css), /\.cp-(panel|card-head) h2/.test(css),
 ], [true, true, true, true, true, true, false]);
 check('a credit named the same on another card says which card', js.includes('creditCardIds().some((id) => id !== cardId && cardCreditDefs(id).some((c) => sameText(c.name, name)))'), true);
 

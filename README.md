@@ -8,7 +8,7 @@ A personal airline and hotel loyalty tracker: point balances, elite status and p
 
 Open the site in your phone's browser, then:
 
-- **iPhone (Safari):** Share → **Add to Home Screen**
+- **iPhone (Safari):** **Share** (or **•••** → **Share**) → **Add to Home Screen**
 - **Android (Chrome):** ⋮ menu → **Install app** (or **Add to Home screen**)
 
 It launches full-screen from the home screen and works with no network. The app shows a one-time tip with these steps (or an **Install** button where the browser supports it) until you install it or dismiss the tip.
@@ -27,7 +27,7 @@ On a laptop or desktop (1000px wide and up) it becomes a dashboard: the header r
 
 **Simple or Detailed:** above the list, **Simple** shows just each program, your highest status with its end date, and your balance. **Detailed** adds perks, progress, and the Medallion tracker. **Type balances** opens one screen with every balance (and Delta MQDs) to type in and save at once. Points and miles are whole numbers, so a number like "212,50" (a missed zero) isn't saved as 213: the screen stays open on that row and says so. The same goes for a number you fix in the screenshot review before tapping **Update**. Shorthand like 1.5k, 2,25m or 2.125m (2,125,000) still works, and MQDs can have cents; "2,125m" could mean 2.125 or 2,125 million, so it asks you to type the whole number. If you've typed something and tap outside this screen (or the **Edit program** screen) or press Escape, it stays open and asks you to tap **Save** (an extra status row you added and left empty doesn't count); **Discard** or **Cancel** drops the changes. On a phone, a long screen keeps its **Done** or **Save** button at the bottom, so you never have to scroll to the end to close it.
 
-The first time you open it, pick the programs you have and, optionally, the credit cards you hold (or tap **Use the example setup**). Tap **Edit** on the program list anytime to add, rename, reorder, or delete programs, set your own status levels and where they come from, and write a note under the list. Tap any number to update a balance.
+The first time you open it, pick the programs you have and, optionally, the credit cards you hold (or tap **Use the example setup**, which has Undo to start fresh instead). On a phone the **Start** button stays at the bottom of the screen while you pick. Tap **Edit** on the program list anytime to add, rename, reorder, or delete programs, set your own status levels and where they come from, and write a note under the list. In **Add program**, a short name for a program the app knows ("United", "Hyatt", "Bonvoy") offers the full one with its levels and perks in one tap. Tap any number to update a balance, or **Add balance** in a program's details.
 
 ### Knowing your perks
 
@@ -131,7 +131,7 @@ Everyone who opens the site on their own phone gets their own tracker automatica
 
 ## Moving to another device
 
-**Send to another device** (at the bottom) makes a link that carries your whole tracker. Share it to yourself (Messages, AirDrop, email), open it on the other device, and choose **Add as another person** or **Replace the tracker on this device**. A device with nothing set up yet takes it right away. A link copied with a period or bracket after it still opens; one that got cut off says so. Nothing is uploaded: the data rides in the part of the link after `#`, which browsers never send to a server. The link includes member numbers, so only send it to yourself or someone you trust.
+**Send to another device** (at the bottom) makes a link that carries your whole tracker. Share it to yourself (Messages, AirDrop, email), open it on the other device, and choose **Add as another person** or **Replace the tracker on this device**. A link from someone never given a name asks whose tracker it is. When someone already added here sends a newer link, **Update Alex’s tracker** puts the new copy in place of their old one and shows it, with Undo; your own tracker isn't touched. A device with nothing set up yet takes it right away, without the what's-new card. A link copied with a period or bracket after it still opens; one that got cut off says so. Nothing is uploaded: the data rides in the part of the link after `#`, which browsers never send to a server. The link includes member numbers, so only send it to yourself or someone you trust.
 
 ## Your data
 

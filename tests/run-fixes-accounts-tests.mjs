@@ -92,7 +92,7 @@ const fakeDom = `
   for (const id of ['scan-result', 'scan-start', 'scan-again', 'scan-status', 'scan-apply', 'scan-preview', 'scan-text', 'scan-file']) make('div', id, scanEl);
   const sheetEl = make('dialog', 'sheet');
   const formEl = make('form', 'sheet-form', sheetEl);
-  for (const id of ['sheet-title', 'p-name', 'p-unit', 'p-member', 'p-who', 'p-medallion', 'p-medallion-wrap', 'p-status', 'p-delete', 'p-add-status', 'p-cancel']) make(id === 'p-status' ? 'div' : 'input', id, formEl);
+  for (const id of ['sheet-title', 'p-name', 'p-unit', 'p-member', 'p-who', 'p-medallion', 'p-medallion-wrap', 'p-status', 'p-delete', 'p-add-status', 'p-cancel', 'p-suggest']) make(id === 'p-status' ? 'div' : 'input', id, formEl);
   make('div', 'say'); make('div', 'achieve');
   const document = { body, querySelector: (sel) => body.querySelector(sel), querySelectorAll: (sel) => body.querySelectorAll(sel), createElement: (tag) => new El(tag) };
 `;
@@ -193,11 +193,11 @@ check('…and Update saves to her row only', [api.state.balances['lhw-2'], api.s
 
 twoLhw();
 api.showLoot(shot(unnumbered));
-check('no number and no name, two accounts: the card asks, with no countdown', [title(), shown.countdowns, actions()], ['Which Leading Hotels of the World account is this?', 0, ['Try another', 'Read it']]);
+check('no number and no name, two accounts: the card asks, with no countdown', [title(), shown.countdowns, actions()], ['Which Leading Hotels of the World account is this?', 0, ['Try another', 'Use this account']]);
 check('…the chooser lists both rows by name and number, then New account', $('#play-program').options.map((o) => [o.value, o.innerText]),
   [['lhw', 'Leading Hotels of the World · •••• 3190'], ['lhw-2', 'Leading Hotels of the World (Ms. Lee) · •••• 1204'], ['new:lhw', 'New account']]);
 $('#play-program').value = 'lhw-2';
-tap('Read it');
+tap('Use this account');
 check('…choosing her row reads it as hers', [api.playing.choice, api.playing.vals.balance], ['lhw-2', 1450]);
 api.collectNow();
 check('…and saves there', [api.state.balances['lhw-2'], api.state.balances.lhw], [1450, 1200]);
@@ -205,7 +205,7 @@ check('…and saves there', [api.state.balances['lhw-2'], api.state.balances.lhw
 twoLhw();
 api.showLoot(shot(strangerScreen));
 check('a third number: the card asks, New account preselected', [title(), $('#play-program').value, shown.countdowns], ['Which Leading Hotels of the World account is this?', 'new:lhw', 0]);
-tap('Read it');
+tap('Use this account');
 check('…reading it as a new account names it so', [title(), api.playing.choice, lootText()[0]], ['New Leading Hotels of the World account', 'new:lhw', 'LHW | Leading Hotels of the World | Adding a second account — name it in Edit | New']);
 api.collectNow();
 const third = api.state.programs[2];
@@ -307,7 +307,7 @@ check('…and New account from the sheet adds the row with that number', [api.st
   two();
   api.showLoot(shot('Platinum Elite Member\nYOUR POINTS\n26,948'));
   check('…with no number: the account chooser, not the whole program list', [title(), $('#play-program').options.map((o) => o.value)], ['Which IHG One Rewards account is this?', ['ihg', 'ihg-2', 'new:ihg']]);
-  tap('Read it');
+  tap('Use this account');
   check('…and the account picked there is read with the same make-sure note', [api.playing.choice, title(), lootText()[1], shown.countdowns],
     ['ihg', 'This looks like your IHG One Rewards', 'Check this first | the screenshot doesn’t name the program, so make sure it’s this one.', 0]);
   reset([program('ihg'), program('hilton')], { members: { ihg: '5523190' } });

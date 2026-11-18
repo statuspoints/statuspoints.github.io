@@ -218,6 +218,7 @@ function app(store, globals = {}) {
   let planOpen = false; let planMqd = 0; let planSpend = 0; const picked = new Set(); const pickedCards = new Set(); const scrollTo = () => {};
   ${piece('  function renderSafely', '  // Also for a rollover')}
   ${piece("  // Shows someone else's tracker", '  function saveRename')}
+  ${piece('  // A one-time card listing new features', '  /* ---------- Install hint')}
   globalThis.api = { state, toasts, location, listeners, el, store, KEY, normalize, scheduleSave, saveNow, replaceTracker, backUp, trackerLink, receiveFromLink, switchPerson,
     flush() { const fn = pending; pending = null; if (fn) fn(); },
     undo: () => undoAction, tapUndo() { const a = undoAction; undoAction = null; if (a) a(); },
