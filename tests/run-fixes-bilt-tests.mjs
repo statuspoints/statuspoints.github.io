@@ -410,7 +410,7 @@ check('Bilt checked on Nov 7, 2026', data.CHECKED_ON.bilt, 'Nov 7, 2026');
 const partner = (bank, id) => data.TRANSFERS[bank].partners.find((x) => x[0] === id);
 check('Copa ConnectMiles: Citi 1:1, Capital One 2:1.5, as of November 2026', [partner('citi', 'Copa'), partner('capitalone', 'Copa'), data.TRANSFERS_AS_OF], [['Copa', 1, 1], ['Copa', 2, 1.5], 'November 2026']);
 check('the card picker says the 4% Bilt Cash option is only for cards opened by Dec 31, 2026', /CARD_ISSUER_NOTES = \{ Bilt: 'The 4% Bilt Cash option is only for Bilt cards opened by Dec 31, 2026\.' \}/.test(html), true);
-check('What’s new: an item on Bilt’s 2027 changes, and a new id so it shows again', [/<li><b>Bilt’s 2027 changes<\/b>:[^<]*Credits checklist/.test(html), /const NEWS_ID = '2026-11d'/.test(html)], [true, true]);
+check('What’s new: an item on Bilt’s 2027 changes, and a new id so it shows again', [/<li><b>Bilt’s 2027 changes<\/b>:[^<]*Credits checklist/.test(html), /const NEWS_ID = '2026-11e'/.test(html)], [true, true]);
 
 /* ---------- 7. Marking the Palladium bonus earned: a targeted Undo, then an offer of Bilt Gold ---------- */
 

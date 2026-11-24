@@ -5,8 +5,9 @@
 //   const m = await import('/tests/lookalikes.js'); await m.run(); // then: m.results, m.results.filter((r) => !r.ok)
 // Harder copies: m.run(m.pages, { scale: 0.5 }) (a low-resolution screenshot), { jpeg: 0.5 } (compressed),
 // { font: 'Georgia, serif' } or { light: true } (thin text) — any mix.
-// 80 account pages (31 programs) and 11 voucher pages (`expect.vouchers`: each voucher's name and end date, in order;
-// with `program` too when the page also shows an account). It never applies a read (each card is closed), and setUp()
+// 80 account pages (31 programs), 11 voucher pages (`expect.vouchers`: each voucher's name and end date, in order;
+// with `program` too when the page also shows an account), and 8 pages listing several programs' balances
+// (`expect.balances`: [program id, balance, the name its row shows], in order). It never applies a read (each card is closed), and setUp()
 // is for a test browser only.
 
 const W = '#fff';
@@ -347,6 +348,38 @@ export const pages = [
   { name: 'JetBlue web, Travel Bank in small type', w: 1440, h: 300,
     text: [t('jetBlue', 40, 50, 26, 700, '#0033a0'), t('Travel Bank', 60, 130, 22, 700), t('Available credit $85.00', 60, 170, 16), t('Expires on 06/12/2027', 60, 200, 16)],
     expect: { vouchers: [['JetBlue $85 Travel Bank credit', '2027-06-12']] } },
+  // Several programs' balances on one page (made-up numbers): each row read with its own number.
+  { name: 'Travel app, “My programs” stacked', w: 1170, h: 1700, rects: [[0, 0, 1170, 170, '#14324f']],
+    text: [t('9:41', 60, 60, 32, 700, W), t('My programs', 60, 135, 52, 700, W), t('Delta SkyMiles', 60, 300, 44, 700), t('84,250 miles', 60, 380, 60, 700), t('Hilton Honors', 60, 560, 44, 700),
+      t('Diamond', 60, 620, 32, 400, '#555'), t('212,500 points', 60, 710, 60, 700), t('World of Hyatt', 60, 890, 44, 700), t('61,200 points', 60, 970, 60, 700)],
+    expect: { balances: [['delta', 84250, 'Delta SkyMiles'], ['hilton', 212500, 'Hilton Honors'], ['hyatt', 61200, 'World of Hyatt']] } },
+  { name: 'Bank app, linked programs with captions under the numbers', w: 1170, h: 1300, rects: [[0, 0, 1170, 160, '#0b3b2e']],
+    text: [t('Linked loyalty programs', 60, 115, 46, 700, W), t('United MileagePlus', 60, 300, 42, 700), t('112,450', 60, 400, 76, 700), t('Available miles', 60, 460, 32, 400, '#555'),
+      t('Marriott Bonvoy', 60, 640, 42, 700), t('156,000', 60, 740, 76, 700), t('Points balance', 60, 800, 32, 400, '#555')],
+    expect: { balances: [['united', 112450, 'United MileagePlus'], ['marriott', 156000, 'Marriott Bonvoy']] } },
+  { name: 'A list of accounts in two columns (web)', w: 1440, h: 640, rects: [[0, 0, 1440, 90, '#2b2d42'], [60, 150, 1320, 2, '#ccc']],
+    text: [t('My loyalty accounts', 60, 60, 30, 700, W), t('Program', 60, 135, 18, 700, '#666'), t('Balance', 1380, 135, 18, 700, '#666', 'right'),
+      t('Delta SkyMiles', 60, 220, 24), t('84,250 miles', 1380, 220, 24, 700, '#111', 'right'), t('Hilton Honors', 60, 300, 24), t('212,500 points', 1380, 300, 24, 700, '#111', 'right'),
+      t('Alaska Atmos Rewards', 60, 380, 24), t('38,700 points', 1380, 380, 24, 700, '#111', 'right'), t('Amex Membership Rewards', 60, 460, 24), t('248,000 points', 1380, 460, 24, 700, '#111', 'right')],
+    expect: { balances: [['delta', 84250, 'Delta SkyMiles'], ['hilton', 212500, 'Hilton Honors'], ['alaska', 38700, 'Alaska Atmos Rewards'], ['amex', 248000, 'Amex Membership Rewards']] } },
+  { name: 'A chat summary of balances, dark', w: 1170, h: 760, bg: '#1f1f1f', ink: '#ececec',
+    text: [t('Here’s where your points stand:', 60, 180, 40), t('• Delta SkyMiles: 84,250 miles', 60, 280, 40), t('• Hilton Honors: 212,500 points', 60, 360, 40),
+      t('• Marriott Bonvoy: 156,000 points', 60, 440, 40), t('Want me to check anything else?', 60, 560, 40)],
+    expect: { balances: [['delta', 84250, 'Delta SkyMiles'], ['hilton', 212500, 'Hilton Honors'], ['marriott', 156000, 'Marriott Bonvoy']] } },
+  { name: 'A note of balances, no units', w: 1170, h: 820, bg: '#fbf7e9',
+    text: [t('Points balances', 60, 160, 54, 700), t('Delta 84,250', 60, 300, 44), t('Hilton 212,500', 60, 390, 44), t('Chase 131,500', 60, 480, 44), t('Updated Nov 20', 60, 600, 32, 400, '#777')],
+    expect: { balances: [['delta', 84250, 'Delta SkyMiles'], ['hilton', 212500, 'Hilton Honors'], ['chase', 131500, 'Chase Ultimate Rewards']] } },
+  { name: 'Amex app, Membership Rewards and a Delta card’s miles', w: 1170, h: 1400, rects: [[0, 0, 1170, 170, '#006fcf'], [40, 760, 1090, 420, '#f2f4f7']],
+    text: [t('AMERICAN EXPRESS', 60, 115, 46, 700, W), t('Membership Rewards', 60, 300, 42, 700), t('248,000', 60, 410, 90, 700), t('Points available', 60, 470, 32, 400, '#555'),
+      t('Delta SkyMiles® Gold Card', 80, 840, 40, 700), t('SkyMiles', 80, 920, 32, 400, '#555'), t('48,200', 80, 1010, 76, 700)],
+    expect: { balances: [['amex', 248000, 'Amex Membership Rewards'], ['delta', 48200, 'Delta SkyMiles']] } },
+  { name: 'Two tiles side by side', w: 1170, h: 620, rects: [[40, 120, 530, 380, '#eef3fb'], [600, 120, 530, 380, '#fbf1ee']],
+    text: [t('Delta SkyMiles', 80, 220, 40, 700), t('84,250 miles', 80, 330, 52, 700), t('Hilton Honors', 640, 220, 40, 700), t('212,500 points', 640, 330, 52, 700)],
+    expect: { balances: [['delta', 84250, 'Delta SkyMiles'], ['hilton', 212500, 'Hilton Honors']] } },
+  { name: 'Hotel programs in a travel app, dark', w: 1170, h: 1100, bg: D, ink: '#f2f2f2',
+    text: [t('Hotels', 60, 150, 56, 700), t('IHG One Rewards 40,210 points', 60, 300, 40), t('Marriott Bonvoy 156,000 points', 60, 400, 40), t('World of Hyatt 61,200 points', 60, 500, 40),
+      t('British Airways Club 22,000 Avios', 60, 650, 40)],
+    expect: { balances: [['ihg', 40210, 'IHG One Rewards'], ['marriott', 156000, 'Marriott Bonvoy'], ['hyatt', 61200, 'World of Hyatt'], ['ba', 22000, 'British Airways Club']] } },
 ];
 
 export function draw(page, variant = {}) {
@@ -392,6 +425,9 @@ export async function scan(page, variant = {}) {
   const rows = [...document.querySelectorAll('#play-loot li')].map((li) => (li.innerText.includes('\n') ? li.innerText.replace(/\n+/g, ' | ') : pieces(li)));
   // Each voucher on the card: its name and end date.
   const vouchers = [...document.querySelectorAll('#play-loot li.loot-voucher')].map((li) => [li.querySelector('b').textContent, li.dataset.voucherExp]);
+  // Each program row on a page of several balances: its name, its number, and whether it was ticked to update.
+  const many = [...document.querySelectorAll('#play-loot li.loot-many')].map((li) => ({ name: li.querySelector('b').textContent,
+    balance: Number(((/^([\d,]+)/.exec(li.querySelector('small').textContent) || [])[1] || '').replace(/,/g, '')), on: !li.classList.contains('hold') }));
   document.querySelector('#play-close').click();
   await pause(300);
   const balance = rows.map((r) => /^([\d,]+) (?:points|miles|avios)/i.exec(r)).find(Boolean);
@@ -407,6 +443,13 @@ export async function scan(page, variant = {}) {
   if (e.vouchers && !e.program) {
     const ok = vouchersOk && /^Found (?:a|\d+) vouchers?$/.test(title);
     return { name: page.name, ok, silentlyWrong: !ok && !got.flagged, got: { ...got, rows } };
+  }
+  // A page of several programs' balances: every row with its number. Wrong without saying so: a row ticked to update
+  // with a number that isn't its program's.
+  if (e.balances) {
+    const right = (r) => e.balances.some(([, v, name]) => r.name === name && r.balance === v);
+    const ok = /^Found \d+ programs|^These \d+ programs/.test(title) && many.length === e.balances.length && many.every(right);
+    return { name: page.name, ok, silentlyWrong: many.some((r) => r.on && !right(r)), got: { title, many } };
   }
   // A page with several statuses (a card's benefits page): every program named, each with its level.
   if (e.many) {

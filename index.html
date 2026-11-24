@@ -937,6 +937,16 @@ try { if (SITE_LOCK && sessionStorage.getItem('status-tracker-unlocked') !== SIT
   .loot-date input { flex: 1 1 auto; min-width: 0; max-width: 190px; height: 40px; padding: 0 10px; border: 1px solid var(--field-border); border-radius: 10px; background: var(--field); color: var(--text); font: inherit; font-size: 16px; }
   .loot-date input[aria-invalid="true"] { border-color: var(--danger); }
   .scan-vname { flex-basis: 100%; font-weight: 650; overflow-wrap: anywhere; }
+  /* A page of several programs' balances: a row that waits says why, with a box to tick or an account to pick. */
+  .play-loot li.loot-many { min-width: 0; flex-wrap: wrap; }
+  .play-loot li.loot-many.hold { background: var(--warn-soft); }
+  .loot-many .loot-main b, .loot-many .loot-main small { overflow-wrap: break-word; }
+  .loot-more { flex: 1 1 100%; min-width: 0; margin: -4px 0 0 42px; }
+  .loot-more .loot-why { display: block; font-size: 12.5px; line-height: 1.4; color: var(--warn-ink); overflow-wrap: break-word; }
+  .loot-pick { display: flex; align-items: center; gap: 8px; min-height: 44px; margin-top: 2px; font-size: 13.5px; font-weight: 650; color: var(--text); cursor: pointer; }
+  .loot-pick input[type="checkbox"] { flex: none; width: 20px; height: 20px; margin: 0; accent-color: var(--accent); }
+  .loot-pick select { flex: 1; min-width: 0; max-width: 320px; height: 44px; padding: 0 10px; border: 1px solid var(--field-border); border-radius: 10px; background: var(--field); color: var(--text); font: inherit; font-size: 16px; }
+  .play-loot li.still { animation: none; }
   .play-xp { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin: 12px 2px 0; font-size: 12.5px; font-weight: 650; color: var(--muted); animation: loot-in .45s both .6s; }
   .xp-gain { color: var(--good); font-weight: 800; }
   .xp-track { position: relative; flex: 1; min-width: 60px; height: 8px; border-radius: 4px; background: var(--track); overflow: hidden; }
@@ -1993,6 +2003,7 @@ var siteLock = (function () {
     <div class="install-body">
       <strong>New in your tracker</strong>
       <ul class="news-list">
+        <li><b>Several programs from one screenshot</b>: a page that shows the balances of two or more programs — a bank’s or travel app’s list, a note, a chat’s summary — updates each of them at once, with one Undo. A row it isn’t sure of waits for you to tick it, and it asks which account when you track two.</li>
         <li><b>Vouchers from a screenshot</b>: scan or paste an eCredit, travel credit, free night or certificate and it goes into <b>Vouchers</b> with its value, number and expiry date. When anything on the screen is unclear, it waits for you to check it first.</li>
         <li><b>Bilt’s 2027 changes</b>: on the Credits checklist, Bilt Palladium’s credits follow your card anniversary ($600 Bilt Cash in place of the hotel credit, unless you kept 4% Bilt Cash) and Bilt Cash shows when it really runs out. Bilt Rewards shows Silver, Gold and Platinum, with what each gets you in 2027.</li>
         <li><b>Two of the same card</b>: in the Credits checklist, tap <b>Second card</b> for a second Sapphire Reserve (or any card with credits), with its own boxes to tick.</li>
@@ -2339,6 +2350,7 @@ var siteLock = (function () {
         <li>Take a screenshot. Got several accounts? Screenshot them all.</li>
         <li>Choose them here (one or many). Watch each one scan, then update your points and status.</li>
         <li>Got a voucher, like an eCredit, a flight credit or a free night? Screenshot it too, and it goes into your vouchers.</li>
+        <li>A page that lists several programs’ balances (a bank’s linked programs, a note, a chat’s summary) updates them all at once.</li>
       </ol>
       <button class="add scan-pick" id="scan-pick" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="M20.5 15.5l-4.8-4.6-8.7 8.6"/></svg>Choose screenshot</button>
       <p class="scan-drop-note desk-only">Or drop or paste a screenshot anywhere on this page.</p>
@@ -7652,6 +7664,637 @@ var siteLock = (function () {
     return -1;
   }
 
+  /* ---------- Several programs' balances on one page ---------- */
+
+  // A page showing the balances of two or more programs — a bank's or travel app's list of linked programs, an
+  // AwardWallet-style list, a note, a chat's summary ("Delta 84,250 miles, Hilton 212,500 points") — read one row per
+  // program. Pages about one program are left to the reader above: rows are only returned for two programs or more.
+  // The names a row goes by: the reader's signs that name a program — not a level, a count or a currency several
+  // programs share ("Medallion", "MQDs", "Loyalty Points", "Avios") — and the short names people write ("Amex").
+  const MULTI_NOT_NAMES = new Set(['medallion', 'mqd', 'mqds', 'pqp', 'pqf', 'premier 1k', 'loyalty points', 'a-list', 'companion pass', 'mosaic', 'globalist', 'explorist', 'discoverist', 'avios', 'qpoints']);
+  // Names that are a unit too ("48,200 SkyMiles", "Bilt Points 27,310").
+  const MULTI_NAME_UNITS = { skymiles: 'miles', lifemiles: 'miles', 'asia miles': 'miles', 'venture miles': 'miles', 'frontier miles': 'miles', 'bilt points': 'points', 'thankyou points': 'points', 'altitude points': 'points', 'virgin points': 'points' };
+  // Everyday words a letter away from a program's name ("advantage", "Liberia", "Alaskan").
+  const MULTI_NOT_NEAR = new Set(['advantage', 'liberia', 'siberia', 'iberian', 'aeroplane', 'emirate', 'unite', 'unites', 'frontiers', 'skyward', 'enterprises', 'alaskan', 'americas', 'americano', 'chasing']);
+  // Words that can sit between a program's name and its balance ("Delta SkyMiles: you have 84,250 miles", "Hilton
+  // Honors balance 212,500 points") — and nothing else does.
+  const MULTI_FILLER = new Set(['balance', 'balances', 'available', 'avail', 'total', 'current', 'currently', 'your', 'you', "you've", 'youve', 'have', 'has', 'had', 'got',
+    'is', 'are', 'of', 'now', 'at', 'with', 'in', 'on', 'account', 'accounts', 'rewards', 'reward', 'program', 'programme', 'club', 'member', 'membership', 'the', 'a', 'an',
+    'redeemable', 'spendable', 'my', 'its', "it's", 'it', 'there', 'today', 'still', 'points', 'point', 'pts', 'miles', 'mile', 'mi', 'avios']);
+  const MULTI_UNIT_WORD = /^(?:points?|pts|miles?|mi|avios)$/;
+  const multiUnit = (word) => (/^(?:points?|pts)$/.test(word) ? 'points' : /^(?:miles?|mi)$/.test(word) ? 'miles' : word === 'avios' ? 'avios' : '');
+  // What follows a number that isn't a balance: a count's unit ("18,000 Tier miles", "52 nights", "$11,240 MQDs").
+  const MULTI_COUNT_AFTER = /^\s*(?:(?:(?:tier|status|loyalty|base|elite|qualifying|bonus|earned|pending|expiring|lifetime|premier|medallion|segment|flight)\s+)+(?:points?|pts|miles?|credits?|dollars|avios)\b|(?:nights?|stays?|flights?|segments?|u?xp|mqds?|pqps?|pqfs?|sqcs?|tqps?|tiles|qpoints|credits?|dollars?|usd|eur|gbp|years?|days?|months?)\b|%)/;
+  // …and what follows one that's still to earn, going, or an offer ("84,250 of 100,000", "1,200 miles expiring", "to go").
+  // A price beside it counts too ("35,000 points + $100", "84,250 miles round trip", "… vs United 70,000 miles").
+  const MULTI_AFTER_NOT = /^\s*(?:\/|\+|&|of\b|to\b|for\b|toward|into|more\b|left\b|remaining|away\b|short\b|need|requir|until\b|pending|on hold|expir|earn|this year|so far|ytd\b|per\b|each\b|a night|off\b|back\b|bonus|x\b|in (?:19|20)\d\d|by\b|after\b|=|or\b|vs\.?|versus|compared|plus\b|round|one[- ]way)/;
+  const MULTI_AFTER_ANY = /\b(?:to go|needed|required|pending|expir\w*|earned|this year|so far|to reach|to unlock|to qualify|until|per|worth of|round[- ]?trip|one[- ]way|each way|non-?stop|stops?|cabin|economy|business|first|premium|saver|fares?|tickets?|flights?|nights?|stays?|seats?|class)\b/;
+  // A page about what things cost (an award search, a chart, a comparison): numbers beside names there are prices, so
+  // every row waits.
+  const MULTI_PRICES = /\b(?:round[- ]?trip|one[- ]way|each way|per (?:person|night|passenger|travell?er)|award (?:charts?|prices?|costs?|flights?|tickets?|availability|search|space)|saver|cash price|taxes (?:and|&) fees|costs?|prices?|priced|fares?|economy|business class|first class|premium economy|non-?stop|to (?:europe|asia|japan|hawaii|london|paris|tokyo))\b/i;
+  // A line about moving or getting points, not holding them: a transfer, a partner, an offer, a purchase.
+  const MULTI_DEMOTED = /\b(?:transfer\w*|partners?|convert\w*|redeem(?!able)\w*|earn\w*|bonus|offers?|apply|sign up|pre-?approved|refer\w*|promo\w*|buy|purchase\w*|gift\w*|share[ds]?|sharing|pool\w*|book with|fly with|deals?|minimum|maximum|limited time|sale)\b/;
+  // A voucher's line ("Free Night Award", "Companion Certificate", "eCredit"): numbers under it are the voucher's.
+  const MULTI_VOUCHER = /\b(?:free[\s-]nights?|fnas?|certificates?|certs?|vouchers?|e-?credits?|(?:travel|flight|trip|future ?flight) credits?|travel ?bank|companion|upgrades?|(?:award|reward|free) (?:nights?|stays?)|night awards?|e?-?gift ?cards?|(?:day|lounge|club) pass(?:es)?)\b/;
+  // A line ending in words that say what the number on the next line is ("Up to", "Rooms from", "Earn at least").
+  const MULTI_LEADS_ON = /\b(?:up to|from|of|for|to|earn\w*|need\w*|at least|min(?:imum)?|max(?:imum)?|about|over|under|or|and|plus|with|only|just|by|worth|valued at|costs?|price|save|get)\s*:?\s*$/;
+  // A heading over recent activity: what's under it is what came and went, not balances.
+  const MULTI_ACTIVITY = /^(?:recent\s+|your\s+|points\s+|miles\s+|account\s+)?(?:activity|transactions?|history|statements?|recent)$/;
+  // A line naming a program as part of a sentence ("Book a stay at Hilton"), not as a heading over its balance.
+  const MULTI_SENTENCE = /\b(?:book|stay|fly|shop|use|using|redeem|get|learn|view|see|manage|link|add|join|sign|open|explore|discover|save|from|for|to|via|when|if|after|before|by)\b/;
+  let multiSigns = null;
+  let multiWordsOf = null;
+  // The program names on a line, in order, as [{ at, end, id, near }]: the longest name wins ("American Express" isn't
+  // American), a name run together counts ("HiltonHonors"), and names of one program side by side are one ("Delta Air
+  // Lines (SkyMiles)"). A word one letter off a long name ("Marriot") is `near`: such a row waits for a tap.
+  function multiNames(lower) {
+    if (!multiSigns) {
+      const list = [...Object.entries(SCAN_SIGNS).flatMap(([id, signs]) => signs.filter((s) => !MULTI_NOT_NAMES.has(s)).map((s) => [s, id])),
+        ['amex', 'amex'], ['american', 'american'], ['alaska', 'alaska'], ['frontier', 'frontier'], ['qatar', 'qatar']];
+      multiSigns = list.sort((a, b) => b[0].length - a[0].length).map(([s, id]) => {
+        const esc = s.replace(/[.*+?^${}()|[\]\\&-]/g, '\\$&');
+        return [new RegExp(`(^|[^a-z])(${esc}${s.includes(' ') ? `|${esc.replace(/ /g, '')}` : ''})(?![a-z])`, 'g'), id, s];
+      });
+    }
+    const taken = [];
+    const free = (at, end) => !taken.some((t) => at < t.end && t.at < end);
+    // The longest name wins; of two as long that overlap, the one that starts first ("Capital One Rewards" is Capital
+    // One's, not IHG's "One Rewards").
+    const hits = [];
+    for (const [re, id, sign] of multiSigns) {
+      for (const m of lower.matchAll(re)) {
+        const at = m.index + m[1].length;
+        const end = at + m[2].length;
+        // "United States", "United Arab Emirates" aren't programs.
+        if (id === 'united' && /^\s+(?:states|kingdom|arab|nations)\b/.test(lower.slice(end))) continue;
+        if (id === 'emirates' && /\barab\s+$/.test(lower.slice(0, at))) continue;
+        hits.push({ at, end, id, sign });
+      }
+    }
+    hits.sort((a, b) => (b.end - b.at) - (a.end - a.at) || a.at - b.at);
+    for (const t of hits) if (free(t.at, t.end)) taken.push(t);
+    for (const m of lower.matchAll(/[a-z]{5,}/g)) {
+      const end = m.index + m[0].length;
+      if (!free(m.index, end) || SCAN_COMMON.has(m[0]) || MULTI_NOT_NEAR.has(m[0])) continue;
+      const hit = multiSigns.find(([, , s]) => !s.includes(' ') && s.length >= 6 && nearWord(m[0], s));
+      if (hit) taken.push({ at: m.index, end, id: hit[1], sign: hit[2], near: true });
+    }
+    taken.sort((a, b) => a.at - b.at);
+    const out = [];
+    for (const t of taken) {
+      const last = out[out.length - 1];
+      if (last && last.id === t.id && /^[\s()®&:'’.-]*$/.test(lower.slice(last.end, t.at))) {
+        last.end = t.end;
+        last.near = last.near && !!t.near;
+        last.signs.push(t.sign);
+        continue;
+      }
+      out.push({ ...t, near: !!t.near, signs: [t.sign] });
+    }
+    return out;
+  }
+  // The words of a program's own name ("Air", "Lines", "Pacific") and its levels ("gold medallion"), for what may sit
+  // between its name and its balance.
+  function multiOwnWords(id) {
+    if (!multiWordsOf) multiWordsOf = Object.create(null);
+    if (!multiWordsOf[id]) {
+      const names = [String((CATALOG_BY_ID[id] || {}).name || ''), ...(SCAN_SIGNS[id] || []).filter((s) => !MULTI_NOT_NAMES.has(s))];
+      multiWordsOf[id] = { words: new Set(names.flatMap((n) => normTier(n).split(' ')).filter((w) => w && !/^(?:loyalty|tier|status)$/.test(w))),
+        levels: scanTiersFor(id).flatMap((t) => t.aliases).sort((a, b) => b.length - a.length) };
+    }
+    return multiWordsOf[id];
+  }
+  // Whether text between a name and a number is only filler: the program's own words and levels, a member number,
+  // and words like "balance", "you have", "points". With the unit it names, and whether it calls the number a balance.
+  function multiFiller(raw, id) {
+    // A rate or a sum between them ("1,000 points = 2,000 points", "… / night", "+ $50") is never filler.
+    if (/[=/+×≈→<>@]/.test(raw)) return { ok: false, unit: '', worded: false };
+    let t = ` ${normTier(String(raw).replace(/\baward (miles|points)\b/gi, '$1').replace(/(?:#|\bno\.?|\bnumber|\bid|\bmember(?:ship)?|\baccount)\s*:?\s*#?\s*[A-Za-z]{0,3}\d[\d ]{4,}[A-Za-z]?\b/gi, ' '))} `;
+    const own = id ? multiOwnWords(id) : { words: new Set(), levels: [] };
+    for (const a of own.levels) t = t.split(` ${a} `).join(' @ ');
+    t = t.replace(/ @ (?:status|tier|level|elite|member)(?= )/g, ' @');
+    const words = t.split(' ').filter((w) => w && w !== '@');
+    const ok = words.every((w) => MULTI_FILLER.has(w) || own.words.has(w));
+    const units = words.filter((w) => MULTI_UNIT_WORD.test(w)).map(multiUnit);
+    return { ok, unit: units.length ? units[units.length - 1] : '', worded: words.some((w) => /^(?:balances?|available|avail|redeemable|spendable|total)$/.test(w)) };
+  }
+  // The numbers on a line that could be amounts, with what each is: money ("$11,240"), a credit or debit ("+3,420"), a
+  // member number or a card's last digits ("#1234567", "ending 4417"), or a plain number with no thousands comma.
+  function multiAmounts(line) {
+    const out = [];
+    for (const m of line.matchAll(/(?<![\w.,/:])(\d{1,3}(?:,\d{3})+|\d{3,7})(?![\w/:]|[.,]\d)/g)) {
+      const pre = line.slice(0, m.index);
+      const value = toNumber(m[1]);
+      const plain = !m[1].includes(',');
+      if (plain && /^\d{4}$/.test(m[1]) && value >= 1990 && value <= 2100) continue; // a year
+      // After "Member #" or "ending" it's an id — unless it has thousands commas, which ids never do.
+      const id = plain && /(?:#|\bno\.?|\bnumber|\bid|\bmember(?:ship)?|\baccount|\bending|\bends in)\s*:?\s*#?\s*$/i.test(pre);
+      const money = /[$€£¥]\s?$/.test(pre) || /^\s*%/.test(line.slice(m.index + m[0].length));
+      const withSign = /(?:^|[\s(])[+−-]\s?$/.test(pre);
+      out.push({ start: m.index, end: m.index + m[0].length, value, plain, id, money, signed: withSign });
+    }
+    return out.filter((a) => !a.id);
+  }
+  // A number's unit right after it ("84,250 miles", "84,250 Award miles"), or a count's ("18,000 Tier miles": null).
+  function multiUnitAfter(after) {
+    if (MULTI_COUNT_AFTER.test(after)) return null;
+    const m = /^\s*(?:(?:award|reward|redeemable|available)\s+)?(points?|pts|miles?|mi|avios)\b/i.exec(after);
+    return m ? { unit: multiUnit(m[1].toLowerCase()), len: m[0].length } : { unit: '', len: 0 };
+  }
+  // What comes after a number, up to the next mark or number: nothing saying it's still to earn, going, or a price.
+  function multiAfterOk(after) {
+    const window = after.split(/[,;()\n]|\.(?:\s|$)|\d/)[0].slice(0, 40).toLowerCase();
+    return !MULTI_AFTER_NOT.test(window) && !MULTI_AFTER_ANY.test(window);
+  }
+
+  // The confidence gate's grammar. A clause is certain only when it is, and nothing else: [a bullet] <the program's name>
+  // [its own name's words, its level, its member number, "balance", "available", "you have", ":", "-"] <the number>
+  // [its unit] ["available" / "balance"]. A line is certain when every clause on it is (clauses split at "," ";" "|"
+  // ". " and " and "): "Delta 84,250 miles, Hilton 212,500 points". Anything else — a word before the name ("Park
+  // Hyatt", "Last month you had", "Sam:"), after the unit ("RT", "J", "nightly", "(Alex)"), a second name — fails.
+  const MULTI_STRICT_WORDS = new Set(['balance', 'balances', 'available', 'avail', 'redeemable', 'current', 'you', 'have', 'has', 'points', 'point', 'pts', 'miles', 'mile', 'mi', 'avios']);
+  function multiStrictWords(text, id) {
+    if (/[=/+×≈→<>@$€£%,;!?]/.test(text) || /\d/.test(text.replace(/(?:#|\b(?:member(?:ship)?|account)?\s*(?:number|no\.?|#)\s*:?\s*#?)\s*[A-Za-z]{0,3}\d[\d ]{4,}[A-Za-z]?\b/gi, ' '))) return false;
+    let t = ` ${normTier(text.replace(/(?:#|\b(?:member(?:ship)?|account)?\s*(?:number|no\.?|#)\s*:?\s*#?)\s*[A-Za-z]{0,3}\d[\d ]{4,}[A-Za-z]?\b/gi, ' ').replace(/\baward (miles|points)\b/gi, '$1'))} `;
+    const own = id ? multiOwnWords(id) : { words: new Set(), levels: [] };
+    for (const a of own.levels) t = t.split(` ${a} `).join(' @ ');
+    t = t.replace(/ @ (?:status|tier|level|elite|member)(?= )/g, ' @');
+    return t.split(' ').filter((w) => w && w !== '@').every((w) => MULTI_STRICT_WORDS.has(w) || own.words.has(w));
+  }
+  const MULTI_STRICT_AFTER = /^\s*(?:(?:points?|pts|miles?|mi|avios)\b)?\s*(?:(?:available|balance)\b)?[\s.:]*$/i;
+  // A clause's program and number, or null.
+  function multiClause(raw) {
+    const c = raw.replace(/^[\s•·*>–—-]+/, '').replace(/[\s.!:]+$/, '');
+    const names = multiNames(c.toLowerCase());
+    if (names.length !== 1 || names[0].at !== 0 || names[0].near) return null;
+    const n = names[0];
+    const rest = c.slice(n.end);
+    const amounts = multiAmounts(rest);
+    if (amounts.length !== 1 || amounts[0].money || amounts[0].signed) return null;
+    const a = amounts[0];
+    if (!multiStrictWords(rest.slice(0, a.start), n.id) || !MULTI_STRICT_AFTER.test(rest.slice(a.end))) return null;
+    // Its unit beside it, or in the program's own name ("SkyMiles 88,430"); never a plain number of 4 digits or more
+    // ("1234567 points" is likelier a member number than a balance printed without its commas).
+    const unit = /^\s*(?:points?|pts|miles?|mi|avios)\b/i.test(rest.slice(a.end)) || /(?:points?|pts|miles?|mi|avios)\W*$/i.test(rest.slice(0, a.start)) || n.signs.some((sg) => MULTI_NAME_UNITS[sg]);
+    if (!unit || (a.plain && a.value >= 1000)) return null;
+    return { id: n.id, value: a.value };
+  }
+  // A heading line: the program's name and nothing else but its own words, level and member number.
+  function multiHeading(line, id) {
+    const c = line.replace(/^[\s•·*>–—-]+/, '').replace(/[\s.!:]+$/, '');
+    const names = multiNames(c.toLowerCase());
+    return names.length === 1 && names[0].at === 0 && !names[0].near && names[0].id === id && !multiAmounts(c).length && multiStrictWords(c.slice(names[0].end), id);
+  }
+  // A line that is only a number, with its unit or a caption's words ("84,250 miles", "Points: 61,200", "112,450").
+  function multiValueLine(line, value) {
+    const amounts = multiAmounts(line);
+    return amounts.length === 1 && amounts[0].value === value && !amounts[0].money && !amounts[0].signed && !(amounts[0].plain && amounts[0].value >= 1000)
+      && multiStrictWords(line.slice(0, amounts[0].start).replace(/^[\s•·*>–—-]+/, ''), null) && MULTI_STRICT_AFTER.test(line.slice(amounts[0].end));
+  }
+  // A line that is only a program's level ("Diamond", "Gold Medallion status") or a member number ("Member # 123 456 789").
+  const multiLevelLine = (l, id) => multiOwnWords(id).levels.includes(normTier(l).replace(/ (?:status|tier|level|member)$/, ''));
+  const MULTI_MEMBER_LINE = /^\W*(?:(?:member(?:ship)?|account)\s*(?:number|no\.?|#|id)?|number|no\.?|#)?\s*:?\s*#?\s*[A-Z]{0,3}\s?\d[\d -]{5,}[A-Z]?\s*$/i;
+  // The page allowlist: lines a balance list may have around its rows — a phone's status bar, a plain heading, when it
+  // was updated, a tab bar. Any other line holds the whole page.
+  // Only headings that can't head prices or someone else's accounts ("Points", "Hotels", "Linked accounts", "Rewards" can).
+  const MULTI_CHROME = /^(?:balances|your balances|my programs|programs|loyalty programs|wallet|overview|home|see all|edit|manage|program balance)$/;
+  const MULTI_TABS = /^(?:(?:home|trips?|wallet|profile|account|book|stays|flights|offers|more|menu|search|explore|inbox|settings|rewards|today)\s*)+$/;
+  // An update stamp and nothing else: "Updated today", "Last updated: 5 min ago", "As of Nov 20, 2026 9:41 AM". As
+  // { at, old }, or null ("Updated for Mom", "Updated: points needed"). `old`: more than 7 days ago, in the future
+  // (beyond a day ahead, as anywhere on Earth can be), not a real date, or a numeric date that reads two ways
+  // (01/11/2026) with either reading more than 7 days ago — the card then asks whether the screen is current.
+  function multiStamp(l) {
+    const m = /^\W*(?:last updated|updated|as of)(?:\s+on)?\s*:?\s+(.+?)[\s.]*$/i.exec(l);
+    if (!m) return null;
+    const rest = m[1].toLowerCase().replace(/(?:,?\s*(?:at\s+)?\d{1,2}:\d{2}(?:\s*[ap]\.?m\.?)?)$/, '').trim();
+    const today = new Date();
+    const day = (d) => (Number.isNaN(d.getTime()) ? null : d);
+    let d = null;
+    let ago = null;
+    if (!rest && /\d{1,2}:\d{2}/.test(m[1])) d = today; // a time alone: today
+    else if (/^(?:today|just now|now)$/.test(rest)) d = today;
+    else if (rest === 'yesterday') d = new Date(today.getTime() - 864e5);
+    else if ((ago = /^(\d+)\s*(min|mins|minutes?|h|hrs?|hours?|days?|weeks?|months?|years?|yrs?)\s+ago$/.exec(rest))) {
+      const n = Number(ago[1]);
+      const per = /^m(?:in|ins|inute)/.test(ago[2]) ? 1 / 1440 : /^h/.test(ago[2]) ? 1 / 24 : /^d/.test(ago[2]) ? 1 : /^w/.test(ago[2]) ? 7 : /^y/.test(ago[2]) ? 365 : 30;
+      d = new Date(today.getTime() - n * per * 864e5);
+    } else {
+      const mon = new RegExp(`^(${SCAN_MONTH})\\.?\\s+(?:(\\d{1,2})(?:,?\\s+(\\d{4}))?|(\\d{4}))$`).exec(rest);
+      const num = /^(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?$/.exec(rest);
+      if (mon) {
+        const mi = SCAN_MONTHS.indexOf(mon[1].slice(0, 3));
+        const year = Number(mon[3] || mon[4] || today.getFullYear());
+        d = day(new Date(year, mi, Number(mon[2] || 1)));
+        if (d && !mon[3] && !mon[4] && d > today) d.setFullYear(year - 1);
+      } else if (num) {
+        // Month first unless the first number can't be a month (24/11/25); a year of two digits is 20YY. A date that
+        // can be read either way is old when either reading is.
+        const y = num[3] ? Number(num[3].length === 2 ? `20${num[3]}` : num[3]) : today.getFullYear();
+        const [a, b] = [Number(num[1]), Number(num[2])];
+        const make = (mo, dd) => {
+          if (mo < 1 || mo > 12 || dd < 1 || dd > 31) return null;
+          const x = new Date(y, mo - 1, dd);
+          if (x.getMonth() !== mo - 1) return null; // 31/02
+          if (!num[3] && x > today) x.setFullYear(y - 1);
+          return x;
+        };
+        const reads = [a <= 12 ? make(a, b) : null, b <= 12 && a !== b ? make(b, a) : null].filter(Boolean);
+        if (!reads.length) return { at: m[1].trim(), old: true };
+        d = reads.reduce((p, q) => (q < p ? q : p)); // the older reading
+      }
+    }
+    if (!d) return null;
+    const future = d.getTime() > today.getTime() + 864e5;
+    return { at: m[1].trim(), old: future || today.getTime() - d.getTime() > 7 * 864e5 };
+  }
+  const multiChrome = (l) => {
+    if (!/[\p{L}\p{N}]/u.test(l)) return true; // marks only (a bullet, an icon read as a stray mark)
+    if (/[^\x00-\x7F’‘“”–—•·®™]/.test(l.replace(/[\p{Extended_Pictographic}\uFE0F]/gu, '')) || /\p{Extended_Pictographic}/u.test(l)) return false; // another script or an emoji: a name, maybe
+    const t = l.toLowerCase().replace(/[^a-z0-9:%/,. ]+/g, ' ').replace(/\s+/g, ' ').trim();
+    if (multiStamp(l)) return true;
+    return MULTI_CHROME.test(t.replace(/[:.]$/, '')) || (MULTI_TABS.test(t) && t.split(' ').length >= 3); // a tab bar, not one word
+  };
+  function multiStrict(lines) {
+    const memo = new Map();
+    const line = (i) => {
+      if (!memo.has(i)) {
+        const parts = String(lines[i] || '').split(/\s*(?:,(?!\d)|[;|]|\.\s+|\s+and\s+)\s*/).map((x) => x.trim()).filter(Boolean);
+        const clauses = parts.map(multiClause);
+        memo.set(i, clauses.every(Boolean) ? clauses : []);
+      }
+      return memo.get(i);
+    };
+    // Name's line, then (at most) a level line and one caption line, then the number's line, then (if none above) one
+    // caption line: "Hilton Honors" / "Diamond" / "212,500 points", "United MileagePlus" / "112,450" / "Available miles".
+    const capLine = (l) => !/\d/.test(l) && /\b(?:points?|pts|miles?|avios|balance|available)\b/i.test(l) && multiStrictWords(l, null);
+    // The lines a certain block uses (its name, its level or member number, one caption, its number), or null.
+    const block = (row) => {
+      if (row.head == null || row.li == null || !multiHeading(lines[row.head], row.id) || !multiValueLine(lines[row.li], row.balance)) return null;
+      const used = [row.head, row.li];
+      let caps = 0;
+      for (let i = row.head + 1; i < row.li; i++) {
+        const l = lines[i];
+        if (!l) continue;
+        if (capLine(l)) caps++;
+        else if (!multiLevelLine(l, row.id) && !MULTI_MEMBER_LINE.test(l)) return null;
+        used.push(i);
+      }
+      const next = lines.findIndex((l, i) => i > row.li && l);
+      if (next > 0 && capLine(lines[next])) { caps++; used.push(next); }
+      return caps <= 1 ? used : null;
+    };
+    return { line, block };
+  }
+  // Page-wide holds: other people's balances on the page (an owner's name over a list, "Sam:", "Sam's Hilton",
+  // "Household", "Total"), or prices and offers (an award search, a chart, a card's welcome offer). Each holds every
+  // row, with one reason.
+  const MULTI_OTHERS = /\b(?:owners?|household|family|combined|joint|spouse|total|totals)\b/i;
+  const MULTI_OFFERS = /\b(?:per (?:night|person|passenger|travell?er|stay)|nightly|rt|r\/t|round[- ]?trip|one[- ]?way|each way|cabin|economy|business class|first class|premium (?:economy|cabin)|polaris|delta one|comfort\+?|main cabin|saver|peak|off-peak|award (?:charts?|prices?|costs?|flights?|tickets?|availability|search|space)|fares?|costs?|prices?|priced|subs?|sign[- ]?up|welcome|limited[- ]time|elevated|intro\w*|after (?:you )?spend|earn\w*|bonus\w*|promo\w*|offers?|category \d|cash price|taxes|fees|deals?|sale|non-?stop|to (?:europe|asia|japan|hawaii|london|paris|tokyo))\b|%/i;
+  const MULTI_ROUTES = /\b[A-Z]{3} ?[-–—/] ?[A-Z]{3}\b|\b[A-Z]{3} to [A-Z]{3}\b/; // "SEA-LAX", "SFO to NRT\"
+  // Words a heading of a person's name never is (a section, a caption, a greeting, a tab).
+  const MULTI_NOT_PEOPLE = /^(?:my|your|our|the|all|linked|loyalty|programs?|accounts?|balances?|points?|miles?|rewards?|airlines?|hotels?|cards?|credit|bank|banks|travel|wallet|summary|overview|home|trips?|profile|settings|more|menu|book|stays?|flights?|offers?|good|morning|afternoon|evening|welcome|back|hello|hi|hey|here|program|balance|available|status|elite|member|members|membership|club|activity|recent|history|updated|today|note|tip|from|to|as|of|and|current|new|your)$/i;
+  // A phone's status bar: the first non-empty line, with exactly one time and nothing else but the carrier, signal and
+  // battery ("9:41", "9:41 AM 5G 87%", "Verizon 9:41 AM 87%"). Its index, or -1.
+  function multiStatusBar(lines) {
+    const i = lines.findIndex((l) => l);
+    const l = i >= 0 ? lines[i] : '';
+    const ok = (l.match(/\b\d{1,2}:\d{2}\b/g) || []).length === 1
+      && !l.replace(/\b\d{1,2}:\d{2}\b/, '').replace(/(?:^|\s)(?:am|pm|a\.m\.|p\.m\.|lte|5g|4g|3g|5ge|wi-?fi|sos|verizon|at&t|att|t-mobile|vodafone|ee|o2|three|sprint|\d{1,3}\s?%)(?=\s|$)/gi, ' ').replace(/[\s\W_]+/g, '').length;
+    return ok ? i : -1;
+  }
+  function multiPage(lines) {
+    const bar = multiStatusBar(lines); // its battery "87%" isn't a price
+    const kept = lines.filter((l, i) => l && i !== bar);
+    const text = kept.join('\n');
+    const levelWords = anyLevelWords();
+    const person = (l) => {
+      const ws = l.replace(/[’']s\b/g, '').split(/\s+/);
+      return ws.length >= 2 && ws.length <= 3 && ws.every((w) => /^\p{Lu}[\p{Ll}'’.-]+$/u.test(w) && !MULTI_NOT_PEOPLE.test(w) && !levelWords.has(normTier(w)))
+        && !multiNames(l.toLowerCase()).length;
+    };
+    const lead = (l) => {
+      const m = /^\W*(\p{Lu}[\p{Ll}'’.-]+)(?:\s*:|['’]s\s)/u.exec(l);
+      return !!m && !MULTI_NOT_PEOPLE.test(m[1]) && !multiNames(m[1].toLowerCase()).length;
+    };
+    const possessive = (l) => [...l.matchAll(/\b(\p{Lu}\p{Ll}+)['’]s\s+/gu)].some((m) => !MULTI_NOT_PEOPLE.test(m[1]) && multiNames(l.slice(m.index + m[0].length).toLowerCase()).some((n) => n.at === 0));
+    // A person's name as a group's heading: the line right under it names a program.
+    const heads = kept.some((l, i) => !/\d/.test(l) && !MULTI_VOUCHER.test(l.toLowerCase()) && !MULTI_DEMOTED.test(l.toLowerCase()) && person(l.trim()) && kept[i + 1] && multiNames(kept[i + 1].toLowerCase()).length);
+    if (MULTI_OFFERS.test(text) || MULTI_ROUTES.test(text) || MULTI_PRICES.test(text)) return 'prices';
+    if (MULTI_OTHERS.test(text) || heads || kept.some((l) => lead(l) || possessive(l))) return 'others';
+    return null;
+  }
+
+  // Two member numbers are the same one whatever their letter case, spaces or dashes ("514807263k", "938 172 6450").
+  const multiMemberKey = (m) => String(m || '').toUpperCase().replace(/[\s-]+/g, '');
+  const multiSameMember = (a, b) => !!a && !!b && multiMemberKey(a) === multiMemberKey(b);
+  function findBalances(raw, voucherLines = []) {
+    const text = cleanScanText(String(raw || '').replace(/[ \t]+[|•·][ \t]+/g, ' ; '));
+    const lines = text.split('\n').map((l) => l.trim());
+    const rows = [];
+    const ratio = (ll) => /\b\d+(?:[.,]\d+)?\s?:\s?\d+(?:[.,]\d+)?\b/.test(ll) && !/^\W*\d{1,2}:\d{2}\b/.test(ll);
+    const words = (l) => l.split(/\s+/).filter((w) => /[a-z]/i.test(w));
+    let listCaption = false; // "Balance" over the list: its numbers are balances, units or not
+    let listed = false; // under a "Transfer partners" heading
+    let owner = null; // the block a program's name line opened: { id, near, at, span, found: [], lines: [] }
+    let cols = null; // a line naming several programs and nothing else: { names, at, skipped }
+    let orphan = false; // a number before any name, or a name left without one: tiles whose order isn't sure
+    const close = () => {
+      if (!owner) return;
+      const values = [...new Set([...(owner.had != null ? [owner.had] : []), ...owner.found.map((f) => f.value)])];
+      const had = owner.had != null && values.length > 1 ? rows.find((r) => r.id === owner.id && r.balance === owner.had && r.how === 'inline') : null;
+      if (had) had.check.push('several');
+      for (const [k, f] of owner.found.entries()) {
+        if (f.value === owner.had || owner.found.findIndex((g) => g.value === f.value) !== k) continue;
+        rows.push({ id: owner.id, balance: f.value, unit: f.unit, worded: f.worded, how: f.how || 'block', near: owner.near, text: owner.lines.join('\n'), head: owner.at, li: f.li,
+          check: [...f.check, ...(values.length > 1 ? ['several'] : [])] });
+      }
+      owner = null;
+    };
+    // A line of only captions for a bare number ("Miles", "Available points", "Points balance"), or a count's ("Tier Points").
+    const caption = (l, id) => {
+      if (!l || /\d/.test(l) || multiNames(l.toLowerCase()).length) return null;
+      const f = multiFiller(l, id);
+      return f.ok && (f.unit || f.worded) ? f : null;
+    };
+    const countCaption = (l) => !!l && !/\d/.test(l) && /\b(?:tier|status|loyalty|qualif\w*|earned|pending|expir\w*|lifetime|nights?|stays?|flights?|segments?|u?xp|mqds?|pqps?|pqfs?|sqcs?|tiles|credits?|to go|needed|next|bonus|dollars)\b/i.test(l);
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      if (!line) continue;
+      const ll = line.toLowerCase();
+      if (!/\d/.test(ll) && MULTI_ACTIVITY.test(ll.replace(/[^a-z ]/g, '').trim())) { close(); break; }
+      const names = multiNames(ll);
+      // A co-brand card's line ("Delta SkyMiles Reserve American Express Card") names the card's program, not its issuer.
+      if (/\bcard\b|\bvisa\b|mastercard/.test(ll) && names.some((n) => SCAN_ISSUER_IDS.has(n.id)) && names.some((n) => !SCAN_ISSUER_IDS.has(n.id))) {
+        for (let k = names.length - 1; k >= 0; k--) if (SCAN_ISSUER_IDS.has(names[k].id)) names.splice(k, 1);
+      }
+      if (listed && ((/\d{3}/.test(ll) && !ratio(ll)) || /\b(?:available|balance|you have)\b|^your\b/.test(ll))) listed = false;
+      const demoted = listed || MULTI_DEMOTED.test(ll) || MULTI_VOUCHER.test(ll) || ratio(ll);
+      if (demoted) {
+        if (!/\d/.test(ll) && /\btransfer|\bpartners?\b|\bconvert\b/.test(ll)) listed = true;
+        close();
+        cols = null;
+        continue;
+      }
+      const amounts = multiAmounts(line);
+      const usable = (a) => !a.money && !a.signed && !(a.plain && a.value < 100);
+      if (!names.length) {
+        if (!/\d/.test(ll) && /\bbalances?\b/.test(ll) && multiFiller(line.replace(/\bprograms?\b|\bname\b/gi, ' '), null).ok) listCaption = true;
+        // Under a line of names (two columns read as one line): as many numbers, one to each in turn — a guess, so they wait.
+        if (cols && amounts.length) {
+          const values = amounts.filter(usable);
+          const gaps = [line.slice(0, amounts[0].start), ...amounts.map((a, k) => line.slice(a.end, k + 1 < amounts.length ? amounts[k + 1].start : line.length))];
+          const unitsOk = amounts.every((a, k) => { const u = multiUnitAfter(gaps[k + 1]); return u && multiAfterOk(gaps[k + 1].slice(u.len)); });
+          if (values.length === amounts.length && amounts.length === cols.names.length && unitsOk && gaps.every((g) => multiFiller(g, null).ok)) {
+            amounts.forEach((a, k) => {
+              const n = cols.names[k];
+              rows.push({ id: n.id, balance: a.value, unit: multiUnitAfter(gaps[k + 1]).unit, worded: false, how: 'columns', near: n.near,
+                text: `${cols.line.slice(n.at, k + 1 < cols.names.length ? cols.names[k + 1].at : cols.line.length)}\n${line.slice(k ? amounts[k - 1].end : 0, a.end)}`, check: ['columns'] });
+            });
+          }
+          cols = null;
+          continue;
+        }
+        if (cols && ++cols.skipped > 2) cols = null;
+        // A number before any program's name (tiles with the number above the name): the page's order is unknown.
+        if (!owner && amounts.some((a) => usable(a) && (!a.plain || multiUnitAfter(line.slice(a.end)))) && !rows.length) orphan = true;
+        if (!owner) continue;
+        owner.lines.push(line);
+        if (++owner.span > 5) { close(); continue; }
+        // A number on its own line under the name: its unit beside it, or a caption line just above or below it.
+        amounts.forEach((a, k) => {
+          if (!usable(a)) return;
+          const before = line.slice(k ? amounts[k - 1].end : 0, a.start);
+          const after = line.slice(a.end, k + 1 < amounts.length ? amounts[k + 1].start : line.length);
+          const u = multiUnitAfter(after);
+          if (!u || !multiAfterOk(after.slice(u.len))) return;
+          const f = multiFiller(before, owner.id);
+          const tail = multiFiller(after.slice(u.len), owner.id);
+          if (!f.ok || !tail.ok) return;
+          // The line above leading into it ("Up to" / "35,000 points"): it's what that line says, not the balance.
+          const lead = k ? '' : (lines.slice(owner.at, i).filter((l) => l).pop() || '').toLowerCase();
+          if (!/[a-z]/i.test(before) && MULTI_LEADS_ON.test(lead)) return;
+          let unit = u.unit || f.unit;
+          let worded = f.worded || tail.worded;
+          const check = [];
+          if (!words(line).length) {
+            // Tiles read caption first ("Miles" / 84,250 / "MQDs" / $11,240) or value first (84,250 / "Miles"): a count's
+            // caption beside it ("Tier miles") is its own, unless the tiles around show the other way.
+            const earlier = lines.slice(owner.at + 1, i).filter((l) => l);
+            const later = lines.slice(i + 1).filter((l) => l);
+            const [prev, next] = [earlier[earlier.length - 1], later[0]];
+            const value = (l) => !!l && /\d/.test(l) && !words(l).length;
+            const capAbove = caption(prev, owner.id);
+            const capBelow = caption(next, owner.id);
+            const nameUnit = !prev && MULTI_NAME_UNITS[owner.signs.find((s) => MULTI_NAME_UNITS[s])];
+            if (countCaption(next) && !capAbove) return;
+            if (countCaption(prev) && !capBelow) return;
+            if ((capAbove && countCaption(next) && !value(later[1])) || (capBelow && countCaption(prev) && !value(earlier[earlier.length - 2]))
+              || (capAbove && capBelow && capAbove.unit !== capBelow.unit)) check.push('caption');
+            const cap = capAbove || capBelow || (nameUnit ? { unit: nameUnit, worded: false } : null);
+            if (cap) { unit = unit || cap.unit; worded = worded || cap.worded; }
+          } else if (a.plain && !u.unit && !f.unit) return; // "Room 1204", "Gate 112": a plain number needs its unit
+          owner.found.push({ value: a.value, unit, worded, check, li: i });
+        });
+        continue;
+      }
+      // A line naming one or more programs. A heading left without a number, under it the next program's: which number
+      // goes with which name is a guess ("Marriott Bonvoy" / "Hilton Honors" / 156,000 points).
+      if (owner && !owner.found.length && owner.had == null && names.some((n) => n.id !== owner.id)) orphan = true;
+      close();
+      cols = null;
+      const claims = []; // [name index, amount index, how]
+      names.forEach((n, j) => {
+        const segEnd = j + 1 < names.length ? names[j + 1].at : line.length;
+        // Name first: "Delta SkyMiles: 84,250 miles", "Hilton Honors balance 212,500 points" — its first number, with
+        // only filler (no comma or full stop) between.
+        const k = amounts.findIndex((a) => a.start >= n.end);
+        const a = amounts[k];
+        if (!a || a.start >= segEnd || !usable(a)) return;
+        const between = line.slice(n.end, a.start);
+        if (/[,;]|\.\s/.test(between)) return;
+        const f = multiFiller(between, n.id);
+        const after = line.slice(a.end, Math.min(segEnd, k + 1 < amounts.length ? amounts[k + 1].start : line.length));
+        const u = multiUnitAfter(after);
+        if (!f.ok || !u || !multiAfterOk(after.slice(u.len))) return;
+        if (a.plain && !u.unit && !f.unit) return;
+        claims.push({ j, k, unit: u.unit || f.unit || MULTI_NAME_UNITS[n.signs.find((s) => MULTI_NAME_UNITS[s])] || '', worded: f.worded, how: 'inline' });
+      });
+      amounts.forEach((a, k) => {
+        // Number first: "84,250 Delta SkyMiles", "212,500 Hilton Honors points", "156,000 points with Marriott".
+        const j = names.findIndex((n) => n.at >= a.end);
+        const n = names[j];
+        if (!n || !usable(a) || (amounts[k + 1] && amounts[k + 1].start < n.at)) return;
+        const gap = line.slice(a.end, n.at);
+        const prep = /^\s*(points?|pts|miles?|avios)\s+(?:with|at|in|on)\s+(?:the\s+)?$/i.exec(gap);
+        if (!/^\s*$/.test(gap) && !prep) return;
+        const segEnd = j + 1 < names.length ? names[j + 1].at : line.length;
+        const tail = line.slice(n.end, Math.min(segEnd, amounts[k + 1] ? amounts[k + 1].start : line.length));
+        const tailUnit = /^\s*(points?|pts|miles?|avios)\b/i.exec(tail);
+        const nameUnit = MULTI_NAME_UNITS[n.signs.find((s) => MULTI_NAME_UNITS[s])];
+        const unit = prep ? multiUnit(prep[1].toLowerCase()) : tailUnit ? multiUnit(tailUnit[1].toLowerCase()) : nameUnit;
+        if (!unit) return;
+        const rest = tail.slice(tailUnit && !prep ? tailUnit[0].length : 0).split(/[,;]|\.(?:\s|$)/)[0];
+        if (!multiFiller(rest.replace(/\b(?:and|plus|also)\b/gi, ' '), n.id).ok || !multiAfterOk(rest)) return;
+        const prevEnd = Math.max(0, ...names.filter((m) => m.end <= a.start).map((m) => m.end), ...amounts.filter((b) => b.end <= a.start).map((b) => b.end));
+        const lead = line.slice(prevEnd, a.start).replace(/\b(?:and|plus|also|then)\b|[,;&]/gi, ' ');
+        if (!multiFiller(lead, null).ok) return;
+        claims.push({ j, k, unit, worded: false, how: 'inline' });
+      });
+      // A number two names claim, or a name with two numbers: the line reads two ways, so its rows wait.
+      const twoWays = claims.some((c) => claims.some((d) => d !== c && ((d.k === c.k && names[d.j].id !== names[c.j].id) || (d.j === c.j && d.k !== c.k))));
+      const seen = new Set();
+      for (const c of claims) {
+        if (seen.has(`${c.j}:${c.k}`)) continue;
+        seen.add(`${c.j}:${c.k}`);
+        const n = names[c.j];
+        const a = amounts[c.k];
+        const segEnd = c.j + 1 < names.length ? names[c.j + 1].at : line.length;
+        rows.push({ id: n.id, balance: a.value, unit: c.unit, worded: c.worded, how: c.how, near: n.near, li: i,
+          text: line.slice(Math.min(n.at, a.start), Math.max(segEnd, a.end)), check: twoWays ? ['line'] : [] });
+      }
+      // The last name on the line with nothing after it but its level, a member number or "Card" (a heading): it heads
+      // the lines under it. Its number on this line, with nothing after: lines under it with another balance make it two
+      // ("Delta 84,250 miles" over "12,000 miles").
+      const last = names[names.length - 1];
+      const lastSeg = line.slice(last.at);
+      const own = claims.filter((c) => c.j === names.length - 1).pop();
+      const heading = words(lastSeg).length <= 8 && !MULTI_SENTENCE.test(lastSeg.toLowerCase().replace(/\b(?:member|card)\s+since\b.*$/, ''));
+      if (!own && heading && !amounts.some((a) => a.start >= last.at) && (names.length === 1 || claims.length)) {
+        owner = { id: last.id, near: last.near, signs: last.signs, at: i, span: 0, found: [], lines: [lastSeg] };
+      } else if (own && !twoWays && words(line.slice(amounts[own.k].end)).every((w) => MULTI_FILLER.has(w.toLowerCase().replace(/\W/g, '')) || !/[a-z]/i.test(w))) {
+        owner = { id: last.id, near: last.near, signs: last.signs, at: i, span: 0, found: [], lines: [lastSeg], had: amounts[own.k].value };
+      } else if (!amounts.length && !claims.length && names.length >= 2 && new Set(names.map((n) => n.id)).size === names.length
+        && names.every((n, j) => multiFiller(line.slice(n.end, j + 1 < names.length ? names[j + 1].at : line.length), n.id).ok) && multiFiller(line.slice(0, names[0].at), null).ok) {
+        cols = { names, line, skipped: 0 };
+      }
+    }
+    close();
+    // What each row still needs looked at, and whether the page is about two programs or more.
+    const kept = [];
+    for (const row of rows) {
+      const cat = CATALOG_BY_ID[row.id];
+      if (!cat || !cat.unit) continue; // car rental and lounges keep no balance
+      const unit = String(cat.unit).toLowerCase();
+      if (row.unit && row.unit !== unit) row.check.push('mismatch');
+      if (!row.unit && !row.worded && !listCaption) row.check.push('unit');
+      if (row.near) row.check.push('near');
+      const twin = kept.find((o) => o.id === row.id && o.balance === row.balance);
+      if (twin) { if (row.check.length < twin.check.length) kept[kept.indexOf(twin)] = row; continue; }
+      kept.push(row);
+    }
+    for (const row of kept) if (kept.some((o) => o !== row && o.id === row.id)) row.check.push('twice');
+    // The confidence gate (a whitelist, see multiStrict): a row is certain only when its own line — or its name's line
+    // and its number's line, with nothing but its level or a caption between — reads exactly as a balance and nothing
+    // else. A page that also shows prices or offers, or other people's balances, or whose tiles don't say which number
+    // goes with which name, holds every row.
+    const strict = multiStrict(lines);
+    for (const row of kept) {
+      if (row.how === 'columns') continue;
+      if (row.how === 'inline' ? !strict.line(row.li).some((c) => c.id === row.id && c.value === row.balance) : !strict.block(row)) row.check.push('grammar');
+      if (!row.unit) row.check.push('unit'); // "balance 2,345": no unit, so it may be a card's dollars
+      if (orphan && row.how !== 'inline') row.check.push('order');
+    }
+    // The page allowlist: every line is one a certain row used, a level or member number of a program on the page, a
+    // heading naming one of them and nothing else, a voucher's line, or a plain heading or status bar. Anything else
+    // (a price heading, a hotel's name, a person's name, a transfer list) holds every row.
+    const used = new Set();
+    for (const row of kept) {
+      if (row.how === 'inline' && strict.line(row.li).length) used.add(row.li);
+      if (row.how === 'block') (strict.block(row) || []).forEach((i) => used.add(i));
+    }
+    // The rows each used line belongs to.
+    const rowsAt = (i) => kept.filter((r) => (r.how === 'inline' && r.li === i) || (r.how === 'block' && (strict.block(r) || []).includes(i)));
+    const prevLine = (i) => { for (let j = i - 1; j >= 0; j--) if (lines[j]) return j; return -1; };
+    const nextLine = (i) => lines.findIndex((l, j) => j > i && l);
+    // A level or member number right under its own row's line ("Delta SkyMiles 84,250 miles" / "Gold Medallion"); a
+    // member number read so is that row's, for the app's other-member-number check.
+    const under = (l, i) => {
+      const at = rowsAt(prevLine(i));
+      if (!at.length) return false;
+      if (MULTI_MEMBER_LINE.test(l) && at.length === 1) {
+        // Only what the member reader takes for this program's number ("Member # 1234567890"), never any long number
+        // ("1 204 000" lifetime miles, "#1234567890" a next program's).
+        const plain = l.replace(/(\d)[-\s](?=\d)/g, '$1'); // "938-172-6450" read as one number
+        const member = parseAccountText(`${lines[prevLine(i)]}\n${plain}`, at[0].id).member;
+        if (!member || !multiSameMember(member, plain.replace(/[^A-Za-z0-9]/g, '').replace(/^(?:member(?:ship)?|account|number|no)/i, ''))) return false;
+        at[0].memberLine = at[0].memberLine || member;
+        return true;
+      }
+      return at.some((r) => multiLevelLine(l, r.id));
+    };
+    // A heading of a program's name alone, heading that program's own row directly ("American Express" over
+    // "Membership Rewards" / 248,000 points), never another's.
+    const heads = (l, i) => kept.some((r) => multiHeading(l, r.id) && (() => {
+      for (let j = nextLine(i); j > 0; j = nextLine(j)) {
+        if (rowsAt(j).some((x) => x.id === r.id && x.how !== 'columns') && used.has(j)) return true;
+        if (!multiHeading(lines[j], r.id)) return false;
+      }
+      return false;
+    })());
+    // A voucher's lines aren't balances either: a page with a voucher on it holds its rows (the voucher still goes in
+    // with Update). "Delta eCredit $75" over "Delta SkyMiles 60,000 miles" may be a trip's price.
+    void voucherLines;
+    // A phone's status bar: the page's first line only (see multiStatusBar). Any other line with a time (flight times,
+    // check-in and check-out, a second time under the first) holds the page.
+    const bar = multiStatusBar(lines);
+    const statusBar = (l, i) => i === bar;
+    const timed = (l) => /\b\d{1,2}:\d{2}\b/.test(l) && !/^\W*\d+\s?:\s?(?:\d(?!\d)|\d+\.\d+)/.test(l);
+    const allowed = (l, i) => !l || used.has(i) || statusBar(l, i) || (!timed(l) && (multiChrome(l) || under(l, i) || heads(l, i)));
+    const transfer = lines.some((l) => /\btransfer\w*|\bratio\b|\bminimum\b|\bpartners?\b|\b\d+\s?:\s?(?:\d(?!\d)|\d+\.\d+)|\b\d+\s+to\s+\d+\b/i.test(l) && !multiChrome(l));
+    const stamp = lines.map((l) => (l ? multiStamp(l) : null)).find((x) => x && x.old);
+    const page = multiPage(lines) || (transfer ? 'transfer' : null) || (stamp ? 'stale' : null) || (lines.every(allowed) ? null : 'more');
+    if (page) for (const row of kept) { row.check.push(page); if (stamp) row.staleAt = stamp.at; }
+    // A member number on the page that isn't one already saved for that program: maybe someone else's account, so
+    // the row waits ("is this your account?"). One that matches what's saved stays as it is.
+    for (const row of kept) {
+      const member = row.memberLine || parseAccountText(row.text || '', row.id).member;
+      const saved = (state.programs || []).filter((x) => catalogFor(x) && catalogFor(x).id === row.id).map((x) => (state.members || {})[x.id]).filter(Boolean);
+      if (member && !saved.some((m) => multiSameMember(m, member))) { row.check.push('member'); row.memberShown = member; }
+    }
+    for (const row of kept) { row.check = [...new Set(row.check)]; delete row.worded; delete row.near; }
+    const exact = new Set(rows.filter((r) => kept.includes(r) && !r.check.includes('near')).map((r) => r.id));
+    return exact.size >= 2 ? kept : [];
+  }
+  // The balances of several programs on a screenshot (or pasted text): the reading that found the most programs, each
+  // row with its level and member number from its own lines, and the numbers vouchers on the page hold set aside. Rows
+  // another reading read differently, or whose number the reader wasn't sure of (under 85%), or cut off at the picture's
+  // edge, wait for a tap ('read'). Null when the page isn't about two programs or more.
+  function readBalances(read, vouchers = []) {
+    const nums = new Set(vouchers.flatMap((v) => v.nums || []));
+    const passes = read.passes || [read];
+    const lists = passes.map((pass) => {
+      const rows = findBalances(pass.text, vouchers.filter((v) => !(v.check || []).includes('who')).flatMap((v) => v.lines || [])).filter((r) => !nums.has(String(r.balance)));
+      return new Set(rows.filter((r) => !r.check.includes('near')).map((r) => r.id)).size >= 2 ? rows : [];
+    });
+    let best = -1;
+    lists.forEach((rows, i) => {
+      const count = (list) => new Set(list.map((r) => r.id)).size * 10 + list.filter((r) => !r.check.length).length;
+      if (rows.length && (best < 0 || count(rows) > count(lists[best]))) best = i;
+    });
+    if (best < 0) return null;
+    const pass = passes[best];
+    const rows = lists[best];
+    const others = passes.map((p, i) => (i === best ? null : findBalances(p.text, vouchers.filter((v) => !(v.check || []).includes('who')).flatMap((v) => v.lines || [])))).filter(Boolean);
+    for (const row of rows) {
+      if (others.some((list) => { const mine = list.filter((o) => o.id === row.id); return mine.length && !mine.some((o) => o.balance === row.balance); })) row.check.push('read');
+      const ws = wordsOf(pass, row.balance);
+      if (ws.some((w) => (w.confidence ?? 100) < 85) || (pass.disputed || []).includes(row.balance) || (ws.length && (atEdge(pass, row.balance, read) || clippedLeft(pass, row.balance)))) row.check.push('read');
+      row.check = [...new Set(row.check)];
+      const r = parseAccountText(row.text, row.id);
+      row.tierIndex = r.tierIndex;
+      row.member = r.member || row.memberLine || null;
+      // Written as saved when it's the same number ("514807263k" for 514807263K), so it finds that account.
+      const same = row.member && (state.programs || []).filter((x) => catalogFor(x) && catalogFor(x).id === row.id).map((x) => (state.members || {})[x.id]).find((m) => multiSameMember(m, row.member));
+      if (same) row.member = same;
+      // A level's end date only from the level's own line ("Gold Medallion through Jan 31, 2028"): an "Expires" date
+      // on a list is the points'.
+      const tier = r.tierIndex >= 0 ? scanTiersFor(row.id)[r.tierIndex] : null;
+      row.exp = tier && r.exp && row.text.split('\n').some((l) => tier.aliases.some((a) => ` ${normTier(l)} `.includes(` ${a} `)) && /\b(?:through|thru|until|valid)\b/i.test(l)) ? r.exp : '';
+    }
+    rows.pass = best;
+    return rows;
+  }
+
   // Loads the open-source text reader (Tesseract) on first use; it runs entirely in this browser.
   const OCR_BASE = 'https://cdn.jsdelivr.net/npm/';
   let ocrWorker = null;
@@ -8805,6 +9448,10 @@ var siteLock = (function () {
     if (vouchers.length && !account && !choice) { showVoucherLoot(reading); return; }
     // A program of your own the catalog doesn't know, named on the screen: read as that program.
     if (!choice && found.ownId && programs.some((x) => x.id === found.ownId)) { showLoot(read, found.ownId); return; }
+    // Two programs' balances or more on one page (a bank's or travel app's list, a note, a chat's summary): a row for
+    // each, unless you picked one program to read it as.
+    const balances = choice ? null : readBalances(read, vouchers);
+    if (balances) { showBalancesLoot(read, balances); return; }
     // Several programs on one page (a card's benefits page), unless you picked one program to read it as — before
     // asking which account, since such a page isn't one account's screen.
     const many = choice ? null : readMany(read);
@@ -9195,7 +9842,7 @@ var siteLock = (function () {
       return;
     }
     if (voucherOnly) { collectVouchers(ready.adding); return; }
-    if (playing && playing.many) { collectMany(ready.adding); return; }
+    if (playing && playing.many) { collectMany(ready.adding, ready.undated); return; }
     if (!playing || !playing.choice) return;
     stopCountdown();
     const from = ($('#play-loot .loot-bal') || $('#play-loot li') || $('#play-shot')).getBoundingClientRect();
@@ -9359,8 +10006,12 @@ var siteLock = (function () {
     if (auto) startCountdown();
   }
   // Update for every program on the page: one batch (one screenshot of it), so there's one toast and one Undo.
-  function collectMany(vouchers = []) {
-    const items = playing.many.filter(({ own, skip, vals }) => !skip || (own && Object.keys(vals).length)); // a number alone still saves
+  function collectMany(vouchers = [], undated = 0) {
+    const rows = playing.many.some((it) => it.balances); // a page of balances (showBalancesLoot): only the rows ticked
+    if (rows && !manyReady(vouchers)) return;
+    const items = rows ? playing.many.filter((it) => it.on && it.choice)
+      : playing.many.filter(({ own, skip, vals }) => !skip || (own && Object.keys(vals).length)); // a number alone still saves
+    const left = rows ? playing.many.filter((it) => !(it.on && it.choice)) : [];
     stopCountdown();
     const from = ($('#play-loot li') || $('#play-shot')).getBoundingClientRect();
     closePlay();
@@ -9368,11 +10019,238 @@ var siteLock = (function () {
     batch.many = true;
     batch.hold = true; // the programs count as one screenshot
     const years = readYears(null);
-    try { for (const { choice, vals } of items) collect(choice, vals, from, years); } finally { batch.hold = false; }
-    if (putVouchers(vouchers).length) { saveNow(); renderVouchers(); }
+    try { for (const { choice, vals } of items) collect(choice, rows ? manyVals(choice, vals) : vals, from, years); } finally { batch.hold = false; }
+    const added = putVouchers(vouchers);
+    if (added.length) { saveNow(); renderVouchers(); }
     finishOne(true);
-    batch.programs = (batch.programs || 0) + items.length;
+    // What the batch's toast says (endBatch): the vouchers added and left out, and the rows left waiting — each said,
+    // none dropped without a word.
+    batch.vouchers = (batch.vouchers || 0) + added.length;
+    batch.undated = (batch.undated || 0) + undated;
+    batch.full = (batch.full || 0) + (added.full || 0);
+    batch.left = [...(batch.left || []), ...left.map((it) => ({ name: nameOf(it.target || it.p), pick: !!it.ask && !it.choice }))];
+    // Nothing collected (only vouchers): no points land to move the batch on, so it moves on here.
+    if (!items.length) setTimeout(nextInQueue);
   }
+  // A page of several programs' balances (findBalances): a row per program with its balance and what it changes, and
+  // Update for all, with one Undo. A row is ticked to update (and Auto-update counts down) only when the reader is
+  // certain of it and nothing about it looks off (doubtsAbout: a big drop, an older screenshot, another member number).
+  // Otherwise it waits, saying why, until you tick it; two of your accounts in its program, until you pick which.
+  const MULTI_WHY = {
+    columns: 'it was read from side-by-side columns — is the number this program’s?',
+    line: 'its line can be read two ways — is the number this program’s?',
+    unit: 'no “points” or “miles” beside it — is it the balance?',
+    several: 'the page shows more than one number for it — is this one the balance?',
+    twice: 'the page shows it twice with different numbers — which one is yours?',
+    caption: 'its label is unclear — is it the balance?',
+    near: 'its name was hard to read — is it this program?',
+    read: 'the number was hard to read — is it right?',
+    grammar: 'there are other words around it — is the number this program’s balance?',
+    order: 'the page’s layout doesn’t say which number goes with which name',
+  };
+  // Reasons that hold every row on the page, said once above them.
+  const MULTI_PAGE_WHY = {
+    prices: 'This screen looks like prices or offers — check each row before updating it.',
+    others: 'This screen may show other people’s balances — check each row is yours before updating it.',
+    transfer: 'This screen shows transfers or partners — check each row before updating it.',
+    more: 'The screen has more on it than balances — check each row before updating it.',
+    stale: '', // "This screen is from <date> — check it’s current." (showBalancesLoot)
+  };
+  function balanceItems(rows) {
+    const out = [];
+    for (const r of rows) {
+      const account = accountFor(r.id, r.member, null);
+      const own = account.own;
+      const p = own || programFromCatalog(CATALOG_BY_ID[r.id]);
+      if (!p.unit) continue; // a program you keep without a balance
+      const vals = { balance: r.balance };
+      if (r.tierIndex >= 0 && !(own && heldAbove(p, r.tierIndex))) { vals.tierIndex = r.tierIndex; vals.exp = r.exp || ''; }
+      if (r.member) vals.member = r.member;
+      // The account question names the screen's member number already, so the row doesn't say it twice.
+      const asking = !account.own && account.ask;
+      const why = r.check.filter((c) => !(c in MULTI_PAGE_WHY) && !(c === 'member' && asking)).map((c) => (c === 'member' ? `is this your account? The screen shows member number •••• ${String(r.memberShown).slice(-4)}` : MULTI_WHY[c])).filter(Boolean);
+      const page = r.check.some((c) => c in MULTI_PAGE_WHY); // held by the page's reason, said once above the rows
+      if (r.unit && r.unit !== String(p.unit).toLowerCase()) why.unshift(`the screen says ${r.unit}, but ${p.name} counts ${String(p.unit).toLowerCase()}`);
+      if (own) why.push(...doubtsAbout(p, vals, { member: r.member }));
+      const ask = !own && account.ask;
+      // A program you don't track is never added by itself: it waits for a tick.
+      if (!own && !ask) why.push('it isn’t on your list yet — tick to add it');
+      out.push({ balances: true, k: out.length, row: r, p, own, ask, why, base: [...why], page, vals, choice: own ? own.id : ask ? '' : `add:${r.id}`, on: !why.length && !ask && !page });
+    }
+    return out;
+  }
+  // What a row's number goes to: your account (once picked), or the program it adds.
+  const manyTarget = (it) => (it.choice && !/^(?:add|new):/.test(it.choice) ? (state.programs || []).find((x) => x.id === it.choice) || null : null);
+  // A member number only fills an empty one, as on the one-program card.
+  function manyVals(choice, vals) {
+    const out = { ...vals };
+    if (out.member && !/^(?:add|new):/.test(choice) && state.members[choice]) delete out.member;
+    return out;
+  }
+  function balanceRow(it) {
+    const { p, vals, row } = it;
+    it.target = manyTarget(it);
+    const shown = it.target || p;
+    const level = vals.tierIndex >= 0 ? nameEnding(p, scanTiersFor(row.id)[vals.tierIndex].name, vals.exp) : null;
+    const member = vals.member && !it.ask && !(it.target && state.members[it.target.id]) ? `number •••• ${vals.member.slice(-4)}` : null; // an account question says it
+    // The unit the screen showed when it isn't the program's ("212,500 miles" for Hilton), so the row says what was read.
+    const unit = row.unit && row.unit !== String(shown.unit).toLowerCase() ? row.unit : shown.unit;
+    const sub = [`${fmt(vals.balance)} ${unit}`, level, member, it.choice.startsWith('add:') ? 'adding it to your list' : it.choice.startsWith('new:') ? 'adding a new account' : null].filter(Boolean).join(' · ');
+    const was = it.target ? state.balances[it.target.id] ?? null : null;
+    const tag = !it.target ? (it.choice ? lootTag('New', 'new') : null) : was === vals.balance ? lootTag('Confirmed') : deltaTag(was, vals.balance);
+    const extra = [];
+    if (it.ask) {
+      const rows = accountsIn(row.id);
+      const said = row.member ? `The member number here (•••• ${row.member.slice(-4)}) isn’t one you’ve saved` : `You track ${rows.length} ${CATALOG_BY_ID[row.id].name} accounts`;
+      extra.push(h('small', { class: 'loot-why', id: `play-many-ask-${it.k}` }, `Which account? ${said}${it.why.length ? `; ${it.why.join('; ')}` : ''}.`));
+      const select = h('select', { id: `play-many-acct-${it.k}`, 'data-many-account': String(it.k), 'aria-label': `Which ${CATALOG_BY_ID[row.id].name} account` },
+        h('option', { value: '' }, 'Which account?'), rows.map((x) => h('option', { value: x.id }, `${nameOf(x)}${state.members[x.id] ? ` · •••• ${state.members[x.id].slice(-4)}` : ''}`)),
+        h('option', { value: `new:${row.id}` }, 'A new account'));
+      select.value = it.choice;
+      extra.push(h('div', { class: 'loot-pick' }, select));
+    }
+    // A row that waits: its reason, and a box named for its program (a picked account that needs a look gets one too).
+    if ((!it.ask || it.choice) && (it.why.length || it.page)) {
+      const text = it.why.join('; ');
+      if (text && !it.ask) extra.push(h('small', { class: 'loot-why', id: `play-many-why-${it.k}` }, `Check first: ${text}${/[?.]$/.test(text) ? '' : '.'}`));
+      const box = h('input', { type: 'checkbox', id: `play-many-${it.k}`, 'data-many': String(it.k), 'aria-label': `Update ${nameOf(shown)} too`,
+        'aria-describedby': text ? (it.ask ? `play-many-ask-${it.k}` : `play-many-why-${it.k}`) : null });
+      box.checked = it.on;
+      extra.push(h('label', { class: 'loot-pick', for: `play-many-${it.k}` }, box, h('span', null, 'Update this one too')));
+    }
+    const li = h('li', { class: it.why.length || it.ask || it.page ? 'loot-many hold' : 'loot-many', 'data-many-row': String(it.k) },
+      avatar(shown), h('div', { class: 'loot-main' }, h('b', null, nameOf(shown)), h('small', null, sub)), tag, extra.length ? h('div', { class: 'loot-more' }, ...extra) : null);
+    return li;
+  }
+  // The collect button's words: "Update all", or how many are ticked.
+  function manyLabel() {
+    const items = playing.many || [];
+    const on = items.filter((it) => it.on && it.choice).length;
+    const same = items.every((it) => it.on && it.target && state.balances[it.target.id] === it.vals.balance && manyChanges(it) === 0);
+    return same ? 'Confirm all' : on === items.length ? 'Update all' : on ? `Update ${on}` : 'Update';
+  }
+  // How many things a row changes besides its balance (a new level, a member number).
+  function manyChanges(it) {
+    if (!it.target) return 1;
+    const outcome = it.vals.tierIndex >= 0 ? statusOutcome(it.target, it.vals.tierIndex, it.vals.exp) : null;
+    return realChanges(it.target, it.target, manyVals(it.target.id, it.vals), outcome);
+  }
+  // A tap on a waiting row's box, or an account picked: that row is in or out, and the button says how many.
+  function setManyRow(k, { on, choice } = {}) {
+    const it = (playing && playing.many || []).find((x) => x.k === k);
+    if (!it) return;
+    stopCountdown();
+    if (choice !== undefined) {
+      // The account picked gets the app's own checks (a big jump or drop, an older screenshot, another member number).
+      it.choice = choice;
+      const target = manyTarget(it);
+      it.why = [...it.base, ...(target ? doubtsAbout(target, it.vals, { member: it.row.member }) : [])];
+      it.on = !!choice && !it.why.length && !it.page;
+    }
+    if (on !== undefined) it.on = !!on;
+    const old = [...$('#play-loot').children].find((x) => x.dataset && x.dataset.manyRow === String(k));
+    const li = balanceRow(it);
+    li.style.setProperty('--i', 0);
+    li.classList.add('still');
+    if (old) old.replaceWith(li);
+    const control = $(`#play-many-acct-${k}`) || $(`#play-many-${k}`);
+    if (control) control.focus();
+    const label = $('#play-collect-label');
+    if (label) label.textContent = manyLabel();
+  }
+  // Before Update: something ticked, and no two balances going to one account.
+  function manyReady(vouchers) {
+    const on = playing.many.filter((it) => it.on && it.choice);
+    const targets = on.map((it) => (it.choice.startsWith('add:') ? `add:${it.row.id}` : it.choice)).filter((c) => !c.startsWith('new:'));
+    let say = null;
+    if (!on.length && !vouchers.length) say = 'Tick the programs to update first';
+    else if (new Set(targets).size < targets.length) say = 'Two balances can’t go to the same account — untick one';
+    if (!say) return true;
+    stopCountdown();
+    const first = playing.many.find((it) => !it.on);
+    const control = first && ($(`#play-many-acct-${first.k}`) || $(`#play-many-${first.k}`));
+    if (control) control.focus();
+    showToast(say);
+    return false;
+  }
+  // Boxes on the screenshot around each row's number, labeled with its program.
+  function markBalances(read, rows) {
+    const pass = (read.passes || [read])[rows.pass || 0] || {};
+    const marks = rows.map((r) => {
+      const boxes = wordsOf(pass, r.balance).map((w) => w.bbox).filter(Boolean);
+      return boxes.length && read.width && read.height ? { x0: Math.min(...boxes.map((b) => b.x0)), y0: Math.min(...boxes.map((b) => b.y0)),
+        x1: Math.max(...boxes.map((b) => b.x1)), y1: Math.max(...boxes.map((b) => b.y1)), label: ({ capitalone: 'Capital One', usbank: 'U.S. Bank', bofa: 'BofA', wellsfargo: 'Wells Fargo' })[r.id] || voucherBrand(r.id) || r.id } : null;
+    }).filter(Boolean);
+    const pad = 0.004;
+    $('#play-marks').replaceChildren(...marks.map((m, i) => {
+      const el = h('div', { class: 'play-mark' }, h('span', null, m.label));
+      el.style.cssText = `--i:${i};--mark:${MARK_COLORS.balance};--mark-ink:#3B2A00;left:${(m.x0 / read.width - pad) * 100}%;top:${(m.y0 / read.height - pad) * 100}%;`
+        + `width:${((m.x1 - m.x0) / read.width + 2 * pad) * 100}%;height:${((m.y1 - m.y0) / read.height + 2 * pad) * 100}%`;
+      return el;
+    }));
+    placeMarkLabels();
+  }
+  function showBalancesLoot(read, rows, again = false) {
+    const items = again && playing.many ? playing.many : balanceItems(rows); // Back from Fix something keeps your ticks
+    Object.assign(playing, { many: items, manyRows: rows, choice: null, found: null });
+    $('#play-shot').className = 'play-shot done';
+    markBalances(read, rows);
+    const lis = items.map(balanceRow);
+    // Vouchers on the same page, after the programs.
+    const vouchers = playing.vouchers || [];
+    voucherTally(vouchers);
+    const doubts = voucherDoubts(vouchers);
+    lis.push(...voucherRows(vouchers));
+    if (doubts.length) lis.push(doubtRow(doubts, { balances: [] }, {}));
+    // A reason that holds the whole page (prices or offers, other people's balances), once, above the rows.
+    const pageWhy = [...new Set(rows.flatMap((r) => r.check.filter((c) => c in MULTI_PAGE_WHY).map((c) => (c === 'stale' ? `This screen is from ${r.staleAt} — check it’s current.` : MULTI_PAGE_WHY[c]))))];
+    if (pageWhy.length) lis.unshift(h('li', { class: 'loot-warn' }, lootIcon('warn', '#B45309'), h('div', { class: 'loot-main' }, h('b', null, 'Check this first'), h('small', null, pageWhy.join(' ')))));
+    $('#play-loot').replaceChildren(...lis.map((li, i) => { li.style.setProperty('--i', i); return li; }));
+    for (const [i, value] of Object.entries(playing.typed || {})) { const box = $(`#play-vexp-${i}`); if (box) box.value = value; }
+    const label = manyLabel();
+    $('#play-title').textContent = label === 'Confirm all' ? `These ${items.length} programs are up to date` : `Found ${items.length} programs on this page`;
+    $('#play-xp').hidden = true;
+    setActions([['Fix something', false, () => fixMany(read)],
+      [[h('span', { class: 'fill', 'aria-hidden': 'true' }), h('span', { id: 'play-collect-label' }, label), h('span', { class: 'cd', 'aria-hidden': 'true' })], true, collectNow, 'play-collect']]);
+    const on = items.filter((it) => it.on);
+    const waiting = items.length - on.length;
+    const auto = autoCollect && !again && on.length > 0 && !doubts.length;
+    const said = items.map((it) => `${nameOf(it.target || it.p)}: ${fmt(it.vals.balance)} ${(it.target || it.p).unit}${it.on ? '' : ', waits for you'}`).join('. ');
+    announce(`${$('#play-title').textContent}. ${said}.${auto ? ` Updating ${on.length === items.length ? 'all' : on.length} in ${COLLECT_SECONDS} seconds${waiting ? `; ${waiting} ${waiting > 1 ? 'wait' : 'waits'} for you` : ''}; press Tab to look first.` : ''}`);
+    if (auto) startCountdown();
+  }
+  // "Fix something" on a page of balances: pick the row, and it opens in the review form (the others aren't changed).
+  function fixMany(read) {
+    const items = playing.many || [];
+    stopCountdown();
+    // Dates typed for vouchers on the card, kept for Back and for the review form.
+    playing.typed = Object.fromEntries((playing.vouchers || []).map((v, i) => [i, ($(`#play-vexp-${i}`) || {}).value || '']).filter(([, value]) => value));
+    $('#play-title').textContent = 'Which one needs fixing?';
+    const first = items.find((it) => !it.on) || items[0];
+    const select = h('select', { id: 'play-program', 'aria-label': 'Program to fix' },
+      items.map((it) => h('option', { value: String(it.k) }, `${nameOf(it.target || it.p)} — ${fmt(it.vals.balance)}`)));
+    select.value = String(first.k);
+    $('#play-loot').replaceChildren(h('li', { class: 'play-pick' }, select),
+      h('li', { class: 'loot-note' }, lootText('Only this one changes', 'The others stay as they are — scan the page again to update them.')));
+    setActions([['Back', false, () => showBalancesLoot(read, playing.manyRows, true)], ['Fix this one', true, () => fixManyRow(items.find((it) => String(it.k) === select.value))]]);
+    select.focus();
+  }
+  function fixManyRow(it) {
+    const { url } = playing;
+    const r = it.row;
+    const found = { ...parseAccountText(r.text, r.id), programId: r.id, balances: [r.balance] };
+    const vouchers = (playing.vouchers || []).map((v, i) => [v, (playing.typed || {})[i]]).filter(([v]) => v.state === 'new' || v.state === 'date')
+      .map(([v, typed]) => (v.exp || !parseISODate(typed) ? v : { ...v, exp: typed }));
+    playing.url = null; // the review sheet shows it now
+    closePlay();
+    openScan();
+    if (url) {
+      $('#scan-preview').src = url;
+      $('#scan-preview').hidden = false;
+    }
+    showScanResult(r.text, it.choice || null, found, vouchers);
+  }
+
   // A level your account already shows above this one (a typed, read or card-given line still in force).
   function heldAbove(p, tierIndex) {
     const tiers = scanTiersFor((catalogFor(p) || {}).id);
@@ -9532,8 +10410,22 @@ var siteLock = (function () {
   function endBatch(then = '') {
     const b = batch;
     batch = null;
+    let head = b ? `Updated from ${plural(b.collected, 'screenshot')}` : '';
+    if (b && b.many) {
+      // A page of several programs in the batch: every program saved across it, the vouchers, and the rows left waiting
+      // whose program the batch didn't update elsewhere.
+      const saved = [...new Set(b.saved || [])];
+      const left = (b.left || []).filter((x, i, all) => !saved.includes(x.name) && all.findIndex((y) => y.name === x.name) === i);
+      const names = (xs) => xs.map((x) => x.name).join(' and ');
+      const said = (xs, why) => (xs.length ? `${names(xs)} ${xs.length > 1 ? 'weren’t' : 'wasn’t'} updated (${xs.length > 1 ? 'they need' : 'it needs'} ${why})` : '');
+      const notes = [said(left.filter((x) => !x.pick), 'a check'), said(left.filter((x) => x.pick), 'you to pick which account'), b.full ? vouchersLeftOut(b.full) : ''];
+      then = [...notes, then].filter(Boolean).join('. ');
+      const vs = b.vouchers ? `${saved.length ? ' and added' : 'Added'} ${plural(b.vouchers, 'voucher')}` : '';
+      head = `${saved.length ? (b.real ? `Updated ${plural(saved.length, 'program')}` : saved.length === 1 ? `${saved[0]} is up to date` : `These ${saved.length} programs are up to date`) : ''}${vs}` || 'Nothing new to update';
+      if (b.undated) head += ` — ${b.undated > 1 ? `${b.undated} vouchers with no date weren’t added` : 'the voucher with no date wasn’t added'}`;
+    }
     if (b && b.collected && b.person === people.active) {
-      showToast(`${b.many ? `Updated ${plural(b.programs || b.collected, 'program')}` : `Updated from ${plural(b.collected, 'screenshot')}`}${then ? `. ${then}` : ''}`, Object.assign(() => undoTo(b.before, b.person), { snapshot: true }));
+      showToast(`${head}${then ? `. ${then}` : ''}`, Object.assign(() => undoTo(b.before, b.person), { snapshot: true }));
       offerBonusLanding(b.before.balances);
     } else if (then) showToast(then);
   }
@@ -9839,7 +10731,11 @@ var siteLock = (function () {
     renderAll();
     celebrate(result, reward, from);
     const { p, added } = result;
-    if (batch) finishOne(true, reward.xp); // one toast, with one Undo, when the batch ends
+    if (batch) { // one toast, with one Undo, when the batch ends; it names what was saved
+      (batch.saved || (batch.saved = [])).push(nameOf(result.p));
+      if (result.real || result.added) batch.real = true;
+      finishOne(true, reward.xp);
+    }
     else {
       const undo = Object.assign(() => undoTo(previous, who), { snapshot: true }); // puts the whole tracker back
       const more = `${addedVouchers.length ? ` and added ${plural(addedVouchers.length, 'voucher')}` : ''}${addedVouchers.full ? `. ${vouchersLeftOut(addedVouchers.full)}` : ''}`
@@ -9966,6 +10862,12 @@ var siteLock = (function () {
     showLoot(playing.read, playing.pickArg);
   });
   play.addEventListener('focusin', (e) => { if (collectTimer && !e.target.closest('#play-collect')) stopCountdown(); });
+  play.addEventListener('change', (e) => { // a waiting row ticked, or its account picked (showBalancesLoot)
+    const box = e.target.closest('[data-many]');
+    const pick = e.target.closest('[data-many-account]');
+    if (box) setManyRow(Number(box.dataset.many), { on: box.checked });
+    else if (pick) setManyRow(Number(pick.dataset.manyAccount), { choice: pick.value });
+  });
   $('#play-close').addEventListener('click', cancelPlay);
   $('#play-skip').addEventListener('click', skipPlay);
   // The review sheet closing without Update (opened from a batch with Fix something) moves on to the next one.
@@ -10078,7 +10980,8 @@ var siteLock = (function () {
     const text = $('#scan-text').value;
     if (!text.trim()) return;
     // Text naming a voucher (copied from an email, a chat or a wallet page) goes on the scan card, like a screenshot.
-    if (findVouchers(text).length) { quietClose = true; scanSheet.close(); playText(text); return; }
+    // So does text with several programs' balances ("Delta 84,250 miles, Hilton 212,500 points").
+    if (findVouchers(text).length || readBalances({ passes: [{ text, lines: [] }] })) { quietClose = true; scanSheet.close(); playText(text); return; }
     showScanResult(text);
   });
   scanSheet.addEventListener('click', (e) => {
@@ -14607,7 +15510,7 @@ var siteLock = (function () {
 
   // A one-time card listing new features for people who already use the app; new setups skip it.
   const NEWS_KEY = 'status-tracker-news';
-  const NEWS_ID = '2026-11d';
+  const NEWS_ID = '2026-11e';
   const newsSeen = () => { try { return localStorage.getItem(NEWS_KEY) === NEWS_ID; } catch (e) { return true; } };
   const markNewsSeen = () => { try { localStorage.setItem(NEWS_KEY, NEWS_ID); } catch (e) { /* private mode */ } };
   // The card is one for the whole device: a new setup skips it only when no one else here already uses the app
