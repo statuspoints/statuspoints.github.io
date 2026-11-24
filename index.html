@@ -929,6 +929,14 @@ try { if (SITE_LOCK && sessionStorage.getItem('status-tracker-unlocked') !== SIT
   .loot-tag { flex: none; padding: 3px 9px; border-radius: 999px; background: var(--chip-bg); color: var(--muted); font-size: 12px; font-weight: 750; white-space: nowrap; }
   .loot-tag.up { background: var(--good-soft); color: var(--good); }
   .loot-tag.new { background: linear-gradient(135deg, #FCE7B2, #F2C466); color: #6B4400; }
+  /* A voucher found on the screenshot: its name wraps (long ones), and one without a date gets a date box. */
+  .play-loot li.loot-voucher { min-width: 0; flex-wrap: wrap; } /* a date box mustn't widen the card's rows past a phone's width */
+  .loot-voucher .loot-main b { overflow-wrap: break-word; }
+  .loot-voucher .loot-main small { overflow-wrap: break-word; }
+  .loot-date { flex: 1 1 100%; display: flex; align-items: center; gap: 8px; margin: 0 0 0 42px; font-size: 12.5px; font-weight: 650; color: var(--muted); }
+  .loot-date input { flex: 1 1 auto; min-width: 0; max-width: 190px; height: 40px; padding: 0 10px; border: 1px solid var(--field-border); border-radius: 10px; background: var(--field); color: var(--text); font: inherit; font-size: 16px; }
+  .loot-date input[aria-invalid="true"] { border-color: var(--danger); }
+  .scan-vname { flex-basis: 100%; font-weight: 650; overflow-wrap: anywhere; }
   .play-xp { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin: 12px 2px 0; font-size: 12.5px; font-weight: 650; color: var(--muted); animation: loot-in .45s both .6s; }
   .xp-gain { color: var(--good); font-weight: 800; }
   .xp-track { position: relative; flex: 1; min-width: 60px; height: 8px; border-radius: 4px; background: var(--track); overflow: hidden; }
@@ -1985,6 +1993,7 @@ var siteLock = (function () {
     <div class="install-body">
       <strong>New in your tracker</strong>
       <ul class="news-list">
+        <li><b>Vouchers from a screenshot</b>: scan or paste an eCredit, travel credit, free night or certificate and it goes into <b>Vouchers</b> with its value, number and expiry date. When anything on the screen is unclear, it waits for you to check it first.</li>
         <li><b>Bilt’s 2027 changes</b>: on the Credits checklist, Bilt Palladium’s credits follow your card anniversary ($600 Bilt Cash in place of the hotel credit, unless you kept 4% Bilt Cash) and Bilt Cash shows when it really runs out. Bilt Rewards shows Silver, Gold and Platinum, with what each gets you in 2027.</li>
         <li><b>Two of the same card</b>: in the Credits checklist, tap <b>Second card</b> for a second Sapphire Reserve (or any card with credits), with its own boxes to tick.</li>
         <li><b>Credits checklist</b>: right under your programs, a box for every month, quarter or half-year of your card credits — tick each one once you’ve used it.</li>
@@ -2329,6 +2338,7 @@ var siteLock = (function () {
         <li>Open your airline, hotel, or card app or website to the page that shows your points and status.</li>
         <li>Take a screenshot. Got several accounts? Screenshot them all.</li>
         <li>Choose them here (one or many). Watch each one scan, then update your points and status.</li>
+        <li>Got a voucher, like an eCredit, a flight credit or a free night? Screenshot it too, and it goes into your vouchers.</li>
       </ol>
       <button class="add scan-pick" id="scan-pick" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="M20.5 15.5l-4.8-4.6-8.7 8.6"/></svg>Choose screenshot</button>
       <p class="scan-drop-note desk-only">Or drop or paste a screenshot anywhere on this page.</p>
@@ -6894,6 +6904,754 @@ var siteLock = (function () {
     return { tierIndex: held[0], line: fresh.find((l) => parseAccountText(l.text, id).tierIndex === held[0]) };
   }
 
+  /* ---------- Vouchers on a screenshot or in pasted text ---------- */
+
+  // Travel vouchers by the words that name them: whether one holds money, the program it's from when the screen
+  // doesn't say (`alts`: programs a page's own name can switch it to), and what it's called on your list. A `generic`
+  // kind (a heading like "Travel credits") gives way to a more exact one below it.
+  const VOUCHER_KINDS = [
+    { id: 'futureflight', re: /\bfuture ?flight credits?\b|\bFFCs?\b/, money: true, program: 'united', label: () => 'FutureFlight credit' },
+    { id: 'travelbank', re: /\btravel ?bank(?:\s+(?:cash|credits?|funds))?\b/, money: true, program: 'united', alts: ['jetblue'], label: (m, pid) => (pid === 'united' ? 'TravelBank cash' : 'Travel Bank credit') },
+    { id: 'luv', re: /\bLUV\s+vouchers?\b/, money: true, program: 'southwest', label: () => 'LUV voucher' },
+    { id: 'ecredit', re: /\be-?credits?\b/, money: true, program: 'delta', label: () => 'eCredit' },
+    { id: 'tripcredit', re: /\btrip credits?\b/, money: true, program: 'american', shared: true, label: () => 'trip credit' }, // Expedia's word too
+    { id: 'travelfunds', re: /\btravel funds?\b/, money: true, program: 'southwest', generic: true, label: () => 'travel funds' },
+    { id: 'flightcredit', re: /\b(?:transferable\s+)?flight credits?\b/, money: true, label: (m) => (/transferable/i.test(m[0]) ? 'transferable flight credit' : 'flight credit') },
+    { id: 'travelcredit', re: /\btravel credits?\b/, money: true, generic: true, label: () => 'travel credit' },
+    { id: 'wallet', re: /\bwallet\s+(?:funds?|credits?|cash)\b/, money: true, program: 'alaska', label: () => 'wallet funds' },
+    { id: 'discount', re: /\bdiscount codes?\b/, money: true, program: 'alaska', generic: true, label: () => 'discount code' },
+    { id: 'giftcard', re: /\be?-?gift ?cards?\b/, money: true, named: true, label: () => 'Gift Card' },
+    { id: 'companion', re: /\b(global\s+|famous\s+)?companion\s+(certificates?|certs?|fares?|tickets?|vouchers?|awards?)\b/,
+      program: (m) => (/^cert/i.test(m[2]) ? 'delta' : /^(?:fare|award)/i.test(m[2]) ? 'alaska' : null),
+      label: (m) => (/^cert/i.test(m[2]) ? 'companion certificate' : /^award/i.test(m[2]) ? `${m[1] && /global/i.test(m[1]) ? 'Global ' : ''}Companion Award`
+        : `companion ${m[2].toLowerCase().replace(/s$/, '')}`) },
+    { id: 'upgrade', re: /\b((?:regional|global|systemwide|confirmable|suite|complimentary|one[- ]car[- ]class|car[- ]class|cabin)\s+)?upgrade\s+(certificates?|certs?|vouchers?|awards?|rewards?|coupons?)\b/,
+      program: (m) => (/regional|global/i.test(m[1] || '') ? 'delta' : null),
+      label: (m) => `${m[1] || ''}upgrade ${m[2].replace(/^certs?$/i, 'certificate').replace(/s$/i, '')}`.replace(/(^|[\s-])([a-z])/g, (all, pre, c) => pre + c.toUpperCase()) },
+    { id: 'freenight', re: /\b(anniversary\s+|weekend\s+)?free[\s-]nights?(?:\s+(?:rewards?|awards?|certificates?|certs?|vouchers?))?\b|\bFNAs?\b/,
+      label: (m) => `${/anniversary/i.test(m[0]) ? 'anniversary ' : /weekend/i.test(m[0]) ? 'weekend ' : ''}free night` },
+    { id: 'lounge', re: /\b(?:delta\s+)?(sky\s?club|united\s+club|admirals\s+club|alaska\s+lounge|centurion\s+lounge)\s+(?:lounge\s+)?((?:one[- ]time|one[- ]day|single[- ]visit|day|guest|entry)\s+)?pass(?:es)?\b/,
+      program: (m) => ({ sky: 'delta', united: 'united', admirals: 'american', alaska: 'alaska' })[m[1].toLowerCase().split(/\s/)[0].replace('skyclub', 'sky')] || null,
+      label: (m) => `${({ sky: 'Delta Sky Club', united: 'United Club', admirals: 'Admirals Club', alaska: 'Alaska Lounge', centurion: 'Centurion Lounge' })[m[1].toLowerCase().split(/\s/)[0].replace('skyclub', 'sky')]} ${(m[2] || '').toLowerCase().replace(/\s+/g, ' ')}pass`,
+      branded: true },
+    { id: 'etc', re: /\belectronic\s+travel\s+certificates?\b/, money: true, program: 'united', label: () => 'travel certificate' },
+    { id: 'voucher', re: /\b(?:(?:travel|flight|transportation|meal|hotel)\s+)?vouchers?\b|\btravel\s+certificates?\b/, money: true, generic: true,
+      label: (m) => (/certificate/i.test(m[0]) ? 'travel certificate' : m[0].toLowerCase().replace(/s$/, '')) },
+  ].map((k) => ({ ...k, all: new RegExp(k.re.source, 'gi') }));
+  // Where a voucher can come from: airlines, hotels and car rental (a card's credits never make one).
+  const VOUCHER_PROGRAMS = new Set([...CATALOG.filter((g) => g.group === 'Airlines' || g.group === 'Hotels').flatMap((g) => g.items.map((c) => c.id)), 'avis', 'hertz', 'national', 'enterprise']);
+  const VOUCHER_BRANDS = { hyatt: 'Hyatt', aeroplan: 'Air Canada', flyingblue: 'Air France-KLM', ba: 'British Airways', virgin: 'Virgin Atlantic', koreanair: 'Korean Air',
+    singapore: 'Singapore Airlines', qatar: 'Qatar Airways', turkish: 'Turkish Airlines', cathay: 'Cathay Pacific', lhw: 'Leading Hotels', bestwestern: 'Best Western', iprefer: 'I Prefer' };
+  const voucherBrand = (id) => VOUCHER_BRANDS[id] || (CATALOG_BY_ID[id] ? CATALOG_BY_ID[id].name.split(' ')[0] : '');
+  // Program names on a line, as [{ at, id }]: the app's own signs, plus a few a voucher goes by ("American" alone,
+  // "Choice Benefit", "LUV"). A longer name wins over one inside it ("American Express" isn't American).
+  let voucherSigns = null;
+  function voucherSignsIn(lower) {
+    if (!voucherSigns) {
+      voucherSigns = [...Object.entries(SCAN_SIGNS).flatMap(([id, signs]) => signs.map((s) => [s, id])),
+        ['american', 'american'], ['alaska', 'alaska'], ['frontier', 'frontier'], ['luv', 'southwest'], ['choice benefit', 'delta'], ['sky club', 'delta']]
+        .sort((a, b) => b[0].length - a[0].length).map(([s, id]) => [new RegExp(`(^|[^a-z])${s.replace(/[-+.&]/g, (c) => `\\${c}`)}(?![a-z])`, 'g'), id, s.length]);
+    }
+    const taken = [];
+    for (const [re, id, len] of voucherSigns) {
+      for (const m of lower.matchAll(re)) {
+        const at = m.index + m[1].length;
+        if (!taken.some((t) => at < t.at + t.len && t.at < at + len)) taken.push({ at, len, id });
+      }
+    }
+    // "United States", "United Kingdom" aren't United.
+    return taken.filter((t) => VOUCHER_PROGRAMS.has(t.id) && !(t.id === 'united' && /^\s+(?:states|kingdom|arab)\b/.test(lower.slice(t.at + t.len))))
+      .sort((a, b) => a.at - b.at);
+  }
+  // An airline the app doesn't list ("Hawaiian Airlines", "WestJet", "Breeze Airways"): its credit is its own, never a
+  // listed airline's by default (a Hawaiian eCredit isn't Delta's).
+  const VOUCHER_OTHER_AIRLINE = /\b(Hawaiian Airlines|Hawaiian|WestJet|Spirit Airlines|Spirit|Breeze Airways|Breeze|Allegiant Air|Allegiant|Avelo Airlines|Avelo|Sun Country Airlines|Sun Country|Porter Airlines|Porter|Volaris|Viva Aerobus|[A-Z][a-z]+(?: [A-Z][a-z]+)? (?:Airlines|Airways))\b/;
+  // The programs the US sites of which write dates month first (an ambiguous 05/09/2027 there is May 9).
+  const VOUCHER_MDY = new Set(['delta', 'united', 'american', 'southwest', 'alaska', 'jetblue', 'frontier', 'hilton', 'marriott', 'hyatt', 'ihg', 'wyndham', 'choice', 'bestwestern', 'omni', 'sonesta', 'avis', 'hertz', 'national', 'enterprise']);
+  // A program's other names that aren't its brand: its levels, its memberships, its perks and its currencies.
+  const VOUCHER_NOT_BRAND = /^(?:medallion|mqds?|premier 1k|pqp|pqf|loyalty points|a-list|companion pass|mosaic|globalist|explorist|discoverist|sky club|choice benefit|avios|qpoints|virgin points|thankyou points|altitude points|bilt points|venture miles|membership rewards|ultimate rewards)$/i;
+  // Another thing between a voucher's name and a date on its line: the date is that thing's.
+  const VOUCHER_OTHER_THING = /(?<!-)\b(?:passport|membership|status|fees?|waiver|waived|trip|stay|sale|offer|promotion|access|account|miles|points|upgrade|seat|bags?|subscription|licen[cs]e|visa|reservation|itinerary|hold|rental|car|wi-?fi|window)\b|\(\s*(?:your|the|a|an)\b|\b(?:your|the|a|an|his|her|their)\s+(?:[\w+-]+\s+){0,3}?(?:must|is|are|was|runs?|ends?|expires?|valid|good)\b/i;
+  // The kinds a hotel gives and the ones an airline gives: a free night is never an airline's, an eCredit never a hotel's.
+  const VOUCHER_HOTEL_KINDS = new Set(['freenight']);
+  const VOUCHER_AIRLINE_KINDS = new Set(['ecredit', 'futureflight', 'tripcredit', 'flightcredit', 'luv', 'travelbank', 'wallet', 'companion', 'lounge', 'etc', 'discount']);
+  const VOUCHER_HOTELS = new Set(CATALOG.filter((g) => g.group === 'Hotels').flatMap((g) => g.items.map((c) => c.id)));
+  const voucherFits = (kindId, pid) => !pid || (VOUCHER_HOTEL_KINDS.has(kindId) ? VOUCHER_HOTELS.has(pid) : VOUCHER_AIRLINE_KINDS.has(kindId) ? !VOUCHER_HOTELS.has(pid) : true);
+  // A travel site's own credit ("Expedia trip credit"): its name, never an airline's.
+  const VOUCHER_OTA = /\b(expedia|priceline|orbitz|travelocity|hotels\.com|booking\.com|hopper|kayak|cheapoair|trip\.com)\b/i;
+  // A payment card's number (a card's prefix, 13–19 digits, the Luhn check): never kept as a voucher's number.
+  function voucherCardNumber(n) {
+    if (!(/^3[47]\d{13}$/.test(n) || /^(?:4|5[1-5]|2(?:22[1-9]|2[3-9]\d|[3-6]\d\d|7[01]\d|720)|6011|65)\d+$/.test(n) && n.length === 16)) return false;
+    let sum = 0;
+    [...n].reverse().forEach((c, i) => { let d = Number(c); if (i % 2) { d *= 2; if (d > 9) d -= 9; } sum += d; });
+    return sum % 10 === 0;
+  }
+
+  // A voucher's kind on a line: the first named, a longer name winning over one inside it ("future flight credit" is
+  // a FutureFlight credit, not a flight credit). As { kind, m, at }, or null.
+  function voucherKindIn(text, exact = false) {
+    const kept = voucherHits(text);
+    // `exact`: "Travel Funds: $212.98 Flight Credit" is a flight credit.
+    return (exact && kept.find((h) => !h.kind.generic)) || kept[0] || null;
+  }
+  // Every voucher kind named on a line, a longer name winning over one inside it, in order.
+  function voucherHits(text) {
+    const hits = [];
+    for (const kind of VOUCHER_KINDS) for (const m of text.matchAll(kind.all)) hits.push({ kind, m, at: m.index, end: m.index + m[0].length });
+    const kept = hits.filter((a) => !hits.some((b) => b !== a && b.at <= a.at && b.end >= a.end && (b.end - b.at > a.end - a.at || (b.end - b.at === a.end - a.at && VOUCHER_KINDS.indexOf(b.kind) < VOUCHER_KINDS.indexOf(a.kind)))));
+    return kept.sort((a, b) => a.at - b.at);
+  }
+
+  // Dates as vouchers write them: "Sep 28, 2027", "Sep. 28 2027", "28 Sep 2027", "09/28/2027", "9/28/27", "2027-09-28",
+  // or a month and year ("Sep 2027", its last day). Read at the start of `s`, as an ISO date or null.
+  const VOUCHER_DATES = [
+    [new RegExp(`^(${SCAN_MONTH})\\.?\\s*(\\d{1,2})(?:st|nd|rd|th)?\\s*,?\\s*((?:19|20)\\d\\d)(?!\\d)`, 'i'), (m) => [m[3], m[1], m[2]]],
+    [new RegExp(`^(\\d{1,2})(?:st|nd|rd|th)?\\s+(${SCAN_MONTH})\\.?,?\\s*((?:19|20)\\d\\d)(?!\\d)`, 'i'), (m) => [m[3], m[2], m[1]]],
+    [/^((?:19|20)\d\d)-(\d{1,2})-(\d{1,2})(?!\d)/, (m) => [m[1], m[2], m[3]]],
+    [/^(\d{1,2})[/.-](\d{1,2})[/.-]((?:19|20)\d\d|\d\d)(?![\d/])/, (m, dayFirst) => (Number(m[1]) > 12 || (dayFirst && Number(m[2]) <= 12) ? [m[3], m[2], m[1]] : [m[3], m[1], m[2]])],
+    [new RegExp(`^(${SCAN_MONTH})\\.?,?\\s+((?:19|20)\\d\\d)(?!\\d)`, 'i'), (m) => [m[2], m[1], '0']],
+  ];
+  // `dayFirst`: 05/09/2027 is 5 September (British Airways, Flying Blue and the app's other DAY_FIRST programs).
+  function voucherDateAt(s, dayFirst = false) {
+    for (const [re, parts] of VOUCHER_DATES) {
+      const m = re.exec(s);
+      if (!m) continue;
+      const [y, mo, d] = parts(m, dayFirst);
+      const year = y.length === 2 ? 2000 + Number(y) : Number(y);
+      const month = /\d/.test(mo) ? Number(mo) : SCAN_MONTHS.indexOf(mo.slice(0, 3).toLowerCase()) + 1;
+      const day = Number(d) || new Date(year, month, 0).getDate();
+      const iso = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      return parseISODate(iso) && year >= 2000 && year < 2100 ? iso : null;
+    }
+    return null;
+  }
+  // A date read both ways: month first (iso) and day first (isoDF), and whether those differ (`amb`, as 05/09/2027 does).
+  const voucherDateBoth = (s) => { const iso = voucherDateAt(s); const isoDF = voucherDateAt(s, true); return iso ? { iso, isoDF, amb: iso !== isoDF } : null; };
+  // Every date on a line.
+  const voucherDatesIn = (text) => [...text.matchAll(/(?:^|[\s(,:])(?=[A-Za-z0-9])/g)].map((m) => voucherDateBoth(text.slice(m.index + m[0].length))).filter(Boolean);
+
+  // When a voucher ends: "good until", "valid through", "expires (on)", "expiration date", "use by", "must be used by",
+  // "travel by", "book by", "redeem by" — "Exp1res" as the reader may write it, and "until" alone.
+  const VOUCHER_UNTIL = /\b(?:good|valid|usable)(?:\s+for\s+travel)?\s+(?:until|through|thru|till|to)\b|\bfor\s+travel\s+(?:until|through|thru|by)\b|\b(?:must\s+be\s+)?used?\s+(?:it\s+)?(?:by|before)\b|\b(?:redeem(?:ed)?|book(?:ed)?|travel(?:ed)?)\s+(?:by|before)\b|\btravel\s+(?:must\s+be\s+)?(?:completed|booked|taken)\s+by\b|\bexp[il1|]r[a-z]*(?:\s+(?:on|date))?\b|\bexp\b\.?|\buntil\b/gi;
+  // An amount: "$75", "$75.00 USD", "US$ 212.40", "USD 312.60", "48.20 USD", "CAD $150.00", "£250.00", "€120,00", "EUR 75.00".
+  const VOUCHER_MONEY = /(?:\b(USD|US|CAD|CA|C(?=\$)|AUD|AU|A(?=\$)|NZD|NZ|HK|NT|MX|SG|R(?=\$)|S(?=\$))\s?)?\$\s?(\d{1,3}(?:,\d{3})+|\d+)(?:[.,](\d{2}))?(?!\d|,\d{3}(?!\d))|(?:\b(USD|CAD|AUD|NZD|GBP|EUR|MXN|JPY|AED|SGD|HKD|CHF|INR|KRW|CNY|BRL|QAR|SAR|THB)\s?|([£€¥])\s?)(\d{1,3}(?:,\d{3})+|\d+)(?:[.,](\d{2}))?(?!\d|,\d{3}(?!\d))|\b(\d{1,3}(?:,\d{3})+|\d+)(?:[.,](\d{2}))?\s?(USD|CAD|AUD|NZD|GBP|EUR|MXN|JPY|AED|SGD|HKD|CHF|INR|KRW|CNY|BRL|QAR|SAR|THB|[£€¥])(?![A-Za-z])/gi;
+  // How an amount is written on your list: "$75", "CA$150", "£250", "€120" (never "$" for Canadian dollars).
+  const VOUCHER_CURRENCY = { USD: '$', US: '$', CAD: 'CA$', CA: 'CA$', C: 'CA$', AUD: 'A$', AU: 'A$', A: 'A$', NZD: 'NZ$', NZ: 'NZ$', HK: 'HK$', HKD: 'HK$',
+    NT: 'NT$', MX: 'MX$', SG: 'S$', S: 'S$', SGD: 'S$', R: 'R$', BRL: 'R$', GBP: '£', EUR: '€', JPY: '¥', '£': '£', '€': '€', '¥': '¥' };
+  // Words of a perk list, an offer or a card's yearly credits ("4 upgrade certificates per membership year", "Earn a free
+  // night", "$300 annual travel credit", "Free nights from 5,000 points"): a line with one never shows a voucher you hold.
+  const VOUCHER_PERK = /\b(?:earn(?:s|ed|ing)?|get|gets|receive|enjoy|choose|choice of|select(?:ion)?|pick|unlock\w*|qualify\w*|when you|after you|spend|per\s+(?:year|membership year|calendar year|stay|night|person|card ?member ?year)|each\s+(?:year|calendar year|membership year|card ?member ?year|(?:card |account )?anniversary|renewal)|every\s+year|annual(?:ly)?|statement|apply|offers?|bonus|from\s+\d|starting\s+at|book(?!(?:ed)?\s+(?:by|before))|redeem(?!(?:ed)?\s+(?:by|before))|benefits|perks?|includes?|including|make your (?:choice|selection)|select your benefits?|selection (?:deadline|by)|now valid|for all tickets)\b|\bup\s+to\s+\$/i;
+  // A voucher already spent (a receipt, a booking): "eCredit applied $75.00", "Flight credit applied -$212.98", "paid with".
+  // Only a past transaction: an amount or a minus sign with it, a date, "has been applied", a ticket it went toward, or the
+  // word ending its line ("Free Night Award applied"). A rule about using it ("can be used toward…", "may be redeemed for…",
+  // "not to be used for…", "paid with points") never is.
+  const VOUCHER_SPENT = new RegExp(`\\b(?:applied|redeemed|used)\\s*:?\\s*[-−]?\\s*(?:US)?[$£€]\\d|\\b(?:was|were|has been|have been|fully)\\s+(?:applied|used|redeemed)\\b(?!\\s+to\\s+your\\s+(?:account|wallet))`
+    + `|\\b(?:was|were|has been|have been)\\s+(?:cancell?ed|transferred|refunded|voided|forfeited|exchanged|converted)\\b|\\btransferred\\s+to\\b`
+    + `|\\b(?:applied|redeemed|used)\\s+(?:on|toward|towards|to)\\s+(?:\\d|${SCAN_MONTH}|ticket|booking|reservation|confirmation|trip)\\b|\\bpaid\\s+with\\b[^.\\n]{0,30}?[$£€]\\d|(?:^|\\s)[-−](?:US)?[$£€]\\d|\\b(?:applied|redeemed|used)\\s*\\.?\\s*$`, 'gi');
+  // …and not after "can", "may", "not", "will", "to be", "partially", "not yet", "auto-".
+  // "Nothing shows it's been used" says it wasn't.
+  const voucherSpent = (text) => [...text.matchAll(VOUCHER_SPENT)].some((m) => !/(?:\b(?:can|may|cannot|can't|not|must|will|could|should|to|yet|partially)(?:\s+be)?\s*|\bauto-?)$/i.test(text.slice(Math.max(0, m.index - 14), m.index))
+    && !/\b(?:nothing|never|not|no)\b|n['’]t\b/i.test(text.slice(Math.max(0, m.index - 30), m.index)));
+  // A card program's page (a bank's app or site): a credit there is the card's, unless the line names an airline or hotel.
+  const VOUCHER_CARD_PAGE = /\b(?:sapphire|venture x?|altitude|platinum card|gold card|credit card|card ?member|statement credit)\b/i;
+  // A card's credit, by its issuer or the card ("Sapphire Reserve travel credit"): not an airline's voucher.
+  const VOUCHER_CARD = /\b(?:american express|amex|chase|citi|capital one|wells fargo|u\.?s\.? bank|bank of america|card ?members?|credit card|cardholders?|statement|global entry|tsa precheck)\b/i;
+  // A page of perks or a card's benefits: a dollar amount by a voucher's name there isn't one you hold.
+  const VOUCHER_LISTY = /\b(?:choice benefits|select one|choose one|pick one|benefits include|card benefits|your benefits|perks)\b/i;
+  // A line about the account, not a voucher: status, this year's counts, a balance, points expiring.
+  const VOUCHER_ACCOUNT = /\b(?:status|tier|medallion|member\s+since|membership|lifetime|qualifying|mqds?|pqps?|pqfs?|loyalty points|nights this year)\b|\b(?:miles|points|pts|avios)\s*:?\s*\d{1,3}(?:,\d{3})+|\b(?:points?|miles?|avios)\b[^.\n]{0,25}\bexpir/i;
+  // What's left of a line that only holds a voucher's value, date or number ("$120.00 USD", "Amount: $75.00").
+  const VOUCHER_BARE = new RegExp(`\\b(?:usd|us|cad|aud|nzd|gbp|eur|mxn|jpy|aed|dollars?|amount|value|balance|remaining|available|total|credit|left|exp[a-z]*|date|valid|through|thru|until|till|good|use|used|by|before|on|number|no|code|id|confirmation|ticket|is|of|${SCAN_MONTH})\\b`, 'gi');
+  const VOUCHER_COUNT_WORDS = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10 };
+  const voucherThousands = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+  // A voucher's name inside a rule about another ("not valid for a Sky Club day pass", "can pay for a United Club one-time
+  // pass", "eCredits not accepted"): no voucher of its own.
+  const voucherRuled = (text, h) => /\b(?:not|no|n['’]t|cannot|isn['’]t|valid|good|usable|used|use|pay|paid|toward|towards|for|with|combin\w*|accepted|excluding|except|including|on)\b[^.;]{0,25}$/i.test(text.slice(0, h.at))
+    || /^\s*(?:are\s+|is\s+)?(?:not|n['’]t|cannot|can['’]t|aren['’]t|isn['’]t|accepted|excluded)\b/i.test(text.slice(h.end));
+
+  // A caption row's date columns, in order ("Credit Amount Issued Expires" → other, exp), or null: a row of words (no
+  // digits) naming at least one date column beside other captions, or two date columns. "Expiration date" alone is a label.
+  const VOUCHER_COLUMN = /\b(issue(?:d)?(?:\s+date)?|last\s+used|expir[a-z]*(?:\s+date)?|exp\b\.?|valid\s+(?:until|through|thru)|travel\s+by|book\s+by|use\s+by)/gi;
+  function voucherCaption(text) {
+    if (/\d|[$£€¥]/.test(text)) return null;
+    const cols = [...text.matchAll(VOUCHER_COLUMN)].map((m) => (/issue|last/i.test(m[1]) ? 'other' : /travel/i.test(m[1]) ? 'travel' : /book/i.test(m[1]) ? 'book' : 'exp'));
+    const rest = text.replace(VOUCHER_COLUMN, ' ').replace(/[^a-z#]+/gi, ' ').trim();
+    return cols.length && (rest || cols.length > 1) ? cols : null;
+  }
+
+  // A restriction, in a few words: "covers fares on Delta, Air France and KLM only" → "Delta, Air France and KLM fares
+  // only"; "Valid on Delta-marketed flights only"; "Not valid for award tickets"; "Non-transferable"; a cabin and trip.
+  function voucherRule(text) {
+    const tidy = (s) => s.replace(/^(?:the|a|an)\s+/i, '').replace(/\s+/g, ' ').replace(/[\s,;:.]+$/, '').trim();
+    const upper = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+    const dated = (s) => /\b(?:19|20)\d\d\b|\d{1,2}\/\d{1,2}/.test(s);
+    const stop = '(?=$|[.;](?:\\s|$)|,\\s*(?:not|but|excluding|expir\\w*|valid|good|use)\\b)';
+    let m = /\bcovers?\s+(fares?|flights?|tickets?|travel|bookings?|stays?)\s+(?:on|with|at)\s+(.+?)\s+only\b/i.exec(text);
+    if (m && !dated(m[2])) return `${tidy(m[2])} ${m[1].toLowerCase()} only`;
+    // "valid on …" — not "not valid for …" (rule below) nor "also good for …" (an extra use, not a limit).
+    m = new RegExp(`(?<!\\b(?:not|also|n['’]t)\\s)\\b(?:valid|good|usable|redeemable)\\s+(?:only\\s+)?(?:on|for|at|toward|towards)\\s+(.+?)(?:\\s+only)?${stop}`, 'i').exec(text);
+    if (m && !dated(m[1]) && !/^travel\s+(?:through|thru|until|by)\b/i.test(m[1])) return `${upper(tidy(m[1]))} only`;
+    m = /\b(?:not|cannot|can[’']t)\s+(?:valid\s+|good\s+|usable\s+|(?:to\s+)?be\s+used\s+)?(?:for|on|toward|towards)\s+(.+?)(?=$|[.;,])/i.exec(text);
+    if (m && !dated(m[1])) return `Not for ${tidy(m[1])}`;
+    if (/\bnon-?transferable\b/i.test(text)) return 'Non-transferable';
+    m = /\b((?:main cabin|basic economy|economy|first class|business class|comfort\+?|premium select|delta one|premium economy)\b[^.;]{0,30}?\b(?:round[- ]trip|one[- ]way))\b/i.exec(text);
+    if (m) return upper(tidy(m[1]));
+    if (/^[A-Z]/.test(text) && /\bonly\b/i.test(text) && text.length <= 60 && !dated(text) && !/\$|\d{3}/.test(text)) return upper(tidy(text));
+    return null;
+  }
+
+  // What a line says about a voucher: its value, end date (or a caption waiting for a date on the next line), number,
+  // count, points cap ("up to 35,000 points"), hotel category, restriction — and whether it's a perk or a card's credit,
+  // about the account instead, only a value or a date, or a used-up voucher.
+  function voucherBits(text, hit) {
+    const lower = text.toLowerCase();
+    const b = { trigger: false, dangling: false, ends: [], dates: voucherDatesIn(text), money: null, number: null, count: null, cap: null, category: null, rule: voucherRule(text) };
+    const triggers = [...text.matchAll(VOUCHER_UNTIL)];
+    b.trigger = triggers.length > 0;
+    // Each end date with what it ends: the time to travel ("travel by", "valid for travel through") or to act (book,
+    // use, redeem, expires). A voucher showing both keeps the earlier as its expiry and notes the other.
+    const ends = triggers.map((t) => {
+      const rest = text.slice(t.index + t[0].length).replace(/^[\s:,-]+/, '');
+      return { at: t.index, ...(voucherDateBoth(rest) || {}), travel: /travel/i.test(t[0]) && !/book/i.test(t[0]), book: /book/i.test(t[0]), empty: !/\w/.test(rest) };
+    });
+    b.dangling = ends.some((e) => e.empty);
+    // A row of captions ending in one ("Credit type Amount Expires"): every row under it has its date there.
+    b.table = b.dangling && text.slice(0, triggers[triggers.length - 1].index).trim().split(/\s+/).length >= 2;
+    // On a voucher's own line, the dates after its name ("Free Night Award expires…" after "Gold Elite status through…").
+    const dated = ends.filter((e) => e.iso);
+    // …and only one tied to it: with nothing but its value, number or filler between ("a $75 Delta eCredit that's good until",
+    // "eCredit $75.00 · Exp 09/28/2027"), never another thing's ("— passport must be valid until", "(your Sky Club
+    // membership expires", "· Seat fee waived until", "— your trip to Denver runs until").
+    const near = (e) => !hit || e.at < hit.end || !VOUCHER_OTHER_THING.test(text.slice(hit.end, e.at).replace(/\(?\s*up\s+to\s+[\d,]+\s*(?:[a-z]+\s+)?(?:points|pts)\s*\)?/gi, ' '));
+    // For it to add itself, only its value, its number, its program's name, punctuation and a few filler words may sit
+    // between ("a $75 Delta eCredit that's good until", "eCredit 0061112223334 $120.00 USD Expires"): anything else, and
+    // the date is shown but the card asks to check it (`far`).
+    const tight = (e) => {
+      if (!hit || e.at < hit.end) return true;
+      let mid = text.slice(hit.end, e.at).replace(/\(?\s*up\s+to\s+[\d,]+\s*(?:[a-z]+\s+)?(?:points|pts)\s*\)?/gi, ' ')
+        .replace(/\b(?:for|worth)\s+(?=(?:US|CA|A|NZ|HK|S|R)?[$£€¥]|[A-Z]{3}\s?\d)/g, ' '); // its value ("for $75", "worth $89.50")
+      // A program's name only as "with/from <the company>" right after it or its value ("eCredit $75 with Delta Air Lines",
+      // "Flight credit $150 with Southwest") — never a loyalty program's name (AAdvantage, SkyMiles, Honors, Bonvoy…),
+      // which is the account's, nor another program.
+      const lower = text.toLowerCase();
+      const before = voucherSignsIn(lower.slice(0, hit.at)).pop();
+      const kindOwn = typeof hit.kind.program === 'function' ? hit.kind.program(hit.m) : hit.kind.program;
+      const afterSign = voucherSignsIn(lower.slice(hit.end))[0];
+      const ownId = (before && before.id) || kindOwn || (afterSign && afterSign.id);
+      const brand = ownId ? voucherBrand(ownId).toLowerCase() : '';
+      if (brand) {
+        const company = new RegExp(`^(\\s*(?:(?:US|CA|A|NZ|HK|S|R)?[$£€¥]\\s?[\\d,.]+|[\\d,.]+\\s?(?:USD|CAD|EUR|GBP))?\\s*,?\\s*)(?:with|from)\\s+${brand.replace(/[-+.&]/g, (c) => `\\${c}`)}(?:\\s+(?:air\\s+lines|airlines|airways|hotels?))?\\b`, 'i');
+        mid = mid.replace(company, '$1 ');
+      }
+      // "balance", "value", "number", "remaining" only as the label of its own amount or number ("balance of $42.18").
+      mid = mid.replace(/\b(?:remaining\s+)?(?:balance|value|number|no\.?|amount|remaining)\s*(?:of|is)?\s*:?\s*(?=(?:US|CA|A|NZ|HK|S|R)?[$£€¥]|[A-Z]{3}\s?\d|#?\s*[A-Z0-9]*\d)/gi, ' ');
+      mid = mid.replace(VOUCHER_MONEY, ' ');
+      return !mid.replace(/\((?:ticket|confirmation|no\.?|#|number)?\s*[A-Z0-9-]+\)/gi, ' ').replace(/\b[A-Z0-9_-]*\d[A-Z0-9_-]{3,}\b/gi, ' ')
+        .replace(/\b(?:it['’]s|that['’]s|that|which|it|is|with|a|an|the|of|expires?|expiration|exp|good|valid|until|through|thru|by|use|used|must|be|on|itself|usd|cad|aud|nzd|eur|gbp)\b/gi, ' ')
+        .replace(/[\s,;:·—–\-()#.'’]+/g, '');
+    };
+    const after = hit ? dated.filter((e) => e.at >= hit.at) : dated;
+    const tied = after.filter(near).map((e) => (tight(e) ? e : { ...e, far: true }));
+    b.ends = tied.length ? tied : after.length ? [] : hit && dated.length === 1 && !VOUCHER_ACCOUNT.test(text) ? dated : [];
+    // The value: one said to be left ("Remaining value: $50.00") over others; never a price, a fee, what was spent or used.
+    // What was used ("Amount used $100.00", "$32.82 used") and the original amount are noted: with nothing else shown,
+    // the original less what was used is its value.
+    for (const m of text.matchAll(VOUCHER_MONEY)) {
+      const before = text.slice(Math.max(0, m.index - 24), m.index);
+      const next = text.slice(m.index + m[0].length);
+      const whole = m[2] || m[6] || m[8];
+      const cents = m[3] || m[7] || m[9];
+      // Its currency: a symbol ("$75", "CA$150", "£250", "€120", "R$500"), or the code for others ("MXN 2,500", "AED 500").
+      const code = (m[1] || m[4] || m[5] || m[10] || '').toUpperCase();
+      const sign = VOUCHER_CURRENCY[code] || (code ? `${code} ` : '$');
+      const value = { amount: Number(whole.replace(/,/g, '')) + Number(cents || 0) / 100, text: `${sign}${voucherThousands(whole.replace(/,/g, ''))}${cents && cents !== '00' ? `.${cents}` : ''}`, sign,
+        left: /\b(?:remaining|available|balance|current value|left)(?:\s+(?:value|balance|amount))?\s*:?\s*$/i.test(before) || /^\s*(?:remaining|left|available)\b/i.test(next) };
+      if (/\bused\s*(?:value|amount)?\s*:?\s*$/i.test(before) || /^\s*used\b/i.test(next)) { b.usedAmount = (b.usedAmount || 0) + value.amount; continue; }
+      if (/\b(?:original|initial)\s*(?:value|amount)?\s*:?\s*$/i.test(before)) { b.original = b.original || value; continue; }
+      if (/\b(?:issued|fees?|paid|price|spend|spent|purchases?|from|plus|total|(?<!companion\s)fare|refund(?:\s+to\s+card)?|cost|charged?|covers?(?:\s+an?)?|toward|towards|upgrade|seat|bags?)\s*(?:value|amount|of)?\s*:?\s*$/i.test(before) || /[$£€][\d,.]+\s+of\s*$/i.test(before)) continue;
+      if (!b.money || (value.left && !b.money.left)) b.money = value;
+      if (b.money.left) break;
+    }
+    b.card = VOUCHER_CARD.test(text) || (/\bcard\b/i.test(lower.replace(/\be?-?gift ?cards?\b/g, '')) && !(hit && hit.kind.id === 'giftcard'));
+    // Its number: after a label ("eCredit number is …", "Voucher # …", "Code: …"); else a 13-digit ticket-style number
+    // on its own. Never a member, membership, account or flight number (a program's name just before the label), a
+    // security code or PIN, or a payment card's number (labelled "card", or one that is a card's number at all).
+    for (const m of text.matchAll(/(?:\b(?:number|no|num|code|id)\b\.?|#)(?:\s+is)?\s*[:#]?\s*/gi)) {
+      const pre = text.slice(Math.max(0, m.index - 30), m.index);
+      if (/\b(?:member(?:ship)?|account|skymiles|mileageplus|aadvantage|rapid rewards|honors|bonvoy|loyalty|known traveler|redress|phone|seat|flight|gate|order|case|policy|security|pin|cvv|cvc|verification|access|visa|mastercard|discover|payment|billing|ending)\s*$/i.test(pre)) continue;
+      if (/\bcard\s*$/i.test(pre) && !/\bgift\s*card\s*$/i.test(pre)) continue;
+      const end = pre.replace(/[\s#:]+$/, '').toLowerCase();
+      if (voucherSignsIn(end).some((sg) => sg.at + sg.len >= end.length)) continue; // "IHG One Rewards number", "World of Hyatt #"
+      const rest = text.slice(m.index + m[0].length);
+      const grouped = /^(\d{4}(?:[ -]\d{4}){2,3})(?!\d)/.exec(rest);
+      const plain = /^([A-Z0-9](?:[A-Z0-9_-]*[A-Z0-9])?)(?![A-Za-z0-9/])/i.exec(rest);
+      const no = grouped ? grouped[1].replace(/\D/g, '') : plain && plain[1].length >= 5 && /\d/.test(plain[1]) && !/^\d{1,2}-\d{1,2}-\d/.test(plain[1]) ? plain[1].toUpperCase() : null;
+      // A voucher's own label ("Gift card number", "Voucher number", "eCredit #") vouches for it; otherwise a number that is
+      // a payment card's (by its shape) is left out.
+      const own = /\b(?:gift\s*cards?|e-?credits?|certificates?|certs?|tickets?|vouchers?|credits?|pass(?:es)?|awards?|rewards?)\s*$/i.test(pre);
+      if (no && (own || !voucherCardNumber(no))) { b.number = no; break; }
+    }
+    if (!b.number) { const t = /(?<![\d$.,/])(\d{3})[- ]?(\d{10})(?![\d/]|[.,]\d)/.exec(text); if (t) b.number = t[1] + t[2]; }
+    if (!hit && b.card && !/\be?-?gift ?cards?\b/i.test(text)) b.number = null; // a payment card's line never gives the voucher's number
+    b.secret = /\b(?:security code|pin|cvv|cvc)\b/i.test(text); // a voucher's own code: its digits are never the account's
+    // How many: "2 Global Upgrade Certificates", "Upgrade Certificates (2)", "2 passes", "Quantity: 2".
+    const countOf = (w) => Number(w) || VOUCHER_COUNT_WORDS[w.toLowerCase()];
+    let c = hit && new RegExp(`(?<![\\d$.,\\-–])(\\d{1,2}|${Object.keys(VOUCHER_COUNT_WORDS).join('|')})\\s+(?:[A-Za-z][\\w+-]*\\s+){0,3}$`, 'i').exec(text.slice(0, hit.at));
+    if (!c && hit) c = /^\s*(?:\((\d{1,2})\)|[x×]\s?(\d{1,2})\b)/.exec(text.slice(hit.end));
+    if (!c && !hit) c = /^\s*(\d{1,2})\s+(?:passes|certificates?|vouchers?|awards?|rewards?|nights?|available|remaining|left)\b|\b(?:quantity|qty)\s*:?\s*(\d{1,2})\b/i.exec(text);
+    if (c) b.count = countOf(c[1] || c[2]);
+    // A free night's cap ("up to 35,000 points", "35K Free Night Award", "35,000-point") and a Hyatt category.
+    const cap = /\bup\s+to\s+(\d{1,3}(?:,\d{3})+|\d{4,6})\s*(?:[a-z]+\s+)?(?:points|pts)\b/i.exec(text) || /\((\d{1,3},\d{3})\s*(?:points|pts)\)/i.exec(text)
+      || /\b(\d{1,3},\d{3})[- ]point\b/i.exec(text);
+    const capK = /\b(\d{2,3})\s?k\b(?=[^\n]{0,14}\b(?:free night|fna|award|certificate|cert)\b)/i.exec(text);
+    if (cap) b.cap = Number(cap[1].replace(/,/g, ''));
+    else if (capK) b.cap = Number(capK[1]) * 1000;
+    const cat = /\b(?:category|cat\.?)\s*([1-8])(?:\s*(?:-|–|—|to|through|thru)\s*([1-8]))?\b/i.exec(text);
+    if (cat) b.category = `Category ${cat[1]}${cat[2] ? `-${cat[2]}` : ''}`;
+    // A perk or an offer; "eligible for" only without a date of its own ("Companion Certificate eligible for Main Cabin…,
+    // expires 1/31/2027" is a certificate you hold); "$150 of $300" (a card's credit used) unless it says what's left.
+    b.perk = VOUCHER_PERK.test(text) || (/\beligible\b/i.test(text) && !b.trigger) || (/\$[\d,.]+\s+of\s+\$/.test(text) && !/\b(?:remaining|left|balance)\b/i.test(text))
+      || (!!hit && /\bmeal\b/i.test(text)); // a delay's meal voucher is for that day only
+    b.spent = voucherSpent(text) && !/\b(?:remaining|left|balance|available)\b/i.test(text);
+    // Used up: "Used", "Redeemed", "Status: Redeemed", "Used on 03/03/2026" on a line of its own, or a line saying it was applied.
+    // Used up: "Used", "Redeemed Oct 3, 2026", "Status: Cancelled", "Used on 03/03/2026" on a line of its own; or a line
+    // saying so of it ("This credit was used on…", "This eCredit has been used.", "transferred to another traveler").
+    b.used = /^\s*(?:status\s*:?\s*)?(?:fully\s+)?(?:used|redeemed|applied|cancell?ed|void(?:ed)?|refunded|transferred|forfeited|exchanged)\b(?:\s+(?:on\s+)?.*)?\s*\.?\s*$/i.test(text)
+      || (!hit && voucherSpent(text) && /\b(?:was|were|has been|have been|transferred to)\b/i.test(text) && !/\b(?:remaining|left|balance|available)\b/i.test(text));
+    // A state word anywhere (used, redeemed, cancelled, expired, transferred…), except in a rule ("can be used for"):
+    // the voucher may not be good as shown, so it never adds itself.
+    b.state = [...text.matchAll(/\b(?:used|redeemed|applied|cancell?ed|transferred|refunded|void(?:ed)?|expired|forfeited|converted|exchanged)\b/gi)]
+      .some((m) => !/(?:\b(?:can|may|cannot|can't|not|must|will|could|should|to|yet|partially|be|amount)(?:\s+be)?\s*|\bauto-?|\bun)$/i.test(text.slice(Math.max(0, m.index - 14), m.index))
+        && !/^\s*(?:(?:by|before|for|toward|towards)\b|:?\s*[$£€]|to\s+your\s+(?:account|wallet))/i.test(text.slice(m.index + m[0].length)));
+    // A line that can give a voucher its date: only a date with its words ("Expires Sep 28, 2027", "Expiration date:",
+    // "Credit must be used by …", "Travel by …", "It expires …") — never another thing's ("Sale fares valid until…", "Your
+    // Sky Club access expires…", "Offer expires…", "Passport expires…").
+    b.dateLine = !/[a-z]{2,}/i.test(text.replace(VOUCHER_MONEY, ' ').replace(new RegExp(`\\b(?:${SCAN_MONTH}|exp[a-z1|]*|expiration|expiry|date|valid|good|usable|use|used|by|before|until|through|thru|till|to|on|for|travel|traveled|book|booked|must|be|completed|taken|redeem|redeemed|it|this|that|is|the|your|credit|e-?credit|voucher|reward|certificate|award|night|pass|funds?|amount|value|balance|remaining|available)\\b`, 'gi'), ' ').replace(/[\d/.,:#$£€¥()*–—-]/g, ' '));
+    // About the account: status, counts, a balance (not a free night's "up to 35,000 points"), or a level on its own.
+    const balances = [...text.matchAll(/(\d{1,3}(?:,\d{3})+|\d{4,})\s*(?:miles|points|pts|avios)\b/gi)].filter((m) => !/(?:up\s+to|\()\s*$/i.test(text.slice(Math.max(0, m.index - 8), m.index)));
+    b.account = !hit && !b.used && (VOUCHER_ACCOUNT.test(text) || balances.length > 0 || levelLine(lower.trim()));
+    b.bare = !/[a-z]{2,}/i.test(text.replace(VOUCHER_MONEY, ' ').replace(VOUCHER_BARE, ' ').replace(/[\d/.,:#$£€()-]/g, ' '));
+    return b;
+  }
+
+  // The text in lines and sentences: a chat answer's sentences and bullets, two vouchers joined by "and" ("$75 good until
+  // … and $120 good until …"), each read on its own; a line naming two vouchers, each with its own date, split too.
+  function voucherUnits(rawText) {
+    const text = String(rawText || '')
+      .replace(/[®™©℠]/g, '')
+      // Markdown, as a chat's Copy button gives it: bold and italics, code, "#" headings, a table's rule and pipes.
+      .replace(/\*\*|__|`/g, '')
+      .replace(/(^|\s)[*_](\S[^*_\n]*?)[*_](?=\s|[.,:;!?)]|$)/gm, '$1$2')
+      .replace(/^[ \t]*#{1,6}[ \t]+(?=\S)/gm, '')
+      .replace(/^[ \t]*\|?[ \t]*:?-{3,}[-:| \t]*$/gm, '')
+      .replace(/^[ \t]*\|[ \t]*|[ \t]*\|[ \t]*$/gm, '')
+      .replace(/[ \t]*\|[ \t]*/g, '  ')
+      .replace(/\b[\dOolI]*\d[\dOolI]*\b/g, (n) => n.replace(/[Oo]/g, '0').replace(/[lI]/g, '1'))
+      .replace(/(^|[\s(:])S(\d{1,4}\.\d{2})\b/g, '$1$$$2')
+      .replace(/[ \t]*[•●▪◦][ \t]*/g, '\n')
+      .replace(/(^|\n)[ \t]*[*–-][ \t]+/g, '$1')
+      .replace(/[ \t ]+/g, ' ')
+      // A sentence wrapped onto the next line (a chat bubble, an email): one line again, when the line breaks mid-sentence
+      // — the next one going on in lower case, or this one ending on a comma or a little word ("…and KLM" / "only, …").
+      .replace(/([^\n.!?:])[ \t]*\n(?:[ \t]*\n)?[ \t]*(?=\S)/g, (all, last, at, whole) => {
+        const before = whole.slice(0, at + 1).split('\n').pop();
+        const next = whole.slice(at + all.length).split('\n')[0];
+        const named = voucherKindIn(next);
+        if (named && named.at === 0) return all; // "eCredit $75.00 …" under a caption is a row of its own
+        if (voucherCaption(before)) return all; // a row of captions ("Credit Amount Travel by") is a line of its own
+        const goesOn = /^[a-z]/.test(next) || /(?:,|\b(?:and|or|the|a|an|of|on|to|for|in|with|that|is|are|your|until|through|by|from))$/.test(before.trim());
+        return goesOn && before.trim().split(/\s+/).length >= 3 ? `${last} ` : all;
+      });
+    const units = [];
+    units.split = new Set(); // pieces split off a line or a sentence: never certain (findVouchers)
+    const ABBR = /(?:\b(?:no|nos|sep|sept|oct|nov|dec|jan|feb|mar|apr|jun|jul|aug|st|mr|mrs|ms|dr|approx|incl|vs|etc|[a-z]))\.$/i;
+    for (const line of text.split('\n')) {
+      const sentences = [];
+      let from = 0;
+      for (const m of line.matchAll(/[.!?](?=\s+["“(]?[A-Z$])|;\s+/g)) {
+        const end = m.index + 1;
+        if (m[0] !== ';' && m[0][0] === '.' && ABBR.test(line.slice(from, end))) continue;
+        sentences.push(line.slice(from, end));
+        from = m.index + m[0].length;
+      }
+      sentences.push(line.slice(from));
+      for (const sentence of sentences) {
+        let parts = [sentence];
+        // "… and $120 good until …", "…, and a Delta Companion Certificate …": a second voucher.
+        const ands = [...sentence.matchAll(/,?\s+and\s+/g)].filter((m) => {
+          const next = sentence.slice(m.index + m[0].length);
+          if (/^(?:(?:an?|one|another|your|the)\s+)?(?:US)?\$\d/.test(next)) return true;
+          const k = /^(?:an?|one|another|your|the|\d{1,2})\s/i.test(next) && voucherKindIn(next.slice(0, 60));
+          if (k && k.at <= 30 && voucherKindIn(sentence.slice(0, m.index))) return true;
+          // A program's name and an amount: another credit of the kind named at the start.
+          return voucherSignsIn(next.slice(0, 30).toLowerCase())[0]?.at === 0 && /^\S+(?:\s+\S+)?\s+(?:US)?[$£€]\d/.test(next) && !!voucherKindIn(sentence.slice(0, m.index));
+        });
+        if (ands.length && (voucherKindIn(sentence) || /\$\s?\d/.test(sentence))) {
+          parts = [];
+          let at = 0;
+          for (const m of ands) { parts.push(sentence.slice(at, m.index)); at = m.index + m[0].length; }
+          parts.push(sentence.slice(at));
+          // A piece with no kind of its own ("American $150 expiring 5/1/2027") takes the one named at the start.
+          const head = voucherKindIn(sentence);
+          parts = parts.map((part, i) => (i && head && !voucherKindIn(part) && voucherSignsIn(part.slice(0, 30).toLowerCase())[0]?.at === 0 ? `${part.replace(/[.\s]+$/, '')} (${head.m[0]})` : part));
+        }
+        const andSplit = parts.length > 1;
+        for (const [pi, part] of parts.entries()) {
+          if (andSplit && pi) units.split.add(units.length);
+          // Two vouchers' names on one line, each with its own date: one unit each.
+          let names = VOUCHER_KINDS.flatMap((k) => [...part.matchAll(k.all)].map((m) => m.index));
+          const dated = [...part.matchAll(VOUCHER_UNTIL)].filter((t) => voucherDateAt(part.slice(t.index + t[0].length).replace(/^[\s:,-]+/, ''))).length;
+          // …or two different kinds, neither a heading's (a voucher and a pass on one line), whatever the dates.
+          // A kind named in a rule ("not valid for a Sky Club day pass", "can pay for a United Club pass", "eCredits not
+          // accepted") is no voucher of its own.
+          const ruled = (h) => voucherRuled(part, h);
+          const exactHits = voucherHits(part).filter((h, i, all) => !h.kind.generic && (h === all.find((x) => !x.kind.generic) || !ruled(h)));
+          const kinds = [...new Set(exactHits.map((h) => h.kind))];
+          // …nor does a name in a rule start a piece of its own when the line has two dates.
+          const ruledAt = new Set(voucherHits(part).filter((h, i) => i && ruled(h)).map((h) => h.at));
+          names = names.filter((at) => !ruledAt.has(at));
+          // Two different kinds split wherever the second is named; one kind named twice, only well apart.
+          const byKind = kinds.length >= 2 ? kinds.map((k) => exactHits.find((h) => h.kind === k).at).sort((a, b) => a - b) : null;
+          const named = byKind || (dated >= 2 && names.length ? [...new Set(names)].sort((a, b) => a - b).filter((at, i, all) => i === 0 || at - all[i - 1] > 20) : [0]);
+          // Each piece starts where its phrase does ("a $40 Delta eCredit", not "eCredit"): after the comma or "and" before it.
+          const starts = named.map((at, i) => {
+            if (!i) return at;
+            const from = named[i - 1] + 1;
+            const cut = [...part.slice(from, at).matchAll(/(?:[,(;:](?!\s*(?:19|20)\d\d)|\band|\bplus)\s+/g)].pop(); // never inside a date ("Sep 28, 2027")
+            return cut ? from + cut.index + cut[0].length : at;
+          });
+          starts.forEach((at, i) => {
+            const piece = part.slice(i ? at : 0, starts[i + 1] ?? part.length).trim();
+            if (!piece) return;
+            if (i) units.split.add(units.length); // a piece split off its line: it waits
+            units.push(piece);
+          });
+        }
+      }
+    }
+    return units;
+  }
+
+  // The vouchers in a screenshot's text or pasted text, in the order shown: each one's name, note (its number and a
+  // short restriction) and end date ('' when the screen doesn't show it), plus its number, program, and the numbers
+  // on its lines (`nums`, which are never the account's balance). Only what is surely a voucher you hold: one named with
+  // its date, its number, or (for a credit) its dollar value — never a perk list, a card's credit, an offer, or a
+  // date that is a status's or points'.
+  function findVouchers(rawText, pageProgram = null) {
+    const units = voucherUnits(rawText);
+    const whole = units.join('\n');
+    const issuer = [...SCAN_ISSUERS].some((s) => new RegExp(`\\b${s.replace(/\./g, '\\.')}\\b`, 'i').test(whole));
+    const listy = VOUCHER_LISTY.test(whole) || issuer;
+    // A card program's page (its issuer, a card's name): a credit there is the card's own unless its line names an airline
+    // or hotel. A receipt with nothing left on it: credits there were spent.
+    const cardPage = issuer || VOUCHER_CARD_PAGE.test(whole) || Object.entries(SCAN_SIGNS).some(([id, signs]) => SCAN_ISSUER_IDS.has(id) && signs.some((sg) => new RegExp(`(^|[^a-z])${sg.replace(/[-+.&]/g, (c) => `\\${c}`)}(?![a-z])`).test(whole.toLowerCase())));
+    // An issuer's own page (the bank, or a card program's name): its "Southwest travel credit" is the card's statement credit.
+    const issuerPage = issuer || Object.entries(SCAN_SIGNS).some(([id, signs]) => SCAN_ISSUER_IDS.has(id) && signs.some((sg) => new RegExp(`(^|[^a-z])${sg.replace(/[-+.&]/g, (c) => `\\${c}`)}(?![a-z])`).test(whole.toLowerCase())));
+    const receipt = /\b(?:payment summary|total paid|order total|receipt|amount charged)\b/i.test(whole) && !/\b(?:remaining|balance|expir\w*|valid (?:through|until)|issued)\b/i.test(whole)
+      && !units.some((u) => [...u.matchAll(VOUCHER_UNTIL)].some((t) => voucherDateAt(u.slice(t.index + t[0].length).replace(/^[\s:,-]+/, ''))));
+    const signs = units.map((u) => voucherSignsIn(u.toLowerCase()));
+    const blocks = [];
+    let cur = null;
+    let gap = 0;
+    let pending = false;
+    let table = null; // a caption row's date columns, in order ('exp', 'travel', 'book', or 'other' for Issued / Last used)
+    let held = null; // in a list dated above each item: the date waiting for the next voucher
+    let labelLost = false; // an "Expiration date" label with no date under it, above another voucher
+    // A list dated above each item ("Expires Sep 28, 2027" / "Delta eCredit $75.00" / "Expires Jan 2, 2027" / …): its
+    // first line after any headings is a date line and the next names a voucher. Each date is the voucher below it's.
+    const headingLine = (u) => /^(?:my\s+|your\s+)?(?:wallet|e-?credits?|credits?(?:\s+and\s+certificates)?|certificates|vouchers|travel credits|rewards|awards|benefits)\s*:?$/i.test(u.trim())
+      || (!/\d/.test(u) && voucherSignsIn(u.toLowerCase()).length > 0 && u.trim().split(/\s+/).length <= 3 && !/\b(?:pass|status|membership|medallion|elite|club|benefits?)\b/i.test(u));
+    const dateLineOf = (u) => { if (voucherKindIn(u)) return false; const b = voucherBits(u, null); return b.dateLine && b.ends.length > 0; };
+    const firstAt = units.findIndex((u) => !headingLine(u));
+    const aboveLayout = firstAt >= 0 && dateLineOf(units[firstAt]) && !!units[firstAt + 1] && !!voucherKindIn(units[firstAt + 1], true);
+    let prev = null;
+    const fieldsOf = (b, ends) => ({ value: b.money, ends, number: b.number, count: b.count, cap: b.cap, category: b.category, rule: b.rule, used: b.used, secret: b.secret,
+      original: b.original, usedAmount: b.usedAmount, state: b.state });
+    // A second date of the same sort (two expiry dates, two travel-by dates) is another voucher's.
+    const conflict = (blk, f) => (f.value && blk.value && f.value.amount !== blk.value.amount && !f.value.left)
+      || f.ends.some((e) => blk.ends.some((x) => x.travel === e.travel && x.iso !== e.iso))
+      || (f.number && blk.number && f.number !== blk.number);
+    // A line joins the voucher (its numbers are the voucher's, not the account's) when it names it or tells something about it.
+    const apply = (blk, f, i, named) => {
+      let info = false;
+      if (f.value && (!blk.value || f.value.left)) { blk.value = f.value; info = true; }
+      for (const e of f.ends) if (!blk.ends.some((x) => x.travel === e.travel)) { blk.ends.push(e); info = true; if (e.guess || e.far) blk.dateGuess = true; }
+      for (const k of ['number', 'count', 'cap', 'category', 'rule', 'original', 'usedAmount']) if (f[k] != null && blk[k] == null) { blk[k] = f[k]; info = true; }
+      if (f.used) { blk.used = true; info = true; }
+      if (f.state) blk.state = true;
+      if (f.secret) info = true;
+      if (info || named) blk.units.push(i);
+      return info;
+    };
+    const kindKey = (hit) => `${hit.kind.id}:${hit.kind.id === 'upgrade' || hit.kind.id === 'lounge' || hit.kind.id === 'companion' ? hit.kind.label(hit.m).toLowerCase() : ''}`;
+    // The program, and whether the voucher's own words name it (its line, or the kind's own program) — as against the
+    // page's header. A travel site's credit (Expedia) is the site's.
+    // How it was found (`how`): named on its own lines ('literal'); the page's heading ('header'); the kind's own program
+    // ('default': a FutureFlight credit is United's); the heading over a different default ('override': Alaska's
+    // companion certificate); an airline or travel site the app doesn't list (`brand`, no program).
+    const programOf = (hit, i) => {
+      // A heading-like kind on the same line lends its program ("Travel Funds: $212.98 Flight Credit" is Southwest's).
+      const also = voucherKindIn(units[i]);
+      const lent = also && also.kind !== hit.kind && typeof also.kind.program === 'string' ? also.kind.program : null;
+      const own = hit.kind.program ? (typeof hit.kind.program === 'function' ? hit.kind.program(hit.m) : hit.kind.program) : lent;
+      if (hit.kind.branded && own) return { id: own, how: 'literal' };
+      // The page's own program: named above the first voucher (never on an earlier voucher's own line).
+      const firstBlock = blocks.length ? Math.min(...blocks[0].units) : i;
+      const headerAt = signs.slice(0, firstBlock).map((sg, at) => (sg.length ? at : -1)).filter((at) => at >= 0).pop();
+      const header = headerAt >= 0 ? signs[headerAt][signs[headerAt].length - 1] : null;
+      // A program after the name ("Flight credit $150 with Southwest", "a travel credit from United") — not one it's valid
+      // on ("valid on British Airways flights", "on American-operated flights").
+      const after = signs[i].find((s) => s.at >= hit.end && s.at - hit.end <= 30 && !/\b(?:valid|good|usable)\s+on\s+$|\boperated\s+by\s+$|\bon\s+$/i.test(units[i].slice(hit.end, s.at))
+        && !/^[\w-]*\s*(?:-operated\s+)?flights\b/i.test(units[i].slice(s.at + s.len).replace(/^[\w\s]*?(?=flights|-operated)/i, '')));
+      const here = signs[i].filter((s) => s.at < hit.at).pop() || after;
+      if (here) return { id: here.id, how: 'literal' };
+      // An airline the app doesn't list, on this line or in the heading (below any listed program's name).
+      const otherOf = (u) => { const m = VOUCHER_OTHER_AIRLINE.exec(u); return m && !voucherSignsIn(m[1].toLowerCase()).length ? m[1] : null; };
+      const otherAt = [...units.slice(0, firstBlock).keys()].filter((at) => otherOf(units[at])).pop();
+      const other = otherOf(units[i]) || (otherAt >= 0 && !(headerAt > otherAt) ? otherOf(units[otherAt]) : null);
+      if (other) return { id: null, how: 'brand', ota: other };
+      const ota = units.slice(0, i + 1).map((u) => VOUCHER_OTA.exec(u)).filter(Boolean).pop();
+      // A FutureFlight credit is United's, even via Expedia; a trip credit there is Expedia's.
+      if (ota && (!own || hit.kind.shared || typeof hit.kind.program !== 'string')) return { id: null, how: 'brand', site: true, ota: ota[1].charAt(0).toUpperCase() + ota[1].slice(1).toLowerCase() };
+      const page = header ? header.id : pageProgram; // pageProgram: a header bar's logo, read on its own
+      if (own && page && page !== own) return (hit.kind.alts || []).includes(page) ? { id: page, how: 'header' } : { id: page, how: 'override' };
+      if (own) return { id: own, how: page === own ? 'header' : 'default' };
+      return { id: page || null, how: page ? 'header' : null };
+    };
+    units.forEach((text, i) => {
+      const hit = voucherKindIn(text, true);
+      const b = voucherBits(text, hit);
+      // A row under a caption takes its date from the caption's expiry column ("Credit Amount Issued Expires" over
+      // "… 09/28/2026 01/02/2027"), only when the row has a date in each date column (a blank "N/A" cell takes none, and
+      // nothing is borrowed from another row); several date columns make it a guess (it waits). A label on its own line
+      // ("Expiration date") gives the date on the next.
+      const cap = voucherCaption(text);
+      let captioned = null;
+      if (table && !cap && !b.trigger && b.dates.length) {
+        const col = table.includes('exp') ? table.indexOf('exp') : table.findIndex((c) => c !== 'other');
+        const pick = col < 0 ? null : b.dates.length === table.length ? b.dates[col] : table.length === 1 ? b.dates[b.dates.length - 1] : null;
+        if (pick) captioned = { ...pick, travel: table[col] === 'travel', book: table[col] === 'book', guess: table.length > 1 || b.dates.length > 1 };
+      } else if (pending === 'next' && !b.trigger && b.dates.length === 1) captioned = { ...b.dates[0], travel: false };
+      if (pending === 'next' && !captioned && hit) labelLost = true;
+      if (cap) table = cap; else if (table && !b.dates.length) table = null;
+      const ends = b.ends.length ? (hit || b.dateLine ? b.ends : []) : captioned ? [captioned] : [];
+      pending = b.dangling && !cap ? 'next' : false;
+      const f = fieldsOf(b, ends);
+      // Card words on the line ("Sapphire Reserve travel credit") make it the card's — unless the voucher is an airline's
+      // or hotel's own ("Delta eCredit … (this is not a credit card)").
+      const claimed = hit && (typeof hit.kind.program === 'string' || signs[i].length > 0);
+      const numberLine = hit && cur && b.number && !b.money && !ends.length && /^\s*(?:(?:number|no\.?|code|id)\b|#)/i.test(text.slice(hit.end))
+        && (kindKey(cur.hit) === kindKey(hit) || cur.hit.kind.generic || hit.kind.generic) && (!cur.number || cur.number === b.number);
+      if (aboveLayout && !hit && b.dateLine && ends.length) { held = ends; cur = null; } // the next voucher's date
+      else if (numberLine) { apply(cur, f, i, true); gap = 0; } // "eCredit number 0069876543210" under the eCredit: its number
+      else if (hit && !b.perk && !b.spent && !voucherRuled(text, hit) && !(hit.kind.money && b.card && !claimed)) {
+        const program = programOf(hit, i);
+        const same = cur && !cur.ends.length && (kindKey(cur.hit) === kindKey(hit) || ((cur.hit.kind.generic || hit.kind.generic) && !!cur.hit.kind.money === !!hit.kind.money))
+          && (!program.id || !cur.program || program.id === cur.program) && !conflict(cur, f)
+          // Named again after its number was read ("Free Night Reward" / "Award number …" twice): the next one.
+          && !(cur.number && !hit.kind.generic && !cur.hit.kind.generic && kindKey(cur.hit) === kindKey(hit) && !f.ends.length && !f.value)
+          && !(held && !headingLine(text));
+        if (same) {
+          if (cur.hit.kind.generic && !hit.kind.generic) cur.hit = hit;
+          if (!cur.program && program.id) Object.assign(cur, { program: program.id, how: program.how, own: program.how === 'literal' || program.how === 'default' });
+          else if (program.id === cur.program && program.how === 'literal') Object.assign(cur, { how: 'literal', own: true });
+        } else {
+          cur = { hit, program: program.id, how: program.how, own: program.how === 'literal' || program.how === 'default', ota: program.ota, site: program.site, units: [], ends: [], split: units.split.has(i) };
+          blocks.push(cur);
+          if (held && !f.ends.length) { cur.ends.push(...held); cur.fromAbove = true; }
+          held = null;
+          // A value on its own line just above the name ("$75.00 USD" over "eCredit").
+          if (prev && prev.value && !prev.taken && !f.value) { cur.value = prev.value; cur.units.push(i - 1); }
+          // A date on its own line just above the name ("**Expires:** Sep 28, 2027" over "**Delta eCredit:** $75.00"): only
+          // in a list dated that way — the date line first on the page, or under a voucher that took its date from above
+          // or has none — never one under a membership, a pass, a card's credit or anything else. It always waits for a tap.
+          if (!aboveLayout && prev && prev.ends.length && !prev.taken && !f.ends.length && !prev.account && prev.bare && (prev.top || prev.afterAbove)) {
+            cur.ends.push(...prev.ends); cur.units.push(i - 1); cur.fromAbove = true;
+          }
+        }
+        apply(cur, f, i, true);
+        gap = 0;
+      } else if (hit) {
+        // "This eCredit has been used." / "…has been cancelled" under one: that one is used up.
+        const last = cur || blocks[blocks.length - 1];
+        if (b.spent && last && !f.value && !f.ends.length && /\b(?:this|the|that|your|it)\b/i.test(text) && (kindKey(last.hit) === kindKey(hit) || hit.kind.generic)) last.used = true;
+        // A rule naming the voucher's own kind ("eCredits cannot be used for bag fees") is that voucher's restriction.
+        if (voucherRuled(text, hit) && !b.perk && !b.spent) {
+          if (last && b.rule && !last.rule && kindKey(last.hit) === kindKey(hit)) last.rule = b.rule;
+        } else cur = null; // a perk, an offer, a card's credit or a spent one: not a voucher, and the end of one before it
+      } else if (b.used && (cur || blocks.length)) {
+        (cur || blocks[blocks.length - 1]).used = true; // "This credit was used on…", "Status: Cancelled" under it
+      } else if (cur) {
+        if (b.account) cur = null;
+        else if (conflict(cur, f)) {
+          // The next voucher under the same heading ("$120.00 USD" after the first one's date).
+          // Unless the list dates each voucher above it: then this date is the next voucher's.
+          const nextNamed = units[i + 1] && voucherKindIn(units[i + 1]);
+          const dateOnly = f.ends.length && !f.value && !f.number;
+          if (b.bare && dateOnly && nextNamed) { held = f.ends.map((e) => ({ ...e, guess: true })); cur = null; }
+          else if (b.bare && dateOnly) { cur.dateGuess = true; gap = 0; }
+          else if (b.bare) { cur = { hit: cur.hit, program: cur.program, how: cur.how, own: cur.own, ota: cur.ota, units: [], ends: [] }; blocks.push(cur); apply(cur, f, i); gap = 0; } else cur = null;
+        } else if (apply(cur, f, i) || b.dangling) gap = 0;
+        else if (++gap > 3) cur = null;
+      }
+      const before = i ? blocks.find((blk) => blk.units.includes(i - 1)) : null;
+      prev = { value: b.bare && !hit ? b.money : null, ends: hit ? [] : ends, account: b.account, bare: b.bare && !hit, top: i === 0,
+        afterAbove: !!before && (before.fromAbove || !before.ends.length) && !blocks.some((blk) => blk.units.includes(i)),
+        taken: blocks.some((blk) => blk.units.includes(i)) };
+    });
+    // A voucher named again without its date ("Delta $75 eCredit: it came from…" under "a $75 Delta eCredit that's good
+    // until…"): the same one, its number and restriction joining it — when it can only be that one.
+    const fits = (a, b) => !a.used && !b.used && (kindKey(a.hit) === kindKey(b.hit) || ((a.hit.kind.generic || b.hit.kind.generic) && !!a.hit.kind.money === !!b.hit.kind.money)) && (!a.program || !b.program || a.program === b.program)
+      && (!a.value || !b.value || a.value.amount === b.value.amount) && (!a.number || !b.number || a.number === b.number)
+      && (!a.cap || !b.cap || a.cap === b.cap) && (!a.category || !b.category || a.category === b.category);
+    for (const blk of [...blocks]) {
+      if (blk.ends.length) continue;
+      const evidence = (o) => (o.value && blk.value && o.value.amount === blk.value.amount) || (o.number && blk.number && o.number === blk.number)
+        || (o.cap && blk.cap === o.cap) || (o.category && blk.category === o.category) || (!blk.value && !blk.number && !blk.cap && !blk.category);
+      const twins = blocks.filter((o) => o !== blk && o.ends.length && fits(o, blk) && evidence(o));
+      if (twins.length === 1) {
+        const [o] = twins;
+        for (const k of ['value', 'number', 'count', 'cap', 'category', 'rule', 'program']) if (o[k] == null && blk[k] != null) o[k] = blk[k];
+        if (blk.used) o.used = true;
+        o.units.push(...blk.units);
+        blocks.splice(blocks.indexOf(blk), 1);
+      } else if (twins.length > 1 && !blk.value && !blk.number) blocks.splice(blocks.indexOf(blk), 1);
+    }
+    // With no value of its own shown, the original amount less what was used ("Original amount $75.00 / Amount used $0.00").
+    for (const blk of blocks) {
+      const left = blk.original && blk.original.amount - (blk.usedAmount || 0);
+      if (!blk.value && left > 0) blk.value = { amount: Math.round(left * 100) / 100, text: `${blk.original.sign}${voucherThousands(Math.floor(left))}${left % 1 ? `.${String(Math.round(left * 100) % 100).padStart(2, '0')}` : ''}` };
+    }
+    // A hotel's kind with an airline's program, or the reverse ("Free Night Reward" under a Delta heading): not that
+    // program's, and it waits.
+    for (const blk of blocks) if (blk.program && !voucherFits(blk.hit.kind.id, blk.program)) Object.assign(blk, { program: null, how: null, own: false, misfit: true });
+    return blocks.filter((blk) => {
+      const k = blk.hit.kind;
+      if (blk.used || (blk.value && blk.value.amount === 0) || (k.named && !blk.program)) return false;
+      // A generic travel credit with no airline or hotel is a card's; so is any credit on a card's page that no airline or
+      // hotel claims, and any generic credit on an issuer's own page; and a credit on a receipt was spent.
+      if (k.money && ((k.id === 'travelcredit' && !blk.program && (!blk.ota || blk.site)) || (cardPage && !blk.program) || (issuerPage && k.generic) || receipt)) return false;
+      return blk.ends.length > 0 || !!blk.number || (k.money && !!blk.value && !listy);
+    }).map((blk) => {
+      const k = blk.hit.kind;
+      const brand = blk.program && !k.branded ? voucherBrand(blk.program) : blk.ota || '';
+      const many = !k.money && blk.count > 1;
+      const label = k.label(blk.hit.m, blk.program);
+      let name;
+      if (k.money || (k.id === 'companion' && /fare/i.test(label))) name = [brand, blk.value && blk.value.text, label].filter(Boolean).join(' ');
+      else {
+        const detail = blk.cap && (k.id === 'freenight' || k.id === 'companion') ? ` (up to ${voucherThousands(blk.cap)} points)` : blk.category && k.id === 'freenight' ? ` (${blk.category})` : '';
+        name = `${[many ? blk.count : '', brand, `${label}${many ? (/pass$/.test(label) ? 'es' : 's') : ''}`].filter(Boolean).join(' ')}${detail}`;
+      }
+      name = name.charAt(0).toUpperCase() + name.slice(1);
+      // Its dates read the program's way (day first for British Airways, Flying Blue…): the earlier is the expiry; a
+      // later one of the other sort goes in the note ("travel by Jun 30, 2028"). A date that reads two ways with no
+      // program to say which is `unsure`: the card waits for a tap.
+      const dayFirst = DAY_FIRST.has(blk.program);
+      const ends = blk.ends.map((e) => ({ ...e, day: dayFirst ? e.isoDF : e.iso })).sort((a, b) => a.day.localeCompare(b.day));
+      const later = ends.length > 1 ? ends[ends.length - 1] : null;
+      const also = later && later.day !== ends[0].day ? `${later.travel ? 'travel by' : later.book ? 'book by' : 'expires'} ${dateFmt.format(parseISODate(later.day))}` : '';
+      const note = voucherNote(blk.number, blk.rule, also);
+      // Every number from its first line to its last (a security code, a "£250.00"): never the account's balance.
+      const span = blk.units.length ? units.slice(Math.min(...blk.units), Math.max(...blk.units) + 1) : [];
+      // The confidence gate (a whitelist): added by itself only when it's certain —
+      //  · its program named among its own lines, or as the page's heading with no other program on the page (a kind's
+      //    usual program alone never is: an eCredit is usually Delta's, but not always);
+      //  · one expiry date, from its own line or a date line right under it, reading one way for that program;
+      //  · nothing among its lines saying it was used, cancelled, transferred or the like;
+      //  · no credit card or bank around it, and not someone else's ("Your husband has…");
+      //  · a credit with its value or number.
+      // Otherwise it still shows, and the card waits for a tap with the reason (`check`).
+      const pageIds = new Set(signs.flat().map((sg) => sg.id));
+      const named = span.some((u) => voucherSignsIn(u.toLowerCase()).some((sg) => sg.id === blk.program));
+      const headed = (blk.how === 'header' || (blk.program && blk.program === pageProgram)) && [...pageIds].every((id) => id === blk.program);
+      const others = blk.how === 'literal' || named ? [] : span.flatMap((u) => voucherSignsIn(u.toLowerCase())).filter((sg) => sg.id !== blk.program);
+      const oneWay = !ends.length || !ends[0].amb || DAY_FIRST.has(blk.program) || VOUCHER_MDY.has(blk.program);
+      const check = [
+        ends.length !== 1 || blk.fromAbove || blk.dateGuess || !oneWay || labelLost ? 'date' : null,
+        !blk.program || !(blk.how === 'literal' || named || headed) || others.length || (k.generic && blk.how !== 'literal' && !named) ? 'program' : null,
+        blk.state ? 'state' : null,
+        blk.split ? 'split' : null,
+        cardPage || span.some((u) => VOUCHER_CARD.test(u) || /\bcard\b/i.test(u.replace(/\be?-?gift ?cards?\b/gi, ''))) ? 'card' : null,
+        span.some((u) => /\b(?:your|my|his|her)\s+(?:husband|wife|partner|spouse|son|daughter|kids?|child(?:ren)?|mom|mother|dad|father|friend|sister|brother|parents?)\b|\bissued\s+to\s+[A-Z]|\bin\s+the\s+name\s+of\b/i.test(u)) ? 'who' : null,
+        k.money && !blk.value && !blk.number ? 'value' : null,
+      ].filter(Boolean);
+      const nums = [...new Set(span.flatMap((u) => (u.match(/\d[\d,]*/g) || []).map((n) => n.replace(/,/g, ''))))];
+      return { name: name.slice(0, 80).trim(), note, exp: ends.length ? ends[0].day : '', also, number: blk.number || '', rule: blk.rule || '', programId: blk.program || null, kind: k.id,
+        value: blk.value ? blk.value.amount : null, lines: blk.units.map((i) => units[i]), nums, unsure: !!(ends.length && ends[0].amb && !blk.program), certain: !check.length, check,
+        alt: ends.length && ends[0].amb && !blk.program ? ends[0].isoDF : '' }; // the date read day first, when that's possible too
+    });
+  }
+
+  // A voucher's note: its number and restriction, cut at a word to fit 120 characters.
+  function voucherNote(number, rule, also = '') {
+    const note = [number ? `No. ${number}` : '', also || '', rule || ''].filter(Boolean).join(' · ');
+    return note.length > 120 ? `${note.slice(0, 119).replace(/\s+\S*$/, '').replace(/[\s,;:·-]+$/, '')}…` : note;
+  }
+
+  // The vouchers on a screenshot read more than one way: the reading that found the most (then the most dates and
+  // numbers). A voucher another reading found with a different date, value or number is `unsure`: the card waits for a tap.
+  function scanVouchers(read) {
+    const passes = read.passes || [read];
+    const page = (voucherSignsIn(String(read.bands || '').toLowerCase())[0] || {}).id || null;
+    const lists = passes.map((pass) => findVouchers(columnsApart(pass), page));
+    const score = (list) => list.length * 100 + list.filter((v) => v.exp).length * 10 + list.filter((v) => v.number).length;
+    let best = 0;
+    lists.forEach((list, i) => { if (score(list) > score(lists[best])) best = i; });
+    const out = lists[best].map((v) => ({ ...v, unsure: !!v.unsure }));
+    for (const [i, other] of lists.entries()) {
+      if (i === best) continue;
+      for (const v of out) {
+        const mine = out.filter((x) => x.kind === v.kind && x.programId === v.programId);
+        const theirs = other.filter((x) => x.kind === v.kind && x.programId === v.programId);
+        const twin = theirs.length === mine.length ? theirs[mine.indexOf(v)] : null;
+        // Read differently, not just missed (a big value the other reading skipped isn't a doubt).
+        const differ = (k) => twin[k] != null && twin[k] !== '' && v[k] != null && v[k] !== '' && twin[k] !== v[k];
+        if (twin && (differ('exp') || differ('value') || differ('number'))) v.unsure = true;
+      }
+    }
+    // A number the reader wasn't sure of (under 85%) is left out rather than saved wrong ("7HX2K9" read "THX2KS").
+    const words = (passes[best].lines || []).flatMap((l) => (l && l.words) || []);
+    for (const v of out) {
+      if (!v.number) continue;
+      const parts = words.filter((w) => { const t = voucherUnits(String(w.text || '')).join('').toUpperCase().replace(/[^A-Z0-9]/g, ''); return t.length >= 3 && v.number.includes(t); });
+      if (parts.length && Math.min(...parts.map((w) => w.confidence || 0)) < 85) Object.assign(v, { number: '', note: voucherNote('', v.rule, v.also) });
+    }
+    out.pass = best;
+    return out;
+  }
+
+  // An account read from a screen with vouchers on it: the vouchers' own numbers set aside (a free night's "up to 35,000
+  // points" isn't a balance, an eCredit's number isn't a member number, its "Valid until …" under "Up to 40,000 points"
+  // isn't the status's end). True when an account is still shown — a balance, a level, or this year's counts; a member
+  // number alone isn't one.
+  function voucherAccount(found, list) {
+    if (list.length) {
+      const nums = new Set(list.flatMap((v) => v.nums));
+      found.balances = found.balances.filter((n) => !nums.has(String(n)));
+      if (found.member && (nums.has(found.member) || list.some((v) => v.number && v.number === String(found.member).toUpperCase()))) found.member = null;
+      if (found.exp && list.some((v) => v.exp === found.exp)) found.exp = null;
+    }
+    return found.balances.length > 0 || found.tierIndex >= 0 || [found.progress, found.altProgress, found.mqd].some((v) => v != null);
+  }
+
+  // What the card does with a voucher found: 'new' (added), 'date' (no date on the screen: it waits for one),
+  // 'expired' (said, not added), 'have' (its number, or its name and date, are on your list already: not added twice).
+  function voucherState(v, saved, day) {
+    if (v.exp && v.exp < day) return 'expired';
+    return voucherMatch(v, saved) >= 0 ? 'have' : v.exp ? 'new' : 'date';
+  }
+  // The saved voucher a found one is (its number in a saved note or name; else the same name and date), as its index, or -1.
+  // One with neither date nor number waits for a date, and that date then settles it (readyVouchers).
+  function voucherMatch(v, saved) {
+    const key = (s) => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const tokens = (x) => `${x.name} ${x.note}`.replace(/(\d{4})[ -](?=\d{4})/g, '$1').split(/[^A-Za-z0-9-]+/).map(key);
+    if (v.number) { const at = saved.findIndex((x) => tokens(x).includes(key(v.number))); if (at >= 0) return at; }
+    if (v.exp) return saved.findIndex((x) => x.exp === v.exp && key(x.name) === key(v.name));
+    return -1;
+  }
+
   // Loads the open-source text reader (Tesseract) on first use; it runs entirely in this browser.
   const OCR_BASE = 'https://cdn.jsdelivr.net/npm/';
   let ocrWorker = null;
@@ -7700,7 +8458,7 @@ var siteLock = (function () {
   let playing = null; // { url, text, found, choice, vals } for the screenshot on the card
   let collectTimer = 0;
   const COLLECT_SECONDS = 4;
-  const MARK_COLORS = { program: '#2F5FC4', balance: '#E0A82E', status: '#7044C7', count: '#12776D', member: '#4B5563' };
+  const MARK_COLORS = { program: '#2F5FC4', balance: '#E0A82E', status: '#7044C7', count: '#12776D', member: '#4B5563', voucher: '#B4462B' };
   const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   // Another sheet is open (maybe mid-edit), so a dropped or pasted image is left alone.
   const otherSheetOpen = () => [...document.querySelectorAll('dialog[open]')].some((d) => d !== scanSheet && d !== play);
@@ -7717,6 +8475,7 @@ var siteLock = (function () {
     $('#play-xp').hidden = true;
     $('#play-actions').replaceChildren();
     $('#play-shot').className = 'play-shot scanning';
+    $('.play-frame').hidden = false;
     const img = $('#play-img');
     img.src = playing.url;
     if (!play.open) play.showModal();
@@ -7766,6 +8525,24 @@ var siteLock = (function () {
     const k = Math.min($('#play-shot').parentElement.clientWidth / w, Math.max(160, innerHeight * 0.42) / ht, 1.5);
     $('#play-shot').style.width = `${Math.round(w * k)}px`;
     $('#play-shot').style.height = `${Math.round(ht * k)}px`;
+  }
+
+  // Pasted text that names a voucher: read on the same card as a screenshot, without a picture.
+  function playText(text) {
+    ++playRun;
+    stopCountdown();
+    if (playing && playing.url) URL.revokeObjectURL(playing.url);
+    if (!batch) dropWaitingVouchers();
+    playing = { url: null, hint: null, taken: null };
+    $('#play-img').removeAttribute('src');
+    $('.play-frame').hidden = true;
+    $('#play-loot').replaceChildren();
+    $('#play-marks').replaceChildren();
+    $('#play-xp').hidden = true;
+    $('#play-actions').replaceChildren();
+    if (!play.open) play.showModal();
+    renderPlayCount();
+    showLoot({ passes: [{ text, lines: [] }] });
   }
 
   function setActions(list) {
@@ -8016,9 +8793,16 @@ var siteLock = (function () {
         balances: found.balances, unsure: !!found.unsure, unsureCounts: found.unsureCounts || [], programId: found.programId, bands: read.bands || '', faint: (read.faint || []).map((l) => l.text) }));
       }
     } catch { /* storage blocked: no debug */ }
-    Object.assign(playing, { read, pickArg: choice, text: reading.text, found, many: null });
+    Object.assign(playing, { read, pickArg: choice, text: reading.text, found, many: null, voucherOnly: false });
     $('#play-shot').className = 'play-shot done';
     const later = batch ? ['Skip', false, skipPlay] : ['Try another', false, pickAnother];
+    // Vouchers on the screen (an eCredit, a free night): read once per screenshot, and their own numbers (a free night's
+    // "up to 35,000 points", an eCredit's number) set aside from the account's. A screen with only vouchers on it is
+    // a voucher card: no program to pick, no balance to find.
+    if (!playing.vouchers) playing.vouchers = scanVouchers(read);
+    const vouchers = playing.vouchers;
+    const account = voucherAccount(found, vouchers);
+    if (vouchers.length && !account && !choice) { showVoucherLoot(reading); return; }
     // A program of your own the catalog doesn't know, named on the screen: read as that program.
     if (!choice && found.ownId && programs.some((x) => x.id === found.ownId)) { showLoot(read, found.ownId); return; }
     // Several programs on one page (a card's benefits page), unless you picked one program to read it as — before
@@ -8084,6 +8868,8 @@ var siteLock = (function () {
     // showing a lower level than your account does: a card's level never lowers one, so it waits for you.
     if (own && vals.tierIndex >= 0 && heldAbove(p, vals.tierIndex) && benefitsPage(reading.text, found)) doubts.push(`this looks like a card’s benefits page, and your account shows a higher level than ${scanTiersFor(cid)[vals.tierIndex].name}`);
     if (found.unsure && vals.balance !== undefined && playing.balancePick == null) doubts.push(found.several ? 'this page shows more than one balance, so check this one’s yours' : 'the balance was hard to read, so check it');
+    const adding = voucherTally(vouchers);
+    doubts.push(...voucherDoubts(vouchers));
     // A count or the end date the readings disagreed on (see readingOf): the card asks before it updates.
     const track = trackFor(p);
     for (const k of found.unsureCounts || []) {
@@ -8099,24 +8885,278 @@ var siteLock = (function () {
     const real = realChanges(p, own, vals, outcome);
     const confirmOnly = !!own && !real;
     markFound(reading, found, vals, p);
-    const rows = lootRows(p, own, vals, outcome);
+    markVouchers(read, vouchers);
+    const rows = [...lootRows(p, own, vals, outcome), ...voucherRows(vouchers)];
     if (second) rows[0].querySelector('small').textContent = vals.who ? `Adding a second account for ${vals.who}` : 'Adding a second account — name it in Edit';
     if (doubts.length) rows.splice(1, 0, doubtRow(doubts, found, vals));
     $('#play-loot').replaceChildren(...rows.map((li, i) => { li.style.setProperty('--i', i); return li; }));
-    if (own && !changes) {
+    if (own && !changes && !adding) {
       $('#play-title').textContent = `Found your ${nameOf(p)}, but no points or status to update`;
       setActions([later, ['Check it', true, fixPlay]]);
       return;
     }
     $('#play-title').textContent = playing.guessed && choice ? `This looks like your ${nameOf(p)}`
+      : confirmOnly && adding ? (adding === 1 ? 'Found a voucher' : `Found ${adding} vouchers`)
       : confirmOnly ? `Your ${nameOf(p)} is up to date` : own ? `Found your ${nameOf(p)}` : second ? `New ${p.name} account` : `New program: ${p.name}`;
     $('#play-xp').hidden = true; // plain card: what was found and what changes, no XP or combo
+    const confirming = confirmOnly && !adding;
     setActions([['Fix something', false, fixPlay],
-      [[h('span', { class: 'fill', 'aria-hidden': 'true' }), confirmOnly ? 'Confirm' : 'Update', h('span', { class: 'cd', 'aria-hidden': 'true' })], true, collectNow, 'play-collect']]);
+      [[h('span', { class: 'fill', 'aria-hidden': 'true' }), confirming ? 'Confirm' : 'Update', h('span', { class: 'cd', 'aria-hidden': 'true' })], true, collectNow, 'play-collect']]);
     const said = [...$('#play-loot').children].slice(1).map((li) => li.innerText.replace(/\n+/g, ', ')).join('. ');
     const auto = autoCollect && !doubts.length; // something looks off: wait for a tap
-    announce(`${$('#play-title').textContent} ${said}.${auto ? ` ${confirmOnly ? 'Confirming' : 'Updating'} in ${COLLECT_SECONDS} seconds; press Tab to look first.` : ''}`);
+    announce(`${$('#play-title').textContent} ${said}.${auto ? ` ${confirming ? 'Confirming' : 'Updating'} in ${COLLECT_SECONDS} seconds; press Tab to look first.` : ''}`);
     if (auto) startCountdown();
+  }
+
+  /* ---------- Vouchers found on a screenshot: shown on the card, added to Vouchers ---------- */
+
+  // What happens to each voucher found (see voucherState), set on each; how many it adds.
+  // Each saved voucher stands for one found: two identical certificates on the screen with one saved is one new.
+  function voucherTally(list) {
+    const day = todayISO();
+    const pool = [...state.vouchers];
+    for (const v of list) {
+      v.state = voucherState(v, pool, day);
+      if (v.state === 'have') pool.splice(voucherMatch(v, pool), 1);
+    }
+    return list.filter((v) => v.state === 'new' || v.state === 'date').length;
+  }
+  const VOUCHER_MAX = 200; // as many as a saved list keeps (normalize)
+  // What keeps a card from adding by itself: a voucher whose date isn't shown, or one read two ways.
+  function voucherDoubts(list) {
+    const where = playing && !playing.url ? 'the text' : 'the screenshot';
+    const undated = list.filter((v) => v.state === 'date').length;
+    const out = undated ? [undated > 1 ? `${where} doesn’t show when these vouchers expire, so add the dates` : `${where} doesn’t show when the voucher expires, so add the date`] : [];
+    // A date that reads two ways ("05/09/2027" with no program to say which) says both; other doubts, that it was hard to read.
+    const open = list.filter((v) => v.unsure && (v.state === 'new' || v.state === 'date'));
+    const day = (iso) => dateFmt.format(parseISODate(iso));
+    for (const v of open.filter((x) => x.alt && parseISODate(x.alt) && parseISODate(x.exp))) out.push(`the date could be ${day(v.exp)} or ${day(v.alt)}, so check it`);
+    if (open.some((v) => !v.alt)) out.push('a voucher was hard to read, so check it');
+    // The confidence gate (findVouchers' `check`): a voucher not certain from its own lines waits, with a plain reason.
+    // One line per reason, naming the voucher when it's one ("these 3 vouchers" when more).
+    const gated = list.filter((x) => (x.state === 'new' || x.state === 'date') && x.check && x.check.length && !open.includes(x));
+    const by = (k, also = () => true) => gated.filter((v) => v.check.includes(k) && also(v));
+    const say = (vs, one, many) => { if (vs.length === 1) out.push(one(vs[0])); else if (vs.length) out.push(many(vs.length)); };
+    say(by('date', (v) => !!v.exp), (v) => `check the date for ${v.name}`, (n) => `check the dates of these ${n} vouchers`);
+    const named = by('program').every((v) => v.programId);
+    say(by('program'), (v) => (v.programId ? `check that ${v.name} is right — the screen doesn’t clearly name its program` : `check which program ${v.name} is from`),
+      (n) => (named ? `check that these ${n} vouchers are right — the screen doesn’t clearly name their program` : `check which program these ${n} vouchers are from`));
+    say(by('card'), (v) => `check that ${v.name} isn’t a credit card’s own credit`, (n) => `check that these ${n} vouchers aren’t a credit card’s own credits`);
+    say(by('state'), (v) => `check that ${v.name} hasn’t been used`, (n) => `check that these ${n} vouchers haven’t been used`);
+    say(by('split'), (v) => `check that ${v.name} is a voucher you have (it was named alongside another)`, (n) => `check that these ${n} are vouchers you have (each was named alongside another)`);
+    say(by('who'), (v) => `check whose voucher ${v.name} is`, (n) => `check whose vouchers these ${n} are`);
+    say(by('value', (v) => !v.check.includes('program')), (v) => `check the value of ${v.name}`, (n) => `check the values of these ${n} vouchers`);
+    return out;
+  }
+  // A row per voucher: its name, end date and note, and what happens to it. One without a date gets a date box.
+  function voucherRows(list) {
+    return list.map((v, i) => {
+      const exp = parseISODate(v.exp);
+      const sub = [exp ? `${v.state === 'expired' ? 'Expired' : 'Expires'} ${dateFmt.format(exp)}` : null, v.note || null].filter(Boolean).join(' · ');
+      const date = v.state === 'date' ? h('label', { class: 'loot-date' }, h('span', null, 'Expires'),
+        h('input', { type: 'date', id: `play-vexp-${i}`, min: todayISO(), 'aria-label': `When ${v.name} expires` })) : null;
+      const tag = v.state === 'new' ? lootTag('New', 'new') : v.state === 'date' ? lootTag('Add date') : v.state === 'have' ? lootTag('Already saved') : lootTag('Not added');
+      return h('li', { class: 'loot-voucher', 'data-voucher-exp': v.exp || '' },
+        h('span', { class: 'loot-ic', style: `--ic:${MARK_COLORS.voucher}`, 'aria-hidden': 'true' }, svgIcon(ICON.ticket)),
+        h('div', { class: 'loot-main' }, h('b', null, v.name), sub ? h('small', null, sub) : null), tag, date);
+    });
+  }
+  // A box on the screenshot around each voucher's lines.
+  function markVouchers(read, list) {
+    if (!list.length || !read.width || !read.height) return;
+    const pass = (read.passes || [read])[list.pass || 0] || {};
+    const norm = (t) => voucherUnits(t).join(' ').toLowerCase().replace(/[^a-z0-9$]+/g, ' ').trim();
+    const start = $('#play-marks').children.length;
+    const pad = 0.004;
+    const marks = list.map((v) => {
+      const hay = v.lines.map(norm);
+      // A line of its own, or a long enough piece of a sentence wrapped over lines ("Points" alone isn't "Up to 35,000 points").
+      const mine = (n) => hay.some((u) => u === n || (n.length >= 12 && u.includes(n)));
+      const boxes = (pass.lines || []).filter((l) => l && Array.isArray(l.words) && typeof l.text === 'string' && mine(norm(l.text)))
+        .flatMap((l) => l.words.map((w) => w.bbox)).filter(Boolean);
+      return boxes.length ? { x0: Math.min(...boxes.map((b) => b.x0)), y0: Math.min(...boxes.map((b) => b.y0)), x1: Math.max(...boxes.map((b) => b.x1)), y1: Math.max(...boxes.map((b) => b.y1)) } : null;
+    }).filter(Boolean);
+    $('#play-marks').append(...marks.map((m, i) => {
+      const el = h('div', { class: 'play-mark' }, h('span', null, 'voucher'));
+      el.style.cssText = `--i:${start + i};--mark:${MARK_COLORS.voucher};left:${(m.x0 / read.width - pad) * 100}%;top:${(m.y0 / read.height - pad) * 100}%;`
+        + `width:${((m.x1 - m.x0) / read.width + 2 * pad) * 100}%;height:${((m.y1 - m.y0) / read.height + 2 * pad) * 100}%`;
+      return el;
+    }));
+    placeMarkLabels();
+  }
+  // A screen with only vouchers on it (a wallet, an email, a chat answer): each voucher and what happens to it, and Add
+  // (by itself after a few seconds with Auto-update on, unless a date is missing or something was hard to read).
+  function showVoucherLoot(read) {
+    const list = playing.vouchers;
+    const adding = voucherTally(list);
+    Object.assign(playing, { voucherOnly: true, choice: null, many: null });
+    $('#play-marks').replaceChildren();
+    markVouchers(read, list);
+    const doubts = voucherDoubts(list);
+    const rows = voucherRows(list);
+    if (doubts.length) rows.unshift(doubtRow(doubts, { balances: [] }, {}));
+    $('#play-loot').replaceChildren(...rows.map((li, i) => { li.style.setProperty('--i', i); return li; }));
+    $('#play-xp').hidden = true;
+    const later = batch ? ['Skip', false, skipPlay] : ['Try another', false, pickAnother];
+    if (!adding) {
+      $('#play-title').textContent = list.every((v) => v.state === 'have') ? 'Already in your vouchers'
+        : list.every((v) => v.state === 'expired') ? (list.length > 1 ? 'These vouchers have expired' : 'This voucher has expired') : 'Nothing new to add';
+      setActions([later, ['Done', true, batch ? skipPlay : closePlay]]);
+      announce(`${$('#play-title').textContent}: ${list.map((v) => v.name).join(', ')}.`);
+      return;
+    }
+    $('#play-title').textContent = adding === 1 ? 'Found a voucher' : `Found ${adding} vouchers`;
+    // Fix something puts one voucher in the form (the others are added); two or more without a date take theirs here.
+    const undated = list.filter((v) => v.state === 'date').length;
+    setActions([undated > 1 ? later : ['Fix something', false, fixVoucher],
+      [[h('span', { class: 'fill', 'aria-hidden': 'true' }), adding === 1 ? 'Add voucher' : `Add ${adding} vouchers`, h('span', { class: 'cd', 'aria-hidden': 'true' })], true, collectNow, 'play-collect']]);
+    const auto = autoCollect && !doubts.length;
+    const said = [...$('#play-loot').children].map((li) => li.innerText.replace(/\n+/g, ', ')).join('. ');
+    announce(`${$('#play-title').textContent}: ${said}.${auto ? ` Adding in ${COLLECT_SECONDS} seconds; press Tab to look first.` : ''}`);
+    if (auto) startCountdown();
+  }
+  // The vouchers a tap saves: new ones, and undated ones with a date typed on the card (today or later). `missing`: a
+  // date box still empty or in the past, which gets the focus instead.
+  // `undated`: how many were left without a date; `have`: ones whose typed date makes them one already saved.
+  function readyVouchers() {
+    const out = { adding: [], missing: null, undated: 0, have: [] };
+    ((playing && playing.vouchers) || []).forEach((v, i) => {
+      if (v.state === 'new') { out.adding.push(v); return; }
+      if (v.state !== 'date') return;
+      const input = $(`#play-vexp-${i}`);
+      if (!input) return;
+      const ok = !!parseISODate(input.value) && input.value >= todayISO();
+      if (ok || !input.value) input.removeAttribute('aria-invalid'); else input.setAttribute('aria-invalid', 'true');
+      if (ok && voucherMatch({ ...v, exp: input.value }, state.vouchers) >= 0) out.have.push(v);
+      else if (ok) out.adding.push({ ...v, exp: input.value, from: v });
+      else {
+        out.undated++;
+        if (!out.missing) out.missing = input;
+      }
+    });
+    return out;
+  }
+  // Puts vouchers on your list (a tracker started from a voucher, before picking programs, opens with it).
+  // A full list (VOUCHER_MAX) takes no more: those left over are returned in `added.full`, for the caller to say so.
+  function putVouchers(list) {
+    if (!list.length) return [];
+    if (!state.programs) { state.programs = []; skipNewsForNewSetup(); }
+    const room = Math.max(0, VOUCHER_MAX - state.vouchers.length);
+    const added = list.slice(0, room).map((v) => ({ name: str(v.name, 80), note: str(v.note, 120), exp: v.exp }));
+    added.full = list.length - added.length;
+    if (!added.length) return added;
+    state.vouchers.push(...added);
+    sortVouchers();
+    markChanged();
+    return added;
+  }
+  const VOUCHERS_FULL = `You have ${VOUCHER_MAX} vouchers — remove old ones first`;
+  const vouchersLeftOut = (n) => `${plural(n, 'voucher')} ${n > 1 ? 'weren’t' : 'wasn’t'} added — you have ${VOUCHER_MAX}; remove old ones first`;
+  // A control that went away with the card (the paste sheet's Read button): let go of it, so the toast's Undo takes focus.
+  const dropHiddenFocus = () => { const a = document.activeElement; if (a && a !== document.body && !a.offsetParent) a.blur(); };
+  // Saves vouchers from a scan and shows them in Vouchers; Undo puts the tracker back as it was (`before`).
+  function saveScannedVouchers(list, before, who) {
+    const added = putVouchers(list);
+    if (!added.length) {
+      showToast(vouchersLeftOut(added.full));
+      if (batch) { finishOne(false); setTimeout(nextInQueue, 400); }
+      return;
+    }
+    saveNow();
+    renderAll();
+    renderVouchers(added[0]);
+    const row = $('#vlist .voucher.new');
+    if (row) row.scrollIntoView({ behavior: reduceMotion.matches ? 'auto' : 'smooth', block: 'center' });
+    if (batch) { finishOne(true); setTimeout(nextInQueue, reduceMotion.matches ? 400 : 700); return; }
+    dropHiddenFocus();
+    showToast(`${added.length === 1 ? `Added ${added[0].name} to your vouchers` : `Added ${added.length} vouchers`}${added.full ? `. ${vouchersLeftOut(added.full)}` : ''}`,
+      Object.assign(() => undoTo(before, who), { snapshot: true }));
+  }
+  function collectVouchers(adding) {
+    stopCountdown();
+    if (!adding.length) return;
+    const before = clone(state);
+    const who = people.active;
+    closePlay();
+    saveScannedVouchers(adding, before, who);
+  }
+  // "Fix something" on a voucher card: the voucher form, filled in with the first voucher that needs a look (one the card
+  // doubts, then one without a date), else the first. The card's other vouchers that are certain are added, with Undo;
+  // others that need a look come next in the form, one after another (nothing saved without a look, nothing dropped).
+  // In a batch the next screenshot waits for the form (or the toast's "Next screenshot", or the next pick).
+  let vformResume = false;
+  let vformNext = []; // vouchers waiting their turn in the form
+  let vformFilled = null; // { name, note } the form was filled with from a scan, while that's what's in it
+  // Vouchers still waiting their turn are let go (a new screenshot, "Next screenshot"), and said so — never silently.
+  function dropWaitingVouchers() {
+    if (vformNext.length) showNote(`${plural(vformNext.length, 'voucher')} from the last screen ${vformNext.length > 1 ? 'weren’t' : 'wasn’t'} checked — scan it again to add ${vformNext.length > 1 ? 'them' : 'it'}`);
+    vformNext = [];
+  }
+  // Another person, a restore, a tracker replaced: nothing scanned for the last one goes into this one.
+  function dropScannedForm() {
+    vformNext = [];
+    vformResume = false;
+    if (vformFilled && $('#vname').value === vformFilled.name) $('#vform').reset();
+    vformFilled = null;
+  }
+  const needsLook = (v) => !!(v.unsure || (v.check && v.check.length));
+  function fixVoucher() {
+    const list = playing.vouchers || [];
+    const ready = readyVouchers();
+    const typedOf = (i) => ($(`#play-vexp-${i}`) || {}).value || '';
+    const dated = (i) => !!parseISODate(typedOf(i)) && typedOf(i) >= todayISO();
+    const open = list.map((v, i) => ({ v, i })).filter(({ v }) => v.state === 'new' || v.state === 'date');
+    const first = open.find(({ v }) => needsLook(v)) || open.find(({ v, i }) => v.state === 'date' && !dated(i)) || open[0];
+    const v = first && first.v;
+    const typed = v && v.state === 'date' ? typedOf(first.i) : '';
+    // Added alongside: only ready vouchers the card is certain of. The rest go to the form after this one.
+    const rest = ready.adding.filter((x) => x !== v && x.from !== v && !needsLook(x.from || x));
+    vformNext = open.filter(({ v: x }) => x !== v && !rest.some((r) => r === x || r.from === x))
+      .map(({ v: x, i }) => (x.exp || !dated(i) ? x : { ...x, exp: typedOf(i) }));
+    stopCountdown();
+    closePlay();
+    if (batch) finishOne(false);
+    if (!v) { if (batch && !scanQueue.length) endBatch(); return; }
+    if (!state.programs) { state.programs = []; skipNewsForNewSetup(); saveNow(); renderAll(); }
+    const before = clone(state);
+    const added = rest.length ? putVouchers(rest) : [];
+    if (added.length) { saveNow(); renderAll(); if (batch) batch.collected++; }
+    fillVoucherForm(v, typed);
+    const ask = $('#vexp').value ? 'Check the voucher, then tap Add' : 'Set the date it expires, then tap Add';
+    const others = `${added.length ? `Added ${plural(added.length, 'other voucher')}. ` : ''}${added.full ? `${vouchersLeftOut(added.full)}. ` : ''}`;
+    const waiting = vformNext.length ? ` — ${plural(vformNext.length, 'more voucher')} to check next` : '';
+    // In a batch: more to read waits for the form's Add (or "Next screenshot", or the next pick); the last one ends it now,
+    // its Undo in the toast with the ask.
+    if (batch && scanQueue.length) { vformResume = true; showToast(`${others}${ask}${waiting}`, () => { vformResume = false; dropWaitingVouchers(); nextInQueue(); }, 'Next screenshot', 15000); }
+    else if (batch) { vformResume = false; endBatch(`${others}${ask}${waiting}`); }
+    else if (added.length) showToast(`${others}${ask}${waiting}`, Object.assign(() => undoTo(before, people.active), { snapshot: true }));
+    else showToast(`${others}${ask}${waiting}`);
+  }
+  function fillVoucherForm(v, typed = '') {
+    vformFilled = { name: v.name, note: v.note };
+    $('#vname').value = v.name;
+    $('#vnote').value = v.note;
+    $('#vexp').value = v.exp || (parseISODate(typed) ? typed : '');
+    const field = $('#vexp').value ? $('#vname') : $('#vexp');
+    field.focus({ preventScroll: true });
+    field.scrollIntoView({ block: 'center' });
+  }
+  // The voucher form's Add after "Fix something": the next voucher that needs a look, then (in a batch) the next screenshot.
+  // A voucher typed by hand instead (a name sharing no word with the scanned one's) ends the waiting list; an edited
+  // one ("Delta $55 eCredit" for "Delta $50 eCredit") doesn't.
+  function resumeAfterForm(added) {
+    const words = (t) => String(t || '').toLowerCase().split(/[^a-z0-9]+/).filter((w) => w.length >= 3);
+    if (added && vformFilled && !words(added.name).some((w) => words(vformFilled.name).includes(w))) vformNext = [];
+    vformFilled = null;
+    if (vformNext.length) {
+      const v = vformNext.shift();
+      fillVoucherForm(v);
+      showToast(`Next: ${$('#vexp').value ? 'check' : 'add the date for'} ${v.name}, then tap Add${vformNext.length ? ` (${vformNext.length} more after it)` : ''}`);
+      return;
+    }
+    if (!vformResume) return;
+    vformResume = false;
+    setTimeout(nextInQueue, 400);
   }
 
   function startCountdown() {
@@ -8139,25 +9179,49 @@ var siteLock = (function () {
   }
 
   function collectNow() {
-    if (playing && playing.many) { collectMany(); return; }
+    // A voucher's date box left empty (or a date already past): it gets the focus, and nothing is saved yet.
+    // On an account card an empty date box only leaves that voucher out; a past date, or a card of vouchers alone, waits.
+    const ready = readyVouchers();
+    const voucherOnly = !!(playing && playing.voucherOnly);
+    if (ready.missing && (voucherOnly || ready.missing.value)) {
+      stopCountdown();
+      ready.missing.focus();
+      showToast(ready.missing.value ? 'That date has passed — add the date the voucher expires' : 'Add the date the voucher expires');
+      return;
+    }
+    if (voucherOnly && !ready.adding.length && ready.have.length) {
+      stopCountdown();
+      showToast(`${ready.have[0].name} is already in your vouchers`);
+      return;
+    }
+    if (voucherOnly) { collectVouchers(ready.adding); return; }
+    if (playing && playing.many) { collectMany(ready.adding); return; }
     if (!playing || !playing.choice) return;
     stopCountdown();
     const from = ($('#play-loot .loot-bal') || $('#play-loot li') || $('#play-shot')).getBoundingClientRect();
     const { choice, vals, years } = playing;
     closePlay();
-    collect(choice, vals, from, years);
+    dropHiddenFocus();
+    collect(choice, vals, from, years, ready.adding, ready.undated);
   }
   // "Fix something": the review form, with the screenshot above it.
   function fixPlay() {
     const { text, url, choice, found, balancePick } = playing;
     // A balance you picked on the card ("Use 26,948") is the one the form starts with.
     const picked = found && balancePick != null ? { ...found, balances: [balancePick, ...found.balances.filter((v) => v !== balancePick)] } : found;
+    // Vouchers on the same screen go along, each ticked to add.
+    // A date typed on the card goes along (its row then starts ticked).
+    const vouchers = (playing.vouchers || []).map((v, i) => [v, ($(`#play-vexp-${i}`) || {}).value]).filter(([v]) => v.state === 'new' || v.state === 'date')
+      .map(([v, typed]) => (v.exp || !parseISODate(typed) ? v : { ...v, exp: typed }));
     playing.url = null; // the review sheet shows it now
     closePlay();
     openScan();
-    $('#scan-preview').src = url;
-    $('#scan-preview').hidden = false;
-    showScanResult(text, choice, choice || balancePick != null ? picked : null);
+    if (url) {
+      $('#scan-preview').src = url;
+      $('#scan-preview').hidden = false;
+    }
+    // The card read it as this program, with the vouchers' numbers set aside: the form starts from that reading.
+    showScanResult(text, choice, choice || balancePick != null || vouchers.length ? picked : null, vouchers);
   }
   function closePlay() { if (play.open) play.close(); }
 
@@ -8278,17 +9342,24 @@ var siteLock = (function () {
       return h('li', null, avatar(p), lootText(nameOf(p), sub),
         skip ? lootTag(skip) : outcome.kind === 'new' ? lootTag(own ? 'New status' : 'New', 'new') : lootTag(outcome.kind === 'same' ? 'Confirmed' : outcome.why));
     });
+    // Vouchers on the same page, after the statuses.
+    const vouchers = playing.vouchers || [];
+    voucherTally(vouchers);
+    const doubts = voucherDoubts(vouchers);
+    rows.push(...voucherRows(vouchers));
+    if (doubts.length) rows.push(doubtRow(doubts, { balances: [] }, {}));
     $('#play-loot').replaceChildren(...rows.map((li, i) => { li.style.setProperty('--i', i); return li; }));
     const changed = items.filter(({ own, vals, outcome }) => !own || vals.member || (outcome && outcome.kind === 'new'));
     $('#play-title').textContent = changed.length ? `Found ${plural(items.length, 'status', 'statuses')} on this page` : `These ${items.length} statuses are up to date`;
     $('#play-xp').hidden = true;
     setActions([['Fix something', false, () => { playing.many = null; pickProgram(read, later); }],
       [[h('span', { class: 'fill', 'aria-hidden': 'true' }), changed.length ? 'Update all' : 'Confirm', h('span', { class: 'cd', 'aria-hidden': 'true' })], true, collectNow, 'play-collect']]);
-    announce(`${$('#play-title').textContent} ${items.map(({ p, level }) => `${nameOf(p)}: ${level}`).join('. ')}.${autoCollect ? ` Updating in ${COLLECT_SECONDS} seconds; press Tab to look first.` : ''}`);
-    if (autoCollect) startCountdown();
+    const auto = autoCollect && !doubts.length;
+    announce(`${$('#play-title').textContent} ${items.map(({ p, level }) => `${nameOf(p)}: ${level}`).join('. ')}.${auto ? ` Updating in ${COLLECT_SECONDS} seconds; press Tab to look first.` : ''}`);
+    if (auto) startCountdown();
   }
   // Update for every program on the page: one batch (one screenshot of it), so there's one toast and one Undo.
-  function collectMany() {
+  function collectMany(vouchers = []) {
     const items = playing.many.filter(({ own, skip, vals }) => !skip || (own && Object.keys(vals).length)); // a number alone still saves
     stopCountdown();
     const from = ($('#play-loot li') || $('#play-shot')).getBoundingClientRect();
@@ -8298,6 +9369,7 @@ var siteLock = (function () {
     batch.hold = true; // the programs count as one screenshot
     const years = readYears(null);
     try { for (const { choice, vals } of items) collect(choice, vals, from, years); } finally { batch.hold = false; }
+    if (putVouchers(vouchers).length) { saveNow(); renderVouchers(); }
     finishOne(true);
     batch.programs = (batch.programs || 0) + items.length;
   }
@@ -8405,8 +9477,10 @@ var siteLock = (function () {
       scanQueue.push(...images);
       renderPlayCount();
       if (play.open || scanSheet.open) showToast(`${plural(images.length, 'more screenshot')} in line`);
+      else { vformResume = false; dropWaitingVouchers(); nextInQueue(); } // nothing on screen (the voucher form left after Fix something): go on
       return true;
     }
+    dropWaitingVouchers(); // a new screenshot: vouchers still waiting from the last one are let go, and said so
     if (images.length > 1) batch = newBatch(images.length);
     const hint = images.length === 1 && pickHint && Date.now() - pickHint.at < 5 * 60 * 1000 ? pickHint.id : null;
     pickHint = null;
@@ -8433,6 +9507,7 @@ var siteLock = (function () {
   }
   // Drops anything in progress (switching person, restoring a backup): the queue, a batch, hints, the combo.
   function stopScanning() {
+    dropScannedForm();
     scanQueue.length = 0;
     batch = null;
     pickHint = null;
@@ -8453,13 +9528,14 @@ var siteLock = (function () {
     closePlay();
     endBatch();
   }
-  function endBatch() {
+  // `then`: what to say after it ("Check the voucher, then tap Add"), in the same toast as the batch's Undo.
+  function endBatch(then = '') {
     const b = batch;
     batch = null;
     if (b && b.collected && b.person === people.active) {
-      showToast(b.many ? `Updated ${plural(b.programs || b.collected, 'program')}` : `Updated from ${plural(b.collected, 'screenshot')}`, Object.assign(() => undoTo(b.before, b.person), { snapshot: true }));
+      showToast(`${b.many ? `Updated ${plural(b.programs || b.collected, 'program')}` : `Updated from ${plural(b.collected, 'screenshot')}`}${then ? `. ${then}` : ''}`, Object.assign(() => undoTo(b.before, b.person), { snapshot: true }));
       offerBonusLanding(b.before.balances);
-    }
+    } else if (then) showToast(then);
   }
   // Undo of a collect or batch: only for the person it was made for, and it ends any combo (#8).
   function undoTo(before, who = people.active) {
@@ -8495,7 +9571,7 @@ var siteLock = (function () {
 
   // The review form: everything found, each with a checkbox, editable before anything changes.
   // `choice` and `forced`: the program picked on the scan card and what was read as that program.
-  function showScanResult(text, choice = null, forced = null) {
+  function showScanResult(text, choice = null, forced = null, vouchers = []) {
     const programs = state.programs || [];
     const mine = choice ? programs.find((p) => p.id === choice) : null;
     const found = forced || parseAccountText(text || '');
@@ -8505,7 +9581,7 @@ var siteLock = (function () {
     const second = !!choice && choice.startsWith('new:'); // another account in a program you track
     const account = !mine && !second && found.programId ? accountFor(found.programId, found.member, found.name) : { own: null, ask: false };
     const target = mine || account.own || (found.programId && !account.ask && own(found.programId));
-    scanned = { text, found };
+    scanned = { text, found, vouchers };
     $('#scan-start').hidden = true;
     $('#scan-again').hidden = false;
     if (!found.programId && !mine && !second) {
@@ -8531,7 +9607,15 @@ var siteLock = (function () {
   // different program than the one detected reads the text again as that program, for its level and counts.
   function renderScanFields() {
     const first = $('#scan-result').firstElementChild;
-    $('#scan-result').replaceChildren(first, ...scanFields(scanned.found));
+    $('#scan-result').replaceChildren(first, ...scanFields(scanned.found), ...voucherFields(scanned.vouchers));
+  }
+  // Vouchers from the same screenshot: each ticked to add when its date is known, with the date to check or fill.
+  function voucherFields(list = []) {
+    return list.map((v, i) => {
+      const date = h('input', { type: 'date', id: `scan-vexp-${i}`, min: todayISO(), 'aria-label': `When ${v.name} expires` });
+      date.value = v.exp || '';
+      return scanField(`v${i}`, 'Voucher', [h('span', { class: 'scan-vname' }, v.name), date], !!v.exp, v.note || null);
+    });
   }
   function scanFields(detected) {
     const choice = $('#scan-program').value;
@@ -8609,13 +9693,27 @@ var siteLock = (function () {
       bad[0].focus();
       return;
     }
+    // Each ticked voucher needs a date, today or later.
+    const vouchers = [];
+    for (const [i, v] of ((scanned && scanned.vouchers) || []).entries()) {
+      if (!$(`#scan-use-v${i}`).checked) continue;
+      const input = $(`#scan-vexp-${i}`);
+      if (!parseISODate(input.value) || input.value < todayISO()) {
+        input.setAttribute('aria-invalid', 'true');
+        showToast(input.value ? 'That date has passed — add the date the voucher expires' : 'Add the date the voucher expires, then tap Update');
+        input.focus();
+        return;
+      }
+      if (voucherMatch({ ...v, exp: input.value }, state.vouchers) >= 0) continue; // already on your list: not twice
+      vouchers.push({ ...v, exp: input.value });
+    }
     const vals = formVals();
     if (choice.startsWith('new:') && scanned && scanned.found.name) vals.who = scanned.found.name; // the greeting names the second account
     const years = scanned && scanned.years;
     const from = $('#scan-apply').getBoundingClientRect();
     quietClose = true;
     scanSheet.close();
-    collect(choice, vals, from, years);
+    collect(choice, vals, from, years, vouchers);
   }
 
   // Puts what a screenshot showed into one program (adding it if it's new) and says what changed.
@@ -8696,7 +9794,7 @@ var siteLock = (function () {
   }
 
   // Applies a screenshot, then celebrates: points fly into the program's row, the number counts up, XP and badges.
-  function collect(choice, vals, from, years) {
+  function collect(choice, vals, from, years, vouchers = [], undated = 0) {
     // A new qualifying year began after the screen was read (the card or review sheet stayed open over New Year):
     // roll over first, and leave out last year's counts (kept as a status if they earned one), like the number
     // editor and Type balances do.
@@ -8707,6 +9805,7 @@ var siteLock = (function () {
       const have = (state.programs || []).find((x) => catalogFor(x) && catalogFor(x).id === choice.slice(4));
       if (have) choice = have.id;
     } else if (!choice.startsWith('new:') && !(state.programs || []).some((x) => x.id === choice)) { // "new:": a second account, added as asked
+      if (vouchers.length) { saveScannedVouchers(vouchers, clone(state), people.active); return; } // the vouchers still go in
       showToast('That program was removed in another window, so nothing was updated');
       if (batch) { finishOne(false); setTimeout(nextInQueue); }
       return;
@@ -8718,11 +9817,14 @@ var siteLock = (function () {
     const result = applyRead(choice, vals);
     if (!result.changes.length && !result.added) {
       Object.assign(state, previous);
+      // Only the vouchers are new: they're saved, with their own Undo.
+      if (vouchers.length) { saveScannedVouchers(vouchers, clone(state), who); return; }
       showToast(stale.length ? `New qualifying year: counts start over, so ${stale.length > 1 ? 'those numbers weren’t' : 'that number wasn’t'} saved`
         : 'Nothing new to update');
       if (batch) { finishOne(false); setTimeout(nextInQueue); }
       return;
     }
+    const addedVouchers = vouchers.length ? putVouchers(vouchers) : []; // undone with the rest (`previous`)
     const reward = award(result);
     const g = game();
     if (result.real || result.added || reward.xp) { // a repeat check with nothing new isn't news
@@ -8740,7 +9842,9 @@ var siteLock = (function () {
     if (batch) finishOne(true, reward.xp); // one toast, with one Undo, when the batch ends
     else {
       const undo = Object.assign(() => undoTo(previous, who), { snapshot: true }); // puts the whole tracker back
-      showToast(!result.real && !added ? `${nameOf(p)} is up to date` : `${added ? 'Added' : 'Updated'} ${nameOf(p)}`, undo);
+      const more = `${addedVouchers.length ? ` and added ${plural(addedVouchers.length, 'voucher')}` : ''}${addedVouchers.full ? `. ${vouchersLeftOut(addedVouchers.full)}` : ''}`
+        + `${undated ? ` — ${undated > 1 ? `${undated} vouchers with no date weren’t added` : 'the voucher with no date wasn’t added'}` : ''}`;
+      showToast(!result.real && !added ? `${nameOf(p)} is up to date${more}` : `${added ? 'Added' : 'Updated'} ${nameOf(p)}${more}`, undo);
     }
     offerBonusLanding(previous.balances);
   }
@@ -8970,7 +10074,13 @@ var siteLock = (function () {
   $('#scan-apply').addEventListener('click', applyScan);
   $('#scan-file').addEventListener('change', (e) => { const files = [...(e.target.files || [])]; e.target.value = ''; scanFiles(files); });
   $('#scan-file').addEventListener('cancel', () => { pickHint = null; replacePick = false; }); // picker closed with nothing
-  $('#scan-read-text').addEventListener('click', () => { if ($('#scan-text').value.trim()) showScanResult($('#scan-text').value); });
+  $('#scan-read-text').addEventListener('click', () => {
+    const text = $('#scan-text').value;
+    if (!text.trim()) return;
+    // Text naming a voucher (copied from an email, a chat or a wallet page) goes on the scan card, like a screenshot.
+    if (findVouchers(text).length) { quietClose = true; scanSheet.close(); playText(text); return; }
+    showScanResult(text);
+  });
   scanSheet.addEventListener('click', (e) => {
     if (backdropTap(e, scanSheet)) { scanSheet.close(); return; }
     const alt = e.target.closest('[data-scan-balance]');
@@ -11626,12 +12736,14 @@ var siteLock = (function () {
     if (!name) { nameEl.value = ''; nameEl.focus(); return; }
     if (!parseISODate(expEl.value)) { expEl.focus(); return; }
 
+    if (state.vouchers.length >= VOUCHER_MAX) { showToast(VOUCHERS_FULL); return; }
     const voucher = { name, note: $('#vnote').value.trim(), exp: expEl.value };
     state.vouchers.push(voucher);
     sortVouchers();
     scheduleSave();
     holdVouchers(() => renderVouchers(voucher));
     e.target.reset();
+    resumeAfterForm(voucher); // a batch paused by a voucher card's Fix something goes on
     // Keep the keyboard flow on desktop; don't pop the on-screen keyboard back up on phones. Plain focus() would scroll
     // the field to the middle of the screen if Coming up growing pushed it below; bring it up only as far as needed.
     if (matchMedia('(pointer: fine)').matches) {
@@ -13495,7 +14607,7 @@ var siteLock = (function () {
 
   // A one-time card listing new features for people who already use the app; new setups skip it.
   const NEWS_KEY = 'status-tracker-news';
-  const NEWS_ID = '2026-11c';
+  const NEWS_ID = '2026-11d';
   const newsSeen = () => { try { return localStorage.getItem(NEWS_KEY) === NEWS_ID; } catch (e) { return true; } };
   const markNewsSeen = () => { try { localStorage.setItem(NEWS_KEY, NEWS_ID); } catch (e) { /* private mode */ } };
   // The card is one for the whole device: a new setup skips it only when no one else here already uses the app

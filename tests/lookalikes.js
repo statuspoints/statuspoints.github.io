@@ -5,7 +5,9 @@
 //   const m = await import('/tests/lookalikes.js'); await m.run(); // then: m.results, m.results.filter((r) => !r.ok)
 // Harder copies: m.run(m.pages, { scale: 0.5 }) (a low-resolution screenshot), { jpeg: 0.5 } (compressed),
 // { font: 'Georgia, serif' } or { light: true } (thin text) — any mix.
-// 79 pages, 31 programs. It never applies a read (each card is closed), and setUp() is for a test browser only.
+// 80 account pages (31 programs) and 11 voucher pages (`expect.vouchers`: each voucher's name and end date, in order;
+// with `program` too when the page also shows an account). It never applies a read (each card is closed), and setUp()
+// is for a test browser only.
 
 const W = '#fff';
 const D = '#0f1115';
@@ -299,6 +301,52 @@ export const pages = [
     text: [t('World of Hyatt', 26, 50, 20, 400, W), t('Taylor Quinn', 26, 100, 14, 400, W), t('Globalist', 26, 122, 14, 400, W), t('Current points', 26, 200, 13, 400, W), t('91,450', 26, 240, 30, 400, W),
       t('My tier progress', 330, 60, 26), t('Qualifying nights: 41 of 60', 330, 100, 15), t('Base points: 62,300 of 100,000', 330, 128, 15), t('Earn 5,000 bonus points on your next stay', 330, 170, 15)],
     expect: { program: 'Hyatt', balance: 91450, tier: 'Globalist', counts: ['41 nights'] } },
+  // Vouchers (made-up numbers): a wallet, a chat answer, a table, tiles beside an account. Each is found with its date.
+  { name: 'Delta app wallet, an eCredit tile', w: 1170, h: 1500, rects: [[0, 0, 1170, 170, '#0b1f4a'], [40, 330, 1090, 500, '#f3f5f9']],
+    text: [t('My Wallet', 60, 115, 52, 700, W), t('eCredits', 60, 280, 44, 700), t('Delta eCredit', 90, 410, 40, 700), t('$75.00 USD', 90, 520, 84, 700),
+      t('Expires Sep 28, 2027', 90, 610, 36, 400, '#444'), t('eCredit number 0069876543210', 90, 690, 32, 400, '#444'), t('Valid on Delta-marketed flights only', 90, 770, 30, 400, '#444')],
+    expect: { vouchers: [['Delta $75 eCredit', '2027-09-28']] } },
+  { name: 'A chat answer about an eCredit, dark', w: 1170, h: 900, bg: '#1f1f1f', ink: '#ececec',
+    text: [t('Yes, one confirmed: a $75 Delta eCredit that’s', 60, 200, 38), t('good until Sep 28, 2027.', 60, 256, 38), t('• Delta $75 eCredit: it came from your customer', 60, 340, 38),
+      t('care case in September, and nothing shows it’s', 60, 396, 38), t('been used. The eCredit number is 0061234567890.', 60, 452, 38), t('It covers fares on Delta, Air France and KLM', 60, 508, 38), t('only, not bag fees.', 60, 564, 38)],
+    expect: { vouchers: [['Delta $75 eCredit', '2027-09-28']] } },
+  { name: 'United app, a FutureFlight credit and TravelBank cash', w: 1170, h: 1100, rects: [[0, 0, 1170, 160, '#0c2340']],
+    text: [t('UNITED', 60, 110, 52, 700, W), t('Travel credits', 60, 290, 44, 700), t('Future flight credit', 60, 410, 38, 700), t('$212.40', 60, 510, 72, 700),
+      t('Expires 09/28/2027', 60, 580, 32, 400, '#444'), t('Ticket number 0162345678901', 60, 640, 30, 400, '#444'), t('TravelBank cash', 60, 780, 38, 700), t('$150.00', 60, 880, 72, 700),
+      t('Expires 01/31/2028', 60, 950, 32, 400, '#444')],
+    expect: { vouchers: [['United $212.40 FutureFlight credit', '2027-09-28'], ['United $150 TravelBank cash', '2028-01-31']] } },
+  { name: 'Southwest web, a table of travel funds', w: 1440, h: 480, rects: [[0, 0, 1440, 90, '#304cb2']],
+    text: [t('Southwest', 40, 60, 34, 700, W), t('Travel funds', 60, 170, 30, 700), t('Credit type', 60, 250, 18, 400, '#555'), t('Confirmation #', 400, 250, 18, 400, '#555'),
+      t('Amount', 700, 250, 18, 400, '#555'), t('Expires', 950, 250, 18, 400, '#555'), t('Flight credit', 60, 310, 22), t('ABC1D2', 400, 310, 22), t('$123.45', 700, 310, 22), t('01/15/2027', 950, 310, 22),
+      t('LUV voucher', 60, 370, 22), t('1234567890123456', 400, 370, 22), t('$100.00', 700, 370, 22), t('12/31/2027', 950, 370, 22)],
+    expect: { vouchers: [['Southwest $123.45 flight credit', '2027-01-15'], ['Southwest $100 LUV voucher', '2027-12-31']] } },
+  { name: 'Marriott app, points and a Free Night Award tile', w: 1170, h: 1100, rects: [[40, 690, 1090, 300, '#f4efe9']],
+    text: [t('MARRIOTT BONVOY', 60, 120, 48, 700), t('Gold Elite', 60, 240, 52, 700), t('48,320', 60, 430, 110, 700), t('Points', 60, 490, 36, 400, '#444'), t('My Awards', 60, 650, 40, 700),
+      t('Free Night Award', 80, 770, 40, 700), t('Up to 35,000 points', 80, 840, 34, 400, '#444'), t('Expires Jun 30, 2027', 80, 900, 34, 400, '#444')],
+    expect: { program: 'Marriott', balance: 48320, tier: 'Gold Elite', vouchers: [['Marriott free night (up to 35,000 points)', '2027-06-30']] } },
+  { name: 'Hilton app, two Free Night Rewards', w: 1170, h: 800, rects: [[0, 0, 1170, 160, '#104c97']],
+    text: [t('Hilton Honors', 60, 105, 52, 700, W), t('Free Night Rewards', 60, 280, 44, 700), t('Free Night Reward', 60, 400, 38, 700), t('Expires Mar 31, 2027', 60, 460, 32, 400, '#444'),
+      t('Free Night Reward', 60, 600, 38, 700), t('Expires Sep 30, 2027', 60, 660, 32, 400, '#444')],
+    expect: { vouchers: [['Hilton free night', '2027-03-31'], ['Hilton free night', '2027-09-30']] } },
+  { name: 'Hyatt web, a Category 1-4 free night', w: 1440, h: 400, rects: [[0, 0, 1440, 100, '#1a1a1a']],
+    text: [t('WORLD OF HYATT', 40, 64, 34, 700, W), t('My Awards', 60, 170, 28, 700), t('Category 1-4 Free Night', 60, 240, 24, 700), t('Award ID 7HX2K9', 60, 280, 18, 400, '#444'),
+      t('Expires 12/15/2027', 60, 315, 18, 400, '#444')],
+    expect: { vouchers: [['Hyatt free night (Category 1-4)', '2027-12-15']] } },
+  { name: 'IHG app, Platinum Elite with an anniversary night', w: 1170, h: 1000, rects: [[40, 620, 1090, 300, '#f6efe8']],
+    text: [t('IHG One Rewards', 60, 130, 52, 700), t('Platinum Elite', 60, 250, 52, 700), t('61,250', 60, 450, 110, 700), t('Points', 60, 510, 36, 400, '#444'),
+      t('Anniversary Free Night', 80, 700, 40, 700), t('Up to 40,000 points', 80, 770, 34, 400, '#444'), t('Valid until Nov 30, 2027', 80, 830, 34, 400, '#444')],
+    expect: { program: 'IHG', balance: 61250, tier: 'Platinum Elite', vouchers: [['IHG anniversary free night (up to 40,000 points)', '2027-11-30']] } },
+  { name: 'Delta app, a companion certificate and upgrade certificates', w: 1170, h: 860, rects: [[0, 0, 1170, 110, '#0b1f4a']],
+    text: [t('DELTA', 60, 75, 44, 700, W), t('My Certificates', 60, 190, 52, 700), t('Companion Certificate', 60, 340, 40, 700), t('Main Cabin round trip', 60, 400, 32, 400, '#444'), t('Expires Jan 31, 2027', 60, 460, 32, 400, '#444'),
+      t('Regional Upgrade Certificates (2)', 60, 620, 40, 700), t('Expire Jan 31, 2028', 60, 680, 32, 400, '#444')],
+    expect: { vouchers: [['Delta companion certificate', '2027-01-31'], ['2 Delta Regional Upgrade Certificates', '2028-01-31']] } },
+  { name: 'American app dark, a trip credit, day-first date', w: 1170, h: 700, bg: D, ink: '#f2f2f2',
+    text: [t('AAdvantage', 60, 130, 52, 700), t('Trip credits', 60, 280, 44, 700), t('$189.20', 60, 400, 84, 700), t('Valid through 28 Sep 2027', 60, 470, 32, 400, '#bbb'),
+      t('Credit number 0011234567890', 60, 530, 30, 400, '#bbb')],
+    expect: { vouchers: [['American $189.20 trip credit', '2027-09-28']] } },
+  { name: 'JetBlue web, Travel Bank in small type', w: 1440, h: 300,
+    text: [t('jetBlue', 40, 50, 26, 700, '#0033a0'), t('Travel Bank', 60, 130, 22, 700), t('Available credit $85.00', 60, 170, 16), t('Expires on 06/12/2027', 60, 200, 16)],
+    expect: { vouchers: [['JetBlue $85 Travel Bank credit', '2027-06-12']] } },
 ];
 
 export function draw(page, variant = {}) {
@@ -336,12 +384,14 @@ export async function scan(page, variant = {}) {
   for (let i = 0; i < 600; i++) {
     await pause(250);
     title = document.querySelector('#play-title').textContent;
-    if (/^Found|^New program|up to date|Which program|Couldn|looks like|no points or status|^These/.test(title)) break;
+    if (/^Found|^New program|up to date|Which program|Couldn|looks like|no points or status|^These|Already in your vouchers|expired|Nothing new to add/.test(title)) break;
   }
   document.querySelector('#play').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); // no automatic update
   // A row's lines; innerText drops them when the page isn't being laid out (tabs switching), so its pieces then.
   const pieces = (li) => { const out = []; const walk = document.createTreeWalker(li, NodeFilter.SHOW_TEXT); while (walk.nextNode()) if (walk.currentNode.nodeValue.trim()) out.push(walk.currentNode.nodeValue.trim()); return out.join(' | '); };
   const rows = [...document.querySelectorAll('#play-loot li')].map((li) => (li.innerText.includes('\n') ? li.innerText.replace(/\n+/g, ' | ') : pieces(li)));
+  // Each voucher on the card: its name and end date.
+  const vouchers = [...document.querySelectorAll('#play-loot li.loot-voucher')].map((li) => [li.querySelector('b').textContent, li.dataset.voucherExp]);
   document.querySelector('#play-close').click();
   await pause(300);
   const balance = rows.map((r) => /^([\d,]+) (?:points|miles|avios)/i.exec(r)).find(Boolean);
@@ -351,6 +401,13 @@ export async function scan(page, variant = {}) {
     balance: balance ? Number(balance[1].replace(/,/g, '')) : null, tier: status ? status.split(' | ')[0] : null,
     counts: rows.filter((r) => !/Balance|\| Status|Member number|On your list|Adding it|Check this/.test(r)).map((r) => r.split(' | ')[0]) };
   const e = page.expect;
+  got.vouchers = vouchers;
+  // A voucher page: every voucher with its date, nothing else asked for; with an account too, that's read as below.
+  const vouchersOk = JSON.stringify(vouchers) === JSON.stringify(e.vouchers || []);
+  if (e.vouchers && !e.program) {
+    const ok = vouchersOk && /^Found (?:a|\d+) vouchers?$/.test(title);
+    return { name: page.name, ok, silentlyWrong: !ok && !got.flagged, got: { ...got, rows } };
+  }
   // A page with several statuses (a card's benefits page): every program named, each with its level.
   if (e.many) {
     const ok = /^Found \d+ status(?:es)?|^These \d+ statuses/.test(title) && e.many.every((name) => rows.some((r) => r.startsWith(`${name} |`) || r.includes(`| ${name} |`)));
@@ -359,7 +416,7 @@ export async function scan(page, variant = {}) {
   // `ask`: the page can't be read for sure (two balances, a number cut off), so a right card still has to ask.
   const ok = title.includes(e.program) && got.balance === e.balance && (e.tier === undefined || got.tier === e.tier)
     && (e.member === undefined || got.member === e.member)
-    && (e.counts || []).every((c) => got.counts.includes(c)) && (!e.ask || got.flagged);
+    && (e.counts || []).every((c) => got.counts.includes(c)) && (!e.ask || got.flagged) && vouchersOk;
   // Wrong without saying so is the failure that matters: a flagged card waits for you to check it.
   return { name: page.name, ok, silentlyWrong: !ok && !got.flagged, got };
 }
